@@ -1,0 +1,46 @@
+\documentclass[a4paper,10pt]{article}
+
+% Packages
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{geometry}
+\usepackage{amsmath, amssymb, amsfonts, mathtools}
+\usepackage{longtable} % For tables spanning multiple pages
+\usepackage{booktabs}  % For prettier tables
+\usepackage{array}     % For better column definitions
+\usepackage{hyperref}
+
+% Page Layout
+\geometry{left=2cm, right=2cm, top=2.5cm, bottom=2.5cm}
+
+% Custom Column Types
+% L: Left aligned, variable width
+\newcolumntype{L}[1]{>{\raggedright\arraybackslash}p{#1}}
+
+\title{\textbf{Mathematical Notation Reference}\\\large Measure Theory, Set Theory, Probability \& Statistics}
+\author{Personal Reference}
+\date{\today}
+
+\begin{document}
+
+\maketitle
+% \tableofcontents
+% \newpage
+
+\section{Introduction}
+This document serves as a reference for mathematical notations used in Measure Theory, Set Theory, Probability, and Statistics.
+
+% Table Configuration
+\setlength{\tabcolsep}{10pt} % Padding between columns
+\renewcommand{\arraystretch}{1.5} % Padding between rows
+
+\section{Set Theory}
+\input{sections/set_theory.tex}
+
+\section{Measure Theory}
+\input{sections/measure_theory.tex}
+
+\section{Probability \& Statistics}
+\input{sections/probability.tex}
+
+\end{document}
