@@ -1,0 +1,70 @@
+# R History files
+.Rhistory
+.Rapp.history
+
+# R Data files
+*.RData
+*.Rdata
+*.rda
+*.rds
+
+# R User files
+.Ruserdata
+
+# RStudio files
+.Rproj.user/
+*.Rproj
+
+# R Markdown cache and output
+*.Rmd
+!*_documentation.Rmd
+*.html
+*.pdf
+*.docx
+*.pptx
+*_files/
+*_cache/
+
+# Knitr cache
+*_cache/
+*.utf8.md
+*.knit.md
+
+# Temporary files
+*.tmp
+*.temp
+*.log
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# IDE files
+.idea/
+.vscode/
+*.sublime-project
+*.sublime-workspace
+
+# Package files
+*.tar.gz
+*.zip
+
+# Compiled files
+*.o
+*.so
+*.dll
+
+# Data files (optional - uncomment if you don't want to track data)
+# data/raw/*
+# data/processed/*
+# !data/raw/.gitkeep
+# !data/processed/.gitkeep
+

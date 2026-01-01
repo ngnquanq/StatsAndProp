@@ -1,0 +1,172 @@
+---
+title: "Expectation-Maximization (EM) Algorithm - Documentation"
+author: "Computational Statistics Lab"
+date: "`r Sys.Date()`"
+output: 
+  html_document:
+    css: ../../templates/styles.css
+    toc: true
+    toc_float: true
+    number_sections: true
+    theme: default
+    highlight: tango
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  echo = TRUE,
+  warning = FALSE,
+  message = FALSE,
+  fig.width = 10,
+  fig.height = 6,
+  fig.align = "center"
+)
+
+# Load required libraries
+library(ggplot2)
+library(MASS)
+```
+
+# Algorithm Overview
+
+The Expectation-Maximization (EM) algorithm is an iterative method for finding maximum likelihood estimates of parameters in statistical models, especially when the model depends on unobserved latent variables. The EM algorithm alternates between performing an expectation (E) step, which creates a function for the expectation of the log-likelihood evaluated using the current estimate for the parameters, and a maximization (M) step, which computes parameters maximizing the expected log-likelihood found on the E step.
+
+## Background
+
+The EM algorithm was introduced by Dempster, Laird, and Rubin in 1977. It is particularly useful when:
+- Data has missing values
+- The model involves latent variables
+- Direct maximum likelihood estimation is difficult
+- The likelihood function is not easily differentiable
+
+## Key Concepts
+
+- **Latent Variables**: Unobserved variables that explain the observed data
+- **Complete Data**: The combination of observed and latent variables
+- **Incomplete Data**: Only the observed variables
+- **E-step**: Compute the expected value of the log-likelihood
+- **M-step**: Maximize the expected log-likelihood to update parameters
+
+# Mathematical Foundation
+
+## Theory
+
+Given observed data $\mathbf{X}$ and latent variables $\mathbf{Z}$, the EM algorithm maximizes the log-likelihood:
+
+$$\ell(\boldsymbol{\theta}) = \log p(\mathbf{X} | \boldsymbol{\theta}) = \log \int p(\mathbf{X}, \mathbf{Z} | \boldsymbol{\theta}) d\mathbf{Z}$$
+
+The algorithm iteratively:
+
+1. **E-step**: Compute $Q(\boldsymbol{\theta} | \boldsymbol{\theta}^{(t)}) = \mathbb{E}_{\mathbf{Z}|\mathbf{X},\boldsymbol{\theta}^{(t)}}[\log p(\mathbf{X}, \mathbf{Z} | \boldsymbol{\theta})]$
+
+2. **M-step**: Find $\boldsymbol{\theta}^{(t+1)} = \arg\max_{\boldsymbol{\theta}} Q(\boldsymbol{\theta} | \boldsymbol{\theta}^{(t)})$
+
+## Algorithm Steps
+
+The EM algorithm proceeds as follows:
+
+1. **Initialization**: Choose initial parameter values $\boldsymbol{\theta}^{(0)}$
+
+2. **E-step**: For each iteration $t$:
+   - Compute the posterior distribution of latent variables: $p(\mathbf{Z} | \mathbf{X}, \boldsymbol{\theta}^{(t)})$
+   - Calculate the expected complete-data log-likelihood: $Q(\boldsymbol{\theta} | \boldsymbol{\theta}^{(t)})$
+
+3. **M-step**: 
+   - Update parameters: $\boldsymbol{\theta}^{(t+1)} = \arg\max_{\boldsymbol{\theta}} Q(\boldsymbol{\theta} | \boldsymbol{\theta}^{(t)})$
+
+4. **Convergence Check**:
+   - If $|\ell(\boldsymbol{\theta}^{(t+1)}) - \ell(\boldsymbol{\theta}^{(t)})| < \epsilon$, stop
+   - Otherwise, return to step 2
+
+# Implementation
+
+## Main Function
+
+```{r}
+# Source the algorithm implementation
+source("em_algorithm.R")
+source("em_helpers.R")
+
+# Function signature:
+# em_algorithm(data, k, max_iter = 100, tol = 1e-6, verbose = FALSE)
+```
+
+## Helper Functions
+
+The implementation includes:
+- `e_step()`: Performs the expectation step
+- `m_step()`: Performs the maximization step
+- `compute_log_likelihood()`: Calculates the log-likelihood
+- `check_convergence()`: Checks if convergence criteria are met
+
+# Examples
+
+## Basic Example: Gaussian Mixture Model
+
+```{r}
+# Generate sample data from a mixture of two Gaussians
+set.seed(123)
+n <- 200
+mu1 <- c(0, 0)
+mu2 <- c(3, 3)
+sigma1 <- matrix(c(1, 0.5, 0.5, 1), 2, 2)
+sigma2 <- matrix(c(1, -0.5, -0.5, 1), 2, 2)
+
+# Generate data
+data1 <- mvrnorm(n/2, mu1, sigma1)
+data2 <- mvrnorm(n/2, mu2, sigma2)
+data <- rbind(data1, data2)
+
+# Run EM algorithm
+result <- em_algorithm(data, k = 2, max_iter = 100, tol = 1e-6, verbose = TRUE)
+
+# Plot results
+plot_em_results(data, result)
+```
+
+## Convergence Analysis
+
+```{r}
+# Plot log-likelihood convergence
+if (exists("result") && !is.null(result$log_likelihood_history)) {
+  plot_convergence(result$log_likelihood_history, 
+                   title = "EM Algorithm: Log-Likelihood Convergence",
+                   ylabel = "Log-Likelihood")
+}
+```
+
+# Performance Analysis
+
+## Complexity
+
+- **Time Complexity**: $O(n \cdot k \cdot d \cdot T)$ where:
+  - $n$ = number of data points
+  - $k$ = number of mixture components
+  - $d$ = dimensionality of data
+  - $T$ = number of iterations
+
+- **Space Complexity**: $O(n \cdot k + k \cdot d^2)$
+
+## Convergence Properties
+
+- The EM algorithm is guaranteed to increase the log-likelihood at each iteration
+- Convergence to a local maximum (not necessarily global)
+- Convergence rate depends on the amount of missing information
+
+# References
+
+- Dempster, A. P., Laird, N. M., & Rubin, D. B. (1977). Maximum likelihood from incomplete data via the EM algorithm. *Journal of the Royal Statistical Society: Series B*, 39(1), 1-22.
+
+- McLachlan, G., & Krishnan, T. (2007). *The EM Algorithm and Extensions* (2nd ed.). Wiley.
+
+- Bishop, C. M. (2006). *Pattern Recognition and Machine Learning*. Springer.
+
+# Appendix
+
+## Additional Notes
+
+- The EM algorithm is sensitive to initialization
+- Multiple random initializations are recommended
+- The algorithm may converge slowly in some cases
+- Suitable for Gaussian mixture models, hidden Markov models, and other latent variable models
+

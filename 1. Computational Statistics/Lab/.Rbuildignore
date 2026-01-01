@@ -1,0 +1,13 @@
+^.*\.Rproj$
+^\.Rproj\.user$
+^README\.md$
+^RESTRUCTURE_PLAN\.md$
+^\.gitignore$
+^docs/
+^notebooks/
+^scripts/
+^templates/
+^data/
+^algorithms/.*/tests/
+^algorithms/.*/data/
+

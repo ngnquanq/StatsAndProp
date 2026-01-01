@@ -1,0 +1,124 @@
+/* CSS Template for R Markdown Documentation Files */
+
+/* Import Source Sans Pro font */
+@import url('https://fonts.googleapis.com/css2?family=Source+Sans+Pro:wght@400;600;700&display=swap');
+
+/* Body text styling - Arial font, 13pt */
+body {
+  font-family: Arial, sans-serif;
+  font-size: 13pt;
+  line-height: 1.6;
+  color: #333333;
+}
+
+/* Headers H1, H2, H3 - Source Sans Pro font, red color (RGB 237, 0, 0) */
+h1, h2, h3 {
+  font-family: 'Source Sans Pro', sans-serif;
+  color: rgb(237, 0, 0);
+  font-weight: 600;
+  margin-top: 1.5em;
+  margin-bottom: 0.5em;
+}
+
+/* H1 specific styling */
+h1 {
+  font-size: 2em;
+  font-weight: 700;
+  border-bottom: 2px solid rgb(237, 0, 0);
+  padding-bottom: 0.3em;
+}
+
+/* H2 specific styling */
+h2 {
+  font-size: 1.5em;
+  font-weight: 600;
+  border-bottom: 1px solid rgb(237, 0, 0);
+  padding-bottom: 0.2em;
+}
+
+/* H3 specific styling */
+h3 {
+  font-size: 1.2em;
+  font-weight: 600;
+}
+
+/* H4, H5, H6 - Keep default styling but use Arial */
+h4, h5, h6 {
+  font-family: Arial, sans-serif;
+  font-size: 13pt;
+  color: #333333;
+}
+
+/* Code blocks */
+pre {
+  font-family: 'Courier New', monospace;
+  font-size: 11pt;
+  background-color: #f5f5f5;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  padding: 10px;
+  overflow-x: auto;
+}
+
+code {
+  font-family: 'Courier New', monospace;
+  font-size: 11pt;
+  background-color: #f5f5f5;
+  padding: 2px 4px;
+  border-radius: 3px;
+}
+
+/* Links */
+a {
+  color: rgb(237, 0, 0);
+  text-decoration: none;
+}
+
+a:hover {
+  text-decoration: underline;
+}
+
+/* Tables */
+table {
+  border-collapse: collapse;
+  width: 100%;
+  margin: 1em 0;
+  font-family: Arial, sans-serif;
+  font-size: 13pt;
+}
+
+th, td {
+  border: 1px solid #ddd;
+  padding: 8px;
+  text-align: left;
+}
+
+th {
+  background-color: rgb(237, 0, 0);
+  color: white;
+  font-weight: 600;
+}
+
+/* Blockquotes */
+blockquote {
+  border-left: 4px solid rgb(237, 0, 0);
+  padding-left: 1em;
+  margin-left: 0;
+  font-style: italic;
+  color: #666;
+}
+
+/* Lists */
+ul, ol {
+  font-family: Arial, sans-serif;
+  font-size: 13pt;
+  line-height: 1.8;
+}
+
+/* Horizontal rule */
+hr {
+  border: none;
+  border-top: 2px solid rgb(237, 0, 0);
+  margin: 2em 0;
+}
+
