@@ -126,12 +126,3 @@ When adding a new algorithm:
 3. Implement the algorithm following the existing structure
 4. Add tests in the `tests/` subfolder
 5. Update this README with the new algorithm
-
-## License
-
-[Add your license information here]
-
-## Contact
-
-[Add contact information here]
-
