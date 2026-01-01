@@ -8,37 +8,35 @@
 \usepackage{longtable}
 \usepackage{booktabs}  
 \usepackage{array}     
-\usepackage{hyperref}
+\usepackage{hyperref}  
 
 % Page Layout
 \geometry{left=2cm, right=2cm, top=2.5cm, bottom=2.5cm}
 
-% Custom Column Types
-% L: Left aligned, variable width
 \newcolumntype{L}[1]{>{\raggedright\arraybackslash}p{#1}}
 
-\title{\textbf{Mathematical Notation Reference}\\\large Measure Theory, Set Theory, Probability \& Statistics}
+\title{\textbf{Set Theory}\\\large Measure Theory, Set Theory, Probability \& Statistics}
 \author{Personal Reference}
 \date{\today}
 
 \begin{document}
 
 \maketitle
-% \tableofcontents
-% \newpage
+\tableofcontents
+\newpage
 
 \section{Introduction}
 This document serves as a reference for mathematical notations used in Measure Theory, Set Theory, Probability, and Statistics.
 
 % Table Configuration
-\setlength{\tabcolsep}{10pt} % Padding between columns
-\renewcommand{\arraystretch}{1.5} % Padding between rows
+\setlength{\tabcolsep}{10pt}
+\renewcommand{\arraystretch}{1.5}
 
 \section{Set Theory}
 \input{sections/set_theory.tex}
 
 \section{Measure Theory}
-\input{sections/measure_theory.tex}sudo apt install texlive-full
+\input{sections/measure_theory.tex}
 
 \section{Probability \& Statistics}
 \input{sections/probability.tex}
