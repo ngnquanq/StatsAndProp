@@ -35,14 +35,33 @@ fi
 
 # Render the R Markdown file
 echo "Rendering: $RMD_FILE"
-Rscript -e "library(rmarkdown); render('$RMD_FILE')"
+echo "Working directory: $(pwd)"
+echo ""
 
-if [ $? -eq 0 ]; then
+# Render with explicit output directory to ensure HTML is created in the same folder
+# Capture both stdout and stderr to see all output
+Rscript -e "library(rmarkdown); setwd('$(pwd)'); result <- render('$RMD_FILE'); cat('Output file:', result, '\n')" 2>&1 | tee /tmp/rmd_render_output.log
+
+RENDER_EXIT_CODE=${PIPESTATUS[0]}
+
+if [ $RENDER_EXIT_CODE -eq 0 ]; then
     # Get output filename (replace .Rmd with .html)
     OUTPUT_FILE="${RMD_FILE%.*}.html"
-    echo "Done! Output saved to: $OUTPUT_FILE"
+    
+    # Check if file actually exists
+    if [ -f "$OUTPUT_FILE" ]; then
+        echo ""
+        echo "✓ Done! Output saved to: $OUTPUT_FILE"
+        echo "✓ File size: $(du -h "$OUTPUT_FILE" | cut -f1)"
+    else
+        echo ""
+        echo "⚠ Warning: Render reported success but HTML file not found at: $OUTPUT_FILE"
+        echo "Checking for HTML files in the directory..."
+        ls -lh "$(dirname "$OUTPUT_FILE")"/*.html 2>/dev/null || echo "No HTML files found"
+    fi
 else
-    echo "Error: Rendering failed"
+    echo ""
+    echo "✗ Error: Rendering failed with exit code: $RENDER_EXIT_CODE"
     exit 1
 fi
 

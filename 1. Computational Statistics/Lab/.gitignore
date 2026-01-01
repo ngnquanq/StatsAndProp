@@ -16,10 +16,7 @@
 *.Rproj
 
 # R Markdown cache and output
-*.Rmd
 !*_documentation.Rmd
-*.html
-*.pdf
 *.docx
 *.pptx
 *_files/

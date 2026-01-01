@@ -106,3 +106,146 @@ plot_em_results <- function(data, result, title = "EM Algorithm Results") {
   
   return(p)
 }
+
+#' Plot kernel smoothing results
+#' 
+#' @param x Original predictor values
+#' @param y Original response values
+#' @param result Result object from kernel_smooth() or spline_smooth() function
+#' @param title Plot title
+#' @param show_original Logical, whether to show original data points
+#' @param true_function Optional function to plot true underlying function
+#' @return ggplot object
+plot_smoothing_results <- function(x, y, result, title = "Kernel Smoothing", 
+                                    show_original = TRUE, true_function = NULL) {
+  # Create data frame for original data
+  df_original <- data.frame(x = x, y = y)
+  
+  # Handle both kernel and spline results
+  if ("x_grid" %in% names(result)) {
+    # Kernel smoothing result
+    x_smooth <- result$x_grid
+    y_smooth <- result$y_smooth
+    subtitle_text <- sprintf("Bandwidth: %.3f, Kernel: %s", 
+                            result$bandwidth, result$kernel)
+  } else if ("x" %in% names(result)) {
+    # Spline smoothing result
+    x_smooth <- result$x
+    y_smooth <- result$y_smooth
+    subtitle_text <- sprintf("df: %.2f, spar: %.3f", 
+                            result$df, result$spar)
+  } else {
+    stop("Result object must have either 'x_grid' (kernel) or 'x' (spline)")
+  }
+  
+  # Create data frame for smoothed curve
+  df_smooth <- data.frame(x = x_smooth, y = y_smooth)
+  
+  # Start plot
+  p <- ggplot() +
+    theme_minimal() +
+    theme(plot.title = element_text(hjust = 0.5))
+  
+  # Add true function if provided
+  if (!is.null(true_function)) {
+    x_true <- seq(min(x_smooth), max(x_smooth), length.out = 200)
+    y_true <- true_function(x_true)
+    df_true <- data.frame(x = x_true, y = y_true)
+    
+    p <- p + geom_line(data = df_true, aes(x = x, y = y), 
+                   color = "green", linetype = "dashed", linewidth = 1, 
+                   alpha = 0.7) +
+      labs(color = "Type")
+  }
+  
+  # Add original data points
+  if (show_original) {
+    p <- p + geom_point(data = df_original, aes(x = x, y = y), 
+                       color = "steelblue", alpha = 0.6, size = 2)
+  }
+  
+  # Add smoothed curve
+  p <- p + geom_line(data = df_smooth, aes(x = x, y = y), 
+                    color = "red", linewidth = 1.2) +
+    labs(title = title,
+         x = "X",
+         y = "Y",
+         subtitle = subtitle_text)
+  
+  return(p)
+}
+
+#' Plot comparison between kernel and spline smoothing
+#' 
+#' @param x Original predictor values
+#' @param y Original response values
+#' @param result_kernel Result object from kernel_smooth() function
+#' @param result_spline Result object from spline_smooth() function
+#' @param title Plot title
+#' @param show_original Logical, whether to show original data points
+#' @param true_function Optional function to plot true underlying function
+#' @return ggplot object
+plot_smoothing_comparison <- function(x, y, result_kernel, result_spline, 
+                                      title = "Smoothing Comparison: Kernel vs Spline",
+                                      show_original = TRUE, true_function = NULL) {
+  # Create data frame for original data
+  df_original <- data.frame(x = x, y = y)
+  
+  # Create data frame for kernel smoothed curve
+  df_kernel <- data.frame(
+    x = result_kernel$x_grid,
+    y = result_kernel$y_smooth,
+    method = "Kernel"
+  )
+  
+  # Create data frame for spline smoothed curve
+  df_spline <- data.frame(
+    x = result_spline$x,
+    y = result_spline$y_smooth,
+    method = "Spline"
+  )
+  
+  # Combine smoothed curves
+  df_smooth <- rbind(df_kernel, df_spline)
+  
+  # Start plot
+  p <- ggplot() +
+    theme_minimal() +
+    theme(plot.title = element_text(hjust = 0.5),
+          plot.subtitle = element_text(hjust = 0.5))
+  
+  # Add true function if provided
+  if (!is.null(true_function)) {
+    x_range <- range(c(result_kernel$x_grid, result_spline$x))
+    x_true <- seq(x_range[1], x_range[2], length.out = 200)
+    y_true <- true_function(x_true)
+    df_true <- data.frame(x = x_true, y = y_true)
+    
+    p <- p + geom_line(data = df_true, aes(x = x, y = y), 
+                   color = "green", linetype = "dashed", linewidth = 1, 
+                   alpha = 0.7)
+  }
+  
+  # Add original data points
+  if (show_original) {
+    p <- p + geom_point(data = df_original, aes(x = x, y = y), 
+                       color = "gray", alpha = 0.5, size = 1.5)
+  }
+  
+  # Add smoothed curves with different colors/linetypes
+  p <- p + 
+    geom_line(data = df_smooth, aes(x = x, y = y, color = method, linetype = method), 
+              linewidth = 1.2) +
+    scale_color_manual(values = c("Kernel" = "red", "Spline" = "blue")) +
+    scale_linetype_manual(values = c("Kernel" = "solid", "Spline" = "solid")) +
+    labs(title = title,
+         x = "X",
+         y = "Y",
+         color = "Method",
+         linetype = "Method",
+         subtitle = sprintf("Kernel: h=%.3f, %s | Spline: df=%.2f, spar=%.3f",
+                           result_kernel$bandwidth, result_kernel$kernel,
+                           result_spline$df, result_spline$spar))
+  
+  return(p)
+}
