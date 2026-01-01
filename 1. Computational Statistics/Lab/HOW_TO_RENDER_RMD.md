@@ -214,6 +214,39 @@ render("algorithms/em/em_documentation.Rmd",
 install.packages(c("rmarkdown", "knitr"))
 ```
 
+### Issue: "pandoc version X or higher is required"
+
+**Problem**: Error message: `pandoc version 1.12.3 or higher is required and was not found`
+
+**Solution**: Install pandoc (required for rendering R Markdown files):
+
+**On Linux (Ubuntu/Debian):**
+```bash
+sudo apt-get update
+sudo apt-get install pandoc
+```
+
+**On Linux (Fedora/RHEL):**
+```bash
+sudo dnf install pandoc
+```
+
+**On macOS:**
+```bash
+brew install pandoc
+```
+
+**On Windows:**
+- Download from: https://github.com/jgm/pandoc/releases
+- Or use Chocolatey: `choco install pandoc`
+
+**Verify installation:**
+```bash
+pandoc --version
+```
+
+**Note**: After installing pandoc, you may need to restart R or your terminal session.
+
 ### Issue: Code Chunks Not Running
 
 **Problem**: Code chunks show but don't execute.
@@ -242,6 +275,9 @@ install.packages(c("rmarkdown", "knitr"))
 
 ### Minimum Requirements:
 - **R installed** (version 4.0+ recommended)
+- **Pandoc** (version 1.12.3 or higher) - Required for rendering R Markdown
+  - Install via system package manager (apt, dnf, brew, etc.)
+  - Or download from: https://pandoc.org/installing.html
 - **rmarkdown package**: `install.packages("rmarkdown")`
 - **knitr package**: `install.packages("knitr")`
 - **That's it!** No RStudio or other IDE needed.

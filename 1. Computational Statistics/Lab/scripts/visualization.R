@@ -83,3 +83,26 @@ plot_heatmap <- function(matrix, title = "Heatmap") {
           axis.text.x = element_text(angle = 45, hjust = 1))
 }
 
+#' Plot EM algorithm results
+#' 
+#' @param data Numeric matrix with observations (rows) and features (columns)
+#' @param result Result object from em_algorithm() function
+#' @param title Plot title
+#' @return ggplot object
+plot_em_results <- function(data, result, title = "EM Algorithm Results") {
+  # Convert data to data frame
+  if (is.matrix(data)) {
+    df <- data.frame(x = data[, 1], y = data[, 2])
+  } else {
+    df <- data
+  }
+  
+  # Get cluster assignments from responsibilities
+  clusters <- apply(result$responsibilities, 1, which.max)
+  df$cluster <- factor(clusters)
+  
+  # Create plot with clusters
+  p <- plot_clusters(df, clusters, centers = result$means, title = title)
+  
+  return(p)
+}

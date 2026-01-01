@@ -41,7 +41,11 @@ Each algorithm is contained in its own folder under `algorithms/` with:
 ### Prerequisites
 
 - R (>= 4.0.0)
-- RStudio (recommended)
+- **Pandoc** (>= 1.12.3) - Required for rendering R Markdown files
+  - Linux: `sudo apt-get install pandoc` (Ubuntu/Debian) or `sudo dnf install pandoc` (Fedora)
+  - macOS: `brew install pandoc`
+  - Windows: Download from https://pandoc.org/installing.html
+- RStudio (optional, but recommended for easier rendering)
 - Required R packages (see `scripts/setup.R`)
 
 ### Setup
@@ -126,3 +130,5 @@ When adding a new algorithm:
 3. Implement the algorithm following the existing structure
 4. Add tests in the `tests/` subfolder
 5. Update this README with the new algorithm
+
+**For detailed instructions, see [HOW_TO_ADD_ALGORITHM.md](HOW_TO_ADD_ALGORITHM.md)**

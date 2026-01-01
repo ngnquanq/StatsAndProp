@@ -25,6 +25,11 @@ knitr::opts_chunk$set(
 # Load required libraries
 library(ggplot2)
 library(MASS)
+
+# Source utility functions
+source("../../scripts/visualization.R")
+source("em_algorithm.R")
+source("em_helpers.R")
 ```
 
 # Algorithm Overview
@@ -82,14 +87,12 @@ The EM algorithm proceeds as follows:
 
 ## Main Function
 
-```{r}
-# Source the algorithm implementation
-source("em_algorithm.R")
-source("em_helpers.R")
-
-# Function signature:
-# em_algorithm(data, k, max_iter = 100, tol = 1e-6, verbose = FALSE)
+The main function signature:
+```r
+em_algorithm(data, k, max_iter = 100, tol = 1e-6, verbose = FALSE)
 ```
+
+The algorithm is already loaded in the setup chunk above.
 
 ## Helper Functions
 
@@ -128,7 +131,8 @@ plot_em_results(data, result)
 
 ```{r}
 # Plot log-likelihood convergence
-if (exists("result") && !is.null(result$log_likelihood_history)) {
+if (exists("result") && !is.null(result$log_likelihood_history) && 
+    length(result$log_likelihood_history) > 0) {
   plot_convergence(result$log_likelihood_history, 
                    title = "EM Algorithm: Log-Likelihood Convergence",
                    ylabel = "Log-Likelihood")
