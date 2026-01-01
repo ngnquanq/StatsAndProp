@@ -34,7 +34,15 @@ source("em_helpers.R")
 
 # Algorithm Overview
 
-The Expectation-Maximization (EM) algorithm is an iterative method for finding maximum likelihood estimates of parameters in statistical models, especially when the model depends on unobserved latent variables. The EM algorithm alternates between performing an expectation (E) step, which creates a function for the expectation of the log-likelihood evaluated using the current estimate for the parameters, and a maximization (M) step, which computes parameters maximizing the expected log-likelihood found on the E step.
+The Expectation-Maximization (EM) algorithm is an iterative method for 
+finding maximum likelihood estimates of parameters in statistical models, 
+especially when the model depends on unobserved latent variables. 
+The EM algorithm alternates between performing an expectation (E) step, 
+which creates a function for the expectation of the log-likelihood evaluated using 
+the current estimate for the parameters, and a maximization (M) step, 
+which computes parameters maximizing the expected log-likelihood found on the E step.
+
+The algorithm is implemented in the `em_algorithm.R` file.
 
 ## Background
 
@@ -50,7 +58,7 @@ The EM algorithm was introduced by Dempster, Laird, and Rubin in 1977. It is par
 - **Complete Data**: The combination of observed and latent variables
 - **Incomplete Data**: Only the observed variables
 - **E-step**: Compute the expected value of the log-likelihood
-- **M-step**: Maximize the expected log-likelihood to update parameters
+- **M-step**: Maximize the expected log-likelihood to update parameters using the result of the E-step
 
 # Mathematical Foundation
 
@@ -68,7 +76,7 @@ The algorithm iteratively:
 
 ## Algorithm Steps
 
-The EM algorithm proceeds as follows:
+The EM algorithm proceeds as follows: 
 
 1. **Initialization**: Choose initial parameter values $\boldsymbol{\theta}^{(0)}$
 

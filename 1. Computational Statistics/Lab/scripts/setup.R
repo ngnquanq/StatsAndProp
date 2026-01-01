@@ -9,7 +9,8 @@ required_packages <- c(
   "knitr",         # R Markdown
   "rmarkdown",     # R Markdown rendering
   "MASS",          # Statistical functions
-  "Matrix"         # Matrix operations
+  "Matrix",        # Matrix operations
+  "servr"          # Live preview server (optional but recommended)
 )
 
 # Function to install packages if not already installed
