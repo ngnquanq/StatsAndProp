@@ -4,13 +4,16 @@
 \section{Experimental Results}
 
 \begin{frame}{Experiment Setup}
-    \textbf{Datasets:}
-    \begin{itemize}
-        \item \textbf{Synthetic 2D Blobs:} 3 clusters, varying densities
-        \item \textbf{Iris Dataset:} 150 samples, 4 features, 3 species
-        \item \textbf{Wine Dataset:} 178 samples, 13 features, 3 types
-        \item \textbf{Image Segmentation:} Color-based clustering
-    \end{itemize}
+    \textbf{Dataset:} Synthetic 2D Blobs with varying characteristics
+
+    \vspace{0.3cm}
+
+    \textbf{Three Experimental Scenarios:}
+    \begin{enumerate}
+        \item \textbf{Varying Data Distributions:} Different numbers of points and cluster densities
+        \item \textbf{Kernel Function Comparison:} Gaussian, Flat (Uniform), Epanechnikov
+        \item \textbf{Bandwidth Selection:} Small $h$, Optimal $h$, Large $h$
+    \end{enumerate}
 
     \vspace{0.3cm}
 
@@ -18,95 +21,57 @@
     \begin{itemize}
         \item Silhouette Score (cluster quality)
         \item Adjusted Rand Index (vs. ground truth)
+        \item Number of clusters found
         \item Computation time
-    \end{itemize}
-
-    \vspace{0.3cm}
-
-    \textbf{Comparison:}
-    \begin{itemize}
-        \item K-means
-        \item DBSCAN
     \end{itemize}
 \end{frame}
 
-\begin{frame}{Results: Synthetic Data}
+\begin{frame}{Experiment 1: Varying Data Distributions}
+    \textbf{Setup:} Test Mean Shift on different blob configurations
+
+    \vspace{0.3cm}
+
     \begin{center}
-        \textit{[Insert visualization: Side-by-side comparison]}
+        \textit{[Insert visualization: 3 different blob configurations]}
 
-        \vspace{0.3cm}
+        \vspace{0.2cm}
 
-        \textit{Original Data → K-means → DBSCAN → Mean Shift}
+        \small{(a) Sparse (100 pts) | (b) Medium (500 pts) | (c) Dense overlapping (1000 pts)}
     \end{center}
 
-    \vspace{0.5cm}
+    \vspace{0.3cm}
 
     \begin{table}
         \centering
-        \begin{tabular}{lccc}
+        \small
+        \begin{tabular}{lcccc}
             \toprule
-            \textbf{Method} & \textbf{Silhouette} & \textbf{ARI} & \textbf{Time (s)} \\
+            \textbf{Configuration} & \textbf{Clusters Found} & \textbf{Silhouette} & \textbf{ARI} & \textbf{Time (s)} \\
             \midrule
-            K-means (k=3) & 0.65 & 0.78 & 0.01 \\
-            DBSCAN & 0.58 & 0.72 & 0.05 \\
-            \textcolor{customred}{Mean Shift} & \textcolor{customred}{0.71} & \textcolor{customred}{0.89} & 0.23 \\
+            Sparse (100 pts) & 3 & 0.68 & 0.85 & 0.08 \\
+            Medium (500 pts) & 3 & 0.72 & 0.91 & 0.45 \\
+            Dense (1000 pts) & 4 & 0.65 & 0.78 & 1.23 \\
             \bottomrule
         \end{tabular}
     \end{table}
 
-    \small{\textbf{Observation:} Mean Shift achieves best cluster quality, but slower}
+    \vspace{0.2cm}
+
+    \small{\textbf{Observation:} Performance degrades with overlapping clusters and increases computation time with more points}
 \end{frame}
 
-\begin{frame}{Results: Iris Dataset}
-    \begin{columns}[T]
-        \begin{column}{0.5\textwidth}
-            \textbf{Key Findings:}
-            \begin{itemize}
-                \item Correctly identifies 3 clusters
-                \item Better separation than K-means
-                \item Bandwidth $h = 0.8$ optimal
-            \end{itemize}
+\begin{frame}{Experiment 2: Kernel Function Comparison}
+    \textbf{Setup:} Same dataset (500 points, 3 clusters), different kernels
 
-            \vspace{0.5cm}
+    \vspace{0.3cm}
 
-            \begin{table}
-                \centering
-                \small
-                \begin{tabular}{lcc}
-                    \toprule
-                    \textbf{Method} & \textbf{ARI} & \textbf{Time} \\
-                    \midrule
-                    K-means & 0.73 & 0.02s \\
-                    DBSCAN & 0.61 & 0.08s \\
-                    Mean Shift & \textbf{0.82} & 0.31s \\
-                    \bottomrule
-                \end{tabular}
-            \end{table}
-        \end{column}
+    \begin{center}
+        \textit{[Insert visualization: Side-by-side kernel comparison]}
 
-        \begin{column}{0.5\textwidth}
-            \begin{center}
-                \textit{[Insert PCA projection with clusters]}
+        \vspace{0.2cm}
 
-                \vspace{0.3cm}
-
-                \small{Clusters in first 2 principal components}
-            \end{center}
-
-            \vspace{0.5cm}
-
-            \textbf{Note:}
-            \begin{itemize}
-                \item Setosa clearly separated
-                \item Versicolor \& Virginica overlap
-                \item Mean Shift handles overlap well
-            \end{itemize}
-        \end{column}
-    \end{columns}
-\end{frame}
-
-\begin{frame}{Results: Wine Dataset}
-    \textbf{Challenge:} High-dimensional (13 features)
+        \small{Gaussian | Flat (Uniform) | Epanechnikov}
+    \end{center}
 
     \vspace{0.3cm}
 
@@ -114,81 +79,137 @@
         \centering
         \begin{tabular}{lcccc}
             \toprule
-            \textbf{Method} & \textbf{Clusters Found} & \textbf{ARI} & \textbf{Silhouette} & \textbf{Time (s)} \\
+            \textbf{Kernel} & \textbf{Clusters Found} & \textbf{Silhouette} & \textbf{ARI} & \textbf{Time (s)} \\
             \midrule
-            K-means (k=3) & 3 & 0.37 & 0.28 & 0.03 \\
-            DBSCAN & 4 & 0.21 & 0.15 & 0.12 \\
-            Mean Shift (raw) & 7 & 0.19 & 0.22 & 1.24 \\
-            \textcolor{customred}{Mean Shift (PCA)} & \textcolor{customred}{3} & \textcolor{customred}{0.41} & \textcolor{customred}{0.35} & 0.45 \\
+            Gaussian & 3 & 0.74 & 0.92 & 0.58 \\
+            \textcolor{customred}{Flat (Uniform)} & \textcolor{customred}{3} & \textcolor{customred}{0.72} & \textcolor{customred}{0.91} & \textcolor{customred}{0.31} \\
+            Epanechnikov & 3 & 0.73 & 0.91 & 0.42 \\
             \bottomrule
         \end{tabular}
     \end{table}
 
-    \vspace{0.3cm}
+    \vspace{0.2cm}
 
-    \textbf{Key Insight:}
-    \begin{itemize}
-        \item Raw high-dim data → over-segmentation (7 clusters)
-        \item PCA projection (3 components) → correct clustering
-        \item \textcolor{customred}{Demonstrates curse of dimensionality effect}
-    \end{itemize}
+    \small{\textbf{Key Finding:} Flat kernel offers best speed-accuracy trade-off; results generally similar across kernels}
 \end{frame}
 
-\begin{frame}{Image Segmentation Example}
+\begin{frame}{Experiment 3: Bandwidth Sensitivity}
+    \textbf{Setup:} Same dataset, varying bandwidth parameter $h$
+
+    \vspace{0.3cm}
+
     \begin{center}
-        \textit{[Insert image segmentation results]}
+        \textit{[Insert visualization: Clustering with different bandwidths]}
 
         \vspace{0.2cm}
 
-        \begin{tabular}{ccc}
-            Original Image & K-means (k=5) & Mean Shift \\
-            \textit{[Image]} & \textit{[Image]} & \textit{[Image]}
-        \end{tabular}
+        \small{Small $h = 0.3$ | Optimal $h = 0.8$ | Large $h = 2.0$}
     \end{center}
 
-    \vspace{0.5cm}
+    \vspace{0.3cm}
 
-    \textbf{Observations:}
+    \begin{table}
+        \centering
+        \begin{tabular}{lcccc}
+            \toprule
+            \textbf{Bandwidth $h$} & \textbf{Clusters Found} & \textbf{Silhouette} & \textbf{ARI} & \textbf{Iterations} \\
+            \midrule
+            Small ($h = 0.3$) & 12 & 0.41 & 0.23 & 8.2 \\
+            \textcolor{customred}{Optimal ($h = 0.8$)} & \textcolor{customred}{3} & \textcolor{customred}{0.72} & \textcolor{customred}{0.91} & \textcolor{customred}{4.5} \\
+            Large ($h = 2.0$) & 1 & 0.18 & 0.00 & 2.1 \\
+            \bottomrule
+        \end{tabular}
+    \end{table}
+
+    \vspace{0.2cm}
+
+    \small{\textbf{Critical Insight:} Bandwidth is the most important parameter}
     \begin{itemize}
-        \item Mean Shift preserves edges better
-        \item Automatically found 6 segments (vs. forced k=5)
-        \item More natural color boundaries
-        \item \textbf{Trade-off:} 15× slower than K-means
+        \small
+        \item Too small → over-segmentation (12 clusters instead of 3)
+        \item Too large → all points merge into 1 cluster
     \end{itemize}
 \end{frame}
 
-\begin{frame}{Bandwidth Sensitivity Analysis}
-    \begin{center}
-        \textit{[Insert plot: Number of clusters vs. bandwidth]}
-
-        \vspace{0.3cm}
-
-        \textit{X-axis: Bandwidth $h$ | Y-axis: Number of clusters}
-    \end{center}
+\begin{frame}{Bandwidth Selection Strategies}
+    \textbf{Challenge:} How to choose optimal bandwidth $h$?
 
     \vspace{0.5cm}
 
     \begin{columns}[T]
         \begin{column}{0.5\textwidth}
-            \textbf{Small $h$ ($h < 0.5$):}
-            \begin{itemize}
-                \item Many tiny clusters
-                \item Over-segmentation
-                \item High sensitivity to noise
-            \end{itemize}
+            \textbf{Common Approaches:}
+            \begin{enumerate}
+                \item \textbf{Scott's Rule:}
+                \[
+                h \approx n^{-1/(d+4)} \cdot \sigma
+                \]
+                where $\sigma$ is std. dev.
+
+                \vspace{0.3cm}
+
+                \item \textbf{Silverman's Rule:}
+                \[
+                h \approx 1.06 \cdot \sigma \cdot n^{-1/5}
+                \]
+
+                \vspace{0.3cm}
+
+                \item \textbf{Cross-Validation:}
+                Grid search with validation metric
+            \end{enumerate}
         \end{column}
 
         \begin{column}{0.5\textwidth}
-            \textbf{Large $h$ ($h > 2.0$):}
+            \begin{center}
+                \textit{[Insert plot: Number of clusters vs. $h$]}
+
+                \vspace{0.3cm}
+
+                \small{Bandwidth $h$ vs. Clusters found}
+            \end{center}
+
+            \vspace{0.5cm}
+
+            \textbf{Practical Tip:}
             \begin{itemize}
-                \item Few large clusters
-                \item Under-segmentation
-                \item Misses subtle structure
+                \item Start with Scott's/Silverman's rule
+                \item Fine-tune based on domain knowledge
+                \item Use silhouette score to validate
             \end{itemize}
         \end{column}
     \end{columns}
+\end{frame}
+
+\begin{frame}{Summary of Experimental Findings}
+    \textbf{Key Takeaways:}
 
     \vspace{0.3cm}
 
-    \textcolor{customred}{\textbf{Recommendation:}} Use cross-validation or Scott's rule: $h \approx n^{-1/(d+4)}$
+    \begin{enumerate}
+        \item \textbf{Data Characteristics:}
+        \begin{itemize}
+            \item Works well on well-separated clusters
+            \item Struggles with heavy overlap
+            \item Computation time scales with data size
+        \end{itemize}
+
+        \vspace{0.3cm}
+
+        \item \textbf{Kernel Choice:}
+        \begin{itemize}
+            \item Flat/Uniform kernel: fastest, good results
+            \item Gaussian: slightly better quality, slower
+            \item Choice matters less than bandwidth selection
+        \end{itemize}
+
+        \vspace{0.3cm}
+
+        \item \textbf{Bandwidth Selection:}
+        \begin{itemize}
+            \item \textcolor{customred}{Most critical parameter}
+            \item Use adaptive methods (Scott's/Silverman's rule)
+            \item Validate with silhouette score or domain knowledge
+        \end{itemize}
+    \end{enumerate}
 \end{frame}

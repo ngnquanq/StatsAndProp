@@ -1,8 +1,8 @@
 ---
-title: "Mean_shift_clustering - Documentation"
+title: "Mean Shift Clustering - Experimental Analysis"
 author: "Quang Nguyen"
 date: "`r Sys.Date()`"
-output: 
+output:
   html_document:
     css: ../../templates/styles.css
     toc: true
@@ -21,94 +21,512 @@ knitr::opts_chunk$set(
   fig.height = 6,
   fig.align = "center"
 )
-```
 
-# Algorithm Overview
-
-Brief introduction to the algorithm, its purpose, and when to use it.
-
-## Background
-
-Describe the theoretical background and motivation for this algorithm.
-
-## Key Concepts
-
-Explain the main concepts and principles behind the algorithm.
-
-# Mathematical Foundation
-
-## Theory
-
-Present the mathematical formulation and theoretical foundations.
-
-## Algorithm Steps
-
-Describe the algorithm step-by-step:
-
-1. **Step 1**: Description
-2. **Step 2**: Description
-3. **Step 3**: Description
-
-# Implementation
-
-## Main Function
-
-```{r}
-# Source the algorithm implementation
-source("mean_shift_clustering.R")
-
-# Example function signature
-# mean_shift_clustering(data, parameters)
-```
-
-## Helper Functions
-
-```{r}
-# Source helper functions
-source("algorithm_helpers.R")
-```
-
-# Examples
-
-## Basic Example
-
-```{r}
 # Load required libraries
 library(ggplot2)
+library(cluster)
+library(mclust)
+library(gridExtra)
+library(dplyr)
 
-# Example code here
-# data <- ...
-# result <- mean_shift_clustering(data, ...)
-# plot(result)
+# Source algorithm implementations
+source("mean_shift_clustering_algorithm.R")
+source("mean_shift_clustering_helpers.R")
 ```
 
-## Advanced Example
+# Introduction
+
+This document presents experimental results for the Mean Shift Clustering algorithm. We focus on three key experiments:
+
+1. **Varying Data Distributions**: Testing on different numbers of points and cluster densities
+2. **Kernel Function Comparison**: Comparing Gaussian, Flat, and Epanechnikov kernels
+3. **Bandwidth Sensitivity**: Analyzing the critical impact of bandwidth parameter selection
+
+# Experiment Setup
+
+## Data Generation Function
 
 ```{r}
-# More complex example
+#' Generate synthetic 2D blobs for clustering
+#'
+#' @param n_samples Total number of samples
+#' @param centers Matrix of cluster centers
+#' @param cluster_std Standard deviation of each cluster
+#' @return List with data and true labels
+generate_blobs <- function(n_samples, centers, cluster_std = 0.5) {
+  n_centers <- nrow(centers)
+  samples_per_cluster <- rep(n_samples %/% n_centers, n_centers)
+  samples_per_cluster[1] <- samples_per_cluster[1] + (n_samples %% n_centers)
+
+  data_list <- list()
+  labels <- c()
+
+  for (i in 1:n_centers) {
+    n <- samples_per_cluster[i]
+    cluster_data <- matrix(rnorm(n * 2, mean = 0, sd = cluster_std), ncol = 2)
+    cluster_data[, 1] <- cluster_data[, 1] + centers[i, 1]
+    cluster_data[, 2] <- cluster_data[, 2] + centers[i, 2]
+
+    data_list[[i]] <- cluster_data
+    labels <- c(labels, rep(i, n))
+  }
+
+  data <- do.call(rbind, data_list)
+  list(data = data, labels = labels)
+}
+
+#' Evaluate clustering performance
+#'
+#' @param data Data matrix
+#' @param result Mean shift result
+#' @param true_labels Ground truth labels
+#' @return Data frame with metrics
+evaluate_clustering <- function(data, result, true_labels) {
+  silhouette <- compute_silhouette(data, result$cluster_labels)
+  ari <- compute_ari(true_labels, result$cluster_labels)
+
+  data.frame(
+    n_clusters = result$n_clusters,
+    silhouette = round(silhouette, 3),
+    ari = round(ari, 3),
+    time_secs = round(result$computation_time, 3),
+    mean_iterations = round(result$mean_iterations, 2)
+  )
+}
 ```
 
-# Performance Analysis
+# Experiment 1: Varying Data Distributions
 
-## Complexity
+**Objective**: Test Mean Shift on different blob configurations to understand how data characteristics affect performance.
 
-Discuss time and space complexity.
+## Setup
 
-## Benchmarks
+We test three configurations:
+- **Sparse**: 100 points, 3 well-separated clusters
+- **Medium**: 500 points, 3 moderately separated clusters
+- **Dense**: 1000 points, 3 overlapping clusters
 
-```{r}
-# Performance benchmarks
+```{r exp1_setup}
+# Set seed for reproducibility
+set.seed(42)
+
+# Configuration 1: Sparse (100 points)
+sparse_data <- generate_blobs(
+  n_samples = 100,
+  centers = matrix(c(0, 0, 5, 5, 10, 0), ncol = 2, byrow = TRUE),
+  cluster_std = 0.5
+)
+
+# Configuration 2: Medium (500 points)
+medium_data <- generate_blobs(
+  n_samples = 500,
+  centers = matrix(c(0, 0, 5, 5, 10, 0), ncol = 2, byrow = TRUE),
+  cluster_std = 0.5
+)
+
+# Configuration 3: Dense overlapping (1000 points)
+dense_data <- generate_blobs(
+  n_samples = 1000,
+  centers = matrix(c(0, 0, 3, 3, 6, 0), ncol = 2, byrow = TRUE),
+  cluster_std = 0.8
+)
 ```
 
-# References
+## Visualization: Data Configurations
 
-- Reference 1
-- Reference 2
-- Reference 3
+```{r exp1_viz_data, fig.height=4}
+# Plot all three configurations
+p1 <- ggplot(data.frame(x = sparse_data$data[, 1],
+                        y = sparse_data$data[, 2],
+                        cluster = factor(sparse_data$labels))) +
+  geom_point(aes(x = x, y = y, color = cluster), size = 2) +
+  labs(title = "Sparse (100 pts)", x = "X", y = "Y") +
+  theme_minimal() +
+  theme(legend.position = "none")
 
-# Appendix
+p2 <- ggplot(data.frame(x = medium_data$data[, 1],
+                        y = medium_data$data[, 2],
+                        cluster = factor(medium_data$labels))) +
+  geom_point(aes(x = x, y = y, color = cluster), size = 1.5) +
+  labs(title = "Medium (500 pts)", x = "X", y = "Y") +
+  theme_minimal() +
+  theme(legend.position = "none")
 
-## Additional Notes
+p3 <- ggplot(data.frame(x = dense_data$data[, 1],
+                        y = dense_data$data[, 2],
+                        cluster = factor(dense_data$labels))) +
+  geom_point(aes(x = x, y = y, color = cluster), size = 1) +
+  labs(title = "Dense overlapping (1000 pts)", x = "X", y = "Y") +
+  theme_minimal() +
+  theme(legend.position = "none")
 
-Any additional information, edge cases, or implementation details.
+grid.arrange(p1, p2, p3, ncol = 3)
+```
 
+## Run Mean Shift Clustering
+
+```{r exp1_run}
+# Run Mean Shift on each configuration with optimal bandwidth
+result_sparse <- mean_shift_clustering(
+  sparse_data$data,
+  bandwidth = 0.8,
+  kernel = "gaussian"
+)
+
+result_medium <- mean_shift_clustering(
+  medium_data$data,
+  bandwidth = 0.8,
+  kernel = "gaussian"
+)
+
+result_dense <- mean_shift_clustering(
+  dense_data$data,
+  bandwidth = 0.8,
+  kernel = "gaussian"
+)
+```
+
+## Results Table
+
+```{r exp1_results}
+results_exp1 <- rbind(
+  cbind(Configuration = "Sparse (100 pts)",
+        evaluate_clustering(sparse_data$data, result_sparse, sparse_data$labels)),
+  cbind(Configuration = "Medium (500 pts)",
+        evaluate_clustering(medium_data$data, result_medium, medium_data$labels)),
+  cbind(Configuration = "Dense (1000 pts)",
+        evaluate_clustering(dense_data$data, result_dense, dense_data$labels))
+)
+
+knitr::kable(results_exp1, caption = "Experiment 1: Varying Data Distributions")
+```
+
+## Visualization: Clustering Results
+
+```{r exp1_viz_results, fig.height=4}
+p1_result <- ggplot(data.frame(x = sparse_data$data[, 1],
+                               y = sparse_data$data[, 2],
+                               cluster = factor(result_sparse$cluster_labels))) +
+  geom_point(aes(x = x, y = y, color = cluster), size = 2) +
+  geom_point(data = data.frame(result_sparse$modes),
+             aes(x = X1, y = X2), size = 5, shape = 4, stroke = 2, color = "black") +
+  labs(title = sprintf("Sparse: %d clusters", result_sparse$n_clusters),
+       x = "X", y = "Y") +
+  theme_minimal() +
+  theme(legend.position = "none")
+
+p2_result <- ggplot(data.frame(x = medium_data$data[, 1],
+                               y = medium_data$data[, 2],
+                               cluster = factor(result_medium$cluster_labels))) +
+  geom_point(aes(x = x, y = y, color = cluster), size = 1.5) +
+  geom_point(data = data.frame(result_medium$modes),
+             aes(x = X1, y = X2), size = 5, shape = 4, stroke = 2, color = "black") +
+  labs(title = sprintf("Medium: %d clusters", result_medium$n_clusters),
+       x = "X", y = "Y") +
+  theme_minimal() +
+  theme(legend.position = "none")
+
+p3_result <- ggplot(data.frame(x = dense_data$data[, 1],
+                               y = dense_data$data[, 2],
+                               cluster = factor(result_dense$cluster_labels))) +
+  geom_point(aes(x = x, y = y, color = cluster), size = 1) +
+  geom_point(data = data.frame(result_dense$modes),
+             aes(x = X1, y = X2), size = 5, shape = 4, stroke = 2, color = "black") +
+  labs(title = sprintf("Dense: %d clusters", result_dense$n_clusters),
+       x = "X", y = "Y") +
+  theme_minimal() +
+  theme(legend.position = "none")
+
+grid.arrange(p1_result, p2_result, p3_result, ncol = 3)
+```
+
+## Key Observations
+
+- **Performance degrades with overlapping clusters**: Dense configuration shows lower Silhouette and ARI scores
+- **Computation time scales with data size**: Time increases from sparse to dense as expected with O(n²) complexity
+- **Extra clusters on dense data**: The algorithm may find more clusters than true clusters when data overlaps
+
+# Experiment 2: Kernel Function Comparison
+
+**Objective**: Compare the performance of different kernel functions on the same dataset.
+
+## Setup
+
+Using the medium dataset (500 points, 3 clusters), we compare:
+- Gaussian kernel
+- Flat (Uniform) kernel
+- Epanechnikov kernel
+
+```{r exp2_run}
+# Use medium dataset with optimal bandwidth
+bandwidth_optimal <- 0.8
+
+result_gaussian <- mean_shift_clustering(
+  medium_data$data,
+  bandwidth = bandwidth_optimal,
+  kernel = "gaussian"
+)
+
+result_flat <- mean_shift_clustering(
+  medium_data$data,
+  bandwidth = bandwidth_optimal,
+  kernel = "flat"
+)
+
+result_epanechnikov <- mean_shift_clustering(
+  medium_data$data,
+  bandwidth = bandwidth_optimal,
+  kernel = "epanechnikov"
+)
+```
+
+## Results Table
+
+```{r exp2_results}
+results_exp2 <- rbind(
+  cbind(Kernel = "Gaussian",
+        evaluate_clustering(medium_data$data, result_gaussian, medium_data$labels)),
+  cbind(Kernel = "Flat (Uniform)",
+        evaluate_clustering(medium_data$data, result_flat, medium_data$labels)),
+  cbind(Kernel = "Epanechnikov",
+        evaluate_clustering(medium_data$data, result_epanechnikov, medium_data$labels))
+)
+
+knitr::kable(results_exp2, caption = "Experiment 2: Kernel Function Comparison")
+```
+
+## Visualization: Kernel Comparison
+
+```{r exp2_viz, fig.height=4}
+p_gaussian <- ggplot(data.frame(x = medium_data$data[, 1],
+                                y = medium_data$data[, 2],
+                                cluster = factor(result_gaussian$cluster_labels))) +
+  geom_point(aes(x = x, y = y, color = cluster), size = 1.5) +
+  geom_point(data = data.frame(result_gaussian$modes),
+             aes(x = X1, y = X2), size = 5, shape = 4, stroke = 2, color = "black") +
+  labs(title = "Gaussian Kernel", x = "X", y = "Y") +
+  theme_minimal() +
+  theme(legend.position = "none")
+
+p_flat <- ggplot(data.frame(x = medium_data$data[, 1],
+                            y = medium_data$data[, 2],
+                            cluster = factor(result_flat$cluster_labels))) +
+  geom_point(aes(x = x, y = y, color = cluster), size = 1.5) +
+  geom_point(data = data.frame(result_flat$modes),
+             aes(x = X1, y = X2), size = 5, shape = 4, stroke = 2, color = "black") +
+  labs(title = "Flat (Uniform) Kernel", x = "X", y = "Y") +
+  theme_minimal() +
+  theme(legend.position = "none")
+
+p_epan <- ggplot(data.frame(x = medium_data$data[, 1],
+                            y = medium_data$data[, 2],
+                            cluster = factor(result_epanechnikov$cluster_labels))) +
+  geom_point(aes(x = x, y = y, color = cluster), size = 1.5) +
+  geom_point(data = data.frame(result_epanechnikov$modes),
+             aes(x = X1, y = X2), size = 5, shape = 4, stroke = 2, color = "black") +
+  labs(title = "Epanechnikov Kernel", x = "X", y = "Y") +
+  theme_minimal() +
+  theme(legend.position = "none")
+
+grid.arrange(p_gaussian, p_flat, p_epan, ncol = 3)
+```
+
+## Key Findings
+
+- **Flat kernel is fastest**: Offers best speed-accuracy trade-off
+- **Results are generally similar**: All three kernels produce comparable clustering quality
+- **Kernel choice matters less than bandwidth**: The bandwidth parameter has more impact on results
+
+# Experiment 3: Bandwidth Sensitivity
+
+**Objective**: Demonstrate the critical importance of bandwidth parameter selection.
+
+## Setup
+
+Using the medium dataset, we test three bandwidth values:
+- **Small**: h = 0.3 (too small, over-segmentation expected)
+- **Optimal**: h = 0.8 (appropriate for this dataset)
+- **Large**: h = 2.0 (too large, under-segmentation expected)
+
+```{r exp3_run}
+result_small <- mean_shift_clustering(
+  medium_data$data,
+  bandwidth = 0.3,
+  kernel = "gaussian"
+)
+
+result_optimal <- mean_shift_clustering(
+  medium_data$data,
+  bandwidth = 0.8,
+  kernel = "gaussian"
+)
+
+result_large <- mean_shift_clustering(
+  medium_data$data,
+  bandwidth = 2.0,
+  kernel = "gaussian"
+)
+```
+
+## Results Table
+
+```{r exp3_results}
+results_exp3 <- rbind(
+  cbind(Bandwidth = "Small (h = 0.3)",
+        evaluate_clustering(medium_data$data, result_small, medium_data$labels)),
+  cbind(Bandwidth = "Optimal (h = 0.8)",
+        evaluate_clustering(medium_data$data, result_optimal, medium_data$labels)),
+  cbind(Bandwidth = "Large (h = 2.0)",
+        evaluate_clustering(medium_data$data, result_large, medium_data$labels))
+)
+
+knitr::kable(results_exp3, caption = "Experiment 3: Bandwidth Sensitivity")
+```
+
+## Visualization: Bandwidth Impact
+
+```{r exp3_viz, fig.height=4}
+p_small <- ggplot(data.frame(x = medium_data$data[, 1],
+                             y = medium_data$data[, 2],
+                             cluster = factor(result_small$cluster_labels))) +
+  geom_point(aes(x = x, y = y, color = cluster), size = 1.5) +
+  geom_point(data = data.frame(result_small$modes),
+             aes(x = X1, y = X2), size = 5, shape = 4, stroke = 2, color = "black") +
+  labs(title = sprintf("Small h=0.3: %d clusters", result_small$n_clusters),
+       x = "X", y = "Y") +
+  theme_minimal() +
+  theme(legend.position = "none")
+
+p_optimal <- ggplot(data.frame(x = medium_data$data[, 1],
+                               y = medium_data$data[, 2],
+                               cluster = factor(result_optimal$cluster_labels))) +
+  geom_point(aes(x = x, y = y, color = cluster), size = 1.5) +
+  geom_point(data = data.frame(result_optimal$modes),
+             aes(x = X1, y = X2), size = 5, shape = 4, stroke = 2, color = "black") +
+  labs(title = sprintf("Optimal h=0.8: %d clusters", result_optimal$n_clusters),
+       x = "X", y = "Y") +
+  theme_minimal() +
+  theme(legend.position = "none")
+
+p_large <- ggplot(data.frame(x = medium_data$data[, 1],
+                             y = medium_data$data[, 2],
+                             cluster = factor(result_large$cluster_labels))) +
+  geom_point(aes(x = x, y = y, color = cluster), size = 1.5) +
+  geom_point(data = data.frame(result_large$modes),
+             aes(x = X1, y = X2), size = 5, shape = 4, stroke = 2, color = "black") +
+  labs(title = sprintf("Large h=2.0: %d clusters", result_large$n_clusters),
+       x = "X", y = "Y") +
+  theme_minimal() +
+  theme(legend.position = "none")
+
+grid.arrange(p_small, p_optimal, p_large, ncol = 3)
+```
+
+## Bandwidth vs. Cluster Count Analysis
+
+```{r exp3_bandwidth_analysis, fig.height=5}
+# Test range of bandwidth values
+bandwidth_values <- seq(0.2, 3.0, by = 0.1)
+n_clusters_found <- numeric(length(bandwidth_values))
+
+for (i in seq_along(bandwidth_values)) {
+  result_temp <- mean_shift_clustering(
+    medium_data$data,
+    bandwidth = bandwidth_values[i],
+    kernel = "gaussian"
+  )
+  n_clusters_found[i] <- result_temp$n_clusters
+}
+
+# Plot
+ggplot(data.frame(bandwidth = bandwidth_values, clusters = n_clusters_found)) +
+  geom_line(aes(x = bandwidth, y = clusters), size = 1, color = "blue") +
+  geom_point(aes(x = bandwidth, y = clusters), size = 2) +
+  geom_hline(yintercept = 3, linetype = "dashed", color = "red", size = 1) +
+  annotate("text", x = 2.5, y = 3.5, label = "True clusters = 3", color = "red") +
+  geom_vline(xintercept = 0.8, linetype = "dashed", color = "darkgreen", size = 1) +
+  annotate("text", x = 1.2, y = max(n_clusters_found) - 1,
+           label = "Optimal h = 0.8", color = "darkgreen") +
+  labs(title = "Bandwidth vs. Number of Clusters Found",
+       x = "Bandwidth (h)",
+       y = "Number of Clusters") +
+  theme_minimal() +
+  theme(plot.title = element_text(hjust = 0.5, face = "bold"))
+```
+
+## Critical Insights
+
+- **Too small bandwidth → over-segmentation**: Many tiny clusters instead of true 3 clusters
+- **Too large bandwidth → under-segmentation**: All points merge into 1 cluster
+- **Bandwidth is the most critical parameter**: More important than kernel choice
+- **Automatic selection methods**: Scott's and Silverman's rules provide good starting points
+
+# Bandwidth Selection Strategies
+
+```{r bandwidth_strategies}
+# Compare automatic bandwidth selection methods
+bandwidth_scott <- scotts_rule(medium_data$data)
+bandwidth_silverman <- silvermans_rule(medium_data$data)
+
+cat(sprintf("Scott's Rule: h = %.4f\n", bandwidth_scott))
+cat(sprintf("Silverman's Rule: h = %.4f\n", bandwidth_silverman))
+cat(sprintf("Manually chosen optimal: h = 0.8\n"))
+
+# Test both automatic methods
+result_scott <- mean_shift_clustering(
+  medium_data$data,
+  bandwidth = bandwidth_scott,
+  kernel = "gaussian"
+)
+
+result_silverman <- mean_shift_clustering(
+  medium_data$data,
+  bandwidth = bandwidth_silverman,
+  kernel = "gaussian"
+)
+
+bandwidth_strategies <- rbind(
+  cbind(Method = "Scott's Rule", h = round(bandwidth_scott, 3),
+        evaluate_clustering(medium_data$data, result_scott, medium_data$labels)),
+  cbind(Method = "Silverman's Rule", h = round(bandwidth_silverman, 3),
+        evaluate_clustering(medium_data$data, result_silverman, medium_data$labels)),
+  cbind(Method = "Manual Optimal", h = 0.8,
+        evaluate_clustering(medium_data$data, result_optimal, medium_data$labels))
+)
+
+knitr::kable(bandwidth_strategies, caption = "Bandwidth Selection Strategies Comparison")
+```
+
+# Summary of Experimental Findings
+
+## Key Takeaways
+
+1. **Data Characteristics**:
+   - Works well on well-separated clusters
+   - Struggles with heavy overlap
+   - Computation time scales with data size (O(n²) complexity)
+
+2. **Kernel Choice**:
+   - Flat/Uniform kernel: fastest, good results
+   - Gaussian: slightly better quality, slower
+   - Choice matters less than bandwidth selection
+
+3. **Bandwidth Selection** (MOST CRITICAL):
+   - Most important parameter affecting results
+   - Use adaptive methods (Scott's/Silverman's rule) as starting point
+   - Fine-tune based on domain knowledge or cross-validation
+   - Validate with silhouette score
+
+## Practical Recommendations
+
+- Start with automatic bandwidth selection (Scott's or Silverman's rule)
+- Visualize results and adjust if needed
+- For well-separated clusters, use slightly larger bandwidth
+- For overlapping data, use smaller bandwidth but expect more clusters
+- Consider computational cost for large datasets (n > 10,000)
+
+# Session Info
+
+```{r session_info}
+sessionInfo()
+```
