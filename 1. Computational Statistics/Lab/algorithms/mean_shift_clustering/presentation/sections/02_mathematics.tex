@@ -74,8 +74,8 @@
             \small{\textcolor{customred}{Choice matters!}}
             \begin{itemize}
                 \item Gaussian: smooth, no hard boundary
-                \item Epanechnikov: optimal in some sense
-                \item Flat (Uniform kernel): simple, fast computation
+                \item Epanechnikov: optimal for Mean Shift (it is the most efficient kernel since the derivative is 1 or just 0 (sklearn use this too))
+                \item Flat (Uniform kernel): simple, fast computation (but no one use for Mean Shift because the derivative is 0)
             \end{itemize}
         \end{column}
     \end{columns}
