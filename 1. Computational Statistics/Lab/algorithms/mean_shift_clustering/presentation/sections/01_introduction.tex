@@ -1,0 +1,91 @@
+% ============================================================
+% Section 1: Introduction & Intuition
+% ============================================================
+\section{Introduction \& Intuition}
+
+\begin{frame}{What is Mean Shift Clustering?}
+    \begin{columns}[T]
+        \begin{column}{0.5\textwidth}
+            \textbf{Core Idea:}
+            \begin{itemize}
+                \item Find modes (peaks) of data density
+                \item Points converge to nearest mode
+                \item No need to specify number of clusters
+                \item Density-based approach
+            \end{itemize}
+
+            \vspace{0.5cm}
+
+            \textbf{Key Characteristic:}
+            \begin{itemize}
+                \item \textcolor{customred}{Non-parametric}
+                \item Discovers clusters naturally
+                \item Based on kernel density estimation
+            \end{itemize}
+        \end{column}
+
+        \begin{column}{0.5\textwidth}
+            \begin{center}
+                \begin{tikzpicture}[scale=0.8]
+                    % Draw density surface (simplified)
+                    \draw[thick, customred] plot[smooth, tension=0.7] coordinates {
+                        (0,1) (1,1.5) (2,3) (3,1.5) (4,1) (5,2.5) (6,1)
+                    };
+
+                    % Draw points
+                    \foreach \x in {1.8,2,2.2,5,5.2} {
+                        \fill (\x,0.2) circle (2pt);
+                    }
+
+                    % Draw arrows showing convergence
+                    \draw[->, thick, blue] (1.8,0.2) -- (2,2.5);
+                    \draw[->, thick, blue] (2.2,0.2) -- (2,2.5);
+                    \draw[->, thick, blue] (5,0.2) -- (5.1,2);
+
+                    % Label modes
+                    \node[customred] at (2,3.3) {Mode 1};
+                    \node[customred] at (5,2.8) {Mode 2};
+
+                    % Axes
+                    \draw[->] (0,0) -- (6.5,0) node[right] {$x$};
+                    \draw[->] (0,0) -- (0,3.5) node[above] {Density};
+                \end{tikzpicture}
+            \end{center}
+            \small{\textit{Points shift toward density peaks}}
+        \end{column}
+    \end{columns}
+\end{frame}
+
+\begin{frame}{Visual Intuition}
+    \textbf{Think of it as:}
+    \begin{enumerate}
+        \item Imagine data points as balls on a hilly landscape
+        \item Each ball rolls uphill to the nearest peak
+        \item Balls ending at the same peak = same cluster
+    \end{enumerate}
+
+    \vspace{0.5cm}
+
+    \begin{center}
+        \begin{tikzpicture}[scale=1.2]
+            % Three clusters
+            \foreach \cx/\cy/\color in {1/2/red!30, 4/3/blue!30, 7/2.5/green!30} {
+                % Cluster points
+                \foreach \i in {1,...,8} {
+                    \pgfmathsetmacro{\dx}{rand*0.4}
+                    \pgfmathsetmacro{\dy}{rand*0.4}
+                    \fill[black] (\cx+\dx,\cy+\dy) circle (1.5pt);
+                }
+                % Cluster center (mode)
+                \fill[\color, draw=black, thick] (\cx,\cy) circle (4pt);
+            }
+
+            % Legend
+            \node[anchor=west] at (0.5,0.3) {\small Data points};
+            \fill[red!30, draw=black, thick] (0.3,0.3) circle (3pt);
+            \node[anchor=west] at (2.8,0.3) {\small Cluster modes};
+        \end{tikzpicture}
+    \end{center}
+
+    \textbf{Advantage:} Discovers cluster count automatically from data!
+\end{frame}

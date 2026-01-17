@@ -1,0 +1,63 @@
+% ============================================================
+% Section 5: Conclusion
+% ============================================================
+\section{Conclusion}
+
+\begin{frame}{Summary}
+    \textbf{Mean Shift Clustering:}
+    \begin{itemize}
+        \item \textcolor{customred}{Core idea:} Find density modes, points converge to nearest mode
+        \item \textcolor{customred}{Strengths:} No cluster count needed, flexible shapes, robust
+        \item \textcolor{customred}{Weaknesses:} $O(n^2)$ complexity, bandwidth sensitivity, high-dim issues
+    \end{itemize}
+
+    \vspace{0.5cm}
+
+    \textbf{Experimental Findings:}
+    \begin{itemize}
+        \item Outperforms K-means in cluster quality (synthetic \& Iris)
+        \item Requires dimensionality reduction for high-dim data (Wine)
+        \item Excellent for image segmentation, but slower
+        \item Bandwidth selection is critical
+    \end{itemize}
+
+    \vspace{0.5cm}
+
+    \textbf{Best Use Cases:}
+    \begin{itemize}
+        \item Small-medium datasets with unknown cluster count
+        \item Non-spherical clusters or mode-finding tasks
+        \item Image/video processing applications
+    \end{itemize}
+\end{frame}
+
+\begin{frame}{References}
+    \begin{enumerate}
+        \item Fukunaga, K., \& Hostetler, L. (1975). \textit{The estimation of the gradient of a density function, with applications in pattern recognition}. IEEE Transactions on Information Theory.
+
+        \item Comaniciu, D., \& Meer, P. (2002). \textit{Mean shift: A robust approach toward feature space analysis}. IEEE Transactions on Pattern Analysis and Machine Intelligence.
+
+        \item Cheng, Y. (1995). \textit{Mean shift, mode seeking, and clustering}. IEEE Transactions on Pattern Analysis and Machine Intelligence.
+
+        \item Carreira-Perpinan, M. A. (2015). \textit{A review of mean-shift algorithms for clustering}. arXiv preprint.
+    \end{enumerate}
+\end{frame}
+
+\begin{frame}[plain]
+    \begin{center}
+        \vspace{2cm}
+
+        {\Huge \textcolor{customred}{Thank You!}}
+
+        \vspace{1cm}
+
+        {\Large Questions?}
+
+        \vspace{1.5cm}
+
+        {\normalsize
+        Quang Nguyen \\
+        Computational Statistics Lab
+        }
+    \end{center}
+\end{frame}

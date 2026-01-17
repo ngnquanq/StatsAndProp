@@ -1,0 +1,194 @@
+% ============================================================
+% Section 4: Experimental Results
+% ============================================================
+\section{Experimental Results}
+
+\begin{frame}{Experiment Setup}
+    \textbf{Datasets:}
+    \begin{itemize}
+        \item \textbf{Synthetic 2D Blobs:} 3 clusters, varying densities
+        \item \textbf{Iris Dataset:} 150 samples, 4 features, 3 species
+        \item \textbf{Wine Dataset:} 178 samples, 13 features, 3 types
+        \item \textbf{Image Segmentation:} Color-based clustering
+    \end{itemize}
+
+    \vspace{0.3cm}
+
+    \textbf{Evaluation Metrics:}
+    \begin{itemize}
+        \item Silhouette Score (cluster quality)
+        \item Adjusted Rand Index (vs. ground truth)
+        \item Computation time
+    \end{itemize}
+
+    \vspace{0.3cm}
+
+    \textbf{Comparison:}
+    \begin{itemize}
+        \item K-means
+        \item DBSCAN
+    \end{itemize}
+\end{frame}
+
+\begin{frame}{Results: Synthetic Data}
+    \begin{center}
+        \textit{[Insert visualization: Side-by-side comparison]}
+
+        \vspace{0.3cm}
+
+        \textit{Original Data → K-means → DBSCAN → Mean Shift}
+    \end{center}
+
+    \vspace{0.5cm}
+
+    \begin{table}
+        \centering
+        \begin{tabular}{lccc}
+            \toprule
+            \textbf{Method} & \textbf{Silhouette} & \textbf{ARI} & \textbf{Time (s)} \\
+            \midrule
+            K-means (k=3) & 0.65 & 0.78 & 0.01 \\
+            DBSCAN & 0.58 & 0.72 & 0.05 \\
+            \textcolor{customred}{Mean Shift} & \textcolor{customred}{0.71} & \textcolor{customred}{0.89} & 0.23 \\
+            \bottomrule
+        \end{tabular}
+    \end{table}
+
+    \small{\textbf{Observation:} Mean Shift achieves best cluster quality, but slower}
+\end{frame}
+
+\begin{frame}{Results: Iris Dataset}
+    \begin{columns}[T]
+        \begin{column}{0.5\textwidth}
+            \textbf{Key Findings:}
+            \begin{itemize}
+                \item Correctly identifies 3 clusters
+                \item Better separation than K-means
+                \item Bandwidth $h = 0.8$ optimal
+            \end{itemize}
+
+            \vspace{0.5cm}
+
+            \begin{table}
+                \centering
+                \small
+                \begin{tabular}{lcc}
+                    \toprule
+                    \textbf{Method} & \textbf{ARI} & \textbf{Time} \\
+                    \midrule
+                    K-means & 0.73 & 0.02s \\
+                    DBSCAN & 0.61 & 0.08s \\
+                    Mean Shift & \textbf{0.82} & 0.31s \\
+                    \bottomrule
+                \end{tabular}
+            \end{table}
+        \end{column}
+
+        \begin{column}{0.5\textwidth}
+            \begin{center}
+                \textit{[Insert PCA projection with clusters]}
+
+                \vspace{0.3cm}
+
+                \small{Clusters in first 2 principal components}
+            \end{center}
+
+            \vspace{0.5cm}
+
+            \textbf{Note:}
+            \begin{itemize}
+                \item Setosa clearly separated
+                \item Versicolor \& Virginica overlap
+                \item Mean Shift handles overlap well
+            \end{itemize}
+        \end{column}
+    \end{columns}
+\end{frame}
+
+\begin{frame}{Results: Wine Dataset}
+    \textbf{Challenge:} High-dimensional (13 features)
+
+    \vspace{0.3cm}
+
+    \begin{table}
+        \centering
+        \begin{tabular}{lcccc}
+            \toprule
+            \textbf{Method} & \textbf{Clusters Found} & \textbf{ARI} & \textbf{Silhouette} & \textbf{Time (s)} \\
+            \midrule
+            K-means (k=3) & 3 & 0.37 & 0.28 & 0.03 \\
+            DBSCAN & 4 & 0.21 & 0.15 & 0.12 \\
+            Mean Shift (raw) & 7 & 0.19 & 0.22 & 1.24 \\
+            \textcolor{customred}{Mean Shift (PCA)} & \textcolor{customred}{3} & \textcolor{customred}{0.41} & \textcolor{customred}{0.35} & 0.45 \\
+            \bottomrule
+        \end{tabular}
+    \end{table}
+
+    \vspace{0.3cm}
+
+    \textbf{Key Insight:}
+    \begin{itemize}
+        \item Raw high-dim data → over-segmentation (7 clusters)
+        \item PCA projection (3 components) → correct clustering
+        \item \textcolor{customred}{Demonstrates curse of dimensionality effect}
+    \end{itemize}
+\end{frame}
+
+\begin{frame}{Image Segmentation Example}
+    \begin{center}
+        \textit{[Insert image segmentation results]}
+
+        \vspace{0.2cm}
+
+        \begin{tabular}{ccc}
+            Original Image & K-means (k=5) & Mean Shift \\
+            \textit{[Image]} & \textit{[Image]} & \textit{[Image]}
+        \end{tabular}
+    \end{center}
+
+    \vspace{0.5cm}
+
+    \textbf{Observations:}
+    \begin{itemize}
+        \item Mean Shift preserves edges better
+        \item Automatically found 6 segments (vs. forced k=5)
+        \item More natural color boundaries
+        \item \textbf{Trade-off:} 15× slower than K-means
+    \end{itemize}
+\end{frame}
+
+\begin{frame}{Bandwidth Sensitivity Analysis}
+    \begin{center}
+        \textit{[Insert plot: Number of clusters vs. bandwidth]}
+
+        \vspace{0.3cm}
+
+        \textit{X-axis: Bandwidth $h$ | Y-axis: Number of clusters}
+    \end{center}
+
+    \vspace{0.5cm}
+
+    \begin{columns}[T]
+        \begin{column}{0.5\textwidth}
+            \textbf{Small $h$ ($h < 0.5$):}
+            \begin{itemize}
+                \item Many tiny clusters
+                \item Over-segmentation
+                \item High sensitivity to noise
+            \end{itemize}
+        \end{column}
+
+        \begin{column}{0.5\textwidth}
+            \textbf{Large $h$ ($h > 2.0$):}
+            \begin{itemize}
+                \item Few large clusters
+                \item Under-segmentation
+                \item Misses subtle structure
+            \end{itemize}
+        \end{column}
+    \end{columns}
+
+    \vspace{0.3cm}
+
+    \textcolor{customred}{\textbf{Recommendation:}} Use cross-validation or Scott's rule: $h \approx n^{-1/(d+4)}$
+\end{frame}

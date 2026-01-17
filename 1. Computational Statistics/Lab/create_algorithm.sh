@@ -11,16 +11,18 @@ if [ $# -eq 0 ]; then
 fi
 
 ALGORITHM_NAME="$1"
-ALGORITHM_DIR="Lab/algorithms/$ALGORITHM_NAME"
+
+# Navigate to script directory (Lab directory)
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+cd "$SCRIPT_DIR"
+
+ALGORITHM_DIR="algorithms/$ALGORITHM_NAME"
 
 # Check if algorithm already exists
 if [ -d "$ALGORITHM_DIR" ]; then
     echo "Error: Algorithm directory already exists: $ALGORITHM_DIR"
     exit 1
 fi
-
-# Navigate to Lab directory
-cd "$(dirname "$0")/.."
 
 echo "Creating algorithm structure for: $ALGORITHM_NAME"
 echo "================================================"
@@ -30,12 +32,20 @@ mkdir -p "$ALGORITHM_DIR/tests"
 mkdir -p "$ALGORITHM_DIR/data"
 touch "$ALGORITHM_DIR/data/.gitkeep"
 
-# Copy template
+# Copy and customize Rmd template
 if [ -f "templates/algorithm_template.Rmd" ]; then
     cp "templates/algorithm_template.Rmd" "$ALGORITHM_DIR/${ALGORITHM_NAME}_documentation.Rmd"
-    echo "✓ Created documentation template"
+
+    # Update title in YAML header
+    sed -i "s/Algorithm Name/${ALGORITHM_NAME^}/g" "$ALGORITHM_DIR/${ALGORITHM_NAME}_documentation.Rmd"
+
+    # Update source paths in template (algorithm_name -> actual algorithm name)
+    sed -i "s/algorithm_name/${ALGORITHM_NAME}/g" "$ALGORITHM_DIR/${ALGORITHM_NAME}_documentation.Rmd"
+
+    echo "✓ Created and customized documentation template"
 else
-    echo "⚠ Warning: Template not found, skipping documentation file"
+    echo "⚠ Warning: Template not found at templates/algorithm_template.Rmd"
+    echo "  Skipping documentation file creation"
 fi
 
 # Create implementation files
@@ -130,15 +140,6 @@ test_that("Input validation works", {
 })
 EOF
 echo "✓ Created test file"
-
-# Update documentation file if template was copied
-if [ -f "$ALGORITHM_DIR/${ALGORITHM_NAME}_documentation.Rmd" ]; then
-    # Update title in YAML header
-    sed -i "s/Algorithm Name/${ALGORITHM_NAME^}/g" "$ALGORITHM_DIR/${ALGORITHM_NAME}_documentation.Rmd"
-    # Update source paths in setup chunk
-    sed -i "s/algorithm_name/${ALGORITHM_NAME}/g" "$ALGORITHM_DIR/${ALGORITHM_NAME}_documentation.Rmd"
-    echo "✓ Updated documentation template"
-fi
 
 echo ""
 echo "================================================"

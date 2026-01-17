@@ -1,0 +1,91 @@
+% ============================================================
+% Section 2: Mathematical Foundation
+% ============================================================
+\section{Mathematical Foundation}
+
+\begin{frame}{The Mathematics (Brief)}
+    \textbf{1. Kernel Density Estimation:}
+    \[
+    \hat{f}(\mathbf{x}) = \frac{1}{n h^d} \sum_{i=1}^{n} K\left(\frac{\mathbf{x} - \mathbf{x}_i}{h}\right)
+    \]
+
+    where $K$ is a kernel function, $h$ is bandwidth, $d$ is dimension.
+
+    \vspace{0.5cm}
+
+    \textbf{2. Mean Shift Vector:}
+    \[
+    \mathbf{m}(\mathbf{x}) = \frac{\sum_{i=1}^{n} \mathbf{x}_i K\left(\frac{\mathbf{x} - \mathbf{x}_i}{h}\right)}{\sum_{i=1}^{n} K\left(\frac{\mathbf{x} - \mathbf{x}_i}{h}\right)} - \mathbf{x}
+    \]
+
+    \vspace{0.3cm}
+
+    \textbf{3. Update Rule:}
+    \[
+    \mathbf{x}^{(t+1)} = \mathbf{x}^{(t)} + \mathbf{m}(\mathbf{x}^{(t)})
+    \]
+
+    \small{\textcolor{customred}{Key insight:} Mean shift points toward increasing density}
+\end{frame}
+
+\begin{frame}{Algorithm Steps}
+    \begin{algorithm}[H]
+        \caption{Mean Shift Clustering}
+        \begin{algorithmic}[1]
+            \State \textbf{Input:} Data points $\{\mathbf{x}_1, \ldots, \mathbf{x}_n\}$, bandwidth $h$
+            \State \textbf{Output:} Cluster assignments
+            \State
+            \For{each data point $\mathbf{x}_i$}
+                \State $\mathbf{y} \gets \mathbf{x}_i$ \Comment{Initialize at data point}
+                \While{not converged}
+                    \State Compute mean shift: $\mathbf{m}(\mathbf{y})$
+                    \State Update: $\mathbf{y} \gets \mathbf{y} + \mathbf{m}(\mathbf{y})$
+                \EndWhile
+                \State Store converged point (mode) for $\mathbf{x}_i$
+            \EndFor
+            \State
+            \State Group points by their converged modes
+            \State \textbf{Return} cluster assignments
+        \end{algorithmic}
+    \end{algorithm}
+\end{frame}
+
+\begin{frame}{Common Kernel Functions}
+    \begin{columns}[T]
+        \begin{column}{0.5\textwidth}
+            \textbf{Gaussian Kernel:}
+            \[
+            K(\mathbf{u}) = \exp\left(-\frac{\|\mathbf{u}\|^2}{2}\right)
+            \]
+
+            \vspace{0.5cm}
+
+            \textbf{Epanechnikov Kernel:}
+            \[
+            K(\mathbf{u}) = \begin{cases}
+            1 - \|\mathbf{u}\|^2 & \text{if } \|\mathbf{u}\| \leq 1 \\
+            0 & \text{otherwise}
+            \end{cases}
+            \]
+        \end{column}
+
+        \begin{column}{0.5\textwidth}
+            \textbf{Flat Kernel:}
+            \[
+            K(\mathbf{u}) = \begin{cases}
+            1 & \text{if } \|\mathbf{u}\| \leq 1 \\
+            0 & \text{otherwise}
+            \end{cases}
+            \]
+
+            \vspace{0.5cm}
+
+            \small{\textcolor{customred}{Choice matters!}}
+            \begin{itemize}
+                \item Gaussian: smooth, no hard boundary
+                \item Epanechnikov: optimal in some sense
+                \item Flat: simple, fast computation
+            \end{itemize}
+        \end{column}
+    \end{columns}
+\end{frame}

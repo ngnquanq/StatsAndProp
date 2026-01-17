@@ -1,0 +1,94 @@
+% ============================================================
+% Section 3: Advantages & Limitations
+% ============================================================
+\section{Advantages \& Limitations}
+
+\begin{frame}{Advantages}
+    \begin{enumerate}
+        \item \textbf{No predefined cluster count}
+        \begin{itemize}
+            \item Automatically discovers number of clusters
+            \item Unlike K-means which requires $k$
+        \end{itemize}
+
+        \vspace{0.3cm}
+
+        \item \textbf{Flexible cluster shapes}
+        \begin{itemize}
+            \item Can find non-spherical clusters
+            \item Follows natural density contours
+        \end{itemize}
+
+        \vspace{0.3cm}
+
+        \item \textbf{Single parameter: bandwidth $h$}
+        \begin{itemize}
+            \item Controls granularity of clustering
+            \item Easier to tune than multiple parameters
+        \end{itemize}
+
+        \vspace{0.3cm}
+
+        \item \textbf{Robust to initialization}
+        \begin{itemize}
+            \item Deterministic convergence to modes
+            \item No random initialization sensitivity
+        \end{itemize}
+    \end{enumerate}
+\end{frame}
+
+\begin{frame}{Limitations (and Why They Matter)}
+    \begin{enumerate}
+        \item \textbf{Computational complexity: $O(n^2 \cdot T)$}
+        \begin{itemize}
+            \item[\textcolor{customred}{Why?}] Each point computes distance to all others at each iteration
+            \item[\textcolor{customred}{Impact:}] Slow for large datasets ($n > 10{,}000$)
+            \item[\textcolor{orange}{Mitigation:}] Use spatial indexing (KD-trees), binning, or sampling
+        \end{itemize}
+
+        \vspace{0.3cm}
+
+        \item \textbf{Bandwidth selection is critical}
+        \begin{itemize}
+            \item[\textcolor{customred}{Why?}] Too small $h$ → many tiny clusters; too large $h$ → all points in one cluster
+            \item[\textcolor{customred}{Impact:}] Results highly sensitive to $h$
+            \item[\textcolor{orange}{Mitigation:}] Cross-validation, adaptive bandwidth, or domain knowledge
+        \end{itemize}
+
+        \vspace{0.3cm}
+
+        \item \textbf{Curse of dimensionality}
+        \begin{itemize}
+            \item[\textcolor{customred}{Why?}] Density estimation becomes unreliable in high dimensions
+            \item[\textcolor{customred}{Impact:}] Poor performance for $d > 10$
+            \item[\textcolor{orange}{Mitigation:}] Dimensionality reduction (PCA, t-SNE) first
+        \end{itemize}
+    \end{enumerate}
+\end{frame}
+
+\begin{frame}{When to Use Mean Shift?}
+    \begin{columns}[T]
+        \begin{column}{0.5\textwidth}
+            \textbf{\textcolor{green!60!black}{Good Scenarios:}}
+            \begin{itemize}
+                \item Unknown number of clusters
+                \item Non-spherical cluster shapes
+                \item Small to medium datasets
+                \item Image segmentation
+                \item Object tracking in video
+                \item Mode-seeking tasks
+            \end{itemize}
+        \end{column}
+
+        \begin{column}{0.5\textwidth}
+            \textbf{\textcolor{red}{Avoid When:}}
+            \begin{itemize}
+                \item Very large datasets ($n > 50{,}000$)
+                \item High-dimensional data ($d > 10$)
+                \item Real-time processing needed
+                \item Clusters have similar densities
+                \item Well-separated spherical clusters (use K-means instead)
+            \end{itemize}
+        \end{column}
+    \end{columns}
+\end{frame}

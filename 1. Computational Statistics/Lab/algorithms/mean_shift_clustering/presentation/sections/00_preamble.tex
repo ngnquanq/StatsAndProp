@@ -1,0 +1,67 @@
+% ============================================================
+% Preamble: Theme, Colors, Fonts, Packages
+% ============================================================
+
+% Theme and color setup - Traditional Beamer style with custom red
+\usetheme{Boadilla}  % Traditional theme with header and footer
+\usecolortheme{default}
+
+% Custom color - Red (RGB 237, 0, 0) matching styles.css
+\definecolor{customred}{RGB}{237,0,0}
+\definecolor{lightred}{RGB}{237,200,200}  % Light red for backgrounds
+
+% Apply red color scheme
+\setbeamercolor{structure}{fg=customred}
+\setbeamercolor{title}{fg=white,bg=customred}
+\setbeamercolor{frametitle}{fg=white,bg=customred}
+\setbeamercolor{section in toc}{fg=customred}
+\setbeamercolor{itemize item}{fg=customred}
+\setbeamercolor{itemize subitem}{fg=customred}
+\setbeamercolor{enumerate item}{fg=customred}
+
+% Header and footer colors
+\setbeamercolor{section in head/foot}{fg=white,bg=customred}
+\setbeamercolor{subsection in head/foot}{fg=white,bg=customred!80}
+\setbeamercolor{author in head/foot}{fg=white,bg=customred}
+\setbeamercolor{title in head/foot}{fg=white,bg=customred}
+\setbeamercolor{date in head/foot}{fg=white,bg=customred!80}
+\setbeamercolor{page number in head/foot}{fg=white,bg=customred!80}
+
+% Font setup - Use standard LaTeX fonts
+\setbeamerfont{title}{size=\LARGE, series=\bfseries}
+\setbeamerfont{subtitle}{size=\large}
+\setbeamerfont{frametitle}{size=\Large, series=\bfseries}
+\setbeamerfont{framesubtitle}{size=\normalsize}
+\setbeamerfont{section in toc}{series=\bfseries}
+\setbeamerfont{subsection in toc}{}
+
+% Required packages
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+\usepackage{tikz}
+\usetikzlibrary{arrows,shapes,positioning}
+
+% Remove navigation symbols
+\setbeamertemplate{navigation symbols}{}
+
+% Customize footer to show slide numbers
+\setbeamertemplate{footline}
+{
+  \leavevmode%
+  \hbox{%
+  \begin{beamercolorbox}[wd=.333333\paperwidth,ht=2.25ex,dp=1ex,center]{author in head/foot}%
+    \usebeamerfont{author in head/foot}\insertshortauthor
+  \end{beamercolorbox}%
+  \begin{beamercolorbox}[wd=.333333\paperwidth,ht=2.25ex,dp=1ex,center]{title in head/foot}%
+    \usebeamerfont{title in head/foot}\insertshorttitle
+  \end{beamercolorbox}%
+  \begin{beamercolorbox}[wd=.333333\paperwidth,ht=2.25ex,dp=1ex,right]{date in head/foot}%
+    \usebeamerfont{date in head/foot}\insertshortdate{}\hspace*{2em}
+    \insertframenumber{} / \inserttotalframenumber\hspace*{2ex}
+  \end{beamercolorbox}}%
+  \vskip0pt%
+}

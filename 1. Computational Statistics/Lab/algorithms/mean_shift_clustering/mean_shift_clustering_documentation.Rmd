@@ -1,0 +1,114 @@
+---
+title: "Mean_shift_clustering - Documentation"
+author: "Quang Nguyen"
+date: "`r Sys.Date()`"
+output: 
+  html_document:
+    css: ../../templates/styles.css
+    toc: true
+    toc_float: true
+    number_sections: true
+    theme: default
+    highlight: tango
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  echo = TRUE,
+  warning = FALSE,
+  message = FALSE,
+  fig.width = 10,
+  fig.height = 6,
+  fig.align = "center"
+)
+```
+
+# Algorithm Overview
+
+Brief introduction to the algorithm, its purpose, and when to use it.
+
+## Background
+
+Describe the theoretical background and motivation for this algorithm.
+
+## Key Concepts
+
+Explain the main concepts and principles behind the algorithm.
+
+# Mathematical Foundation
+
+## Theory
+
+Present the mathematical formulation and theoretical foundations.
+
+## Algorithm Steps
+
+Describe the algorithm step-by-step:
+
+1. **Step 1**: Description
+2. **Step 2**: Description
+3. **Step 3**: Description
+
+# Implementation
+
+## Main Function
+
+```{r}
+# Source the algorithm implementation
+source("mean_shift_clustering.R")
+
+# Example function signature
+# mean_shift_clustering(data, parameters)
+```
+
+## Helper Functions
+
+```{r}
+# Source helper functions
+source("algorithm_helpers.R")
+```
+
+# Examples
+
+## Basic Example
+
+```{r}
+# Load required libraries
+library(ggplot2)
+
+# Example code here
+# data <- ...
+# result <- mean_shift_clustering(data, ...)
+# plot(result)
+```
+
+## Advanced Example
+
+```{r}
+# More complex example
+```
+
+# Performance Analysis
+
+## Complexity
+
+Discuss time and space complexity.
+
+## Benchmarks
+
+```{r}
+# Performance benchmarks
+```
+
+# References
+
+- Reference 1
+- Reference 2
+- Reference 3
+
+# Appendix
+
+## Additional Notes
+
+Any additional information, edge cases, or implementation details.
+
