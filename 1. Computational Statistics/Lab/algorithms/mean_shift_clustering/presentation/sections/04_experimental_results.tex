@@ -8,11 +8,12 @@
 
     \vspace{0.3cm}
 
-    \textbf{Three Experimental Scenarios:}
+    \textbf{Four Experimental Scenarios:}
     \begin{enumerate}
-        \item \textbf{Varying Data Distributions:} Different numbers of points and cluster densities
+        \item \textbf{Cluster Overlap Analysis:} Varying degrees of cluster separation
         \item \textbf{Kernel Function Comparison:} Gaussian, Flat (Uniform), Epanechnikov
         \item \textbf{Bandwidth Selection:} Small $h$, Optimal $h$, Large $h$
+        \item \textbf{Scalability Analysis:} Performance across different data sizes (O($n^2$) behavior)
     \end{enumerate}
 
     \vspace{0.3cm}
@@ -26,38 +27,46 @@
     \end{itemize}
 \end{frame}
 
-\begin{frame}{Experiment 1: Varying Data Distributions}
-    \textbf{Setup:} Test Mean Shift on different blob configurations
+\begin{frame}{Experiment 1: Cluster Overlap Analysis}
+    \textbf{Setup:} Fixed dataset size (500 points, 3 clusters), varying overlap, same bandwidth, flat kernel (sklearn only option)
 
     \vspace{0.3cm}
 
     \begin{center}
-        \textit{[Insert visualization: 3 different blob configurations]}
+        \includegraphics[width=0.8\textwidth]{images/exp1_data.png}
 
         \vspace{0.2cm}
 
-        \small{(a) Sparse (100 pts) | (b) Medium (500 pts) | (c) Dense overlapping (1000 pts)}
+        \small{(a) Well-separated | (b) Moderate overlap | (c) Heavy overlap}
     \end{center}
 
-    \vspace{0.3cm}
+\end{frame}
+
+\begin{frame}{Experiment 1 Results}
 
     \begin{table}
         \centering
         \small
-        \begin{tabular}{lcccc}
+        \begin{tabular}{lccccc}
             \toprule
-            \textbf{Configuration} & \textbf{Clusters Found} & \textbf{Silhouette} & \textbf{ARI} & \textbf{Time (s)} \\
+            \textbf{Configuration} & \textbf{Clusters} & \textbf{Silhouette} & \textbf{ARI} & \textbf{Time (s)} & \textbf{Avg. Iters} \\
             \midrule
-            Sparse (100 pts) & 3 & 0.68 & 0.85 & 0.08 \\
-            Medium (500 pts) & 3 & 0.72 & 0.91 & 0.45 \\
-            Dense (1000 pts) & 4 & 0.65 & 0.78 & 1.23 \\
+            Well-separated & 3 & 0.846 & 1.000 & 4.00 & 5.66 \\
+            Moderate overlap & 3 & 0.668 & 1.000 & 5.42 & 8.07 \\
+            Heavy overlap & \textcolor{customred}{5} & 0.111 & 0.658 & 7.71 & 12.16 \\
             \bottomrule
         \end{tabular}
     \end{table}
 
     \vspace{0.2cm}
 
-    \small{\textbf{Observation:} Performance degrades with overlapping clusters and increases computation time with more points}
+    \small{\textbf{Observation:} Performance degrades with increased cluster overlap}
+    \begin{itemize}
+        \small
+        \item Heavy overlap: Found 5 clusters instead of true 3 (ARI drops to 0.658)
+        \item Silhouette score degrades significantly: 0.846 → 0.111
+        \item Convergence slower: 5.66 → 12.16 average iterations
+    \end{itemize}
 \end{frame}
 
 \begin{frame}{Experiment 2: Kernel Function Comparison}
@@ -181,20 +190,50 @@
     \end{columns}
 \end{frame}
 
+\begin{frame}{Experiment 4: Scalability Analysis}
+    \textbf{Setup:} Well-separated clusters, varying dataset size
+
+    \vspace{0.3cm}
+
+    \textbf{Goal:} Verify O($n^2$) computational complexity
+
+    \vspace{0.3cm}
+
+    \begin{table}
+        \centering
+        \begin{tabular}{lccc}
+            \toprule
+            \textbf{Dataset Size} & \textbf{Time (s)} & \textbf{Time Ratio} & \textbf{Expected Ratio} \\
+            \midrule
+            TBD & TBD & TBD & TBD \\
+            \bottomrule
+        \end{tabular}
+    \end{table}
+
+    \vspace{0.3cm}
+
+    \small{\textbf{Expected Finding:} Computation time should follow O($n^2$) scaling}
+    \begin{itemize}
+        \small
+        \item Doubling data size → ~4$\times$ computation time
+        \item Algorithm becomes impractical for large datasets
+    \end{itemize}
+\end{frame}
+
 \begin{frame}{Summary of Experimental Findings}
     \textbf{Key Takeaways:}
 
     \vspace{0.3cm}
 
     \begin{enumerate}
-        \item \textbf{Data Characteristics:}
+        \item \textbf{Cluster Overlap:}
         \begin{itemize}
             \item Works well on well-separated clusters
             \item Struggles with heavy overlap
-            \item Computation time scales with data size
+            \item May find incorrect number of clusters with overlap
         \end{itemize}
 
-        \vspace{0.3cm}
+        \vspace{0.2cm}
 
         \item \textbf{Kernel Choice:}
         \begin{itemize}
@@ -203,13 +242,21 @@
             \item Choice matters less than bandwidth selection
         \end{itemize}
 
-        \vspace{0.3cm}
+        \vspace{0.2cm}
 
         \item \textbf{Bandwidth Selection:}
         \begin{itemize}
             \item \textcolor{customred}{Most critical parameter}
             \item Use adaptive methods (Scott's/Silverman's rule)
             \item Validate with silhouette score or domain knowledge
+        \end{itemize}
+
+        \vspace{0.2cm}
+
+        \item \textbf{Scalability:}
+        \begin{itemize}
+            \item O($n^2$) time complexity (to be verified)
+            \item Impacts feasibility for large datasets
         \end{itemize}
     \end{enumerate}
 \end{frame}
