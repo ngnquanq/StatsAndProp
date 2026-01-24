@@ -5,77 +5,104 @@
 
 \begin{frame}{The Mathematics (Brief)}
     \textbf{1. Kernel Density Estimation:}
-
-    Let $\mathbf{x} \in \mathbb{R}^d$ and $\mathbf{x}_i \in \mathbb{R}^d$ for $i = 1, 2, \ldots, n$ where $\mathbf{x}_i$ are points within bandwidth $h$ of $\mathbf{x}$.
+    Given $n$ data points $\{x_1, x_2, \ldots, x_n\}$, the kernel density estimate at point $x$ is:
 
     \[
-    \hat{f}(\mathbf{x}) = \frac{1}{n h^d} \sum_{i=1}^{n} K\left(\frac{\mathbf{x} - \mathbf{x}_i}{h}\right)
+    \hat{f}(x) = \frac{1}{n h} \sum_{i=1}^{n} K\left(\frac{x - x_i}{h}\right)
     \]
 
-    where:
+    where we use a \textbf{symmetric kernel}: $K(x) = c_k \cdot k(x^2)$
     \begin{itemize}
-        \item $K: \mathbb{R}^+ \to \mathbb{R}$ is a kernel function
+        \item $k: \mathbb{R}^+ \to \mathbb{R}$ is the \textbf{kernel profile} (function of squared distance)
         \item $h > 0$ is the bandwidth parameter
-        \item $d$ is the dimensionality of the feature space
-        \item $\mathbf{x}_i \in \mathbb{R}^d$ are the data points
+        \item $c_k$ is a normalization constant
+        \item $x_i$ are the data points and no need to be inside the bandwidth
     \end{itemize}
 
-    \small{\textcolor{customred}{Key insight:} As $h$ increase, we now need to consider more points to compare in the kernel density estimation, which 
-    may cause some performance issues.} 
+    \small{\textcolor{customred}{Key insight:} As $h$ increases, 
+    more points contribute to the density estimate, 
+    which may cause performance issues.
+    Also if we set $h$ too large, we may suffer from over-smoothing.}
+\end{frame}
+
+\begin{frame}{From KDE to Mean Shift}
+    \textbf{2. Deriving the Mean Shift Vector:}
+
+    To find density modes, we take the \textbf{gradient} of $\hat{f}(x)$ and set it to zero.
+
+    \vspace{0.2cm}
+    Define the \textbf{shadow kernel profile}: $g(s) = -k'(s)$ (negative derivative of $k$)
+
+    \vspace{0.2cm}
+    Taking $\nabla \hat{f}(x) = 0$ and rearranging yields:
+    \[
+    x = \frac{\sum_{i=1}^{n} x_i \, g\left(\left\|\frac{x - x_i}{h}\right\|^2\right)}{\sum_{i=1}^{n} g\left(\left\|\frac{x - x_i}{h}\right\|^2\right)}
+    \]
+
+    \small{\textcolor{customred}{Key insight:} The function $g = -k'$ ensures we move \textbf{against} the gradient direction (toward increasing density). This weighted mean tells us where the mode is!}
 \end{frame}
 
 \begin{frame}{The Mathematics (Contd.)}
 
-    \textbf{2. Mean Shift Vector:}
+    \textbf{3. Mean Shift Vector:}
+
+    The difference between the weighted mean and current position:
     \[
-    \mathbf{m}(\mathbf{x}) = \left[\frac{\sum_{i=1}^{n} \mathbf{x}_i g\left(\left\|\frac{\mathbf{x} - \mathbf{x}_i}{h}\right\|^2\right)}{\sum_{i=1}^{n} g\left(\left\|\frac{\mathbf{x} - \mathbf{x}_i}{h}\right\|^2\right)}\right] - \mathbf{x}
+    m(x) = \underbrace{\frac{\sum_{i=1}^{n} x_i \, g\left(\left\|\frac{x - x_i}{h}\right\|^2\right)}{\sum_{i=1}^{n} g\left(\left\|\frac{x - x_i}{h}\right\|^2\right)}}_{\text{weighted mean using } g} - x
     \]
 
     \vspace{0.3cm}
 
-    \textbf{3. Update Rule:}
+    \textbf{4. Update Rule:}
     \[
-    \mathbf{x}^{(t+1)} = \mathbf{x}^{(t)} + \mathbf{m}(\mathbf{x}^{(t)})
+    x^{(t+1)} = x^{(t)} + m(x^{(t)})
     \]
 
-    \small{\textcolor{customred}{Key insight:} Mean shift points toward increasing density}
+    \small{\textcolor{customred}{Key insight:} Since $g = -k'$, the mean shift vector always points toward increasing density (gradient ascent on the density surface).}
 \end{frame}
 
-\begin{frame}{Common Kernel Functions}
+\begin{frame}{Common Kernel Profiles}
+    \small
+    Let $s = \left\|\frac{x - x_i}{h}\right\|^2$ be the squared normalized distance.
+    \vspace{0.2cm}
     \begin{columns}[T]
         \begin{column}{0.5\textwidth}
-            \textbf{Gaussian Kernel:}
-            \[
-            K(\mathbf{u}) = \exp\left(-\frac{\|\mathbf{u}\|^2}{2}\right)
-            \]
+            \textbf{Gaussian:}
+            \begin{align*}
+            k(s) &= \exp\left(-\frac{s}{2}\right) \\
+            g(s) &= -k'(s) = \frac{1}{2}\exp\left(-\frac{s}{2}\right)
+            \end{align*}
 
-            \vspace{0.5cm}
+            \vspace{0.3cm}
 
-            \textbf{Epanechnikov Kernel:}
-            \[
-            K(\mathbf{u}) = \begin{cases}
-            1 - \|\mathbf{u}\|^2 & \text{if } \|\mathbf{u}\| \leq 1 \\
-            0 & \text{otherwise}
-            \end{cases}
-            \]
+            \textbf{Epanechnikov:}
+            \begin{align*}
+            k(s) &= \begin{cases} 1 - s & s \leq 1 \\ 0 & \text{else} \end{cases} \\
+            g(s) &= \begin{cases} 1 & s \leq 1 \\ 0 & \text{else} \end{cases}
+            \end{align*}
         \end{column}
 
         \begin{column}{0.5\textwidth}
-            \textbf{Flat Kernel:}
-            \[
-            K(\mathbf{u}) = \begin{cases}
-            1 & \text{if } \|\mathbf{u}\| \leq 1 \\
-            0 & \text{otherwise}
-            \end{cases}
-            \]
+            \textbf{Flat (Uniform):}
+            \begin{align*}
+            k(s) &= \begin{cases} 1 & s \leq 1 \\ 0 & \text{else} \end{cases} \\
+            g(s) &= 0 \text{ (undefined at boundary)}
+            \end{align*}
 
-            \vspace{0.5cm}
+            \vspace{0.3cm}
 
-            \small{\textcolor{customred}{Choice matters!}}
+            \small{\textcolor{customred}{Why Epanechnikov?}}
             \begin{itemize}
-                \item Gaussian: smooth, no hard boundary
-                \item Epanechnikov: optimal for Mean Shift (it is the most efficient kernel since the derivative is 1 or just 0 (sklearn use this too))
-                \item Flat (Uniform kernel): simple, fast computation (but no one use for Mean Shift because the derivative is 0)
+                \item $g(s) = 1$ (constant) $\Rightarrow$ uniform weights
+                \item Simple weighted mean of neighbors
+                \item Most efficient computation
+                \item Used by sklearn's MeanShift
+            \end{itemize}
+
+            \vspace{0.2cm}
+            \small{\textcolor{customred}{Why not Flat?}}
+            \begin{itemize}
+                \item $g(s) = 0$ everywhere $\Rightarrow$ no gradient info!
             \end{itemize}
         \end{column}
     \end{columns}
@@ -86,7 +113,7 @@
     \begin{algorithm}[H]
         \caption{Mean Shift Clustering}
         \begin{algorithmic}[1]
-            \State \textbf{Input:} Data points $\{\mathbf{x}_1, \ldots, \mathbf{x}_n\}$, bandwidth $h$, Kernel function $K$
+            \State \textbf{Input:} Data points $\{x_1, \ldots, x_n\}$, bandwidth $h$, kernel profile $k$, $\epsilon$ for convergence
             \State \textbf{Output:} Cluster assignments
             \State
             \For{each data point $\mathbf{x}_i$}
