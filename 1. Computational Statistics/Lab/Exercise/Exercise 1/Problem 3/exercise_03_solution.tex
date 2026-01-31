@@ -67,31 +67,6 @@ h_{\min} = \max\left\{2\cdot\min_{i\ne j}|X_i-X_j|, \frac{\text{range}(X)}{100}\
 h_{\max} = \frac{\text{range}(X)}{2}.
 \end{align}
 
-% \textbf{4. Kết quả thử nghiệm}
-
-% Dữ liệu synthetic: $Y = \sin(2X) + 0.5X + \epsilon$, với $\epsilon \sim \mathcal{N}(0, 0.4^2)$ và $n=100$ điểm.
-
-% \begin{table}[h]
-% \centering
-% \begin{tabular}{|c|c|c|l|}
-% \hline
-% \textbf{Phương pháp} & \textbf{$p$} & \textbf{$h$ (CV)} & \textbf{Đặc điểm} \\ \hline
-% Nadaraya-Watson & 0 & $\approx 0.192$ & Dao động nhiều tại biên \\
-% Local Linear & 1 & $\approx 0.273$ & Mượt nhất, ổn định tại biên \\
-% Local Quadratic & 2 & 0.5 (cố định) & Linh hoạt hơn nhưng gần $p=1$ \\ \hline
-% \end{tabular}
-% \caption{So sánh các phương pháp hồi quy đa thức cục bộ}
-% \end{table}
-
-% \textbf{5. Nhận xét}
-
-% \begin{itemize}
-%     \item Local Linear ($p=1$) cho kết quả tốt nhất: vừa mượt, vừa giảm bias tại biên (boundary bias).
-%     \item Nadaraya-Watson ($p=0$) đơn giản nhưng có bias cao tại vùng biên.
-%     \item CV tự động chọn được băng thông phù hợp cho từng bậc $p$.
-%     \item Độ phức tạp: $O(n^2 \cdot T)$ với $T$ là số iteration, do phải tính LOOCV.
-% \end{itemize}
-
 \textbf{4. Triển khai}
 
 Code R được lưu tại:
