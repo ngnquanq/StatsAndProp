@@ -1,0 +1,520 @@
+---
+title: "Bài tập 4: Phân tích Khí quyển Sao Hỏa"
+subtitle: "Dự đoán xu hướng nhiệt độ bằng Local Polynomial Regression"
+author: "Quang Nguyen"
+date: "`r Sys.Date()`"
+output:
+  html_document:
+    toc: true
+    toc_float: true
+    toc_depth: 3
+    number_sections: true
+    theme: cosmo
+    highlight: tango
+    code_folding: show
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  echo = TRUE,
+  message = TRUE,
+  warning = FALSE,
+  fig.width = 10,
+  fig.height = 6,
+  fig.align = "center"
+)
+```
+
+# Giới thiệu
+
+Dữ liệu `mars.dat` cung cấp hồ sơ nhiệt độ-áp suất của khí quyển sao Hỏa, được tàu vũ trụ **Mars Global Surveyor** đo vào năm 2003 bằng kỹ thuật che khuất sóng vô tuyến.
+
+**Mục tiêu:**
+
+- (a) Dự đoán xu hướng thay đổi của nhiệt độ theo bán kính tâm hành tinh
+- (b) Phân tích xu hướng theo từng quỹ đạo (orbit) khác nhau
+- (c) Phân tích xu hướng nhiệt độ theo áp suất thay thế cho bán kính
+
+# Load hàm từ Bài tập 3
+
+```{r load-functions}
+# Load hàm Local Polynomial Regression từ Exercise 3
+source("../Problem 3/exercise_03.R")
+```
+
+**Các hàm chính:**
+
+- `gaussian_kernel(u)`: Hàm kernel Gaussian
+- `calculate_cv_score(h, x, y, p)`: Tính Cross-Validation score
+- `locpoly_reg(x, y, p, h, eval_x)`: Hồi quy đa thức địa phương
+
+# Load và Khám phá Dữ liệu
+
+## Dữ liệu mars.dat (đơn giản)
+
+```{r load-mars}
+# Load mars.dat
+mars <- read.table("mars.dat", header = TRUE)
+
+cat("Cấu trúc dữ liệu mars.dat:\n")
+str(mars)
+```
+
+```{r summary-mars}
+cat("\nThống kê mô tả:\n")
+summary(mars)
+```
+
+**Giải thích các biến:**
+
+- `radius`: Bán kính tâm hành tinh (km) - tương ứng với độ cao
+- `temperature`: Nhiệt độ khí quyển (K - Kelvin)
+- `sigmatemperature`: Sai số đo lường nhiệt độ
+
+## Dữ liệu marsbig.dat (đầy đủ)
+
+```{r load-marsbig}
+# Load marsbig.dat
+marsbig <- read.table("marsbig.dat", header = TRUE)
+
+cat("Cấu trúc dữ liệu marsbig.dat:\n")
+str(marsbig)
+```
+
+**Giải thích các biến trong marsbig.dat:**
+
+| Biến | Mô tả |
+|------|-------|
+| `radius` | Bán kính tâm hành tinh (km) |
+| `latitude` | Vĩ độ (độ) |
+| `longitude` | Kinh độ (độ) |
+| `geopotential` | Địa thế năng |
+| `pressure` | Áp suất khí quyển (Pa) |
+| `sigmapressure` | Sai số áp suất |
+| `temperature` | Nhiệt độ (K) |
+| `sigmatemperature` | Sai số nhiệt độ |
+| `mnd` | Molecular number density |
+| `sigmamnd` | Sai số mnd |
+| `orbit` | Số thứ tự quỹ đạo |
+
+```{r orbit-distribution}
+cat("\nPhân bố quan sát theo quỹ đạo:\n")
+print(table(marsbig$orbit))
+cat(sprintf("\nTổng số quan sát: %d\n", nrow(marsbig)))
+```
+
+## Trực quan hóa dữ liệu ban đầu
+
+```{r initial-plot, fig.height=5}
+par(mfrow = c(1, 2))
+
+# Temperature vs Radius
+plot(mars$radius, mars$temperature,
+     pch = 16, col = "steelblue",
+     xlab = "Bán kính (km)",
+     ylab = "Nhiệt độ (K)",
+     main = "Nhiệt độ vs Bán kính")
+
+# Temperature vs Pressure (marsbig)
+plot(marsbig$pressure, marsbig$temperature,
+     pch = 16, col = "coral",
+     xlab = "Áp suất (Pa)",
+     ylab = "Nhiệt độ (K)",
+     main = "Nhiệt độ vs Áp suất")
+
+par(mfrow = c(1, 1))
+```
+
+# Phần (a): Nhiệt độ theo Bán kính
+
+## Áp dụng Local Polynomial Regression
+
+Sử dụng hàm `locpoly_reg()` từ bài tập 3 với các bậc đa thức khác nhau:
+
+- **p = 0**: Nadaraya-Watson (local constant)
+- **p = 1**: Local linear regression
+- **p = 2**: Local quadratic regression
+
+```{r fit-p0}
+x <- mars$radius
+y <- mars$temperature
+
+cat("=== Local Constant (p=0) - Nadaraya-Watson ===\n")
+fit_p0 <- locpoly_reg(x, y, p = 0)
+```
+
+```{r fit-p1}
+cat("\n=== Local Linear (p=1) ===\n")
+fit_p1 <- locpoly_reg(x, y, p = 1)
+```
+
+```{r fit-p2}
+cat("\n=== Local Quadratic (p=2) ===\n")
+fit_p2 <- locpoly_reg(x, y, p = 2)
+```
+
+## So sánh Bandwidth tối ưu
+
+```{r compare-bandwidth}
+bandwidth_comparison <- data.frame(
+  Degree = c("p=0 (Constant)", "p=1 (Linear)", "p=2 (Quadratic)"),
+  Bandwidth = c(fit_p0$h, fit_p1$h, fit_p2$h)
+)
+knitr::kable(bandwidth_comparison,
+             caption = "Bandwidth tối ưu theo bậc đa thức",
+             digits = 4)
+```
+
+## Tạo đường cong làm mượt
+
+```{r smooth-curves}
+# Tạo lưới điểm để đánh giá
+eval_x <- seq(min(x), max(x), length.out = 200)
+
+# Fit trên lưới điểm
+fit_smooth_p0 <- locpoly_reg(x, y, p = 0, h = fit_p0$h, eval_x = eval_x)
+fit_smooth_p1 <- locpoly_reg(x, y, p = 1, h = fit_p1$h, eval_x = eval_x)
+fit_smooth_p2 <- locpoly_reg(x, y, p = 2, h = fit_p2$h, eval_x = eval_x)
+```
+
+## Trực quan hóa kết quả
+
+```{r plot-part-a, fig.height=7}
+plot(x, y, pch = 16, col = "gray40", cex = 1,
+     xlab = "Bán kính tâm hành tinh (km)",
+     ylab = "Nhiệt độ (K)",
+     main = "Nhiệt độ Khí quyển Sao Hỏa vs Bán kính\n(Local Polynomial Regression)")
+
+# Thêm các đường fit
+lines(fit_smooth_p0$x, fit_smooth_p0$fitted, col = "blue", lwd = 2, lty = 2)
+lines(fit_smooth_p1$x, fit_smooth_p1$fitted, col = "red", lwd = 3)
+lines(fit_smooth_p2$x, fit_smooth_p2$fitted, col = "darkgreen", lwd = 2, lty = 3)
+
+legend("topright",
+       legend = c("Dữ liệu",
+                  sprintf("p=0 (Nadaraya-Watson), h=%.2f", fit_p0$h),
+                  sprintf("p=1 (Local Linear), h=%.2f", fit_p1$h),
+                  sprintf("p=2 (Local Quadratic), h=%.2f", fit_p2$h)),
+       col = c("gray40", "blue", "red", "darkgreen"),
+       pch = c(16, NA, NA, NA),
+       lty = c(NA, 2, 1, 3),
+       lwd = c(NA, 2, 3, 2),
+       cex = 0.9)
+```
+
+## Phân tích xu hướng
+
+```{r trend-analysis-a}
+# Ước lượng độ dốc trung bình
+slope_estimate <- (fit_smooth_p1$fitted[length(fit_smooth_p1$fitted)] -
+                   fit_smooth_p1$fitted[1]) / (max(eval_x) - min(eval_x))
+
+cat("=== PHÂN TÍCH XU HƯỚNG (Phần a) ===\n\n")
+cat("1. Xu hướng chung: Nhiệt độ GIẢM khi bán kính (độ cao) TĂNG\n")
+cat(sprintf("2. Độ dốc trung bình (local linear): %.4f K/km\n", slope_estimate))
+cat("3. Điều này phù hợp với đặc điểm khí quyển sao Hỏa:\n")
+cat("   - Càng lên cao (radius lớn), nhiệt độ càng giảm\n")
+cat("   - Tương tự hiện tượng trong tầng đối lưu Trái Đất\n")
+```
+
+# Phần (b): Nhiệt độ theo Bán kính - Phân theo Quỹ đạo
+
+## Phân tích từng quỹ đạo
+
+```{r orbits-setup}
+orbits <- sort(unique(marsbig$orbit))
+n_orbits <- length(orbits)
+orbit_colors <- rainbow(n_orbits)
+
+cat(sprintf("Số quỹ đạo riêng biệt: %d\n", n_orbits))
+cat(sprintf("Tổng số quan sát: %d\n", nrow(marsbig)))
+```
+
+```{r fit-by-orbit}
+# Lưu kết quả cho từng orbit
+orbit_results <- list()
+
+for (i in seq_along(orbits)) {
+  orb <- orbits[i]
+
+  # Lọc dữ liệu cho quỹ đạo này
+  idx <- marsbig$orbit == orb
+  x_orb <- marsbig$radius[idx]
+  y_orb <- marsbig$temperature[idx]
+
+  cat(sprintf("\n--- Quỹ đạo %d: %d quan sát ---\n", orb, sum(idx)))
+
+  if (length(x_orb) >= 5) {
+    tryCatch({
+      # Fit local linear regression
+      fit_orb <- locpoly_reg(x_orb, y_orb, p = 1)
+
+      # Tạo đường cong mượt
+      eval_x_orb <- seq(min(x_orb), max(x_orb), length.out = 100)
+      fit_smooth_orb <- locpoly_reg(x_orb, y_orb, p = 1,
+                                     h = fit_orb$h, eval_x = eval_x_orb)
+
+      # Tính độ dốc
+      slope <- (fit_smooth_orb$fitted[length(fit_smooth_orb$fitted)] -
+                fit_smooth_orb$fitted[1]) / (max(eval_x_orb) - min(eval_x_orb))
+
+      cat(sprintf("  Độ dốc: %.4f K/km\n", slope))
+
+      # Lưu kết quả
+      orbit_results[[as.character(orb)]] <- list(
+        n = sum(idx),
+        h = fit_orb$h,
+        slope = slope,
+        x = fit_smooth_orb$x,
+        fitted = fit_smooth_orb$fitted
+      )
+    }, error = function(e) {
+      cat(sprintf("  Lỗi: %s\n", e$message))
+    })
+  }
+}
+```
+
+## Bảng tổng hợp kết quả theo quỹ đạo
+
+```{r orbit-summary-table}
+orbit_summary <- data.frame(
+  Orbit = sapply(names(orbit_results), as.integer),
+  N_obs = sapply(orbit_results, function(r) r$n),
+  Bandwidth = sapply(orbit_results, function(r) r$h),
+  Slope_K_per_km = sapply(orbit_results, function(r) r$slope)
+)
+orbit_summary <- orbit_summary[order(orbit_summary$Orbit), ]
+
+knitr::kable(orbit_summary,
+             caption = "Kết quả phân tích theo từng quỹ đạo",
+             digits = 4,
+             row.names = FALSE)
+```
+
+## Trực quan hóa theo quỹ đạo
+
+```{r plot-part-b, fig.height=8}
+plot(marsbig$radius, marsbig$temperature, type = "n",
+     xlab = "Bán kính tâm hành tinh (km)",
+     ylab = "Nhiệt độ (K)",
+     main = "Nhiệt độ Khí quyển Sao Hỏa vs Bán kính\ntheo từng Quỹ đạo")
+
+# Vẽ dữ liệu và đường fit cho từng quỹ đạo
+for (i in seq_along(orbits)) {
+  orb <- orbits[i]
+  idx <- marsbig$orbit == orb
+
+  # Điểm dữ liệu
+  points(marsbig$radius[idx], marsbig$temperature[idx],
+         pch = 16, col = orbit_colors[i], cex = 0.8)
+
+  # Đường fit
+  if (!is.null(orbit_results[[as.character(orb)]])) {
+    res <- orbit_results[[as.character(orb)]]
+    lines(res$x, res$fitted, col = orbit_colors[i], lwd = 2)
+  }
+}
+
+legend("topright",
+       legend = paste("Quỹ đạo", orbits),
+       col = orbit_colors,
+       pch = 16, lty = 1, lwd = 2,
+       cex = 0.8, ncol = 2)
+```
+
+## Thông tin bổ sung về các quỹ đạo
+
+```{r orbit-info}
+# Thông tin vị trí của từng quỹ đạo
+orbit_info <- aggregate(cbind(latitude, longitude) ~ orbit,
+                         data = marsbig,
+                         FUN = function(x) round(mean(x), 2))
+names(orbit_info) <- c("Orbit", "Latitude_mean", "Longitude_mean")
+
+knitr::kable(orbit_info,
+             caption = "Vị trí trung bình của từng quỹ đạo",
+             digits = 2)
+```
+
+## Nhận xét phần (b)
+
+```{r comment-b}
+cat("=== NHẬN XÉT (Phần b) ===\n\n")
+cat("1. Tất cả 7 quỹ đạo đều cho thấy XU HƯỚNG GIẢM tương tự\n")
+cat(sprintf("2. Độ dốc dao động từ %.4f đến %.4f K/km\n",
+            min(orbit_summary$Slope_K_per_km),
+            max(orbit_summary$Slope_K_per_km)))
+cat("3. Sự khác biệt giữa các quỹ đạo do:\n")
+cat("   - Đi qua các vùng kinh độ khác nhau của sao Hỏa\n")
+cat("   - Vĩ độ tương đối ổn định (~71.5 độ Bắc)\n")
+cat("   - Biến thiên tự nhiên trong khí quyển\n")
+cat("4. Kết quả xác nhận xu hướng chung của phần (a)\n")
+```
+
+# Phần (c): Nhiệt độ theo Áp suất
+
+## Fit Local Polynomial Regression
+
+```{r fit-pressure}
+x_pres <- marsbig$pressure
+y_temp <- marsbig$temperature
+
+cat("=== Thống kê Áp suất ===\n")
+summary(x_pres)
+```
+
+```{r fit-pressure-p1}
+cat("\n=== Local Linear (p=1) ===\n")
+fit_pres_p1 <- locpoly_reg(x_pres, y_temp, p = 1)
+```
+
+```{r fit-pressure-p2}
+cat("\n=== Local Quadratic (p=2) ===\n")
+fit_pres_p2 <- locpoly_reg(x_pres, y_temp, p = 2)
+```
+
+## Tạo đường cong làm mượt
+
+```{r smooth-pressure}
+eval_pres <- seq(min(x_pres), max(x_pres), length.out = 200)
+
+fit_smooth_pres_p1 <- locpoly_reg(x_pres, y_temp, p = 1,
+                                   h = fit_pres_p1$h, eval_x = eval_pres)
+fit_smooth_pres_p2 <- locpoly_reg(x_pres, y_temp, p = 2,
+                                   h = fit_pres_p2$h, eval_x = eval_pres)
+```
+
+## Trực quan hóa
+
+```{r plot-part-c, fig.height=7}
+plot(x_pres, y_temp, pch = 16, col = "gray40", cex = 0.8,
+     xlab = "Áp suất Khí quyển (Pa)",
+     ylab = "Nhiệt độ (K)",
+     main = "Nhiệt độ Khí quyển Sao Hỏa vs Áp suất\n(Local Polynomial Regression)")
+
+lines(fit_smooth_pres_p1$x, fit_smooth_pres_p1$fitted, col = "red", lwd = 3)
+lines(fit_smooth_pres_p2$x, fit_smooth_pres_p2$fitted, col = "darkgreen", lwd = 2, lty = 3)
+
+legend("bottomright",
+       legend = c("Dữ liệu",
+                  sprintf("p=1 (Local Linear), h=%.2f", fit_pres_p1$h),
+                  sprintf("p=2 (Local Quadratic), h=%.2f", fit_pres_p2$h)),
+       col = c("gray40", "red", "darkgreen"),
+       pch = c(16, NA, NA),
+       lty = c(NA, 1, 3),
+       lwd = c(NA, 3, 2),
+       cex = 0.9)
+```
+
+## Phân tích xu hướng
+
+```{r trend-analysis-c}
+slope_pres <- (fit_smooth_pres_p1$fitted[length(fit_smooth_pres_p1$fitted)] -
+               fit_smooth_pres_p1$fitted[1]) / (max(eval_pres) - min(eval_pres))
+
+cat("=== PHÂN TÍCH XU HƯỚNG (Phần c) ===\n\n")
+cat("1. Xu hướng: Nhiệt độ TĂNG khi áp suất TĂNG\n")
+cat(sprintf("2. Độ dốc trung bình: %.4f K/Pa\n", slope_pres))
+cat("\n3. Giải thích:\n")
+cat("   - Áp suất cao -> độ cao thấp (gần bề mặt) -> nhiệt độ cao\n")
+cat("   - Áp suất thấp -> độ cao lớn -> nhiệt độ thấp\n")
+cat("   - Quan hệ này NGƯỢC LẠI với phần (a)\n")
+cat("\n4. Mối quan hệ Áp suất - Độ cao:\n")
+cat("   - Áp suất giảm theo hàm mũ với độ cao: P ~ exp(-altitude)\n")
+cat("   - Do đó, T tăng theo P tương đương T giảm theo altitude\n")
+```
+
+# Tổng hợp Kết quả
+
+## Đồ thị tổng hợp 3 phần
+
+```{r combined-plot, fig.width=14, fig.height=5}
+par(mfrow = c(1, 3), mar = c(5, 5, 4, 2))
+
+# (a) Temperature vs Radius
+plot(mars$radius, mars$temperature, pch = 16, col = "gray40", cex = 0.9,
+     xlab = "Bán kính (km)", ylab = "Nhiệt độ (K)",
+     main = "(a) Nhiệt độ vs Bán kính")
+lines(fit_smooth_p1$x, fit_smooth_p1$fitted, col = "red", lwd = 3)
+mtext("Xu hướng: GIẢM", side = 3, line = -2, col = "red", cex = 0.9)
+
+# (b) By Orbit
+plot(marsbig$radius, marsbig$temperature, type = "n",
+     xlab = "Bán kính (km)", ylab = "Nhiệt độ (K)",
+     main = "(b) Nhiệt độ vs Bán kính theo Quỹ đạo")
+for (i in seq_along(orbits)) {
+  orb <- orbits[i]
+  idx <- marsbig$orbit == orb
+  points(marsbig$radius[idx], marsbig$temperature[idx],
+         pch = 16, col = orbit_colors[i], cex = 0.6)
+  if (!is.null(orbit_results[[as.character(orb)]])) {
+    res <- orbit_results[[as.character(orb)]]
+    lines(res$x, res$fitted, col = orbit_colors[i], lwd = 2)
+  }
+}
+legend("topright", legend = paste("Orb", orbits),
+       col = orbit_colors, pch = 16, cex = 0.6, ncol = 2)
+
+# (c) Temperature vs Pressure
+plot(x_pres, y_temp, pch = 16, col = "gray40", cex = 0.6,
+     xlab = "Áp suất (Pa)", ylab = "Nhiệt độ (K)",
+     main = "(c) Nhiệt độ vs Áp suất")
+lines(fit_smooth_pres_p1$x, fit_smooth_pres_p1$fitted, col = "red", lwd = 3)
+mtext("Xu hướng: TĂNG", side = 3, line = -2, col = "red", cex = 0.9)
+
+par(mfrow = c(1, 1))
+```
+
+## Bảng tổng hợp
+
+```{r summary-table}
+summary_df <- data.frame(
+  Phần = c("(a) Temp vs Radius", "(b) Temp vs Radius (by orbit)", "(c) Temp vs Pressure"),
+  Xu_hướng = c("Giảm", "Giảm (tất cả orbits)", "Tăng"),
+  Bandwidth_h = c(sprintf("%.4f km", fit_p1$h),
+                  "Khác nhau theo orbit",
+                  sprintf("%.4f Pa", fit_pres_p1$h)),
+  Độ_dốc = c(sprintf("%.4f K/km", slope_estimate),
+             sprintf("%.4f ~ %.4f K/km",
+                     min(orbit_summary$Slope_K_per_km),
+                     max(orbit_summary$Slope_K_per_km)),
+             sprintf("%.4f K/Pa", slope_pres))
+)
+
+knitr::kable(summary_df,
+             caption = "Tổng hợp kết quả Bài tập 4",
+             col.names = c("Phần", "Xu hướng", "Bandwidth (h)", "Độ dốc"))
+```
+
+# Kết luận
+
+```{r conclusion}
+cat(strrep("=", 70))
+cat("\n                    KẾT LUẬN BÀI TẬP 4\n")
+cat(strrep("=", 70))
+cat("\n\n")
+cat("1. NHIỆT ĐỘ vs BÁN KÍNH:\n")
+cat("   - Nhiệt độ GIẢM khi bán kính (độ cao) tăng\n")
+cat(sprintf("   - Độ dốc trung bình: %.4f K/km\n", slope_estimate))
+cat("   - Local linear regression (p=1) cho kết quả tốt\n")
+cat("\n")
+cat("2. PHÂN TÍCH THEO QUỸ ĐẠO:\n")
+cat("   - Tất cả 7 quỹ đạo đều xác nhận xu hướng giảm\n")
+cat("   - Sự biến thiên nhỏ giữa các quỹ đạo do kinh độ khác nhau\n")
+cat(sprintf("   - Dữ liệu từ %d quan sát, vĩ độ ~71.5° Bắc\n", nrow(marsbig)))
+cat("\n")
+cat("3. NHIỆT ĐỘ vs ÁP SUẤT:\n")
+cat("   - Nhiệt độ TĂNG khi áp suất tăng\n")
+cat(sprintf("   - Độ dốc: %.4f K/Pa\n", slope_pres))
+cat("   - Quan hệ NGƯỢC với phần (a) do P ~ exp(-altitude)\n")
+cat("\n")
+cat("4. Ý NGHĨA VẬT LÝ:\n")
+cat("   - Kết quả phù hợp với mô hình khí quyển sao Hỏa\n")
+cat("   - Tầng khí quyển gần bề mặt ấm hơn tầng cao\n")
+cat("   - Dữ liệu từ Mars Global Surveyor 2003 đáng tin cậy\n")
+```
+
+---
+
+*Bài tập được hoàn thành sử dụng hàm Local Polynomial Regression từ Bài tập 3*

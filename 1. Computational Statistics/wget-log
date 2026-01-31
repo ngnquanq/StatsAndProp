@@ -1,0 +1,24 @@
+Retrying.
+
+--2026-01-31 16:10:17--  (try: 4)  https://hastie.su.domains/ElemStatLearn/datasets/marsbig.dat
+Connecting to hastie.su.domains (hastie.su.domains)|146.190.148.141|:443... failed: Connection timed out.
+Retrying.
+
+--2026-01-31 16:12:38--  (try: 5)  https://hastie.su.domains/ElemStatLearn/datasets/marsbig.dat
+Connecting to hastie.su.domains (hastie.su.domains)|146.190.148.141|:443... failed: Connection timed out.
+Retrying.
+
+--2026-01-31 16:14:58--  (try: 6)  https://hastie.su.domains/ElemStatLearn/datasets/marsbig.dat
+Connecting to hastie.su.domains (hastie.su.domains)|146.190.148.141|:443... failed: Connection timed out.
+Retrying.
+
+--2026-01-31 16:17:18--  (try: 7)  https://hastie.su.domains/ElemStatLearn/datasets/marsbig.dat
+Connecting to hastie.su.domains (hastie.su.domains)|146.190.148.141|:443... failed: Connection timed out.
+Retrying.
+
+--2026-01-31 16:19:38--  (try: 8)  https://hastie.su.domains/ElemStatLearn/datasets/marsbig.dat
+Connecting to hastie.su.domains (hastie.su.domains)|146.190.148.141|:443... failed: Connection timed out.
+Retrying.
+
+--2026-01-31 16:22:03--  (try: 9)  https://hastie.su.domains/ElemStatLearn/datasets/marsbig.dat
+Connecting to hastie.su.domains (hastie.su.domains)|146.190.148.141|:443... 
