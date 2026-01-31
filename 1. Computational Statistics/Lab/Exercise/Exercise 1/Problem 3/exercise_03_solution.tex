@@ -1,0 +1,105 @@
+\documentclass[12pt,xcolor=dvipsnames]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[vietnamese]{babel}
+\usepackage{amstext,latexsym,amsbsy,amssymb,amsmath,amsthm,amsfonts,exscale,eucal}
+\usepackage{appendix}
+\usepackage{algorithm}
+\usepackage{graphicx}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\usepackage{indentfirst}
+\usepackage{enumitem}
+\usepackage{diagbox}
+
+\usepackage[left=2.00cm, right=2.00cm, top=2.00cm, bottom=2.00cm]{geometry}
+\setlength{\parskip}{5pt}%khoảng cách dòng
+\renewcommand{\baselinestretch}{1.15}
+\theoremstyle{definition}
+\newtheorem{vd}{Ví dụ}[section]
+\newtheorem*{giai}{Giải}
+\newtheorem{bt}{Bài tập}
+\renewcommand{\l}{\left}
+\renewcommand{\r}{\right}
+\date{}
+
+\begin{document}
+\begin{bt}
+Viết hàm thực hiện hồi quy đa thức (local polynomial regression), với input $p$ là số nguyên có các giá trị $0, 1, 2, \ldots$ Trong đó, băng thông $h$ được truyền vào là 1 số hoặc không truyền vào (đặt mặc định $h = \texttt{NULL}$), nếu không truyền vào thì trong thân hàm cần có một đoạn tính $h$ theo CV hoặc GCV.
+\end{bt}
+
+\begin{giai}
+\textbf{1. Ý tưởng thuật toán}
+
+Hồi quy đa thức cục bộ (Local Polynomial Regression) ước lượng hàm hồi quy $m(x) = \mathbb{E}[Y|X=x]$ tại mỗi điểm $x_0$ bằng cách khớp một đa thức bậc $p$ với trọng số kernel:
+\begin{align}
+\min_{\beta_0,\beta_1,\ldots,\beta_p} \sum_{i=1}^n \left(Y_i - \beta_0 - \beta_1(X_i-x_0) - \cdots - \beta_p(X_i-x_0)^p\right)^2 K\left(\frac{X_i-x_0}{h}\right),
+\end{align}
+trong đó $K(\cdot)$ là hàm kernel (ở đây sử dụng kernel Gaussian), và $h>0$ là băng thông.
+
+Nghiệm của bài toán trên cho ta ước lượng $\hat{m}(x_0) = \hat{\beta}_0$, tức là hệ số tự do của đa thức cục bộ.
+
+\textbf{2. Cấu trúc hàm} 
+
+Hàm \texttt{locpoly\_reg} có cấu trúc như sau:
+\begin{verbatim}
+locpoly_reg(x, y, p, h = NULL, eval_x = NULL)
+\end{verbatim}
+với các tham số:
+\begin{itemize}
+    \item \texttt{x}: vector các giá trị biến độc lập,
+    \item \texttt{y}: vector các giá trị biến phụ thuộc,
+    \item \texttt{p}: bậc đa thức ($p=0,1,2,\ldots$),
+    \item \texttt{h}: băng thông (nếu \texttt{NULL} thì tự động chọn qua CV),
+    \item \texttt{eval\_x}: các điểm cần ước lượng (mặc định là \texttt{x}).
+\end{itemize}
+
+\textbf{3. Chọn băng thông tự động qua Cross-Validation}
+
+Khi $h=\texttt{NULL}$, ta sử dụng Leave-One-Out Cross-Validation (LOOCV) để chọn băng thông tối ưu:
+\begin{align}
+\text{CV}(h) = \frac{1}{n}\sum_{i=1}^n \left(Y_i - \hat{m}_{-i}(X_i;h)\right)^2,
+\end{align}
+trong đó $\hat{m}_{-i}(X_i;h)$ là ước lượng tại $X_i$ khi loại bỏ điểm thứ $i$ khỏi tập huấn luyện.
+
+Do việc tối ưu hóa liên tục tốn kém, ta sử dụng grid search trên 8 giá trị băng thông phân bố logarithmic trong khoảng $[h_{\min}, h_{\max}]$:
+\begin{align}
+h_{\min} = \max\left\{2\cdot\min_{i\ne j}|X_i-X_j|, \frac{\text{range}(X)}{100}\right\}, \quad
+h_{\max} = \frac{\text{range}(X)}{2}.
+\end{align}
+
+% \textbf{4. Kết quả thử nghiệm}
+
+% Dữ liệu synthetic: $Y = \sin(2X) + 0.5X + \epsilon$, với $\epsilon \sim \mathcal{N}(0, 0.4^2)$ và $n=100$ điểm.
+
+% \begin{table}[h]
+% \centering
+% \begin{tabular}{|c|c|c|l|}
+% \hline
+% \textbf{Phương pháp} & \textbf{$p$} & \textbf{$h$ (CV)} & \textbf{Đặc điểm} \\ \hline
+% Nadaraya-Watson & 0 & $\approx 0.192$ & Dao động nhiều tại biên \\
+% Local Linear & 1 & $\approx 0.273$ & Mượt nhất, ổn định tại biên \\
+% Local Quadratic & 2 & 0.5 (cố định) & Linh hoạt hơn nhưng gần $p=1$ \\ \hline
+% \end{tabular}
+% \caption{So sánh các phương pháp hồi quy đa thức cục bộ}
+% \end{table}
+
+% \textbf{5. Nhận xét}
+
+% \begin{itemize}
+%     \item Local Linear ($p=1$) cho kết quả tốt nhất: vừa mượt, vừa giảm bias tại biên (boundary bias).
+%     \item Nadaraya-Watson ($p=0$) đơn giản nhưng có bias cao tại vùng biên.
+%     \item CV tự động chọn được băng thông phù hợp cho từng bậc $p$.
+%     \item Độ phức tạp: $O(n^2 \cdot T)$ với $T$ là số iteration, do phải tính LOOCV.
+% \end{itemize}
+
+\textbf{4. Triển khai}
+
+Code R được lưu tại:
+\begin{itemize}
+    \item \texttt{Exercise/Exercise 1/exercise\_03.R}: Hàm chính \texttt{locpoly\_reg}.
+    \item \texttt{Exercise/Exercise 1/test\_exercise\_03.R}: Script kiểm thử và vẽ đồ thị.
+\end{itemize}
+
+Biểu đồ kết quả được lưu tại \texttt{Exercise/Exercise 1/exercise\_03\_result.png}.
+\end{giai}
+\end{document}
