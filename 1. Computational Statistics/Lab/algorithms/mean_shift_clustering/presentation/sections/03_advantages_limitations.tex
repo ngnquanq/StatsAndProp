@@ -60,7 +60,7 @@
         \item \textbf{Curse of dimensionality}
         \begin{itemize}
             \item[\textcolor{customred}{Why?}] Density estimation becomes unreliable in high dimensions
-            \item[\textcolor{customred}{Impact:}] Poor performance for $d > 10$
+            \item[\textcolor{customred}{Impact:}] Poor performance for $d > 4$
             \item[\textcolor{orange}{Mitigation:}] Dimensionality reduction (PCA, t-SNE) first
         \end{itemize}
     \end{enumerate}
@@ -72,7 +72,6 @@
             \textbf{\textcolor{green!60!black}{Good Scenarios:}}
             \begin{itemize}
                 \item Unknown number of clusters
-                \item Non-spherical cluster shapes
                 \item Small to medium datasets
                 \item Image segmentation
                 \item Object tracking in video
@@ -84,10 +83,9 @@
             \textbf{\textcolor{red}{Avoid When:}}
             \begin{itemize}
                 \item Very large datasets ($n > 50{,}000$)
-                \item High-dimensional data ($d > 10$)
+                \item High-dimensional data ($d > 4$)
                 \item Real-time processing needed
                 \item Clusters have similar densities
-                \item Well-separated spherical clusters (use K-means instead)
             \end{itemize}
         \end{column}
     \end{columns}
