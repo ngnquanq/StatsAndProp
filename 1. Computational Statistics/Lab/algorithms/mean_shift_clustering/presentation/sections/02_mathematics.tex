@@ -8,7 +8,7 @@
     Given $n$ data points $\{x_1, x_2, \ldots, x_n\}$, the kernel density estimate at point $x$ is:
 
     \[
-    \hat{f}(x) = \frac{1}{n h} \sum_{i=1}^{n} K\left(\frac{x - x_i}{h}\right)
+    \hat{f}(x) = \frac{1}{n h^d} \sum_{i=1}^{n} K\left(\frac{x - x_i}{h}\right)
     \]
 
     where we use a \textbf{symmetric kernel}: $K(x) = c_k \cdot k(x^2)$
@@ -36,7 +36,7 @@
     x = \frac{\sum_{i=1}^{n} x_i \, g\left(\left\|\frac{x - x_i}{h}\right\|^2\right)}{\sum_{i=1}^{n} g\left(\left\|\frac{x - x_i}{h}\right\|^2\right)}
     \]
 
-    \small{\textcolor{customred}{Key insight:} The function $g = -k'$ ensures we move \textbf{against} the gradient direction (toward increasing density). This weighted mean tells us where the mode is!}
+    \small{\textcolor{customred}{Key insight:} The function $g = -k'$ ensures we \textbf{move along} the gradient direction (toward increasing density). This weighted mean tells us where the mode is!}
 \end{frame}
 
 \begin{frame}{The Mathematics (Contd.)}
@@ -88,18 +88,12 @@
 
             \vspace{0.3cm}
 
-            \small{\textcolor{customred}{Why Epanechnikov?}}
+            \small{\textcolor{customred}{Why Epanechnikov? and not Flat?}}
             \begin{itemize}
                 \item $g(s) = 1$ (constant) $\Rightarrow$ uniform weights
-                \item Simple weighted mean of neighbors
                 \item Most efficient computation
                 \item Used by sklearn's MeanShift
-            \end{itemize}
-
-            \vspace{0.2cm}
-            \small{\textcolor{customred}{Why not Flat?}}
-            \begin{itemize}
-                \item $g(s) = 0$ everywhere $\Rightarrow$ no gradient info!
+                \item Flat kernel is not used because $g(s) = 0$ everywhere $\Rightarrow$ no gradient info!
             \end{itemize}
         \end{column}
     \end{columns}

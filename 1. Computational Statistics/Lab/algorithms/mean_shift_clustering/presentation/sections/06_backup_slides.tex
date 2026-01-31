@@ -101,7 +101,7 @@
         \item Mean shift is gradient ascent on kernel density estimate
         \item Gradient of KDE:
         \[
-        \nabla \hat{f}(\mathbf{x}) = \frac{1}{nh^{d+2}} \sum_{i=1}^{n} (\mathbf{x}_i - \mathbf{x}) K'\left(\frac{\|\mathbf{x} - \mathbf{x}_i\|}{h}\right)
+        \nabla \hat{f}(\mathbf{x}) = \frac{1}{nh^{d+2}} \sum_{i=1}^{n} (\mathbf{x} - \mathbf{x}_i) K'\left(\frac{\|\mathbf{x} - \mathbf{x}_i\|}{h}\right)
         \]
 
         \item Mean shift direction aligns with gradient
