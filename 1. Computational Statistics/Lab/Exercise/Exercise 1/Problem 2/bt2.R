@@ -1,6 +1,5 @@
-source("Ex1/teacher_code/kernel_reg.R")
-source("Ex1/kernel.R") 
-
+source("Exercise/Exercise 1/Problem 2/kernel.R") 
+source("Exercise/Exercise 1/teacher_code/kernel_reg.R") 
 # func
 cv_gcv_func <- function(x, y, h, type = "both", kernel = "gaussian") { # type = "CV", "GCV" or "both"
   n <- length(x)
