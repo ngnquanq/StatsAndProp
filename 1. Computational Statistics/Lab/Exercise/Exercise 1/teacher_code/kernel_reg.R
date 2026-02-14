@@ -1,5 +1,5 @@
 # load kernel functions ----
-source(file = "Ex1/kernel.R")
+source(file = "Exercise/Exercise 1/Problem 2/kernel.R")
 
 # Kernel regression ----
 kernel_reg <- function(x, y, x_eval, h, kernel = "gauss") {
