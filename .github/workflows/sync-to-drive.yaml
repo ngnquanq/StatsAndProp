@@ -1,0 +1,88 @@
+name: Sync to Google Drive
+
+# Only triggers on push to main — never on pull_request.
+# This is a security boundary: pull_request events from forks can
+# access workflow code but NOT repository secrets. By using push-only,
+# we avoid any ambiguity about secret exposure.
+on:
+  push:
+    branches:
+      - main
+      # To sync all branches instead, replace the above with:
+      # - '**'
+
+# Least-privilege: workflow only needs to read repo contents.
+# This prevents a compromised step from pushing code, creating releases, etc.
+permissions:
+  contents: read
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout repository
+        # PIN TO FULL SHA — tags can be force-pushed by upstream
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683  # v4.2.2
+
+      - name: Install rclone
+        run: |
+          curl -fsSL https://rclone.org/install.sh | sudo bash
+          rclone version
+
+      - name: Write service account key to secure temp file
+        env:
+          GOOGLE_SA_KEY: ${{ secrets.GOOGLE_SA_KEY }}
+        run: |
+          # Create temp file with restrictive permissions from the start
+          SA_KEY_PATH=$(mktemp /tmp/sa-key-XXXXXX.json)
+          chmod 600 "$SA_KEY_PATH"
+          echo "$GOOGLE_SA_KEY" > "$SA_KEY_PATH"
+
+          # Mask the temp file path so it doesn't appear in logs
+          echo "::add-mask::$SA_KEY_PATH"
+
+          # Export path for subsequent steps
+          echo "SA_KEY_PATH=$SA_KEY_PATH" >> "$GITHUB_ENV"
+
+      - name: Configure rclone
+        env:
+          GDRIVE_FOLDER_ID: ${{ secrets.GDRIVE_FOLDER_ID }}
+        run: |
+          mkdir -p ~/.config/rclone
+          chmod 700 ~/.config/rclone
+
+          cat > ~/.config/rclone/rclone.conf <<EOF
+          [gdrive]
+          type = drive
+          scope = drive.file
+          service_account_file = ${SA_KEY_PATH}
+          root_folder_id = ${GDRIVE_FOLDER_ID}
+          EOF
+
+          chmod 600 ~/.config/rclone/rclone.conf
+
+      - name: Sync repo to Google Drive
+        run: |
+          rclone sync . gdrive: \
+            --include "*.pdf" \
+            --include "*.png" \
+            --include "*.jpeg" \
+            --include "*.jpg" \
+            --exclude "*" \
+            --log-level NOTICE \
+            --stats-log-level NOTICE
+
+      # CRITICAL: Always clean up credential files, even if any step above fails
+      - name: Cleanup credentials
+        if: always()
+        run: |
+          # Overwrite then delete the SA key file
+          if [ -f "$SA_KEY_PATH" ]; then
+            shred -u "$SA_KEY_PATH" 2>/dev/null || rm -f "$SA_KEY_PATH"
+          fi
+          # Remove rclone config which contains the folder ID
+          if [ -f ~/.config/rclone/rclone.conf ]; then
+            shred -u ~/.config/rclone/rclone.conf 2>/dev/null || rm -f ~/.config/rclone/rclone.conf
+          fi
