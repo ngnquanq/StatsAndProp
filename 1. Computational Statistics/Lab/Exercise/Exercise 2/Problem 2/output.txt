@@ -1,0 +1,24 @@
+Câu (a): CI 95%
+
+[Ung thư dạ dày]
+  Percentile: [ 3.218876 7.013915 ]
+  BCa       : [ 3.218876 7.013915 ]
+
+[Ung thư vú]
+  Percentile: [ 3.178054 8.244859 ]
+  BCa       : [ 3.178054 7.061334 ]
+
+Cau (b): Permutation Test
+t_diff (stomach - breast) = -1.590684 
+p-value =  0.0149 
+chon alpha = 0.05 -> p-value =  0.0149 
+bac bo H0
+
+Cau (c): CI 95% cho mean thoi gian song (breast)
+
+Percentile tren log(x) -> exp(): [ 24 3808 ]
+Percentile tren du lieu goc    : [ 24 3808 ]
+BCa tren log(x) tu cau (a) -> exp(): [ 24 1166 ]
+
+
+nhận xét: Cả hai phương pháp percentile đều cho CI rộng hơn đáng kể so với BCa. Phương pháp BCa trong câu (a) là đáng tin cậy nhất vì kết hợp hai ưu điểm: làm việc trên log scale để phân phối gần chuẩn hơn và hiệu chỉnh bias + skewness.

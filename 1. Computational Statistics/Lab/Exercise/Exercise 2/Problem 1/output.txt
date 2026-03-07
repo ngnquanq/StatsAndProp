@@ -1,0 +1,36 @@
+Ước lượng điểm cho mức dân số ổn định khi R = S là: 150.0976 (nghìn con cá)
+--- CÁCH 1: Bootstrap dữ liệu ---
+Sai số chuẩn (SE): 3.593523 
+Khoảng tin cậy Percentile 95%:
+I(1/spawners) I(1/spawners) 
+     143.3516      157.6919 
+
+--- CÁCH 2: Residual-based bootstrap ---
+Sai số chuẩn (SE): 3.756212 
+Khoảng tin cậy Percentile 95%:
+    2.5%    97.5% 
+143.3045 157.9070 
+
+--- CÁCH 1: Data Bootstrap (BCa) ---
+[1] -0.010556406  0.002506631
+Khoảng tin cậy BCa 95%:
+I(1/spawners) I(1/spawners) 
+     143.1108      157.3393 
+
+--- CÁCH 2: Residual Bootstrap (BCa) ---
+Hệ số gia tốc (a): -0.010556, Hệ số chệch (z0): -0.025069
+Khoảng tin cậy BCa 95%:
+[1] 142.8895 157.2769
+
+=========================================
+CÂU (d): KHOẢNG TIN CẬY STUDENTIZED 95%
+
+--- CÁCH 1: Data Bootstrap (Studentized) ---
+Khoảng tin cậy Studentized 95%:
+   97.5%     2.5% 
+143.1297 157.5284 
+
+--- CÁCH 2: Residual Bootstrap (Studentized) ---
+Khoảng tin cậy Studentized 95%:
+   97.5%     2.5% 
+142.1329 158.8891 
