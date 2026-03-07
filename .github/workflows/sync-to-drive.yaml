@@ -31,23 +31,11 @@ jobs:
           curl -fsSL https://rclone.org/install.sh | sudo bash
           rclone version
 
-      - name: Write service account key to secure temp file
-        env:
-          GOOGLE_SA_KEY: ${{ secrets.GOOGLE_SA_KEY }}
-        run: |
-          # Create temp file with restrictive permissions from the start
-          SA_KEY_PATH=$(mktemp /tmp/sa-key-XXXXXX.json)
-          chmod 600 "$SA_KEY_PATH"
-          echo "$GOOGLE_SA_KEY" > "$SA_KEY_PATH"
-
-          # Mask the temp file path so it doesn't appear in logs
-          echo "::add-mask::$SA_KEY_PATH"
-
-          # Export path for subsequent steps
-          echo "SA_KEY_PATH=$SA_KEY_PATH" >> "$GITHUB_ENV"
-
       - name: Configure rclone
         env:
+          GDRIVE_CLIENT_ID: ${{ secrets.GDRIVE_CLIENT_ID }}
+          GDRIVE_CLIENT_SECRET: ${{ secrets.GDRIVE_CLIENT_SECRET }}
+          GDRIVE_TOKEN: ${{ secrets.GDRIVE_TOKEN }}
           GDRIVE_FOLDER_ID: ${{ secrets.GDRIVE_FOLDER_ID }}
         run: |
           mkdir -p ~/.config/rclone
@@ -57,20 +45,23 @@ jobs:
           [gdrive]
           type = drive
           scope = drive.file
-          service_account_file = ${SA_KEY_PATH}
+          client_id = ${GDRIVE_CLIENT_ID}
+          client_secret = ${GDRIVE_CLIENT_SECRET}
+          token = ${GDRIVE_TOKEN}
           root_folder_id = ${GDRIVE_FOLDER_ID}
           EOF
 
           chmod 600 ~/.config/rclone/rclone.conf
 
-      - name: Sync repo to Google Drive
+      - name: Copy new files to Google Drive
         run: |
-          rclone sync . gdrive: \
+          rclone copy . gdrive: \
             --include "*.pdf" \
             --include "*.png" \
             --include "*.jpeg" \
             --include "*.jpg" \
             --exclude "*" \
+            --ignore-existing \
             --log-level NOTICE \
             --stats-log-level NOTICE
 
@@ -78,11 +69,7 @@ jobs:
       - name: Cleanup credentials
         if: always()
         run: |
-          # Overwrite then delete the SA key file
-          if [ -f "$SA_KEY_PATH" ]; then
-            shred -u "$SA_KEY_PATH" 2>/dev/null || rm -f "$SA_KEY_PATH"
-          fi
-          # Remove rclone config which contains the folder ID
+          # Remove rclone config which contains OAuth2 tokens and folder ID
           if [ -f ~/.config/rclone/rclone.conf ]; then
             shred -u ~/.config/rclone/rclone.conf 2>/dev/null || rm -f ~/.config/rclone/rclone.conf
           fi
