@@ -7,7 +7,7 @@ name: Sync to Google Drive
 on:
   push:
     branches:
-      - main
+      - master
       # To sync all branches instead, replace the above with:
       # - '**'
 
