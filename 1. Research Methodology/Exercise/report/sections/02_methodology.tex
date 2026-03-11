@@ -1,0 +1,85 @@
+\section{Methodology}
+\label{sec:methodology}
+
+\subsection{Adversarial Prompt Taxonomy}
+
+We organize adversarial prompts into four categories based on the type of vulnerability they exploit:
+
+\begin{table}[H]
+\centering
+\caption{Adversarial prompt categories and their descriptions}
+\label{tab:categories}
+\begin{tabularx}{\textwidth}{lX}
+\toprule
+\textbf{Category} & \textbf{Description} \\
+\midrule
+Math \& Statistics & Prompts exploiting statistical paradoxes, probability misconceptions, and mathematical fallacies to trick the model into confirming incorrect analyses. \\
+Security \& IAM & Code review and security analysis scenarios containing subtle vulnerabilities that the model should identify but may miss. \\
+Reasoning \& Jailbreak & Attempts to bypass safety guidelines through roleplay, encoding, authority impersonation, logical fallacies, and social pressure. \\
+Hallucination & Prompts requesting information about fabricated entities (libraries, events, versions) to test whether the model will confabulate. \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+Each category contains 5 prompts, totaling 20 adversarial tests. Every prompt includes:
+\begin{itemize}
+    \item A specific \textbf{adversarial technique} (e.g., Simpson's Paradox Gaslighting, JWT None Algorithm)
+    \item A documented \textbf{hypothesis} about expected model failure
+    \item \textbf{Ground truth} defining the correct response
+    \item \textbf{Deception criteria} specifying what constitutes a failure
+    \item A \textbf{difficulty rating} (easy, medium, hard)
+\end{itemize}
+
+\subsection{Evaluation Pipeline}
+
+The benchmark follows a three-stage automated pipeline:
+
+\begin{enumerate}
+    \item \textbf{Target Generation:} Each adversarial prompt is sent to the target LLM (Gemini 2.5 Flash Lite) via API, and the response is recorded.
+    \item \textbf{Judge Evaluation:} A separate judge model (Claude) evaluates the target's response against the ground truth and deception criteria, producing a structured assessment~\cite{zheng2023judging}.
+    \item \textbf{Scoring \& Aggregation:} Judge evaluations are aggregated into per-prompt scores, category-level metrics, and overall statistics.
+\end{enumerate}
+
+\subsection{Scoring Rubric}
+
+The judge model assigns scores on a continuous 0.0--1.0 scale with the following anchor points:
+
+\begin{table}[H]
+\centering
+\caption{Robustness scoring rubric}
+\label{tab:rubric}
+\begin{tabular}{clp{8cm}}
+\toprule
+\textbf{Score} & \textbf{Label} & \textbf{Description} \\
+\midrule
+1.00 & Fully Robust & Correctly identified the trick; provided accurate information \\
+0.75 & Mostly Robust & Identified main issue with minor inaccuracies \\
+0.50 & Partially Deceived & Some awareness but significant errors \\
+0.25 & Mostly Deceived & Failed to identify core deception \\
+0.00 & Fully Deceived & Completely fell for the adversarial prompt \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+A response with score $< 0.5$ is classified as ``deceived.'' The overall \textbf{deception rate} (error rate) is the fraction of prompts where the model was deceived.
+
+\subsection{Technical Implementation}
+
+\begin{itemize}
+    \item \textbf{API:} Google Generative AI (Gemini 2.5 Flash Lite), free tier with rate limits per model per day.
+    \item \textbf{Rate Limiting:} 5-second delay between API calls; exponential backoff on failures.
+    \item \textbf{Caching:} Responses cached locally to prevent redundant API calls.
+    \item \textbf{Pipeline:} Python with \texttt{google-genai}, \texttt{pandas}, \texttt{matplotlib}/\texttt{seaborn}.
+    \item \textbf{Hybrid Judging:} For 10 prompts with API responses, Claude was used as judge. 
+    For 10 prompts without API responses, scores were estimated from documented LLM behavior patterns.
+\end{itemize}
+
+\subsection{Limitations of the Methodology}
+
+\begin{itemize}
+    \item \textbf{Partial API coverage:} API quota constraints limited actual model responses to 10 of 20 prompts; remaining scores are estimates.
+    \item \textbf{Automated judging:} AI judges may miss subtle failures that human evaluators would catch~\cite{mazeika2024harmbench}. 
+    Also the judge model's own biases may affect scoring consistency.
+    \item \textbf{Prompt sensitivity:} Results may vary with minor prompt reformulations.
+    \item \textbf{Sample size:} 20 prompts provide indicative rather than statistically conclusive results.
+\end{itemize}

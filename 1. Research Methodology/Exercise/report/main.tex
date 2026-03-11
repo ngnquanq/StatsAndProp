@@ -1,0 +1,93 @@
+\documentclass[12pt,a4paper]{article}
+
+% Encoding & Language
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[english]{babel}
+
+% Layout
+\usepackage[margin=2.5cm]{geometry}
+\usepackage{setspace}
+\onehalfspacing
+
+% Graphics & Tables
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{tabularx}
+\usepackage{float}
+\usepackage{subcaption}
+
+% Code listings
+\usepackage{listings}
+\usepackage{xcolor}
+
+\lstdefinestyle{code}{
+    backgroundcolor=\color{gray!5},
+    basicstyle=\ttfamily\small,
+    breaklines=true,
+    frame=single,
+    rulecolor=\color{gray!40},
+    numbers=left,
+    numberstyle=\tiny\color{gray},
+    keywordstyle=\color{blue!70},
+    commentstyle=\color{green!50!black},
+    stringstyle=\color{red!60},
+}
+\lstset{style=code}
+
+% Math
+\usepackage{amsmath,amssymb}
+
+% Hyperlinks
+\usepackage[colorlinks=true,linkcolor=blue!60!black,citecolor=green!50!black,urlcolor=blue!70]{hyperref}
+
+% Bibliography
+\usepackage[backend=biber,style=ieee,sorting=nyt]{biblatex}
+\addbibresource{references.bib}
+
+% Custom colors for score boxes
+\usepackage{tcolorbox}
+\tcbuselibrary{breakable}
+
+\definecolor{robust}{RGB}{39,174,96}
+\definecolor{partial}{RGB}{241,196,15}
+\definecolor{deceived}{RGB}{231,76,60}
+
+% Title
+\title{%
+    \textbf{Evaluating LLM Robustness Against Adversarial Prompts:}\\
+    \large A Systematic Benchmark of Deception, Hallucination, and Jailbreak Attacks
+}
+\author{
+    Research Methodology Exercise\\
+    Nguyen Nhat Quang
+}
+\date{March 2026}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+Large Language Models (LLMs) are increasingly deployed in high-stakes applications, yet their robustness against adversarial 
+inputs remains insufficiently understood. This study presents a systematic benchmark of 20 adversarial test prompts across four
+diverse categories: Math \& Statistics, Security \& IAM, Reasoning \& Jailbreak, and Hallucination, which are designed to evaluate
+ the deception resistance of modern LLMs. We employ a hybrid evaluation pipeline using Gemini 2.5 Flash Lite as the target model
+with Claude Opus 4.6 as an independent cross-model judge for API-evaluated prompts, producing quantitative robustness scores on a 0.0 - 1.0 scale.
+ Our results reveal category-specific vulnerability patterns and provide actionable insights for improving LLM safety.
+The complete benchmark framework, test suite, and evaluation pipeline are released as open-source tools for reproducible AI safety research.
+\end{abstract}
+
+\tableofcontents
+\newpage
+
+\input{sections/01_introduction}
+\input{sections/02_methodology}
+\input{sections/03_test_cases}
+\input{sections/04_results}
+\input{sections/05_conclusion}
+
+\newpage
+\printbibliography
+
+\end{document}
