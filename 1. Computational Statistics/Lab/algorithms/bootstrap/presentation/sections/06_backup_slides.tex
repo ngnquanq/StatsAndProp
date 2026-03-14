@@ -1,0 +1,119 @@
+% ============================================================
+% Section 6: Backup Slides (Optional)
+% ============================================================
+
+\begin{frame}{Backup: Adaptive Bandwidth}
+    \textbf{Problem:} Fixed bandwidth may not fit all regions
+
+    \vspace{0.3cm}
+
+    \textbf{Solution:} Adaptive Mean Shift
+    \[
+    h_i = h_0 \cdot \left(\frac{\hat{f}(\mathbf{x}_i)}{\text{geom\_mean}(\hat{f})}\right)^{-\alpha}
+    \]
+
+    \begin{itemize}
+        \item Smaller bandwidth in dense regions
+        \item Larger bandwidth in sparse regions
+        \item Parameter $\alpha$ controls adaptation strength
+    \end{itemize}
+
+    \vspace{0.5cm}
+
+    \textbf{Advantages:}
+    \begin{itemize}
+        \item Better handling of varying densities
+        \item More robust to bandwidth choice
+    \end{itemize}
+
+    \textbf{Disadvantages:}
+    \begin{itemize}
+        \item Additional parameter to tune ($\alpha$)
+        \item Increased computational cost
+    \end{itemize}
+\end{frame}
+
+\begin{frame}{Backup: Implementation Tips}
+    \textbf{Performance Optimizations:}
+    \begin{enumerate}
+        \item \textbf{Spatial indexing:} Use KD-trees for neighbor search
+        \begin{itemize}
+            \item Reduces complexity from $O(n^2)$ to $O(n \log n)$
+        \end{itemize}
+
+        \item \textbf{Binning:} Discretize space, compute shift on bins
+        \begin{itemize}
+            \item Trade accuracy for speed
+        \end{itemize}
+
+        \item \textbf{Early stopping:} Merge nearby modes
+        \begin{itemize}
+            \item Use threshold to merge modes within distance $\epsilon$
+        \end{itemize}
+
+        \item \textbf{Sampling:} Use subset for large datasets
+        \begin{itemize}
+            \item Cluster sample, then assign remaining points
+        \end{itemize}
+    \end{enumerate}
+
+    \vspace{0.5cm}
+
+    \textbf{R Implementation:}
+    \begin{itemize}
+        \item \texttt{MeanShift} package
+        \item \texttt{meanShiftR} (faster, C++ backend)
+        \item Custom implementation for learning
+    \end{itemize}
+\end{frame}
+
+\begin{frame}{Backup: Comparison with Other Methods}
+    \begin{table}
+        \centering
+        \small
+        \begin{tabular}{lcccc}
+            \toprule
+            \textbf{Algorithm} & \textbf{Clusters} & \textbf{Shape} & \textbf{Speed} & \textbf{Parameters} \\
+            \midrule
+            K-means & Predefined & Spherical & Fast & $k$ \\
+            DBSCAN & Automatic & Arbitrary & Medium & $\epsilon$, minPts \\
+            Mean Shift & Automatic & Arbitrary & Slow & $h$ \\
+            Hierarchical & Flexible & Arbitrary & Slow & Linkage, $k$ \\
+            Gaussian Mixture & Predefined & Elliptical & Medium & $k$ \\
+            \bottomrule
+        \end{tabular}
+    \end{table}
+
+    \vspace{0.5cm}
+
+    \textbf{Key Takeaway:}
+    \begin{itemize}
+        \item Mean Shift offers good balance of flexibility and simplicity
+        \item Best when cluster count is unknown and shapes are arbitrary
+        \item Speed is main limitation for large datasets
+    \end{itemize}
+\end{frame}
+
+\begin{frame}{Backup: Mathematical Details}
+    \textbf{Convergence Proof Sketch:}
+
+    \begin{enumerate}
+        \item Mean shift is gradient ascent on kernel density estimate
+        \item Gradient of KDE:
+        \[
+        \nabla \hat{f}(\mathbf{x}) = \frac{1}{nh^{d+2}} \sum_{i=1}^{n} (\mathbf{x}_i - \mathbf{x}) K'\left(\frac{\|\mathbf{x} - \mathbf{x}_i\|}{h}\right)
+        \]
+
+        \item Mean shift direction aligns with gradient
+        \item Converges to local mode (stationary point where $\nabla \hat{f} = 0$)
+    \end{enumerate}
+
+    \vspace{0.5cm}
+
+    \textbf{Convergence Rate:}
+    \begin{itemize}
+        \item Linear convergence near modes
+        \item Typically 10-50 iterations in practice
+        \item Depends on bandwidth and data structure
+    \end{itemize}
+\end{frame}
