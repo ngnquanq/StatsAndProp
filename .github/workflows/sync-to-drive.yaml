@@ -33,23 +33,21 @@ jobs:
 
       - name: Configure rclone
         env:
-          GDRIVE_SERVICE_ACCOUNT_JSON: ${{ secrets.GDRIVE_SERVICE_ACCOUNT_JSON }}
+          GDRIVE_CLIENT_ID: ${{ secrets.GDRIVE_CLIENT_ID }}
+          GDRIVE_CLIENT_SECRET: ${{ secrets.GDRIVE_CLIENT_SECRET }}
+          GDRIVE_TOKEN: ${{ secrets.GDRIVE_TOKEN }}
           GDRIVE_FOLDER_ID: ${{ secrets.GDRIVE_FOLDER_ID }}
         run: |
           mkdir -p ~/.config/rclone
           chmod 700 ~/.config/rclone
 
-          # Write service account key to a temp file
-          SA_FILE=$(mktemp)
-          echo "${GDRIVE_SERVICE_ACCOUNT_JSON}" > "${SA_FILE}"
-          chmod 600 "${SA_FILE}"
-          echo "SA_FILE=${SA_FILE}" >> "$GITHUB_ENV"
-
           cat > ~/.config/rclone/rclone.conf <<EOF
           [gdrive]
           type = drive
           scope = drive
-          service_account_file = ${SA_FILE}
+          client_id = ${GDRIVE_CLIENT_ID}
+          client_secret = ${GDRIVE_CLIENT_SECRET}
+          token = ${GDRIVE_TOKEN}
           root_folder_id = ${GDRIVE_FOLDER_ID}
           EOF
 
@@ -71,9 +69,7 @@ jobs:
       - name: Cleanup credentials
         if: always()
         run: |
+          # Remove rclone config which contains OAuth2 tokens and folder ID
           if [ -f ~/.config/rclone/rclone.conf ]; then
             shred -u ~/.config/rclone/rclone.conf 2>/dev/null || rm -f ~/.config/rclone/rclone.conf
-          fi
-          if [ -n "${SA_FILE}" ] && [ -f "${SA_FILE}" ]; then
-            shred -u "${SA_FILE}" 2>/dev/null || rm -f "${SA_FILE}"
           fi
