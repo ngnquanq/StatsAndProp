@@ -1,0 +1,82 @@
+\documentclass[12pt,a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[vietnamese]{babel}
+\usepackage{amsmath, amssymb, amsthm}
+\usepackage{geometry}
+\geometry{a4paper, margin=1in}
+
+\title{\textbf{Báo Cáo Bài Tập 3 - Thống Kê Tính Toán}}
+\author{}
+\date{\today}
+
+\begin{document}
+\maketitle
+
+\section*{Bài tập 1}
+\textbf{Đề bài:} Cho mẫu quan sát $(x_1, \dots, x_n)$ được tạo từ phân phối Student $t_3(m=2)$ (bậc tự do bằng 3, trung bình dịch chuyển 2). Tính kỳ vọng hậu nghiệm của tham số vị trí $\mu$ với giả định tiên nghiệm đều bằng phương pháp hình thang (Trapezoidal) và lấy mẫu tầm quan trọng (Importance Sampling).
+
+\textbf{Giải:}
+Hàm mật độ của phân phối Student theo tham số vị trí $\mu$ và bậc tự do $\nu=3$ tỉ lệ với:
+$$ f(x_i \mid \mu) \propto \left(1 + \frac{(x_i - \mu)^2}{3}\right)^{-2} \propto (3 + (x_i - \mu)^2)^{-2} $$
+Do đó, với tiên nghiệm đều $p(\mu) \propto 1$, phân bố hậu nghiệm của $\mu$ là:
+$$ \pi(\mu \mid X) = \frac{\prod_{i=1}^n (3 + (x_i - \mu)^2)^{-2}}{\int_{-\infty}^\infty \prod_{i=1}^n (3 + (x_i - \mu)^2)^{-2} \, d\mu} $$
+Kỳ vọng hậu nghiệm cần tính là $\mathbb{E}[\mu \mid X] = \frac{\int_{-\infty}^{\infty} \mu \, g(\mu) \, d\mu}{\int_{-\infty}^{\infty} g(\mu) \, d\mu}$ với $g(\mu) = \prod_{i=1}^n (3 + (x_i - \mu)^2)^{-2}$.
+
+\textbf{Phương pháp 1: Tích phân hình thang (Trapezoidal Rule)}
+Chúng ta tính xấp xỉ tích phân tử số và mẫu số trên một lưới các định chuẩn điểm $\mu$ (trải quanh trung bình mẫu $\bar{X}$). Tỉ số của tích phân tử số đối với mẫu số sẽ cho xấp xỉ kỳ vọng hậu nghiệm của tham số $\mu$.
+
+\textbf{Phương pháp 2: Lấy mẫu tầm quan trọng (Importance Sampling)}
+Ta chọn hàm lấy mẫu (proposal distribution) $q(\mu)$ là phân phối chuẩn $\mathcal{N}(\bar{X}, s^2)$ với trung bình $\bar{X}$ và phương sai $s^2$ từ dữ liệu quan sát.
+Trọng số (weight) của mỗi mẫu được tính bằng $w_i = \frac{g(\mu_i)}{q(\mu_i)}$, với mẫu lấy từ $\mu_i \sim \mathcal{N}(\bar{X}, s^2)$.
+Kỳ vọng hậu nghiệm được ước lượng:
+$$ \hat{\mu} = \frac{\sum_{i=1}^{M} \mu_i w_i}{\sum_{i=1}^{M} w_i} $$
+
+
+\section*{Bài tập 2}
+\textbf{Đề bài:} Ước lượng tích phân $I = \int_{1}^{+\infty} \frac{x^2}{\sqrt{2\pi}} e^{-\left(\frac{x^2}{2}\right)} \, dx$ bằng phương pháp lấy mẫu tầm quan trọng (Importance Sampling).
+
+\textbf{Giải:}
+Ta có thể chọn hàm $g(x)$ và $f(x)$:
+$$ g(x) = x^2 $$
+$$ f(x) = \frac{1}{\sqrt{2\pi}} e^{-\frac{x^2}{2}} $$
+Ta thấy $f(x)$ chính là hàm mật độ phân phối xác suất chuẩn $\mathcal{N}(0,1)$. Nhưng vì tích phân lấy trên miền $x \ge 1$, nếu dùng trực tiếp sinh mẫu từ phân phối này sẽ đánh dấu nhiều điểm vứt bỏ dẫn đến phương sai lớn.
+
+Ước lượng tích phân theo Importance Sampling thay bằng:
+$$ \hat{I}_{IS} = \frac{1}{n} \sum_{i=1}^{n} g(x_i) \frac{f(x_i)}{h(x_i)} $$
+Trong đó, chọn hàm $h(x)$ thoả mãn các tiêu chuẩn:
+\begin{enumerate}
+    \item $h(x)$ là hàm mật độ xác suất, nghĩa là (1): $\int_{1}^{+\infty} h(x) \, dx = 1$.
+    \item $\frac{f(x)}{h(x)} < \infty$.
+    \item $h(x)$ có đuôi nặng hơn $f(x)$.
+\end{enumerate}
+
+Để thỏa mãn điều kiện (1), ta có thể chọn $h(x) = a e^{-ax + a}$:
+$$ \int_{1}^{+\infty} h(x) \, dx = e^a \int_{1}^{+\infty} a e^{-ax} \, dx = \left[ -e^{-ax} \right]_{1}^{+\infty} e^a = - \left( \frac{1}{e^{+\infty}} - \frac{1}{e^a} \right) e^a = \frac{1}{e^a} \cdot e^a = 1 $$
+
+Nếu ta chọn $a=1$, hàm trở thành $h(x) = e^{-x+1}$.
+Với giá trị $x \ge 1$, mô phỏng bằng $h(x)$ sinh ra nhiều giá trị chỉ nằm tập trung ở đầu chuỗi (VD $x-1$ trong khoảng $[0,1]$).
+
+Do đó, chọn tham số giãn cách dạng $a = \frac{1}{n}$:
+$$ h(x) = \frac{1}{n} e^{-\frac{x}{n} + \frac{1}{n}} $$
+Ta thấy thao tác này sinh ra đồ thị mẫu tốt hơn so với $a=1$, đem lại phương sai xấp xỉ nhỏ hơn tốt hơn, và hoàn toàn phù hợp với lý thuyết thực hành. Ở bài tập này, giá trị sinh mẫu tối ưu được gợi ý để chọn là $a = \frac{1}{3}$.
+
+
+\section*{Bài tập 3}
+\textbf{Đề bài:} Xét hàm $h(x) = e^{-|x|^3/3}$. Hãy xấp xỉ tỷ số tích phân (chính là bình phương kỳ vọng $\mathbb{E}[X^2]$) giữa của $x^2 h(x)$ và $h(x)$ bằng Importance Sampling và tổng Riemann. So sánh kết quả ước lượng.
+
+\textbf{Câu 3a: Tính bằng Importance Sampling qua phép biến đổi giải tích}
+Ta có tỷ số nguyên thủy $\frac{\int_{-\infty}^{\infty} x^2 e^{-|x|^3/3} dx}{\int_{-\infty}^{\infty} e^{-|x|^3/3} dx} = \frac{\int_{0}^{\infty} x^2 e^{-x^3/3} dx}{\int_{0}^{\infty} e^{-x^3/3} dx}$.
+Biến đổi trên tử số bằng phép chèn $u = x^3/3 \implies du = x^2 dx$, tích phân quy về $\int_0^\infty e^{-u} du = 1$.
+Ở mẫu số, ta đổi qua biến $t = x^3 \implies dx = \frac{1}{3}t^{-2/3} dt$:
+$$ \int_0^\infty e^{-x^3/3} dx = \int_0^\infty e^{-t/3} \frac{1}{3}t^{-2/3} dt = \mathbb{E}_{T \sim \text{Exp}(1/3)} [T^{-2/3}] $$
+Giá trị cần tìm chính là $\frac{1}{\mathbb{E}[T^{-2/3}]}$. Ta tạo $N$ mẫu $t_i \sim \text{Exp}(1/3)$, ước lượng mẫu số qua trung bình các điểm $t_i^{-2/3}$. Kết quả chuẩn đánh giá theo hàm tỉ trọng lý thuyết là $\frac{3^{2/3}}{\Gamma(1/3)}$.
+
+\textbf{Câu 3b: Tính theo tổng Riemann với mẫu lấy lưới ngẫu nhiên}
+Tính xấp xỉ tổng thông qua không gian đối xứng chặn trên miền lưới $[-5, 5]$.
+Khởi tạo $N$ điểm $x_i$ phân bố đều theo Uniform trên $[-5, 5]$ và sắp xếp tăng dần. Lưới bước nhảy tại $i$ là $\Delta x_i = x_{i+1} - x_i$.
+Tính tổng diện tích Riemann bằng tử $\sum (x_i^2) \Delta x_i \, h(x_i)$ và mẫu $\sum \Delta x_i \, h(x_i)$. Tỷ số sẽ trả về kết quả số của hàm xấp xỉ.
+
+\textbf{Câu 3c: So sánh mức hội tụ của hai phương pháp mô phỏng}
+Biên so sánh chu chuỗi $M$ vòng lặp thử ngẫu nhiên giữa 2 hàm 3a (Importance Sampling quy về kỳ vọng) và hàm 3b (Riemann sum). Phương sai đánh giá cho thấy xấp xỉ của Monte Carlo Importance Sampling đem lại hiệu suất biến thiên $\text{Var}(\hat{I})$ nhỏ hơn rõ rệt (do hàm proposal phân bố tương đồng chặt chẽ với mật độ và tận dụng phép biến đổi), xác nhận hiệu năng sử dụng ổn định hơn tổng lưới giới hạn mẫu ngẫu nhiên.
+
+\end{document}
