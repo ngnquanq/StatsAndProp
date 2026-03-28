@@ -1,0 +1,495 @@
+\documentclass[8pt,a4paper]{article}
+
+% --- Packages ---
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[vietnamese]{babel}
+\usepackage{amsmath, amssymb, amsthm}
+\usepackage{mathtools}
+\usepackage{enumitem}
+\usepackage{hyperref}
+\usepackage{geometry}
+\geometry{
+  a4paper,
+  left=3.5cm,
+  right=3.5cm,
+  bottom=4cm,
+  top=2.5cm
+}
+
+% --- Environments ---
+\newtheorem{exercise}{Bài tập}
+\newenvironment{solution}{\begin{proof}[Lời giải]}{\end{proof}}
+
+% --- Custom commands ---
+\newcommand{\prob}{\mathbb{P}}
+\newcommand{\E}{\mathbb{E}}
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\N}{\mathbb{N}}
+\newcommand{\Var}{\operatorname{Var}}
+
+% --- Title ---
+\title{Data Reduction: Exercises and Solutions (Chapter 6)}
+\author{Quang Nguyen}
+\date{\today}
+
+\begin{document}
+\maketitle
+
+\section*{Chương 6: Nguyên lý Giảm dữ liệu (Data Reduction)}
+
+\begin{exercise}[6.1]
+Cho $X$ là một quan sát từ quần thể $n(0, \sigma^2)$. $X$ có phải là thống kê đủ (Sufficient Statistic) không?
+\end{exercise}
+
+\begin{solution}
+\textbf{A. Motivation:} Trong bảo mật hệ thống (Security), việc giữ lại toàn bộ log nguyên bản (raw logs) luôn đảm bảo tính đủ thông tin, nhưng không tối ưu. Thống kê đủ đóng vai trò như một bộ lọc không làm mất thông tin về tham số cần ước lượng.
+
+\textbf{B. Mathematical Detail:}
+Hàm mật độ của $X$ là:
+\[ f(x|\sigma^2) = \frac{1}{\sqrt{2\pi\sigma^2}} \exp\left(-\frac{x^2}{2\sigma^2}\right) \]
+Theo định lý phân rã (Fisher-Neyman Factorization Theorem), một thống kê $T(X)$ là đủ cho $\theta$ nếu $f(x|\theta) = g(T(x)|\theta)h(x)$.
+Ở đây, ta có thể viết:
+\[ f(x|\sigma^2) = \underbrace{\frac{1}{\sqrt{2\pi\sigma^2}} \exp\left(-\frac{x^2}{2\sigma^2}\right)}_{g(x|\sigma^2)} \cdot \underbrace{1}_{h(x)} \]
+Vì $X$ là một hàm của chính nó (identity function), nên $X$ hiển nhiên là một thống kê đủ. Tuy nhiên, lưu ý rằng $|X|$ hoặc $X^2$ mới là thống kê đủ tối tiểu (Minimal Sufficient) vì dấu của $X$ không chứa thông tin về $\sigma^2$.
+
+\textbf{C. Engineering Context:} Việc sử dụng $X$ giống như việc lưu toàn bộ ciphertext khi chỉ cần biết độ dài của nó để phân tích traffic pattern.
+\end{solution}
+
+\begin{exercise}[6.2]
+Cho $X_1, \dots, X_n$ là các biến ngẫu nhiên độc lập với hàm mật độ:
+\[ f_{X_i}(x|\theta) = \begin{cases} e^{i\theta-x} & x \ge i\theta \\ 0 & x < i\theta \end{cases} \]
+Chứng minh rằng $T = \min_i(X_i/i)$ là thống kê đủ cho $\theta$.
+\end{exercise}
+
+\begin{solution}
+Hàm mật độ chung (Joint PDF) của mẫu là:
+\[ f(\mathbf{x}|\theta) = \prod_{i=1}^n e^{i\theta-x_i} \mathbb{I}(x_i \ge i\theta) = e^{\theta \sum i - \sum x_i} \prod_{i=1}^n \mathbb{I}\left(\frac{x_i}{i} \ge \theta\right) \]
+Sử dụng tính chất của hàm chỉ thị (Indicator function): $\prod \mathbb{I}(x_i/i \ge \theta) = \mathbb{I}(\min_i(x_i/i) \ge \theta)$.
+Khi đó:
+\[ f(\mathbf{x}|\theta) = \left[ e^{\theta \sum i} \mathbb{I}(\min(x_i/i) \ge \theta) \right] \cdot \left[ e^{-\sum x_i} \right] \]
+Đặt $g(T(\mathbf{x})|\theta) = e^{\theta \sum i} \mathbb{I}(T \ge \theta)$ và $h(\mathbf{x}) = e^{-\sum x_i}$.
+Theo định lý phân rã, $T = \min_i(X_i/i)$ là thống kê đủ cho $\theta$.
+\end{solution}
+
+\begin{exercise}[6.3]
+Tìm thống kê đủ 2 chiều cho $(\mu, \sigma)$ từ mẫu ngẫu nhiên có PDF:
+\[ f(x|\mu, \sigma) = \frac{1}{\sigma} e^{-(x-\mu)/\sigma}, \quad \mu < x < \infty, \sigma > 0 \]
+\end{exercise}
+
+\begin{solution}
+Đây là phân phối Exponential có tham số dịch chuyển (shifted). Likelihood function là:
+\[ L(\mu, \sigma | \mathbf{x}) = \frac{1}{\sigma^n} \exp\left( -\frac{\sum x_i - n\mu}{\sigma} \right) \mathbb{I}(\min x_i > \mu) \]
+Phân rã thành:
+\[ L(\mu, \sigma | \mathbf{x}) = \underbrace{\frac{1}{\sigma^n} \exp\left( \frac{n\mu}{\sigma} \right) \exp\left( -\frac{\sum x_i}{\sigma} \right) \mathbb{I}(x_{(1)} > \mu)}_{g(\sum X_i, X_{(1)} | \mu, \sigma)} \cdot \underbrace{1}_{h(\mathbf{x})} \]
+Vậy $T(\mathbf{X}) = \left( \sum_{i=1}^n X_i, X_{(1)} \right)$ là thống kê đủ 2 chiều. Trong thực tế, bộ đôi $(\bar{X}, X_{(1)})$ thường được dùng hơn.
+\end{solution}
+
+\begin{exercise}[6.5]
+Cho $X_i$ độc lập với PDF $f(x_i|\theta) = \frac{1}{2i\theta}$ trên khoảng $-i(\theta-1) < x_i < i(\theta+1)$. Tìm thống kê đủ 2 chiều cho $\theta$.
+\end{exercise}
+
+\begin{solution}
+Điều kiện của $x_i$: 
+$ -i\theta + i < x_i < i\theta + i \iff -i\theta < x_i - i < i\theta \iff |x_i - i| < i\theta \iff \frac{|x_i - i|}{i} < \theta$.
+Joint PDF:
+\[ f(\mathbf{x}|\theta) = \prod_{i=1}^n \frac{1}{2i\theta} \mathbb{I}\left( \frac{|x_i - i|}{i} < \theta \right) = \frac{1}{2^n (\prod i) \theta^n} \mathbb{I}\left( \max_i \frac{|x_i - i|}{i} < \theta \right) \]
+Theo định lý phân rã, $T(\mathbf{X}) = \max_i \frac{|X_i - i|}{i}$ là thống kê đủ. Tuy nhiên, đề bài yêu cầu thống kê 2 chiều. Ta có thể chọn $T(\mathbf{X}) = (X_{(1)}, X_{(n)})$ hoặc bất kỳ cặp nào chứa thông tin của cực trị. Thực tế, thống kê đủ tối tiểu ở đây chỉ cần 1 chiều. 
+\end{solution}
+
+\begin{exercise}[6.8]
+Chứng minh rằng đối với họ phân phối vị trí (location family) $f(x-\theta)$, thống kê thứ tự $T = (X_{(1)}, \dots, X_{(n)})$ là đủ và không thể giảm thêm (minimal).
+\end{exercise}
+
+\begin{solution}
+\textbf{A. Motivation:} Trong hệ thống Identity Management, việc sắp xếp các mốc thời gian truy cập (logs) giúp xác định pattern mà không cần quan tâm đến ID cụ thể của từng sự kiện đơn lẻ.
+
+\textbf{B. Mathematical Detail:}
+Hàm Likelihood: $L(\theta|\mathbf{x}) = \prod f(x_i - \theta)$. 
+Tỷ số Likelihood cho hai mẫu $\mathbf{x}$ và $\mathbf{y}$:
+\[ \frac{L(\theta|\mathbf{x})}{L(\theta|\mathbf{y})} = \frac{\prod f(x_i - \theta)}{\prod f(y_i - \theta)} \]
+Để tỷ số này độc lập với $\theta$, tập các giá trị $\{x_i - \theta\}$ phải trùng với $\{y_i - \theta\}$ dưới một phép hoán vị. Điều này dẫn đến việc các khoảng cách giữa các thống kê thứ tự phải bằng nhau. Với một hàm $f$ tổng quát, không có cấu trúc đặc biệt (như Exponential family), ta không thể gộp các quan sát lại mà không mất thông tin, ngoại trừ việc sắp xếp chúng. Do đó, $(X_{(1)}, \dots, X_{(n)})$ là tối tiểu.
+\end{solution}
+% --- Tiếp nối từ Exercise 6.8 ---
+
+\begin{exercise}[6.9]
+Tìm thống kê đủ tối tiểu (Minimal Sufficient Statistic) cho $\theta$ từ mẫu ngẫu nhiên $X_1, \dots, X_n$ của các phân phối sau:
+(a) Normal $(\theta, 1)$, (b) Location Exponential, (c) Logistic, (d) Cauchy, (e) Double Exponential[cite: 34, 42, 46, 47, 48].
+\end{exercise}
+
+\begin{solution}
+\textbf{A. Motivation:} Trong kỹ thuật nén dữ liệu (Data Compression), mục tiêu là tìm được biểu diễn ngắn gọn nhất mà không làm mất thông tin (Lossless). Thống kê đủ tối tiểu chính là "tỷ lệ nén" tối ưu nhất cho một mô hình thống kê[cite: 11, 265].
+
+\textbf{B. Mathematical Detail:}
+Sử dụng Định lý 6.2.13: $T(\mathbf{x})$ là tối tiểu nếu tỷ số $f(\mathbf{x}|\theta)/f(\mathbf{y}|\theta)$ độc lập với $\theta$ khi và chỉ khi $T(\mathbf{x}) = T(\mathbf{y})$[cite: 110].
+
+\begin{itemize}
+    \item \textbf{(a) Normal $(\theta, 1)$}: Tỷ số $\propto \exp(\theta(\sum x_i - \sum y_i))$. Độc lập với $\theta$ khi $\sum x_i = \sum y_i$. Vậy $T(\mathbf{X}) = \sum X_i$ là tối tiểu[cite: 117].
+    \item \textbf{(b) Location Exponential}: $f(\mathbf{x}|\theta) = e^{-\sum (x_i - \theta)} \mathbb{I}(x_{(1)} \ge \theta)$. Tỷ số $\frac{e^{n\theta} \mathbb{I}(x_{(1)} \ge \theta)}{e^{n\theta} \mathbb{I}(y_{(1)} \ge \theta)}$ độc lập với $\theta$ khi $x_{(1)} = y_{(1)}$. Vậy $T(\mathbf{X}) = X_{(1)}$[cite: 42, 45].
+    \item \textbf{(c, d, e) Logistic, Cauchy, Double Exponential}: Các phân phối này không thuộc họ Exponential Family chính tắc. Tỷ số Likelihood thường không triệt tiêu được $\theta$ trừ khi tập các thống kê thứ tự $(X_{(1)}, \dots, X_{(n)})$ là như nhau. Do đó, thống kê đủ tối tiểu chính là $T(\mathbf{X}) = (X_{(1)}, \dots, X_{(n)})$[cite: 31, 117, 131].
+\end{itemize}
+
+\textbf{C. Engineering Context:} Với các phân phối có đuôi nặng (heavy-tailed) như Cauchy, ta không thể "tóm tắt" dữ liệu vào một con số đơn giản như trung bình cộng mà phải giữ lại toàn bộ cấu trúc sắp xếp của các sự kiện (Order Statistics) để đảm bảo tính chính xác cho các bài toán ước lượng Robust[cite: 31, 47].
+\end{solution}
+
+\begin{exercise}[6.10]
+Chứng minh rằng thống kê đủ tối tiểu cho phân phối Uniform $(\theta, \theta+1)$ là không đầy đủ (not complete)[cite: 49].
+\end{exercise}
+
+\begin{solution}
+\textbf{A. Motivation:} Một thống kê có thể chứa "rác" (noise) – thông tin không phụ thuộc vào tham số $\theta$. Nếu ta tìm được một hàm của thống kê đủ có kỳ vọng bằng 0 với mọi $\theta$, điều đó chứng tỏ thống kê đó vẫn còn dư thừa thông tin (Ancillary component)[cite: 242, 258].
+
+\textbf{B. Mathematical Detail:}
+Thống kê đủ tối tiểu là $T = (X_{(1)}, X_{(n)})$[cite: 49].
+Xét hàm $h(T) = X_{(n)} - X_{(1)}$. Đây là Range của mẫu. 
+Vì đây là họ vị trí (location family), Range $R = X_{(n)} - X_{(1)}$ là một thống kê phụ trợ (Ancillary), nghĩa là phân phối của nó không phụ thuộc vào $\theta$.
+Do đó, $E_\theta[X_{(n)} - X_{(1)}]$ là một hằng số $C \neq 0$ không phụ thuộc vào $\theta$.
+Đặt $g(T) = X_{(n)} - X_{(1)} - C$. Ta có $E_\theta[g(T)] = 0$ với mọi $\theta$, nhưng $g(T)$ không bằng 0 hầu khắp nơi. 
+Vậy $T$ không đầy đủ[cite: 49].
+\end{solution}
+
+\begin{exercise}[6.12]
+Xét mô hình $N$ là biến ngẫu nhiên (kích thước mẫu) với xác suất $p_i$ đã biết. Với $N=n$, thực hiện $n$ phép thử Bernoulli với xác suất thành công $\theta$, thu được $X$ thành công[cite: 54].
+(a) Chứng minh $(X, N)$ là đủ tối tiểu và $N$ là Ancillary cho $\theta$[cite: 55].
+(b) Chứng minh $X/N$ là ước lượng không chệch[cite: 56].
+\end{exercise}
+
+\begin{solution}
+\textbf{A. Motivation:} Trong hệ thống Identity \& Access Management (IAM), $N$ có thể là tổng số yêu cầu truy cập trong một ngày (biến đổi theo phiên), và $\theta$ là xác suất một yêu cầu bị từ chối. Việc biết tổng số yêu cầu $N$ giúp ta đánh giá độ tin cậy của ước lượng $\theta$ nhưng bản thân $N$ không cho biết $\theta$ là bao nhiêu[cite: 53, 165].
+
+\textbf{B. Mathematical Detail:}
+(a) Hàm xác suất đồng thời: $P(X=x, N=n | \theta) = P(X=x | N=n, \theta) P(N=n) = \binom{n}{x} \theta^x (1-\theta)^{n-x} \cdot p_n$[cite: 54].
+Phân rã: $f(x, n | \theta) = [\theta^x (1-\theta)^{n-x}] \cdot [\binom{n}{x} p_n]$.
+Theo định lý phân rã, $(X, N)$ là thống kê đủ. Vì $P(N=n) = p_n$ không phụ thuộc vào $\theta$, nên $N$ là Ancillary statistic[cite: 55].
+
+(b) Sử dụng luật kỳ vọng lặp (Law of Iterated Expectations):
+$E[X/N] = E[ E[X/N | N] ] = E[ \frac{1}{N} E[X|N] ]$.
+Vì $X|N \sim Binomial(N, \theta)$, nên $E[X|N] = N\theta$.
+$E[X/N] = E[ \frac{1}{N} \cdot N\theta ] = E[\theta] = \theta$.
+Vậy $X/N$ là ước lượng không chệch[cite: 56].
+\end{solution}
+
+\begin{exercise}[6.15]
+Cho $X_1, \dots, X_n \sim n(\theta, a\theta^2)$ với $a$ đã biết và $\theta > 0$[cite: 60].
+(a) Chứng minh không gian tham số không chứa tập mở 2 chiều.
+(b) Chứng minh $T = (\bar{X}, S^2)$ là thống kê đủ nhưng không đầy đủ[cite: 61].
+\end{exercise}
+
+\begin{solution}
+\textbf{A. Motivation:} Đây là ví dụ điển hình về **Curved Exponential Family**. Trong thực tế, các ràng buộc vật lý hoặc bảo mật thường áp đặt mối quan hệ giữa trung bình và phương sai (ví dụ: độ trễ mạng thường tỷ lệ thuận với biến động của nó)[cite: 63, 108].
+
+\textbf{B. Mathematical Detail:}
+(a) Tham số tự nhiên của họ Exponential này là $\eta_1 = n\theta / (a\theta^2) = n/(a\theta)$ và $\eta_2 = -1/(2a\theta^2)$. 
+Cả hai đều phụ thuộc vào duy nhất một tham số $\theta$. Do đó, tập các giá trị $(\eta_1, \eta_2)$ tạo thành một đường cong trong $\mathbb{R}^2$, không phải một tập mở 2 chiều[cite: 60, 108].
+
+(b) $T = (\bar{X}, S^2)$ là thống kê đủ vì nó đủ cho họ Normal tổng quát. Tuy nhiên, vì chiều của $T$ (là 2) lớn hơn chiều của tham số $\theta$ (là 1) trong một họ Exponential, nó thường không đầy đủ. 
+Cụ thể, $E_\theta[S^2] = a\theta^2$ và $E_\theta[\bar{X}^2] = Var(\bar{X}) + (E\bar{X})^2 = \frac{a\theta^2}{n} + \theta^2 = \theta^2(\frac{a}{n} + 1)$.
+Ta có thể tìm được tổ hợp tuyến tính của $S^2$ và $\bar{X}^2$ có kỳ vọng bằng 0 với mọi $\theta$[cite: 61].
+\end{solution}
+
+% --- Tiếp nối từ Exercise 6.16 ---
+
+\section*{Phần 2: Tính đầy đủ (Completeness) và Định lý Basu}
+
+\begin{exercise}[6.17]
+Cho $X_1, \dots, X_n$ iid theo phân phối Geometric: $P_\theta(X=x) = \theta(1-\theta)^{x-1}, x=1,2,\dots$[cite: 69, 70]. Chứng minh $\sum X_i$ là thống kê đủ và đầy đủ[cite: 72].
+\end{exercise}
+
+\begin{solution}
+\textbf{A. Motivation:} Trong phân tích độ tin cậy hệ thống (Reliability), phân phối Geometric mô tả số lần thử cho đến khi gặp sự cố đầu tiên. $\sum X_i$ chính là tổng số lần thử, và ta muốn biết liệu con số này có chứa "trọn vẹn" thông tin về tỷ lệ lỗi $\theta$ hay không.
+
+\textbf{B. Mathematical Detail:}
+\begin{itemize}
+    \item \textbf{Tính đủ:} Joint PMF là $f(\mathbf{x}|\theta) = \prod_{i=1}^n \theta(1-\theta)^{x_i-1} = \theta^n (1-\theta)^{\sum x_i - n}$[cite: 70, 72]. Theo định lý phân rã, $T(\mathbf{X}) = \sum X_i$ là thống kê đủ[cite: 72].
+    \item \textbf{Tính đầy đủ:} Ta có thể viết lại PMF dưới dạng Exponential Family: $f(x|\theta) = \frac{\theta}{1-\theta} \exp(x \log(1-\theta))$[cite: 106].
+    \item Vì không gian tham số của $\eta = \log(1-\theta)$ chứa một tập mở trong $\R$ (với $0 < \theta < 1$), theo Theorem 6.2.25, thống kê đủ $T = \sum X_i$ là đầy đủ[cite: 107, 108].
+\end{itemize}
+
+\textbf{C. Engineering Context:} Điều này khẳng định rằng trong việc giám sát IAM logs, nếu ta giả định các sự kiện là iid Geometric, thì tổng số request là thông tin "tinh khiết" nhất để ước lượng xác suất fail mà không còn thông tin thừa nào có thể trích xuất thêm.
+\end{solution}
+
+\begin{exercise}[6.18]
+Cho $X_1, \dots, X_n \sim \text{Poisson}(\lambda)$. Chứng minh $\sum X_i$ là đầy đủ mà không dùng định lý về họ Exponential[cite: 73, 74].
+\end{exercise}
+
+\begin{solution}
+Đặt $T = \sum X_i$. Ta biết $T \sim \text{Poisson}(n\lambda)$[cite: 73]. Xét hàm $g(t)$ sao cho $E_\lambda[g(T)] = 0$ với mọi $\lambda > 0$:
+\[ \sum_{t=0}^\infty g(t) \frac{e^{-n\lambda}(n\lambda)^t}{t!} = 0 \implies \sum_{t=0}^\infty \frac{g(t)}{t!} (n\lambda)^t = 0 \text{ (với mọi } \lambda > 0) \]
+Đây là một chuỗi lũy thừa (power series) theo biến $n\lambda$. Một chuỗi lũy thừa bằng 0 trên một khoảng mở khi và chỉ khi tất cả các hệ số của nó bằng 0[cite: 101]. Do đó, $g(t)/t! = 0$ với mọi $t$, dẫn đến $g(t) = 0$ hầu khắp nơi. Vậy $T$ là đầy đủ[cite: 74].
+\end{solution}
+
+% --- Tiếp nối từ Exercise 6.18 ---
+
+\begin{exercise}[6.19]
+Biến ngẫu nhiên $X$ nhận các giá trị 0, 1, 2 theo một trong hai phân phối sau[cite: 75]:
+\begin{itemize}
+    \item Phân phối 1: $P(X=0)=p, P(X=1)=3p, P(X=2)=1-4p$ với $0 < p < 1/4$[cite: 76].
+    \item Phân phối 2: $P(X=0)=p, P(X=1)=p^2, P(X=2)=1-p-p^2$ với $0 < p < 1/2$[cite: 76].
+\end{itemize}
+Xác định tính đầy đủ của họ phân phối trong mỗi trường hợp[cite: 77].
+\end{exercise}
+
+\begin{solution}
+\textbf{A. Motivation:} Tính đầy đủ giúp ta biết liệu có tồn tại bất kỳ "thông tin giả" nào (một hàm của dữ liệu có kỳ vọng luôn bằng 0) hay không[cite: 101]. Trong IAM, nếu ta quan sát các loại lỗi đăng nhập, tính đầy đủ đảm bảo mọi hàm của dữ liệu đều mang thông tin về xác suất lỗi hệ thống.
+
+\textbf{B. Mathematical Detail:}
+Xét điều kiện $E_p[g(X)] = 0$ với mọi $p$.
+\begin{itemize}
+    \item \textbf{Trường hợp 1:} $g(0)p + g(1)3p + g(2)(1-4p) = 0$.
+    Rút gọn: $p[g(0) + 3g(1) - 4g(2)] + g(2) = 0$.
+    Để phương trình đúng với mọi $p$ trong khoảng $(0, 1/4)$, các hệ số phải bằng 0: $g(2) = 0$ và $g(0) + 3g(1) = 0$.
+    Ta có thể chọn $g(0)=3, g(1)=-1, g(2)=0$. Vì tồn tại $g(X) \neq 0$ mà $E[g(X)]=0$, họ này \textbf{không đầy đủ}[cite: 101].
+    \item \textbf{Trường hợp 2:} $g(0)p + g(1)p^2 + g(2)(1-p-p^2) = 0$.
+    Rút gọn: $p^2[g(1)-g(2)] + p[g(0)-g(2)] + g(2) = 0$.
+    Đây là đa thức bậc 2 theo $p$. Để nó bằng 0 với mọi $p$, các hệ số phải bằng 0: $g(2)=0, g(0)=g(2)=0, g(1)=g(2)=0$.
+    Dẫn đến $g(0)=g(1)=g(2)=0$. Vậy họ này \textbf{đầy đủ}.
+\end{itemize}
+
+\textbf{C. Real-world Example:} Trong kiểm thử phần mềm, nếu phân phối của lỗi tuân theo bậc cao (như trường hợp 2), ta dễ dàng kiểm chứng tính toàn vẹn của dữ liệu hơn là các mô hình tuyến tính đơn giản (trường hợp 1).
+\end{solution}
+
+\begin{exercise}[6.20]
+Tìm thống kê đủ đầy đủ cho các PDF sau[cite: 78, 79]:
+(a) $f(x|\theta) = 2x/\theta^2, 0 < x < \theta$[cite: 80].
+(e) $f(x|\theta) = \binom{2}{x}\theta^x(1-\theta)^{2-x}, x \in \{0, 1, 2\}$[cite: 86].
+\end{exercise}
+
+\begin{solution}
+\textbf{B. Mathematical Detail:}
+\begin{itemize}
+    \item \textbf{(a)} Likelihood: $L(\theta|\mathbf{x}) = \frac{2^n \prod x_i}{\theta^{2n}} \mathbb{I}(x_{(n)} < \theta)$[cite: 80]. Theo định lý phân rã, $T = X_{(n)}$ là thống kê đủ. PDF của $T$ là $f_T(t) = \frac{2nt^{2n-1}}{\theta^{2n}}$. Xét $E_\theta[g(T)]=0 \implies \int_0^\theta g(t)t^{2n-1} dt = 0$. Đạo hàm theo $\theta$ ta được $g(\theta)\theta^{2n-1} = 0 \implies g(\theta)=0$. Vậy $X_{(n)}$ là đủ đầy đủ.
+    \item \textbf{(e)} Đây là họ Bernoulli/Binomial, thuộc họ Exponential Family chính tắc với không gian tham số chứa tập mở[cite: 107]. Thống kê đủ $T = \sum X_i$ là đầy đủ[cite: 107].
+\end{itemize}
+\end{solution}
+
+\begin{exercise}[6.23]
+Tìm thống kê đủ tối tiểu cho Uniform$(0, 2\theta)$. Nó có đầy đủ không? [cite: 97, 98]
+\end{exercise}
+
+\begin{solution}
+\textbf{A. Motivation:} Trong các hệ thống đo lường Security, nếu ta biết giới hạn trên tỷ lệ thuận với tham số (như $2\theta$), việc chọn thống kê cực trị giúp tối ưu hóa bộ nhớ[cite: 11].
+
+\textbf{B. Mathematical Detail:}
+Joint PDF: $f(\mathbf{x}|\theta) = \frac{1}{(2\theta)^n} \mathbb{I}(x_{(n)} < 2\theta)$. Tỷ số Likelihood độc lập với $\theta$ khi $x_{(n)} = y_{(n)}$, nên $X_{(n)}$ là đủ tối tiểu[cite: 110]. 
+Tính đầy đủ: $E_\theta[X_{(n)}] = \int_0^{2\theta} t \frac{nt^{n-1}}{(2\theta)^n} dt = \frac{n}{n+1}(2\theta)$. Do đây là họ quy mô (scale family) và không gian tham số là $\theta > 0$, $X_{(n)}$ là đầy đủ.
+\end{solution}
+
+\begin{exercise}[6.25]
+Xét họ Normal curved $n(\mu, \mu)$. Chứng minh $(\sum X_i, \sum X_i^2)$ là đủ nhưng không tối tiểu, và $\sum X_i^2$ là đủ tối tiểu[cite: 111, 112].
+\end{exercise}
+
+\begin{solution}
+\textbf{A. Motivation:} Đây là bài toán tối ưu hóa "chiều" của dữ liệu. Khi có ràng buộc giữa trung bình và phương sai, ta có thể "nén" dữ liệu sâu hơn nữa mà không mất thông tin[cite: 109].
+
+\textbf{B. Mathematical Detail:}
+Joint PDF: $f(\mathbf{x}|\mu) \propto \exp\left( -\frac{\sum x_i^2 - 2\mu \sum x_i + n\mu^2}{2\mu} \right) = \exp\left( -\frac{\sum x_i^2}{2\mu} + \sum x_i - \frac{n\mu}{2} \right)$[cite: 111].
+Để ý rằng $\sum x_i$ xuất hiện với hệ số không phụ thuộc $\mu$. 
+Tỷ số Likelihood $\frac{L(\mu|\mathbf{x})}{L(\mu|\mathbf{y})} = \exp\left( -\frac{1}{2\mu}(\sum x_i^2 - \sum y_i^2) + (\sum x_i - \sum y_i) \right)$[cite: 110].
+Tỷ số này độc lập với $\mu$ khi và chỉ khi $\sum x_i^2 = \sum y_i^2$[cite: 112]. 
+Lưu ý rằng $\sum x_i$ không cần phải bằng nhau vì nó không đi kèm với $\mu$ trong số mũ của phần chứa $\mu$. Do đó, chỉ cần $T = \sum X_i^2$ là đủ tối tiểu[cite: 112].
+\end{solution}
+
+\begin{exercise}[6.29]
+Nếu $X_1, \dots, X_n$ là mẫu từ mật độ $f$ chưa biết, chứng minh các thống kê thứ tự là đủ tối tiểu[cite: 131].
+\end{exercise}
+
+\begin{solution}
+\textbf{A. Motivation:} Đây là nền tảng của thống kê phi tham số (Non-parametric). Khi không biết phân phối là gì (ví dụ: log của một cuộc tấn công mạng lạ), việc sắp xếp dữ liệu là cách tốt nhất để bảo toàn thông tin[cite: 130].
+
+\textbf{B. Mathematical Detail:}
+Sử dụng gợi ý dùng Định lý 6.6.5 và họ Logistic[cite: 132]. Với mọi mẫu $\mathbf{x}$, nếu tỷ số $\prod f(x_i)/\prod f(y_i)$ độc lập với mọi hàm $f$, thì tập các giá trị $\{x_i\}$ phải trùng với $\{y_i\}$. Điều này tương đương với việc các thống kê thứ tự $X_{(1)}, \dots, X_{(n)}$ phải bằng nhau[cite: 131].
+\end{solution}
+
+\begin{exercise}[6.30]
+Cho mẫu ngẫu nhiên từ $f(x|\mu) = e^{-(x-\mu)}, x > \mu$[cite: 132].
+(a) Chứng minh $X_{(1)}$ là thống kê đủ đầy đủ[cite: 133].
+(b) Sử dụng Định lý Basu để chứng minh $X_{(1)}$ và $S^2$ độc lập[cite: 134].
+\end{exercise}
+
+\begin{solution}
+\textbf{A. Motivation (The "Why"):} Trong Cyber Security, $X_{(1)}$ có thể đại diện cho thời điểm xâm nhập đầu tiên. Định lý Basu giúp ta tách biệt thông tin về vị trí (location) và thông tin về độ biến động (scale/variance) mà không cần tính toán tích phân nhiều lớp.
+
+\textbf{B. Mathematical Detail:}
+\begin{itemize}
+    \item \textbf{(a) Sufficient \& Complete:} Likelihood là $L = e^{n\mu - \sum x_i} \mathbb{I}(x_{(1)} > \mu)$. Theo định lý phân rã, $X_{(1)}$ là đủ[cite: 133]. PDF của $X_{(1)}$ là $f_{X_{(1)}}(z) = n e^{-n(z-\mu)}, z > \mu$. Tương tự bài 6.18, việc xét $E_\mu[g(X_{(1)})]=0$ dẫn đến $g(z)=0$, nên $X_{(1)}$ đầy đủ[cite: 133].
+    \item \textbf{(b) Basu's Theorem:} 
+    \begin{enumerate}
+        \item $X_{(1)}$ là thống kê đủ đầy đủ cho $\mu$[cite: 133].
+        \item $S^2 = \frac{1}{n-1}\sum (X_i - \bar{X})^2$ là thống kê phụ trợ (Ancillary) vì nó bất biến đối với phép dịch chuyển vị trí (location invariant): $S^2(X_1+c, \dots, X_n+c) = S^2(X_1, \dots, X_n)$[cite: 134, 198]. 
+        \item Theo định lý Basu, mọi thống kê đủ đầy đủ đều độc lập với mọi thống kê phụ trợ[cite: 134, 141]. Vậy $X_{(1)} \perp S^2$.
+    \end{enumerate}
+\end{itemize}
+\end{solution}
+
+\begin{exercise}[6.31 - Monte Carlo Swindle]
+Sử dụng định lý Basu để chứng minh $Var(M) = Var(M-\bar{X}) + Var(\bar{X})$ trong phân phối chuẩn[cite: 145, 146].
+\end{exercise}
+
+\begin{solution}
+\textbf{A. Motivation:} Kỹ thuật "swindle" giúp tăng độ chính xác của mô phỏng Monte Carlo bằng cách tận dụng các giá trị đã biết lý thuyết ($Var(\bar{X}) = \sigma^2/n$) và chỉ mô phỏng phần sai số còn lại[cite: 144, 146].
+
+\textbf{B. Mathematical Detail:}
+Trong họ $n(\mu, \sigma^2)$ với $\sigma^2$ biết trước, $\bar{X}$ là thống kê đủ đầy đủ cho $\mu$[cite: 139, 140]. 
+$M - \bar{X}$ (hiệu giữa trung vị và trung bình mẫu) là một thống kê phụ trợ vì nó bất biến với phép dịch chuyển $\mu$[cite: 58, 140].
+Theo định lý Basu, $\bar{X}$ và $M-\bar{X}$ độc lập[cite: 141]. 
+Ta có: $M = (M - \bar{X}) + \bar{X}$.
+Do tính độc lập: $Var(M) = Var(M - \bar{X}) + Var(\bar{X})$[cite: 146].
+\end{solution}
+
+% --- Tiếp nối từ Exercise 6.30 ---
+
+\begin{exercise}[6.31 - Tiếp tục]
+(c) (i) Nếu $X/Y$ và $Y$ độc lập, chứng minh $E(X/Y)^k = E(X^k)/E(Y^k)$. 
+(ii) Sử dụng kết quả này và Định lý Basu để chứng minh rằng nếu $X_1, \dots, X_n \sim \text{gamma}(\alpha, \beta)$ với $\alpha$ biết trước, thì với $T = \sum X_i$:
+\[ E(X_{(i)} | T) = T \frac{E(X_{(i)})}{E(T)} \]
+\end{exercise}
+
+\begin{solution}
+\textbf{A. Motivation:} Trong các hệ thống giám sát traffic, đôi khi ta cần ước lượng giá trị của một thành phần (ví dụ: latency của một packet cụ thể) khi biết tổng số (throughput). Định lý Basu cho phép ta "tách" hằng số tổng ra ngoài kỳ vọng một cách hợp lệ.
+
+\textbf{B. Mathematical Detail:}
+\begin{itemize}
+    \item \textbf{(i)} Vì $X/Y$ và $Y$ độc lập: $E(X^k) = E[(X/Y \cdot Y)^k] = E(X/Y)^k \cdot E(Y^k)$. Suy ra điều phải chứng minh. [cite: 147, 148]
+    \item \textbf{(ii)} Với $X_j \sim \text{gamma}(\alpha, \beta)$, $T = \sum X_j$ là thống kê đủ đầy đủ cho $\beta$. 
+    Xét $V = X_{(i)}/T$. Vì $V$ bất biến đối với phép nhân quy mô (scale invariant), phân phối của $V$ không phụ thuộc vào $\beta$. Vậy $V$ là thống kê phụ trợ (Ancillary). [cite: 149]
+    Theo Định lý Basu, $V \perp T$. Áp dụng kết quả phần (i):
+    $E(X_{(i)}/T) = E(X_{(i)})/E(T)$. 
+    Vì $E(X_{(i)}/T | T) = E(X_{(i)}/T)$ do tính độc lập, ta có:
+    $E(X_{(i)} | T) = E(T \cdot \frac{X_{(i)}}{T} | T) = T E(\frac{X_{(i)}}{T}) = T \frac{E(X_{(i)})}{E(T)}$. [cite: 150]
+\end{itemize}
+\end{solution}
+
+\begin{exercise}[6.32 - Likelihood Principle Corollary]
+Chứng minh rằng nếu chấp nhận Formal Sufficiency Principle và Conditionality Principle, thì $Ev(E, x)$ chỉ phụ thuộc vào $L(\theta|x)$.
+\end{exercise}
+
+\begin{solution}
+\textbf{A. Motivation:} Đây là "Trái tim" của suy diễn Bayes và Likelihood. Nó khẳng định rằng mọi thông tin liên quan đến tham số $\theta$ đều nằm gọn trong hàm Likelihood, bất kể thí nghiệm được thiết kế như thế nào.
+
+\textbf{B. Mathematical Detail:}
+Định lý Birnbaum chứng minh rằng: $SLP \iff SP + CP$. 
+Nếu ta coi hai thí nghiệm có cùng hàm Likelihood, ta có thể xây dựng một thí nghiệm hỗn hợp (mixture experiment) $E^*$. Theo Conditionality Principle, suy diễn phải tương đương với thí nghiệm thành phần. Kết hợp với Sufficiency Principle trên thí nghiệm hỗn hợp, ta dẫn đến kết luận rằng các điểm mẫu có cùng Likelihood phải đưa đến cùng một suy diễn. [cite: 151, 159]
+\end{solution}
+
+\begin{exercise}[6.35]
+Một thử nghiệm rủi ro trên tối đa 3 bệnh nhân. Nếu thành công thì tiếp tục bệnh nhân tiếp theo. Xác định 4 điểm mẫu và chứng minh rằng theo Likelihood Principle, suy diễn về $p$ không phụ thuộc vào việc dừng sớm hay muộn.
+\end{exercise}
+
+\begin{solution}
+\textbf{A. Motivation (Security Lens):} Giả sử bạn đang thực hiện "Brute-force attack" và quyết định dừng lại ngay khi tìm thấy password hoặc sau 3 lần thử thất bại. Likelihood Principle nói rằng xác suất thành công $p$ của tool bạn dùng chỉ phụ thuộc vào kết quả thực tế (ví dụ: Thất bại-Thất bại-Thành công), chứ không phụ thuộc vào việc bạn đã lên kế hoạch dừng lại lúc nào. [cite: 171]
+
+\textbf{B. Mathematical Detail:}
+Các điểm mẫu (với $S$: Success, $F$: Failure): $\{F, SF, SSF, SSS\}$. [cite: 171]
+\begin{itemize}
+    \item $L(p | F) = (1-p)$
+    \item $L(p | SF) = p(1-p)$
+    \item $L(p | SSF) = p^2(1-p)$
+    \item $L(p | SSS) = p^3$
+\end{itemize}
+Nếu ta thực hiện một thí nghiệm cố định $n=3$ và quan sát thấy $SSF$, Likelihood cũng sẽ tỷ lệ với $p^2(1-p)$. Sự thật là kế hoạch dừng (stopping rule) không làm thay đổi hình dạng của hàm Likelihood đối với $p$. [cite: 171]
+\end{solution}
+
+\begin{exercise}[6.36]
+Chứng minh rằng sử dụng thống kê đủ tối tiểu sẽ giúp ước lượng không chệch có phương sai nhỏ hơn.
+\end{exercise}
+
+\begin{solution}
+\textbf{A. Motivation:} Đây là sự nâng cấp của định lý Rao-Blackwell. Nó giải thích tại sao trong MLOps, việc "feature selection" hoặc "dimensionality reduction" xuống mức tối tiểu (minimal) không chỉ giúp tiết kiệm tài nguyên mà còn làm mô hình ổn định hơn. [cite: 172]
+
+\textbf{B. Mathematical Detail:}
+Cho $T_1$ là đủ, $T_2$ là đủ tối tiểu. Vì $T_2$ là hàm của $T_1$ (theo định nghĩa tối tiểu), ta có $U_2 = E(U | T_2) = E(E(U|T_1) | T_2) = E(U_1 | T_2)$. [cite: 173, 174]
+Theo công thức phương sai có điều kiện:
+\[ Var(U_1) = E[Var(U_1 | T_2)] + Var(E[U_1 | T_2]) = E[Var(U_1 | T_2)] + Var(U_2) \]
+Vì $E[Var(U_1 | T_2)] \ge 0$, nên $Var(U_1) \ge Var(U_2)$. 
+Vậy ước lượng dựa trên thống kê đủ tối tiểu có phương sai nhỏ nhất trong các ước lượng dựa trên thống kê đủ. [cite: 175]
+\end{solution}
+
+\begin{exercise}[6.37 - Problem of the Nile]
+Cho $(X, Y)$ có mật độ $f(x,y|\theta) = \exp(-(\theta x + y/\theta))$. Chứng minh $(T, U) = (\sqrt{\sum Y_i / \sum X_i}, \sqrt{\sum X_i \sum Y_i})$ là đủ nhưng không đầy đủ.
+\end{exercise}
+
+\begin{solution}
+\textbf{B. Mathematical Detail:}
+\begin{itemize}
+    \item \textbf{Sufficiency:} Joint Likelihood $L(\theta) = \exp(-\theta \sum x_i - \frac{1}{\theta} \sum y_i)$. Đây là hàm của $(\sum X_i, \sum Y_i)$. Vì $(T, U)$ là phép biến đổi 1-1 của $(\sum X_i, \sum Y_i)$, nên $(T, U)$ là thống kê đủ. [cite: 177, 182]
+    \item \textbf{Incompleteness:} Ta thấy rằng $E_\theta[T] = \theta$ (ước lượng hợp lý). Tuy nhiên, có thể chứng minh được rằng $E_\theta[U]$ không phụ thuộc vào $\theta$ (Ancillary statistic). Sự tồn tại của một thành phần phụ trợ bên trong thống kê đủ $(T, U)$ khiến nó không thể đầy đủ. [cite: 182]
+\end{itemize}
+\end{solution}
+% --- Tiếp nối từ Exercise 6.37 ---
+
+\section*{Phần 3: Nguyên lý Bất biến và Tính tương đương (Equivariance)}
+
+\begin{exercise}[6.38]
+Trong Định nghĩa 6.4.2, chứng minh rằng điều kiện (iii) được suy ra từ (i) và (ii).
+\end{exercise}
+
+\begin{solution}
+\textbf{A. Motivation:} Một hệ thống được gọi là nhất quán nếu cấu trúc toán học của nó không thay đổi khi ta thay đổi cách biểu diễn dữ liệu. 
+
+\textbf{B. Mathematical Detail:}
+Định nghĩa 6.4.2 mô tả tính bất biến của mô hình thống kê dưới nhóm biến đổi $\mathcal{G}$. 
+\begin{itemize}
+    \item (i) Định nghĩa sự biến đổi trên không gian mẫu $\mathcal{X}$. [cite: 183]
+    \item (ii) Định nghĩa sự biến đổi tương ứng $\bar{g}$ trên không gian tham số $\Theta$. [cite: 183]
+\end{itemize}
+Điều kiện (iii) yêu cầu $P_\theta(g(X) \in A) = P_{\bar{g}(\theta)}(X \in A)$. [cite: 183] Điều này thực chất là hệ quả của việc định nghĩa $\bar{g}(\theta)$ sao cho phân phối của mẫu đã biến đổi $g(X)$ chính là phân phối của mẫu gốc nhưng với tham số mới $\bar{g}(\theta)$. Đây là nền tảng để đảm bảo rằng việc phân tích dữ liệu trên thang đo mới vẫn dẫn đến các kết luận thống kê tương đương.
+\end{solution}
+
+\begin{exercise}[6.40]
+Cho $X_1, \dots, X_n$ iid từ họ vị trí - quy mô (location-scale family). Cho $T_1, T_2$ là hai thống kê thỏa mãn:
+$T_i(ax_1+b, \dots, ax_n+b) = aT_i(x_1, \dots, x_n)$ với $a > 0$. [cite: 198, 199, 200]
+(a) Chứng minh $T_1/T_2$ là một thống kê phụ trợ (Ancillary). [cite: 201]
+(b) Kiểm tra với $R$ (khoảng biến thiên) và $S$ (độ lệch chuẩn). [cite: 202, 203]
+\end{exercise}
+
+\begin{solution}
+\textbf{A. Motivation:} Trong IAM, nếu bạn "scale" số lượng request và "shift" thời gian bắt đầu, tỷ lệ giữa các đại lượng đo lường độ phân tán (như $R/S$) không được phép thay đổi. Đây là một đặc trưng "vĩnh cửu" của dữ liệu.
+
+\textbf{B. Mathematical Detail:}
+\begin{itemize}
+    \item \textbf{(a)} Đặt $V(\mathbf{X}) = T_1(\mathbf{X})/T_2(\mathbf{X})$. 
+    Với mọi phép biến đổi $g(x) = ax+b$:
+    \[ V(g(\mathbf{X})) = \frac{T_1(a\mathbf{X}+b)}{T_2(a\mathbf{X}+b)} = \frac{aT_1(\mathbf{X})}{aT_2(\mathbf{X})} = \frac{T_1(\mathbf{X})}{T_2(\mathbf{X})} = V(\mathbf{X}) \]
+    Vì giá trị của $V$ không thay đổi dưới bất kỳ phép biến đổi vị trí - quy mô nào, phân phối của nó không thể phụ thuộc vào tham số vị trí $\mu$ hay quy mô $\sigma$. Vậy $V$ là Ancillary. [cite: 201]
+    \item \textbf{(b)} Ta có $R(a\mathbf{X}+b) = \max(aX_i+b) - \min(aX_i+b) = a(X_{(n)} - X_{(1)}) = aR(\mathbf{X})$. [cite: 203]
+    Tương tự, $S(a\mathbf{X}+b) = \sqrt{\frac{1}{n-1}\sum (aX_i+b - (a\bar{X}+b))^2} = aS(\mathbf{X})$. [cite: 203]
+    Cả hai đều thỏa mãn điều kiện, nên $R/S$ là thống kê phụ trợ.
+\end{itemize}
+\end{solution}
+
+\begin{exercise}[6.42]
+Xét họ vị trí - quy mô và việc ước lượng $\mu$. So sánh hai nhóm biến đổi:
+$\mathcal{G}_1 = \{g_{a,c}(\mathbf{x}) = c\mathbf{x} + a\}$ và $\mathcal{G}_2 = \{g_{a}(\mathbf{x}) = \mathbf{x} + a\}$. [cite: 212, 213, 215]
+Chứng minh $W(\mathbf{x}) = \bar{x} + k$ ($k \neq 0$) tương đương với $\mathcal{G}_2$ nhưng không tương đương với $\mathcal{G}_1$. [cite: 218, 219]
+\end{exercise}
+
+\begin{solution}
+\textbf{A. Motivation (Security Engineering):} Việc chọn đúng nhóm biến đổi rất quan trọng. Một tool phát hiện xâm nhập (IDS) có thể chỉ cần "location equivariant" (nhất quán khi dời mốc thời gian), nhưng nếu nó không "scale equivariant", nó sẽ thất bại nếu hacker thay đổi tốc độ tấn công.
+
+\textbf{B. Mathematical Detail:}
+\begin{itemize}
+    \item \textbf{Với $\mathcal{G}_2$:} Phép biến đổi tham số tương ứng là $\bar{g}(\mu) = \mu + a$. 
+    $W(g_a(\mathbf{x})) = W(\mathbf{x}+a) = \frac{1}{n}\sum(x_i+a) + k = \bar{x} + a + k = W(\mathbf{x}) + a$. [cite: 219]
+    Điều này thỏa mãn $W(g(\mathbf{x})) = \bar{g}(W(\mathbf{x}))$. Vậy $W$ tương đương với $\mathcal{G}_2$.
+    \item \textbf{Với $\mathcal{G}_1$:} Phép biến đổi tham số là $\bar{g}(\mu) = c\mu + a$.
+    $W(g_{a,c}(\mathbf{x})) = W(c\mathbf{x}+a) = c\bar{x} + a + k$.
+    Trong khi đó, $\bar{g}(W(\mathbf{x})) = c(\bar{x} + k) + a = c\bar{x} + ck + a$. [cite: 219]
+    Hai biểu thức này chỉ bằng nhau nếu $k = ck$ với mọi $c > 0$, tức là $k=0$. Vì $k \neq 0$, $W$ không tương đương với $\mathcal{G}_1$.
+\end{itemize}
+\end{solution}
+
+\begin{exercise}[6.43]
+Ước lượng $\sigma^2$ trong họ vị trí - quy mô. Chứng minh $kS^2$ tương đương với các nhóm biến đổi quy mô. [cite: 221, 231, 232]
+\end{exercise}
+
+\begin{solution}
+\textbf{A. Motivation:} Khi ước lượng phương sai (độ biến động của logs), nếu ta nhân dữ liệu với một hằng số $c$, ước lượng phương sai phải nhân với $c^2$.
+
+\textbf{B. Mathematical Detail:}
+Xét nhóm $\mathcal{G}_3 = \{g_c(\mathbf{x}) = c\mathbf{x}\}$. Biến đổi tham số là $\bar{g}(\sigma^2) = c^2\sigma^2$. [cite: 229, 230]
+Với $W(\mathbf{X}) = kS^2$:
+\[ W(g_c(\mathbf{X})) = W(c\mathbf{X}) = k S^2(c\mathbf{X}) = k c^2 S^2(\mathbf{X}) = c^2 W(\mathbf{X}) = \bar{g}(W(\mathbf{X})) \]
+Do đó, $kS^2$ là ước lượng tương đương. Bài tập cũng chỉ ra rằng các lớp ước lượng rộng hơn như $\phi(\bar{X}/S)S^2$ có thể mang lại các cải tiến quan trọng trong việc ước lượng phương sai (theo Stein). [cite: 234, 236]
+\end{solution}
+
+\end{document}

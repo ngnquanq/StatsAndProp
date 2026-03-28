@@ -1,0 +1,551 @@
+\documentclass[8pt,a4paper]{article}
+
+% --- Packages ---
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[vietnamese]{babel}
+\usepackage{amsmath, amssymb, amsthm}
+\usepackage{mathtools}
+\usepackage{enumitem}
+\usepackage{hyperref}
+\usepackage{geometry}
+\geometry{
+  a4paper,
+  left=3.5cm,
+  right=3.5cm,
+  bottom=4cm,
+  top=2.5cm
+}
+
+% --- Environments ---
+\newtheorem{exercise}{Bài tập}
+\newenvironment{solution}{\begin{proof}[Lời giải]}{\end{proof}}
+
+% --- Custom commands ---
+\newcommand{\prob}{\mathbb{P}}
+\newcommand{\E}{\mathbb{E}}
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\N}{\mathbb{N}}
+\newcommand{\Var}{\operatorname{Var}}
+\newcommand{\MLE}{\text{MLE}}
+
+% --- Title ---
+\title{Point Estimation: Exercises and Solutions (Chapter 7)}
+\author{Quang Nguyen}
+\date{\today}
+
+\begin{document}
+\maketitle
+
+\section*{Chương 7: Ước lượng điểm (Point Estimation)}
+
+\begin{exercise}[7.1 - Tìm MLE từ bảng xác suất rời rạc]
+Cho một quan sát $X$ từ biến ngẫu nhiên rời rạc với pmf $f(x|\theta),$ trong đó $\theta \in \{1,2,3\}$. Tìm ước lượng hợp lệ tối đa (MLE) của $\theta$ cho mỗi giá trị $x \in \{0, 1, 2, 3, 4\}$.
+\end{exercise}
+
+\begin{solution}
+\textbf{A. Motivation \& Ý nghĩa (The "Why"):} Trong thực tế, MLE trả lời câu hỏi: "Với dữ liệu quan sát được, tham số nào của hệ thống có khả năng tạo ra dữ liệu đó cao nhất?". Trong IAM, nếu ta thấy một chuỗi sự kiện đăng nhập thất bại (quan sát $X$), ta muốn biết cấu hình tấn công nào ($\theta$) là khả thi nhất. [cite: 281, 282]
+
+\textbf{B. Chi tiết Toán học (The "How"):}
+Ước lượng $\hat{\theta}(x)$ là giá trị $\theta$ làm cực đại hóa $f(x|\theta)$ với mỗi $x$ cố định. Dựa vào bảng dữ liệu[cite: 283]:
+\begin{itemize}
+    \item Với $x=0$: $f(0|1) = 1/3, f(0|2) = 1/4, f(0|3) = 0$. Giá trị lớn nhất là $1/3$ tại $\theta=1 \implies \hat{\theta}(0) = 1$. [cite: 283]
+    \item Với $x=1$: $f(1|1) = 1/3, f(1|2) = 1/4, f(1|3) = 0$. Tương tự, $\hat{\theta}(1) = 1$. [cite: 283]
+    \item Với $x=2$: $f(2|1) = 0, f(2|2) = 1/4, f(2|3) = 1/4$. Cả $\theta=2$ và $\theta=3$ đều cho cực đại. Vậy $\hat{\theta}(2) \in \{2, 3\}$. [cite: 283]
+    \item Với $x=3$: $f(3|1) = 1/6, f(3|2) = 1/4, f(3|3) = 1/2$. Giá trị lớn nhất là $1/2$ tại $\theta=3 \implies \hat{\theta}(3) = 3$. [cite: 283]
+    \item Với $x=4$: $f(4|1) = 1/6, f(4|2) = 0, f(4|3) = 1/4$. Giá trị lớn nhất là $1/4$ tại $\theta=3 \implies \hat{\theta}(4) = 3$. [cite: 283]
+\end{itemize}
+
+\textbf{C. Ví dụ Thực tế \& Đa ngành (The "Where"):} Bài toán này giống như việc phân loại các lỗ hổng bảo mật dựa trên các vector tấn công rời rạc. Khi quan sát được một vector đặc thù, ta tra cứu xem loại lỗ hổng nào thường xuyên đi kèm với vector đó nhất.
+\end{solution}
+
+\begin{exercise}[7.2 - MLE của phân phối Gamma]
+Cho mẫu ngẫu nhiên $X_1, \dots, X_n$ từ quần thể Gamma($\alpha, \beta$).
+(a) Tìm MLE của $\beta$ khi biết $\alpha$.
+\end{exercise}
+
+\begin{solution}
+\textbf{A. Motivation \& Ý nghĩa (The "Why"):} Phân phối Gamma thường dùng để mô hình hóa thời gian chờ đợi hoặc độ trễ trong mạng. Biết $\alpha$ giống như biết cấu trúc hình dạng (shape) của traffic, chúng ta cần ước lượng $\beta$ (scale) để biết tốc độ trung bình. [cite: 284, 285]
+
+\textbf{B. Chi tiết Toán học (The "How"):}
+Hàm Likelihood là:
+\[ L(\beta | \mathbf{x}, \alpha) = \prod_{i=1}^n \frac{1}{\Gamma(\alpha)\beta^\alpha} x_i^{\alpha-1} e^{-x_i/\beta} = \frac{1}{(\Gamma(\alpha))^n \beta^{n\alpha}} \left(\prod x_i\right)^{\alpha-1} e^{-\sum x_i/\beta} \] [cite: 284, 289]
+Lấy Log-likelihood:
+\[ \log L(\beta) = -n\alpha \log \beta - n \log \Gamma(\alpha) + (\alpha-1) \sum \log x_i - \frac{\sum x_i}{\beta} \] [cite: 289]
+Đạo hàm theo $\beta$:
+\[ \frac{d}{d\beta} \log L(\beta) = -\frac{n\alpha}{\beta} + \frac{\sum x_i}{\beta^2} = 0 \implies n\alpha\beta = \sum x_i \implies \hat{\beta} = \frac{\bar{x}}{\alpha} \] [cite: 285]
+
+\textbf{C. Ví dụ Thực tế \& Đa ngành (The "Where"):} Trong MLOps, khi giám sát độ trễ (latency) của một API Service, nếu ta giả định latency tuân theo quy luật Gamma, MLE giúp ta xác định nhanh chóng tham số phân phối hiện tại để cảnh báo nếu có sự bất thường (anomaly detection).
+\end{solution}
+
+\begin{exercise}[7.3 - Tính tương đương của Log-likelihood]
+Chứng minh rằng việc cực đại hóa $L(\theta | \mathbf{x})$ tương đương với cực đại hóa $\log L(\theta | \mathbf{x})$.
+\end{exercise}
+
+\begin{solution}
+\textbf{A. Motivation \& Ý nghĩa (The "Why"):} Trong tính toán số học (Computational Science), hàm Likelihood thường là tích của hàng ngàn xác suất nhỏ, dẫn đến hiện tượng tràn số dưới (underflow). Log biến phép nhân thành phép cộng, giúp tính toán ổn định và dễ lấy đạo hàm hơn. [cite: 289]
+
+\textbf{B. Chi tiết Toán học (The "How"):}
+Hàm $g(u) = \log(u)$ là một hàm đơn điệu tăng nghiêm ngặt (strictly increasing function) trên khoảng $(0, \infty)$. 
+Theo định nghĩa, nếu $\theta^*$ là điểm cực đại của $L(\theta)$, thì với mọi $\theta$:
+\[ L(\theta^*) \ge L(\theta) \iff \log L(\theta^*) \ge \log L(\theta) \]
+Do đó, vị trí đạt cực trị (argmax) của cả hai hàm là trùng nhau. [cite: 289]
+
+\textbf{C. Ví dụ Thực tế \& Đa ngành (The "Where"):} Hầu hết các thư viện Optimization (như SciPy) hoặc Deep Learning frameworks (như PyTorch/TensorFlow) đều sử dụng Log-Loss hoặc Log-Likelihood để đảm bảo độ chính xác của gradient trong quá trình lan truyền ngược (backpropagation).
+\end{solution}
+
+\begin{exercise}[7.6 - Phân phối lũy thừa (Power Law)]
+Cho mẫu ngẫu nhiên $X_1, \dots, X_n$ có pdf $f(x|\theta) = \theta x^{-2}$ với $0 < \theta \le x < \infty$.
+(a) Thống kê đủ cho $\theta$ là gì? (b) Tìm MLE của $\theta$.
+\end{exercise}
+
+\begin{solution}
+\textbf{A. Motivation \& Ý nghĩa (The "Why"):} Phân phối này thuộc dạng Pareto/Power Law, thường gặp trong quy luật phân bố tài nguyên hoặc kích thước file trong hệ thống file bảo mật. [cite: 294, 295]
+
+\textbf{B. Chi tiết Toán học (The "How"):}
+Joint pdf: $f(\mathbf{x}|\theta) = \theta^n (\prod x_i)^{-2} \mathbb{I}(x_{(1)} \ge \theta)$. [cite: 295]
+\begin{itemize}
+    \item \textbf{(a)} Theo định lý phân rã (Factorization Theorem), $T(\mathbf{X}) = X_{(1)} = \min(X_1, \dots, X_n)$ là thống kê đủ cho $\theta$ vì hàm mật độ chỉ phụ thuộc vào $\theta$ thông qua điều kiện $x_{(1)} \ge \theta$. [cite: 296]
+    \item \textbf{(b)} $L(\theta | \mathbf{x}) = \theta^n (\prod x_i)^{-2}$ khi $0 < \theta \le x_{(1)}$. Đây là hàm tăng theo $\theta$. Do đó, nó đạt giá trị lớn nhất tại biên cao nhất có thể của $\theta$, tức là $\hat{\theta} = X_{(1)}$. [cite: 297]
+\end{itemize}
+
+\textbf{C. Ví dụ Thực tế \& Đa ngành (The "Where"):} Trong IAM, nếu ta theo dõi thời gian sống của session (session duration), và tham số $\theta$ là thời gian tối thiểu được quy định, thì giá trị session ngắn nhất quan sát được là ước lượng tốt nhất cho ngưỡng $\theta$ đó.
+\end{solution}
+
+% --- Tiếp nối từ Exercise 7.6 ---
+
+\begin{exercise}[7.7 - MLE giữa hai mô hình PDF cụ thể]
+Cho $X_1, \dots, X_n$ iid với $\theta \in \{0, 1\}$. Nếu $\theta=0, f(x|0)=1$ với $0<x<1$. Nếu $\theta=1, f(x|1)=1/(2\sqrt{x})$ với $0<x<1$. Tìm MLE của $\theta$ [cite: 299-305].
+\end{exercise}
+
+\begin{solution}
+\textbf{A. Motivation \& Ý nghĩa:} Đây là bài toán lựa chọn mô hình (Model Selection). Trong Security, điều này giống như việc phân biệt giữa traffic bình thường (Uniform) và traffic bị can thiệp có chủ đích (phân phối dồn về phía 0).
+
+\textbf{B. Chi tiết Toán học:}
+Hàm Likelihood cho mỗi trường hợp:
+\begin{itemize}
+    \item $L(0|\mathbf{x}) = \prod_{i=1}^n 1 = 1$.
+    \item $L(1|\mathbf{x}) = \prod_{i=1}^n \frac{1}{2\sqrt{x_i}} = \frac{1}{2^n \sqrt{\prod x_i}}$.
+\end{itemize}
+Ước lượng MLE $\hat{\theta} = 1$ nếu $L(1|\mathbf{x}) > L(0|\mathbf{x})$, ngược lại $\hat{\theta} = 0$.
+Điều kiện để $\hat{\theta} = 1$ là:
+\[ \frac{1}{2^n \sqrt{\prod x_i}} > 1 \iff \sqrt{\prod x_i} < \frac{1}{2^n} \iff \prod x_i < \frac{1}{4^n} \]
+
+\textbf{C. Ví dụ Thực tế:} Trong giám sát mạng, nếu tích các giá trị đo lường (như độ trễ tương đối) cực nhỏ, ta kết luận hệ thống đang bị tấn công ($\theta=1$) thay vì hoạt động ngẫu nhiên ($\theta=0$).
+\end{solution}
+
+\begin{exercise}[7.8 - Ước lượng phương sai từ một quan sát]
+Cho một quan sát $X \sim n(0, \sigma^2)$. Tìm ước lượng không chệch và MLE cho $\sigma^2$ [cite: 309-311].
+\end{exercise}
+
+\begin{solution}
+\textbf{A. Motivation \& Ý nghĩa:} Khi dữ liệu cực kỳ khan hiếm (Small data), việc tận dụng một quan sát duy nhất để ước lượng độ biến động là thử thách lớn về độ chính xác.
+
+\textbf{B. Chi tiết Toán học:}
+\begin{itemize}
+    \item \textbf{Unbiased:} Ta biết $E[X] = 0$ và $Var(X) = \sigma^2$, suy ra $E[X^2] = Var(X) + (E[X])^2 = \sigma^2$. Vậy $T(X) = X^2$ là ước lượng không chệch của $\sigma^2$.
+    \item \textbf{MLE:} $L(\sigma^2|x) = (2\pi\sigma^2)^{-1/2} \exp(-x^2/2\sigma^2)$.
+    Lấy log: $\log L = -\frac{1}{2}\log(2\pi) - \frac{1}{2}\log(\sigma^2) - \frac{x^2}{2\sigma^2}$.
+    Đạo hàm theo $\sigma^2$: $-\frac{1}{2\sigma^2} + \frac{x^2}{2(\sigma^2)^2} = 0 \implies \hat{\sigma}^2 = x^2$.
+\end{itemize}
+\textbf{C. Ví dụ Thực tế:} Trong IAM, nếu ta chỉ ghi nhận được một khoảng thời gian chờ (latency) duy nhất, bình phương của nó có thể dùng làm ước lượng thô cho mức độ biến động của hệ thống tại thời điểm đó.
+\end{solution}
+
+\begin{exercise}[7.9 - So sánh MoM và MLE cho Uniform]
+Cho $X_1, \dots, X_n \sim \text{Uniform}(0, \theta)$. So sánh Method of Moments (MoM) và MLE [cite: 313-316].
+\end{exercise}
+
+\begin{solution}
+\textbf{A. Motivation \& Ý nghĩa:} Bài toán này minh họa tại sao MLE thường "thắng" MoM về độ hiệu quả (Efficiency).
+
+\textbf{B. Chi tiết Toán học:}
+\begin{itemize}
+    \item \textbf{MoM:} $E[X] = \theta/2 = \bar{x} \implies \tilde{\theta} = 2\bar{X}$.
+    $E[\tilde{\theta}] = \theta$ (không chệch). $Var(\tilde{\theta}) = 4 Var(\bar{X}) = 4 \frac{\theta^2/12}{n} = \frac{\theta^2}{3n}$.
+    \item \textbf{MLE:} $\hat{\theta} = X_{(n)}$. 
+    $E[\hat{\theta}] = \frac{n}{n+1}\theta$. $Var(\hat{\theta}) = \frac{n}{(n+1)^2(n+2)}\theta^2 \approx \frac{\theta^2}{n^2}$.
+\end{itemize}
+\textbf{C. Kết luận:} MLE ($X_{(n)}$) tốt hơn vì phương sai giảm theo bậc $n^2$, nhanh hơn nhiều so với MoM (giảm theo bậc $n$). Trong Engineering, sử dụng giá trị cực đại quan sát được để ước lượng ngưỡng hệ thống luôn chính xác hơn dùng trung bình nhân đôi.
+\end{solution}
+
+\begin{exercise}[7.10 - Ước lượng tham số Power Distribution]
+Cho $X_i$ có CDF $P(X_i \le x) = (x/\beta)^\alpha, 0 \le x \le \beta$. Tìm MLE cho $\alpha, \beta$ [cite: 317-321].
+\end{exercise}
+
+\begin{solution}
+\textbf{A. Motivation \& Ý nghĩa:} Phân phối này tổng quát hóa quy luật lũy thừa. Trong Data Science, nó dùng để mô hình hóa các hiện tượng có giới hạn trên ($\beta$) và hình dạng phân bố ($\alpha$).
+
+\textbf{B. Chi tiết Toán học:}
+PDF: $f(x|\alpha, \beta) = \frac{d}{dx} (x/\beta)^\alpha = \frac{\alpha x^{\alpha-1}}{\beta^\alpha}, 0 \le x \le \beta$.
+Likelihood: $L(\alpha, \beta) = \frac{\alpha^n (\prod x_i)^{\alpha-1}}{\beta^{n\alpha}} \mathbb{I}(x_{(n)} \le \beta)$.
+\begin{itemize}
+    \item \textbf{Với $\beta$:} Để cực đại hóa $L$, ta cần $\beta$ nhỏ nhất có thể nhưng phải thỏa $\beta \ge x_{(n)}$. Vậy $\hat{\beta} = X_{(n)}$.
+    \item \textbf{Với $\alpha$:} Lấy log và đạo hàm theo $\alpha$: 
+    $n/\alpha + \sum \log x_i - n \log \hat{\beta} = 0 \implies \hat{\alpha} = \frac{n}{n \log X_{(n)} - \sum \log X_i}$.
+\end{itemize}
+\end{solution}
+
+\begin{exercise}[7.12 - Ước lượng tham số Bernoulli bị giới hạn]
+Cho $X_i \sim \text{Bernoulli}(\theta)$ với $0 \le \theta \le 1/2$. So sánh MSE của MoM và MLE [cite: 330-335].
+\end{exercise}
+
+\begin{solution}
+\textbf{A. Motivation \& Ý nghĩa:} Trong Security, nếu ta biết chắc chắn tỷ lệ lỗi không vượt quá $50\%$, việc áp dụng ràng buộc này vào ước lượng sẽ giúp cải thiện Mean Squared Error (MSE).
+
+\textbf{B. Chi tiết Toán học:}
+\begin{itemize}
+    \item \textbf{MoM:} $\tilde{\theta} = \bar{X}$ (không xét ràng buộc).
+    \item \textbf{MLE:} $\hat{\theta} = \bar{X}$ nếu $\bar{X} \le 1/2$, và $\hat{\theta} = 1/2$ nếu $\bar{X} > 1/2$. Tức là $\hat{\theta} = \min(\bar{X}, 1/2)$.
+\end{itemize}
+\textbf{C. Đánh giá:} MLE được ưu tiên vì nó luôn nằm trong không gian tham số cho phép. MSE của MLE sẽ nhỏ hơn MoM vì nó "kéo" các ước lượng vô lý ($\bar{X} > 0.5$) về giá trị biên hợp lý nhất.
+\end{solution}
+
+% --- Tiếp nối từ Exercise 7.12 ---
+
+\begin{exercise}[7.13 - MLE của phân phối Double Exponential]
+Cho mẫu ngẫu nhiên $X_1, \dots, X_n$ từ phân phối Double Exponential (Laplace) với pdf $f(x|\theta) = \frac{1}{2}e^{-|x-\theta|}$[cite: 336, 337]. Tìm MLE của $\theta$.
+\end{exercise}
+
+\begin{solution}
+\textbf{A. Motivation \& Ý nghĩa (The "Why"):} Phân phối Laplace thường được dùng để mô hình hóa các sai số có "đuôi nặng" (heavy tails) hơn phân phối chuẩn. Trong Security, nó giúp xử lý các nhiễu hệ thống mà thỉnh thoảng xuất hiện các giá trị cực đoan (outliers).
+
+\textbf{B. Chi tiết Toán học (The "How"):}
+Hàm Likelihood là:
+\[ L(\theta | \mathbf{x}) = \prod_{i=1}^n \frac{1}{2}e^{-|x_i-\theta|} = \left(\frac{1}{2}\right)^n \exp\left( -\sum_{i=1}^n |x_i - \theta| \right) \] [cite: 337]
+Để cực đại hóa $L(\theta)$, ta cần cực tiểu hóa tổng các trị tuyệt đối $D(\theta) = \sum_{i=1}^n |x_i - \theta|$.
+\begin{itemize}
+    \item Nếu $n$ lẻ ($n=2k+1$), giá trị cực tiểu đạt được tại trung vị của mẫu (sample median): $\hat{\theta} = X_{(k+1)}$.
+    \item Nếu $n$ chẵn ($n=2k$), giá trị cực tiểu đạt được tại bất kỳ điểm nào trong khoảng giữa hai giá trị trung tâm: $\hat{\theta} \in [X_{(k)}, X_{(k+1)}]$.
+\end{itemize}
+
+\textbf{C. Ví dụ Thực tế \& Đa ngành (The "Where"):} Khi bạn đo đạc độ trễ phản hồi của hệ thống IAM, nếu dữ liệu có nhiều nhiễu đột ngột, sử dụng trung vị (Median) làm ước lượng cho "điểm trung tâm" sẽ ổn định (robust) hơn nhiều so với dùng trung bình cộng.
+\end{solution}
+
+\begin{exercise}[7.14 - MLE cho mô hình Competing Risks]
+Cho $X \sim \text{Exp}(\lambda)$ và $Y \sim \text{Exp}(\mu)$ độc lập. Ta quan sát $Z = \min(X, Y)$ và $W$ là chỉ thị cho biết biến nào là giá trị nhỏ nhất[cite: 340, 345, 346, 347]. Tìm MLE của $\lambda$ và $\mu$ từ $n$ quan sát iid $(Z_i, W_i)$[cite: 350, 351].
+\end{exercise}
+
+\begin{solution}
+\textbf{A. Motivation \& Ý nghĩa (The "Why"):} Đây là bài toán thực tế trong Security: Một session có thể kết thúc do "Timeout" ($X$) hoặc do "User logout" ($Y$). Bạn chỉ biết session kết thúc lúc nào ($Z$) và lý do kết thúc ($W$).
+
+\textbf{B. Chi tiết Toán học (The "How"):}
+Phân phối đồng thời của $(Z, W)$ là:
+$f(z, w=1) = f_X(z)P(Y>z) = \frac{1}{\lambda}e^{-z/\lambda} e^{-z/\mu} = \frac{1}{\lambda}e^{-z(1/\lambda + 1/\mu)}$[cite: 340, 341, 350].
+$f(z, w=0) = f_Y(z)P(X>z) = \frac{1}{\mu}e^{-z/\mu} e^{-z/\lambda} = \frac{1}{\mu}e^{-z(1/\lambda + 1/\mu)}$[cite: 342, 350].
+Likelihood cho $n$ quan sát:
+\[ L(\lambda, \mu) = \prod_{i=1}^n \left(\frac{1}{\lambda}\right)^{w_i} \left(\frac{1}{\mu}\right)^{1-w_i} \exp\left( -z_i \left(\frac{1}{\lambda} + \frac{1}{\mu}\right) \right) \] 
+Lấy Log-likelihood và đạo hàm:
+$\log L = -\left(\sum w_i\right) \log \lambda - \left(n - \sum w_i\right) \log \mu - \left(\frac{1}{\lambda} + \frac{1}{\mu}\right) \sum z_i$.
+Giải hệ phương trình đạo hàm bằng 0, ta thu được:
+\[ \hat{\lambda} = \frac{\sum Z_i}{\sum W_i}, \quad \hat{\mu} = \frac{\sum Z_i}{n - \sum W_i} \].
+\end{solution}
+
+\begin{exercise}[7.16(e) - MLE trong họ Exponential một tham số]
+Cho $f(x|\theta) = \exp\{\theta h(x) - H(\theta)\}g(x)$ với $h = H'$. Chứng minh MLE của $\theta$ là $\hat{\theta} = h^{-1}(\bar{h})$[cite: 369, 370].
+\end{exercise}
+
+\begin{solution}
+\textbf{A. Motivation \& Ý nghĩa (The "Why"):} Đây là công thức tổng quát cho rất nhiều phân phối thông dụng. Nó cho thấy MLE thực chất là việc khớp các mô-men của dữ liệu với kỳ vọng lý thuyết của mô hình[cite: 369, 370].
+
+\textbf{B. Chi tiết Toán học (The "How"):}
+Log-likelihood: $\log L(\theta) = \theta \sum h(x_i) - n H(\theta) + \sum \log g(x_i)$[cite: 369].
+Đạo hàm theo $\theta$: $\frac{d}{d\theta} \log L = \sum h(x_i) - n H'(\theta) = 0$[cite: 370].
+Vì $h = H'$, ta có: $n \bar{h} - n h(\theta) = 0 \implies h(\theta) = \bar{h}$[cite: 369, 370].
+Vậy $\hat{\theta} = h^{-1}\left( \frac{1}{n} \sum h(x_i) \right)$[cite: 370].
+
+\textbf{C. Ví dụ:} Đối với phân phối Normal (arithmetic mean) và Inverted Gamma (harmonic mean), kết quả này giúp xác định nhanh ước lượng điểm mà không cần tính toán lại từ đầu[cite: 371].
+\end{solution}
+
+\begin{exercise}[7.19 - Ước lượng trong mô hình hồi quy qua gốc tọa độ]
+Cho $Y_i = \beta x_i + \epsilon_i$ với $\epsilon_i \sim n(0, \sigma^2)$ iid[cite: 392, 393, 394].
+(a) Tìm thống kê đủ 2 chiều cho $(\beta, \sigma^2)$[cite: 395].
+(b) Tìm MLE của $\beta$[cite: 396].
+\end{exercise}
+
+\begin{solution}
+\textbf{B. Chi tiết Toán học (The "How"):}
+Hàm Likelihood: $L(\beta, \sigma^2) = \frac{1}{(2\pi\sigma^2)^{n/2}} \exp\left( -\frac{1}{2\sigma^2} \sum (y_i - \beta x_i)^2 \right)$[cite: 394].
+Khai triển tổng: $\sum (y_i - \beta x_i)^2 = \sum y_i^2 - 2\beta \sum x_i y_i + \beta^2 \sum x_i^2$[cite: 393, 394].
+\begin{itemize}
+    \item \textbf{(a)} Theo định lý phân rã, thống kê đủ là $T(\mathbf{Y}) = \left( \sum X_i Y_i, \sum Y_i^2 \right)$[cite: 395].
+    \item \textbf{(b)} Để tìm MLE của $\beta$, ta đạo hàm phần trong số mũ theo $\beta$:
+    $\frac{d}{d\beta} \sum (y_i - \beta x_i)^2 = -2 \sum x_i(y_i - \beta x_i) = 0$[cite: 396].
+    $\implies \sum x_i y_i - \beta \sum x_i^2 = 0 \implies \hat{\beta} = \frac{\sum x_i Y_i}{\sum x_i^2}$[cite: 396].
+\end{itemize}
+\end{solution}
+
+% --- Tiếp nối từ Exercise 7.21 ---
+
+\section*{Phần 2: Ước lượng Bayes và Thuật toán EM}
+
+\begin{exercise}[7.22 - Ước lượng Bayes cho kỳ vọng phân phối Chuẩn]
+Cho $X_1, \dots, X_n \sim n(\theta, \sigma^2)$ và tiên nghiệm (prior) $\theta \sim n(\mu, \tau^2)$. Giả sử $\sigma^2, \mu, \tau^2$ đã biết.
+(a) Tìm pdf đồng thời của $\mathbf{X}$ và $\theta$.
+(b) Chứng minh phân phối lề (marginal) của $\bar{X}$ là $n(\mu, \sigma^2/n + \tau^2)$.
+(c) Tìm phân phối hậu nghiệm (posterior) của $\theta$.
+\end{exercise}
+
+\begin{solution}
+\textbf{A. Motivation \& Ý nghĩa (The "Why"):} Đây là bài toán cập nhật niềm tin. Bạn có một đánh giá ban đầu về rủi ro ($\mu$) và độ bất định ($\tau^2$). Khi quan sát dữ liệu thực tế ($\bar{X}$), bạn điều chỉnh lại đánh giá đó. [cite: 405, 406]
+
+\textbf{B. Chi tiết Toán học (The "How"):}
+\begin{itemize}
+    \item \textbf{(a)} $f(\mathbf{x}, \theta) = f(\mathbf{x}|\theta)\pi(\theta)$. Vì $\bar{X}$ là thống kê đủ, ta chỉ cần xét $f(\bar{x}|\theta) \sim n(\theta, \sigma^2/n)$. [cite: 408]
+    \item \textbf{(b)} Phân phối lề của $\bar{X}$ thu được bằng cách tích phân $\theta$ ra khỏi phân phối đồng thời. Kết quả là $\bar{X} \sim n(\mu, \frac{\sigma^2}{n} + \tau^2)$. [cite: 409]
+    \item \textbf{(c)} Phân phối hậu nghiệm $\pi(\theta|\bar{x})$ là normal với: [cite: 410]
+    \[ E[\theta|\bar{x}] = \frac{\sigma^2/n}{\sigma^2/n + \tau^2}\mu + \frac{\tau^2}{\sigma^2/n + \tau^2}\bar{x} \quad \text{và} \quad Var(\theta|\bar{x}) = \frac{(\sigma^2/n)\tau^2}{\sigma^2/n + \tau^2} \]
+\end{itemize}
+
+\textbf{C. Ví dụ Thực tế (The "Where"):} Trong IAM, nếu bạn ước lượng xác suất một user là "insider threat", $\mu$ là tỷ lệ vi phạm trung bình của phòng ban, và $\bar{x}$ là hành vi thực tế của user đó. [cite: 423]
+\end{solution}
+
+\begin{exercise}[7.23 - Tiên nghiệm liên hợp cho phương sai]
+Cho mẫu từ $n(\mu, \sigma^2)$. Tiên nghiệm liên hợp (conjugate prior) cho $\sigma^2$ là Inverted Gamma $IG(\alpha, \beta)$. Tìm ước lượng Bayes của $\sigma^2$[cite: 413, 415].
+\end{exercise}
+
+\begin{solution}
+\textbf{A. Motivation:} Ước lượng độ biến động (volatility) của traffic mạng.
+
+\textbf{B. Chi tiết Toán học:}
+Posterior của $\sigma^2$ cũng là Inverted Gamma với các tham số mới: [cite: 417]
+\[ \alpha' = \alpha + \frac{n}{2}, \quad \beta' = \left[ \frac{\sum (x_i-\mu)^2}{2} + \frac{1}{\beta} \right]^{-1} \]
+Ước lượng Bayes (posterior mean) là $\frac{1}{\beta'(\alpha'-1)}$. Nếu $\mu$ chưa biết, ta thay bằng $\bar{x}$ và dùng bậc tự do $n-1$. [cite: 417]
+\end{solution}
+
+\begin{exercise}[7.24 - Poisson-Gamma Bayes]
+Cho $X_i \sim \text{Poisson}(\lambda)$ và $\lambda \sim \text{Gamma}(\alpha, \beta)$. Tìm phân phối hậu nghiệm[cite: 418].
+\end{exercise}
+
+\begin{solution}
+\textbf{B. Chi tiết Toán học:}
+Likelihood $\propto \lambda^{\sum x_i} e^{-n\lambda}$. Prior $\propto \lambda^{\alpha-1} e^{-\lambda/\beta}$. [cite: 418]
+Nhân lại ta được Posterior $\propto \lambda^{\alpha + \sum x_i - 1} e^{-\lambda(n + 1/\beta)}$. [cite: 419]
+Đây là phân phối $\text{Gamma}(\alpha + \sum x_i, \frac{\beta}{n\beta + 1})$.
+\textbf{Posterior Mean:} $E[\lambda|\mathbf{x}] = \frac{\alpha + \sum x_i}{n + 1/\beta}$. [cite: 420]
+\end{solution}
+
+\begin{exercise}[7.27 \& 7.28 - Thuật toán EM cho dữ liệu thiếu]
+Sử dụng thuật toán EM để ước lượng tham số $\beta$ trong mô hình Poisson khi một phần dữ liệu dân số ($x_1$) bị mất[cite: 437, 453].
+\end{exercise}
+
+\begin{solution}
+\textbf{A. Motivation:} Trong SIEM, đôi khi một cảm biến (sensor) bị sập khiến ta mất dữ liệu về tổng số request ($x_1$) nhưng vẫn biết số lượng cảnh báo ($y_1$). [cite: 454]
+
+\textbf{B. Chi tiết Toán học (EM Steps):}
+\begin{itemize}
+    \item \textbf{E-step:} Tính kỳ vọng của log-likelihood hoàn chỉnh dựa trên dữ liệu đã biết và ước lượng hiện tại $\hat{\beta}^{(r)}$. Ở đây ta cần tính $E[x_1 | y_1, \hat{\beta}^{(r)}]$. [cite: 465]
+    \item \textbf{M-step:} Cập nhật $\hat{\beta}^{(r+1)}$ bằng cách cực đại hóa kỳ vọng vừa tìm được. [cite: 467]
+\end{itemize}
+Với dữ liệu bệnh bạch cầu (Exercise 7.28), EM sẽ hội tụ về giá trị MLE của dữ liệu không đầy đủ: $\hat{\beta} = \frac{\sum y_i}{\sum x_i}$ (với $x_1$ được ước lượng lại). [cite: 442, 455]
+\end{solution}
+
+% --- Tiếp nối từ Exercise 7.28 ---
+
+\begin{exercise}[7.29 - Biến thể EM với Multinomial và Poisson]
+Xét mô hình quan sát $(Y_i, X_i)$ với $Y_i \sim \text{Poisson}(m\beta\tau_i)$ và $\mathbf{X} \sim \text{Multinomial}(m, \boldsymbol{\tau})$. 
+(a) Viết hàm mật độ đồng thời. (b) Tìm MLE khi dữ liệu đầy đủ. (c) Thiết lập chuỗi EM khi $x_1$ bị thiếu [cite: 456-470].
+\end{exercise}
+
+\begin{solution}
+\textbf{A. Motivation \& Ý nghĩa (The "Why"):} Trong phân tích rủi ro hệ thống, $\tau_i$ có thể đại diện cho tỷ trọng của một phân vùng dữ liệu $i$ trong tổng thể $m$ (Multinomial), và $Y_i$ là số lượng sự cố xảy ra trong phân vùng đó (Poisson). Việc ước lượng đồng thời cả "tỷ trọng" và "tỷ lệ rủi ro" ($\beta$) giúp ta có cái nhìn toàn diện hơn về hệ thống.
+
+\textbf{B. Chi tiết Toán học (The "How"):}
+\begin{itemize}
+    \item \textbf{(a)} Hàm mật độ đồng thời là tích của các Poisson và Multinomial[cite: 459]:
+    \[ f(\mathbf{y}, \mathbf{x} | \beta, \boldsymbol{\tau}) = \prod_{i=1}^n \frac{e^{-m\beta\tau_i}(m\beta\tau_i)^{y_i}}{y_i!} \cdot m! \prod_{i=1}^n \frac{\tau_i^{x_i}}{x_i!} \]
+    \item \textbf{(b)} Khi đạo hàm log-likelihood đầy đủ theo $\beta$ và $\tau_j$ (có ràng buộc $\sum \tau_j = 1$), ta thu được MLE[cite: 461, 463]:
+    \[ \hat{\beta} = \frac{\sum Y_i}{\sum X_i}, \quad \hat{\tau}_j = \frac{X_j + Y_j}{\sum (X_i + Y_i)} \]
+    \item \textbf{(c)} Khi $x_1$ thiếu, ở E-step, ta thay $x_1$ bằng kỳ vọng có điều kiện $E[X_1 | \text{obs}, \hat{\tau}_1^{(r)}] = m\hat{\tau}_1^{(r)}$. Chuỗi EM sẽ cập nhật các tham số dựa trên giá trị ước lượng này của $x_1$[cite: 467, 469].
+\end{itemize}
+
+\textbf{C. Ví dụ Thực tế (The "Where"):} Trong IAM, nếu bạn mất log của một server ($x_1$) nhưng vẫn có dữ liệu về số lần truy cập thất bại ($y_1$) và tổng số server trong cluster ($m$), EM giúp bạn khôi phục lại bức tranh tổng thể về rủi ro của server đó.
+\end{solution}
+
+\begin{exercise}[7.30 - EM cho Mixture Models]
+Sử dụng EM để ước lượng tham số $p$ trong phân phối hỗn hợp $pf(x) + (1-p)g(x)$ bằng cách thêm biến ẩn $Z_i$ chỉ thị thành phần [cite: 471-482].
+\end{exercise}
+
+\begin{solution}
+\textbf{A. Motivation \& Ý nghĩa (The "Why"):} Đây là bài toán \textbf{Unsupervised Learning} kinh điển. Trong Security, traffic mạng thường là hỗn hợp giữa traffic bình thường ($f$) và traffic tấn công ($g$). Biến ẩn $Z_i$ giúp ta "phân loại" từng packet mà không cần nhãn (label) trước.
+
+\textbf{B. Chi tiết Toán học (The "How"):}
+\begin{itemize}
+    \item \textbf{E-step:} Tính xác suất hậu nghiệm packet $i$ thuộc về thành phần $f$[cite: 481]:
+    \[ \gamma_i^{(r)} = P(Z_i=1 | x_i, \hat{p}^{(r)}) = \frac{\hat{p}^{(r)}f(x_i)}{\hat{p}^{(r)}f(x_i) + (1-\hat{p}^{(r)})g(x_i)} \]
+    \item \textbf{M-step:} Cập nhật tỷ lệ hỗn hợp mới bằng trung bình các xác suất hậu nghiệm[cite: 484]:
+    \[ \hat{p}^{(r+1)} = \frac{1}{n} \sum_{i=1}^n \gamma_i^{(r)} \]
+\end{itemize}
+
+\textbf{C. Engineering Context:} Thuật toán này chính là nền tảng của các hệ thống phát hiện bất thường (Anomaly Detection) dựa trên phân cụm (Clustering).
+\end{solution}
+
+\begin{exercise}[7.31 - Chứng minh sự hội tụ của EM]
+Chứng minh rằng chuỗi Likelihood trong EM là không giảm bằng cách sử dụng Bất đẳng thức Jensen [cite: 483-494].
+\end{exercise}
+
+\begin{solution}
+\textbf{B. Chi tiết Toán học (The "How"):}
+Sử dụng tính chất lồi của hàm log và bất đẳng thức Jensen[cite: 492]. Ta phân tích log-likelihood của dữ liệu quan sát thành hiệu của kỳ vọng log-likelihood đầy đủ và entropy của phân phối biến ẩn[cite: 486]. Vì bước M-step cực đại hóa phần kỳ vọng, và bất đẳng thức Jensen đảm bảo phần entropy không làm giảm giá trị tổng, nên $L(\hat{\theta}^{(r+1)}) \ge L(\hat{\theta}^{(r)})$ [cite: 487-490].
+\end{solution}
+
+\begin{exercise}[7.38 - Cramér-Rao Lower Bound (CRLB)]
+Tìm hàm $g(\theta)$ sao cho tồn tại ước lượng không chệch đạt dấu bằng của CRLB cho:
+(a) $f(x|\theta) = \theta x^{\theta-1}, 0 < x < 1$ [cite: 530-534].
+\end{exercise}
+
+\begin{solution}
+\textbf{A. Motivation \& Ý nghĩa (The "Why"):} CRLB xác định giới hạn vật lý về độ chính xác của bất kỳ thuật toán ước lượng nào. Nó giống như "định luật bảo toàn" trong thống kê: bạn không thể ước lượng chính xác hơn lượng thông tin (Fisher Information) có trong dữ liệu.
+
+\textbf{B. Chi tiết Toán học (The "How"):}
+Dấu bằng đạt được khi và chỉ khi điểm số (Score function) có dạng:
+\[ \frac{\partial}{\partial \theta} \log L(\theta) = k(\theta) [W(\mathbf{X}) - g(\theta)] \]
+Với $f(x|\theta) = \theta x^{\theta-1}$, ta có $\log f = \log \theta + (\theta-1) \log x$.
+Đạo hàm: $\frac{\partial}{\partial \theta} \log f = \frac{1}{\theta} + \log x$.
+Với mẫu kích thước $n$: $\frac{\partial}{\partial \theta} \log L = \frac{n}{\theta} + \sum \log X_i = n \left[ \frac{1}{\theta} + \frac{\sum \log X_i}{n} \right]$.
+So sánh với dạng chuẩn, ta thấy $g(\theta) = -1/\theta$. Vậy $W(\mathbf{X}) = \frac{1}{n} \sum \log X_i$ là ước lượng không chệch tốt nhất (UMVUE) cho $-1/\theta$ và nó đạt CRLB.
+\end{solution}
+
+% --- Tiếp nối từ Exercise 7.38 ---
+
+\begin{exercise}[7.40 - CRLB cho phân phối Bernoulli]
+Cho $X_1, \dots, X_n$ iid Bernoulli($p$). Chứng minh rằng phương sai của $\bar{X}$ đạt đến giới hạn dưới Cramér-Rao (CRLB)[cite: 537].
+\end{exercise}
+
+\begin{solution}
+\textbf{A. Motivation \& Ý nghĩa (The "Why"):} Trong Cyber Security, $p$ có thể là xác suất một gói tin là độc hại. CRLB cho biết sai số tối thiểu mà bất kỳ bộ phân loại (classifier) nào cũng phải đối mặt khi ước lượng tỷ lệ này.
+
+\textbf{B. Chi tiết Toán học (The "How"):}
+\begin{itemize}
+    \item Log-likelihood của một quan sát: $\log f(x|p) = x \log p + (1-x) \log(1-p)$[cite: 331].
+    \item Đạo hàm bậc nhất (Score): $\frac{\partial}{\partial p} \log f = \frac{x}{p} - \frac{1-x}{1-p} = \frac{x-p}{p(1-p)}$.
+    \item Đạo hàm bậc hai: $\frac{\partial^2}{\partial p^2} \log f = -\frac{x}{p^2} - \frac{1-x}{(1-p)^2}$.
+    \item Thông tin Fisher (Fisher Information): $I(p) = -E[\frac{\partial^2}{\partial p^2} \log f] = \frac{p}{p^2} + \frac{1-p}{(1-p)^2} = \frac{1}{p(1-p)}$.
+    \item CRLB cho ước lượng không chệch của $p$: $\frac{1}{n I(p)} = \frac{p(1-p)}{n}$.
+    \item Vì $Var(\bar{X}) = \frac{p(1-p)}{n}$, nên $\bar{X}$ đạt CRLB[cite: 537].
+\end{itemize}
+
+\textbf{C. Ví dụ Thực tế (The "Where"):} Điều này khẳng định rằng trung bình mẫu là ước lượng "tối tân" nhất cho tỷ lệ lỗi hệ thống; không có thuật toán nào khác có thể cho phương sai thấp hơn trên cùng một tập dữ liệu.
+\end{solution}
+
+\begin{exercise}[7.41 \& 7.42 - Ước lượng tuyến tính có phương sai tối thiểu (BLUE)]
+Cho $W_1, \dots, W_k$ là các ước lượng không chệch độc lập của $\theta$ với phương sai $\sigma_i^2$. Tìm trọng số $a_i$ để $W^* = \sum a_i W_i$ có phương sai nhỏ nhất [cite: 541-547].
+\end{exercise}
+
+\begin{solution}
+\textbf{A. Motivation \& Ý nghĩa (The "Why"):} Giả sử bạn có $k$ cảm biến (sensors) giám sát cùng một thông số, nhưng độ chính xác của mỗi cảm biến khác nhau. Làm thế nào để kết hợp dữ liệu từ chúng một cách tối ưu?
+
+\textbf{B. Chi tiết Toán học (The "How"):}
+Để $W^*$ không chệch, ta cần $\sum a_i = 1$. Ta cực tiểu hóa $Var(W^*) = \sum a_i^2 \sigma_i^2$ với điều kiện $\sum a_i = 1$.
+Sử dụng nhân tử Lagrange: $L = \sum a_i^2 \sigma_i^2 - \lambda(\sum a_i - 1)$.
+Đạo hàm theo $a_i$: $2a_i \sigma_i^2 - \lambda = 0 \implies a_i = \frac{\lambda}{2\sigma_i^2}$.
+Vì $\sum a_i = 1$, ta có $\frac{\lambda}{2} \sum \frac{1}{\sigma_i^2} = 1 \implies a_i = \frac{1/\sigma_i^2}{\sum (1/\sigma_j^2)}$[cite: 548].
+Phương sai tối thiểu là: $Var(W^*) = \frac{1}{\sum (1/\sigma_i^2)}$[cite: 546].
+
+\textbf{C. Ví dụ Thực tế (The "Where"):} Trong Solution Architecture, đây là nền tảng của các thuật toán Load Balancing hoặc Data Fusion, nơi dữ liệu từ các nguồn tin cậy hơn (phương sai thấp) sẽ được ưu tiên trọng số cao hơn.
+\end{solution}
+
+\begin{exercise}[7.45 - Ước lượng phương sai tối ưu dưới phân phối Chuẩn]
+Chứng minh rằng dưới phân phối chuẩn, ước lượng dạng $aS^2$ có MSE nhỏ nhất khi $a = \frac{n-1}{n+1}$ [cite: 556-563].
+\end{exercise}
+
+\begin{solution}
+\textbf{A. Motivation \& Ý nghĩa (The "Why"):} Trong thống kê mô tả, ta thường dùng $S^2$ (chia cho $n-1$) để đảm bảo tính không chệch. Tuy nhiên, nếu mục tiêu là sai số tổng thể (MSE) nhỏ nhất, việc chấp nhận một chút "chệch" (bias) có thể giúp giảm phương sai đáng kể.
+
+\textbf{B. Chi tiết Toán học (The "How"):}
+$MSE(aS^2) = Var(aS^2) + [E(aS^2) - \sigma^2]^2 = a^2 Var(S^2) + (a-1)^2 \sigma^4$[cite: 560].
+Dưới phân phối chuẩn, $Var(S^2) = \frac{2\sigma^4}{n-1}$.
+Thay vào: $MSE = a^2 \frac{2\sigma^4}{n-1} + (a-1)^2 \sigma^4$.
+Đạo hàm theo $a$ và cho bằng 0: $a \frac{4\sigma^4}{n-1} + 2(a-1)\sigma^4 = 0 \implies a(\frac{2}{n-1} + 1) = 1$.
+$\implies a = \frac{n-1}{n+1}$[cite: 563].
+
+\textbf{C. Engineering Context:} Kết quả này cho thấy bộ ước lượng MLE cho phương sai ($\hat{\sigma}^2 = \frac{1}{n} \sum (X_i - \bar{X})^2$) hay bộ ước lượng không chệch ($S^2$) đều không phải là bộ ước lượng tối ưu nhất về mặt MSE.
+\end{solution}
+
+\begin{exercise}[7.52 - Chứng minh UMVUE cho phân phối Poisson]
+Chứng minh $\bar{X}$ là ước lượng không chệch tốt nhất (UMVUE) của $\lambda$ mà không dùng CRLB [cite: 611-615].
+\end{exercise}
+
+\begin{solution}
+\textbf{A. Motivation \& Ý nghĩa (The "Why"):} Đây là cách tiếp cận thông qua tính Đầy đủ (Completeness). Nếu một ước lượng không chệch là hàm của một thống kê đủ đầy đủ, nó chắc chắn là duy nhất và tốt nhất (Định lý Lehmann-Scheffé).
+
+\textbf{B. Chi tiết Toán học (The "How"):}
+\begin{itemize}
+    \item Đối với Poisson, $T = \sum X_i$ là thống kê đủ và đầy đủ (đã chứng minh ở Chương 6)[cite: 73, 612].
+    \item Ta có $E[\bar{X}] = \lambda$. Vì $\bar{X} = T/n$ là một hàm của thống kê đủ đầy đủ $T$, nên theo định lý Lehmann-Scheffé, $\bar{X}$ là UMVUE của $\lambda$[cite: 613].
+    \item Hơn nữa, với bài toán $E(S^2 | \bar{X}) = \bar{X}$, vì cả $S^2$ và $\bar{X}$ đều là ước lượng không chệch của $\lambda$, nhưng chỉ có $\bar{X}$ là hàm của thống kê đủ đầy đủ, nên phương sai của nó phải nhỏ hơn: $Var(\bar{X}) < Var(S^2)$[cite: 614].
+\end{itemize}
+\end{solution}
+
+% --- Tiếp nối từ Exercise 7.52 ---
+
+\begin{exercise}[7.53 - Điều kiện cần cho Ước lượng không chệch tốt nhất (BUE)]
+Giả sử $W$ là ước lượng không chệch của $\tau(\theta)$ và $U$ là ước lượng không chệch của 0. Chứng minh rằng nếu tồn tại $\theta_0$ sao cho $Cov_{\theta_0}(W, U) \neq 0$, thì $W$ không thể là BUE của $\tau(\theta)$[cite: 617].
+\end{exercise}
+
+\begin{solution}
+\textbf{A. Motivation \& Ý nghĩa (The "Why"):} Đây là nguyên lý "nhiễu" (noise). Một ước lượng là tốt nhất khi nó không còn tương quan với bất kỳ biến số nào có kỳ vọng bằng 0 (biến chỉ chứa nhiễu). Nếu còn tương quan, ta có thể dùng nhiễu đó để triệt tiêu bớt phương sai của ước lượng hiện tại.
+
+\textbf{B. Chi tiết Toán học (The "How"):}
+Xét ước lượng mới $W' = W + aU$ với $a$ là hằng số.
+Vì $E[U]=0$, nên $E[W'] = E[W] + aE[U] = \tau(\theta)$ ($W'$ vẫn không chệch).
+Phương sai của $W'$ là:
+\[ Var(W') = Var(W) + a^2 Var(U) + 2a Cov(W, U) \]
+Để $W$ là BUE, ta cần $Var(W') \ge Var(W)$ với mọi $a$. Tuy nhiên, nếu $Cov(W, U) \neq 0$, ta có thể chọn $a = -Cov(W, U)/Var(U)$ để làm cho $Var(W') < Var(W)$. Điều này mâu thuẫn với giả thiết $W$ là tốt nhất. Vậy $Cov(W, U)$ phải bằng 0 với mọi $\theta$[cite: 617].
+
+\textbf{C. Engineering Context:} Trong hệ thống Monitoring, nếu chỉ số đo lường (W) vẫn còn tương quan với các sai số ngẫu nhiên (U), bạn có thể cải tiến thuật toán lọc nhiễu để thu được chỉ số ổn định hơn.
+\end{solution}
+
+\begin{exercise}[7.56 - Định lý Lehmann-Scheffé]
+Chứng minh rằng nếu $T$ là thống kê đủ đầy đủ và $h(\mathbf{X})$ là bất kỳ ước lượng không chệch nào của $\tau(\theta)$, thì $\phi(T) = E(h(\mathbf{X})|T)$ là UMVUE của $\tau(\theta)$[cite: 631].
+\end{exercise}
+
+\begin{solution}
+\textbf{A. Motivation:} Đây là "công thức vàng" để tìm ước lượng tốt nhất. Nó nói rằng: hãy lấy bất kỳ ước lượng đơn giản nào, rồi "ép" nó đi qua bộ lọc của thống kê đủ đầy đủ.
+
+\textbf{B. Chi tiết Toán học:}
+\begin{enumerate}
+    \item Theo định lý Rao-Blackwell, $\phi(T)$ có phương sai nhỏ hơn hoặc bằng $h(\mathbf{X})$[cite: 631].
+    \item Vì $T$ là đầy đủ, nên chỉ tồn tại duy nhất một hàm của $T$ là ước lượng không chệch của $\tau(\theta)$.
+    \item Vì $\phi(T)$ là hàm của $T$ và không chệch, nên nó là ước lượng không chệch duy nhất dựa trên $T$. Theo bài 7.53, nó không thể tương quan với bất kỳ ước lượng không chệch nào của 0, dẫn đến nó là UMVUE.
+\end{enumerate}
+\end{solution}
+
+\begin{exercise}[7.65 - Hàm mất mát LINEX (Linear-Exponential)]
+Xét LINEX loss: $L(\theta, a) = e^{c(a-\theta)} - c(a-\theta) - 1$ với $c > 0$. Tìm ước lượng Bayes của $\theta$ [cite: 669-671].
+\end{exercise}
+
+\begin{solution}
+\textbf{A. Motivation \& Ý nghĩa (The "Why"):} Trong Cyber Security Risk Assessment, hậu quả của việc "đánh giá thấp" (under-estimating) rủi ro thường nặng nề hơn nhiều so với việc "đánh giá cao" (over-estimating). LINEX loss cho phép ta thiết lập sự bất đối xứng này (asymmetry)[cite: 669, 672].
+
+
+
+\textbf{B. Chi tiết Toán học (The "How"):}
+Ước lượng Bayes $\delta^\pi(X)$ cực tiểu hóa kỳ vọng của hậu nghiệm $E[L(\theta, a)|X]$.
+Đạo hàm theo $a$: $E[c e^{c(a-\theta)} - c | X] = 0$.
+$\implies e^{ca} E[e^{-c\theta} | X] = 1 \implies ca + \log E[e^{-c\theta} | X] = 0$.
+Vậy $\hat{\theta}_{Bayes} = -\frac{1}{c} \log E[e^{-c\theta} | X]$[cite: 675].
+
+\textbf{C. Real-world Example (The "Where"):} Khi ước lượng số lượng lỗ hổng (vulnerabilities), nếu bạn dùng $c < 0$, hàm loss sẽ phạt nặng hơn khi bạn đưa ra con số thấp hơn thực tế. Điều này buộc hệ thống phải đưa ra các cảnh báo "thận trọng" (conservative) hơn.
+\end{solution}
+
+\begin{exercise}[7.66 - Kỹ thuật Jackknife để giảm chệch]
+Sử dụng Jackknife để giảm chệch cho ước lượng $\theta^2$ trong mẫu Bernoulli($\theta$) [cite: 679-684].
+\end{exercise}
+
+\begin{solution}
+\textbf{A. Motivation \& Ý nghĩa (The "Why"):} Đôi khi ta có một thuật toán tốt nhưng bị lệch (bias) một chút. Jackknife là kỹ thuật "rút từng mẫu" để đo lường mức độ chệch và tự động hiệu chỉnh nó mà không cần biết công thức toán học phức tạp của bias[cite: 679, 683].
+
+
+
+\textbf{B. Chi tiết Toán học (The "How"):}
+Ước lượng MLE là $T_n = \bar{X}^2$, đây là ước lượng có chệch của $\theta^2$[cite: 685].
+\begin{itemize}
+    \item Tính $T_n^{(i)}$ bằng cách loại bỏ quan sát $X_i$: $T_n^{(i)} = (\frac{n\bar{X} - X_i}{n-1})^2$.
+    \item Ước lượng Jackknife: $JK(T_n) = nT_n - \frac{n-1}{n} \sum T_n^{(i)}$ [cite: 681-682].
+    \item Sau khi tính toán, ta thu được $JK(T_n) = \frac{\sum X_i (\sum X_i - 1)}{n(n-1)}$. Đây chính là ước lượng không chệch (unbiased) của $\theta^2$ [cite: 686-687].
+\end{itemize}
+
+\textbf{C. Engineering Context:} Trong IAM, nếu bạn muốn ước lượng xác suất hai user cùng truy cập vào một tài nguyên nhạy cảm ($\theta^2$), Jackknife giúp bạn hiệu chỉnh sai số do kích thước mẫu hữu hạn gây ra.
+\end{solution}
+
+\end{document}
