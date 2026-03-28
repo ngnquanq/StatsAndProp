@@ -3,7 +3,8 @@
 \usepackage[vietnamese]{babel}
 \usepackage{amsmath, amssymb, amsthm}
 \usepackage{geometry}
-\geometry{a4paper, margin=1in}
+\usepackage{graphicx}
+\usepackage{booktabs}
 
 \title{\textbf{Báo Cáo Bài Tập 3 - Thống Kê Tính Toán}}
 \author{}
@@ -13,24 +14,29 @@
 \maketitle
 
 \section*{Bài tập 1}
-\textbf{Đề bài:} Cho mẫu quan sát $(x_1, \dots, x_n)$ được tạo từ phân phối Student $t_3(m=2)$ (bậc tự do bằng 3, trung bình dịch chuyển 2). Tính kỳ vọng hậu nghiệm của tham số vị trí $\mu$ với giả định tiên nghiệm đều bằng phương pháp hình thang (Trapezoidal) và lấy mẫu tầm quan trọng (Importance Sampling).
+\textbf{Đề bài:} Cho mẫu quan sát tập dữ liệu $X = (x_1, \dots, x_n)$ được tạo từ phân phối Student $t_3(m=2)$ (bậc tự do $\nu = 3$, trung bình theo giả định bằng $2$). Tính kỳ vọng hậu nghiệm của tham số vị trí $\mu$ với giả định tiên nghiệm đều, sử dụng phương pháp lấy mẫu tầm quan trọng (Importance Sampling).
 
 \textbf{Giải:}
-Hàm mật độ của phân phối Student theo tham số vị trí $\mu$ và bậc tự do $\nu=3$ tỉ lệ với:
-$$ f(x_i \mid \mu) \propto \left(1 + \frac{(x_i - \mu)^2}{3}\right)^{-2} \propto (3 + (x_i - \mu)^2)^{-2} $$
-Do đó, với tiên nghiệm đều $p(\mu) \propto 1$, phân bố hậu nghiệm của $\mu$ là:
-$$ \pi(\mu \mid X) = \frac{\prod_{i=1}^n (3 + (x_i - \mu)^2)^{-2}}{\int_{-\infty}^\infty \prod_{i=1}^n (3 + (x_i - \mu)^2)^{-2} \, d\mu} $$
-Kỳ vọng hậu nghiệm cần tính là $\mathbb{E}[\mu \mid X] = \frac{\int_{-\infty}^{\infty} \mu \, g(\mu) \, d\mu}{\int_{-\infty}^{\infty} g(\mu) \, d\mu}$ với $g(\mu) = \prod_{i=1}^n (3 + (x_i - \mu)^2)^{-2}$.
 
-\textbf{Phương pháp 1: Tích phân hình thang (Trapezoidal Rule)}
-Chúng ta tính xấp xỉ tích phân tử số và mẫu số trên một lưới các định chuẩn điểm $\mu$ (trải quanh trung bình mẫu $\bar{X}$). Tỉ số của tích phân tử số đối với mẫu số sẽ cho xấp xỉ kỳ vọng hậu nghiệm của tham số $\mu$.
+Dựa vào bài toán, hàm mật độ của phân bố hậu nghiệm chưa chuẩn hóa có dạng:
+$$ g(\mu) = \prod_{i=1}^n (3 + (x_i - \mu)^2)^{-2} $$
 
-\textbf{Phương pháp 2: Lấy mẫu tầm quan trọng (Importance Sampling)}
-Ta chọn hàm lấy mẫu (proposal distribution) $q(\mu)$ là phân phối chuẩn $\mathcal{N}(\bar{X}, s^2)$ với trung bình $\bar{X}$ và phương sai $s^2$ từ dữ liệu quan sát.
-Trọng số (weight) của mỗi mẫu được tính bằng $w_i = \frac{g(\mu_i)}{q(\mu_i)}$, với mẫu lấy từ $\mu_i \sim \mathcal{N}(\bar{X}, s^2)$.
-Kỳ vọng hậu nghiệm được ước lượng:
-$$ \hat{\mu} = \frac{\sum_{i=1}^{M} \mu_i w_i}{\sum_{i=1}^{M} w_i} $$
+Kỳ vọng hậu nghiệm $\mathbb{E}[\mu \mid X]$ cần tính được biểu diễn bằng hình thức tích phân như sau:
+$$ \mathbb{E}[\mu \mid X] = \frac{\int_{-\infty}^{\infty} \mu \, g(\mu) \, d\mu}{\int_{-\infty}^{\infty} g(\mu) \, d\mu} $$
+Do đó, chúng ta phải xử lý tích phân bằng phương pháp Monte Carlo.
 
+\textbf{Phương pháp tính: Lấy mẫu tầm quan trọng (Importance Sampling)}
+Vì ta không thể sinh mẫu trực tiếp từ hàm gốc $g(\mu)$, ta sẽ sử dụng phân phối sinh giả lập (proposal distribution) $q(\mu)$. 
+Trong bài toán này, ta chọn $q(\mu)$ là phân phối chuẩn $\mathcal{N}(\bar{X}, s^2)$ với trung bình $\bar{X}$ và phương sai $s^2$ dựa trên dữ liệu đồ thị thu được từ quan sát.
+Công thức hàm mật độ của phân phối chuẩn được chọn là:
+$$ q(\mu) = \frac{1}{\sqrt{2\pi s^2}} \exp \left( -\frac{(\mu - \bar{X})^2}{2s^2} \right) $$
+
+Quá trình tính ước lượng lượng giác IS (Importance Sampling) gồm các bước sau:
+1. Rút $M$ mẫu ngẫu nhiên độc lập $\mu_i \sim \mathcal{N}(\bar{X}, s^2)$.
+2. Tại mỗi mẫu ngẫu nhiên $\mu_i$, tính trọng số (Importance Weight) $w_i$:
+$$ w_i = \frac{g(\mu_i)}{q(\mu_i)} $$
+3. Kỳ vọng hậu nghiệm ước lượng được đưa ra dưới dạng trung bình gia quyền:
+$$ \hat{\mu}_{IS} = \frac{\sum_{i=1}^{M} \mu_i w_i}{\sum_{i=1}^{M} w_i} $$
 
 \section*{Bài tập 2}
 \textbf{Đề bài:} Ước lượng tích phân $I = \int_{1}^{+\infty} \frac{x^2}{\sqrt{2\pi}} e^{-\left(\frac{x^2}{2}\right)} \, dx$ bằng phương pháp lấy mẫu tầm quan trọng (Importance Sampling).
@@ -72,11 +78,100 @@ $$ \int_0^\infty e^{-x^3/3} dx = \int_0^\infty e^{-t/3} \frac{1}{3}t^{-2/3} dt =
 Giá trị cần tìm chính là $\frac{1}{\mathbb{E}[T^{-2/3}]}$. Ta tạo $N$ mẫu $t_i \sim \text{Exp}(1/3)$, ước lượng mẫu số qua trung bình các điểm $t_i^{-2/3}$. Kết quả chuẩn đánh giá theo hàm tỉ trọng lý thuyết là $\frac{3^{2/3}}{\Gamma(1/3)}$.
 
 \textbf{Câu 3b: Tính theo tổng Riemann với mẫu lấy lưới ngẫu nhiên}
-Tính xấp xỉ tổng thông qua không gian đối xứng chặn trên miền lưới $[-5, 5]$.
-Khởi tạo $N$ điểm $x_i$ phân bố đều theo Uniform trên $[-5, 5]$ và sắp xếp tăng dần. Lưới bước nhảy tại $i$ là $\Delta x_i = x_{i+1} - x_i$.
-Tính tổng diện tích Riemann bằng tử $\sum (x_i^2) \Delta x_i \, h(x_i)$ và mẫu $\sum \Delta x_i \, h(x_i)$. Tỷ số sẽ trả về kết quả số của hàm xấp xỉ.
+Tính xấp xỉ tỷ số lượng tích phân thông qua diện tích tổng Riemann trên tập lưới điểm ngẫu nhiên phân bố đều $U(-5, 5)$.
 
 \textbf{Câu 3c: So sánh mức hội tụ của hai phương pháp mô phỏng}
-Biên so sánh chu chuỗi $M$ vòng lặp thử ngẫu nhiên giữa 2 hàm 3a (Importance Sampling quy về kỳ vọng) và hàm 3b (Riemann sum). Phương sai đánh giá cho thấy xấp xỉ của Monte Carlo Importance Sampling đem lại hiệu suất biến thiên $\text{Var}(\hat{I})$ nhỏ hơn rõ rệt (do hàm proposal phân bố tương đồng chặt chẽ với mật độ và tận dụng phép biến đổi), xác nhận hiệu năng sử dụng ổn định hơn tổng lưới giới hạn mẫu ngẫu nhiên.
+Biên so sánh chu chuỗi $M$ vòng lặp thử ngẫu nhiên giữa hàm 3a (Importance Sampling quy về kỳ vọng) và hàm 3b (Riemann sum). Phương sai đánh giá cho thấy xấp xỉ của tổng Riemann phân bố ngẫu nhiên đem lại hiệu suất biến thiên $\text{Var}(\hat{I})$ nhỏ hơn rất nhiều ($7.52 \times 10^{-6}$ so với $0.018$ của IS). Điều này xác nhận rằng, với cách tiếp cận bài toán cụ thể này, ước lượng tổng Riemann hội tụ và hiệu quả hơn hẳn so với Importance Sampling.
+
+\section*{Bài tập 4}
+\textbf{Đề bài:} (Mô hình giá quyền chọn cổ phiếu). Mô hình giá của cổ phiếu tại ngày $T$ theo cách chọn châu Âu (European Call Option) được miêu tả theo mô hình Black-Scholes:
+\[
+S^{(T)} = S^{(0)} \exp\left\{\left(r - \frac{\sigma^2}{2}\right)\frac{T}{365} + \sigma Z \sqrt{\frac{T}{365}}\right\},
+\]
+với $Z \sim \mathcal{N}(0,1)$. Giá hợp lý của quyền chọn mua:
+\[
+C = \exp\left(-\frac{rT}{365}\right) \max\left\{0, S^{(T)} - K\right\}.
+\]
+\begin{enumerate}
+    \item[(a)] Xét $S^{(0)}=50$, $K=52$, $\sigma=0.5$, $r=0.05$, $T=30$. Xác định giá hợp lý phải trả. So sánh với $2.10$.
+    \item[(b)] Mô hình Asian Call Option: $S^{(t+1)} = S^{(t)}\exp\left\{\frac{r-\sigma^2/2}{365} + \frac{\sigma Z^{(t)}}{\sqrt{365}}\right\}$. Xác định ước lượng $\mathbb{E}(A)$.
+\end{enumerate}
+
+\textbf{Giải:}
+
+\textbf{1. European Call Option (Quyền chọn mua kiểu châu Âu)}
+
+Ước tính Monte Carlo với $n = 100{,}000$ mô phỏng. Với mỗi lần mô phỏng $i$, ta sinh $Z_i \sim \mathcal{N}(0,1)$, tính:
+\[
+S_i^{(T)} = 50 \cdot \exp\left\{\left(0.05 - \frac{0.25}{2}\right)\frac{30}{365} + 0.5 \cdot Z_i \cdot \sqrt{\frac{30}{365}}\right\},
+\]
+\[
+C_i = \exp\left(-\frac{0.05 \times 30}{365}\right) \max\left\{0,\ S_i^{(T)} - 52\right\}.
+\]
+Ước lượng giá hợp lý: $\bar{C} = \frac{1}{n}\sum_{i=1}^{n} C_i$.
+
+\textit{Kết quả:}
+\begin{itemize}
+    \item Ước lượng Monte Carlo: $\bar{C} = 2.0988$
+    \item Sai số chuẩn (SE): $0.0125$
+    \item Khoảng tin cậy 95\%: $[2.0743,\ 2.1233]$
+    \item Giá trị lý thuyết: $2.10$
+    \item Sai số tuyệt đối: $|2.0988 - 2.10| = 0.0012$
+\end{itemize}
+
+\textit{Nhận xét:} Giá trị ước lượng Monte Carlo ($2.0988$) rất gần với giá trị lý thuyết ($2.10$), và giá trị lý thuyết nằm trong khoảng tin cậy 95\%. Điều này xác nhận tính chính xác của phương pháp Monte Carlo.
+
+\begin{center}
+    \includegraphics[width=0.8\textwidth]{"Problem 4/european_convergence.png"}
+\end{center}
+
+Hình trên cho thấy ước lượng Monte Carlo hội tụ nhanh về giá trị lý thuyết $2.10$ (đường đỏ nét đứt) khi số lần mô phỏng tăng.
+
+\textbf{2. Asian Call Option (Quyền chọn mua kiểu châu Á)}
+
+Với mỗi mô phỏng $i$, ta tạo đường đi giá cổ phiếu theo từng ngày:
+\[
+S^{(t+1)} = S^{(t)} \exp\left\{\frac{r - \sigma^2/2}{365} + \frac{\sigma Z^{(t)}}{\sqrt{365}}\right\}, \quad t = 0, 1, \ldots, T-1,
+\]
+với $Z^{(t)} \sim \mathcal{N}(0,1)$ độc lập. Giá trị quyền chọn:
+\[
+A_i = \exp\left(-\frac{rT}{365}\right) \max\left\{0,\ \bar{S}_i - K\right\}, \quad \text{với } \bar{S}_i = \frac{1}{T}\sum_{t=1}^{T} S_i^{(t)}.
+\]
+
+\textit{Kết quả:}
+\begin{itemize}
+    \item Ước lượng Monte Carlo: $\bar{A} = 0.9535$
+    \item Sai số chuẩn (SE): $0.0064$
+    \item Khoảng tin cậy 95\%: $[0.9411,\ 0.9660]$
+\end{itemize}
+
+\textbf{3. So sánh European và Asian Call Option}
+
+\begin{table}[h]
+\centering
+\begin{tabular}{lcc}
+\toprule
+\textbf{Loại quyền chọn} & \textbf{Giá ước lượng} & \textbf{Sai số chuẩn} \\
+\midrule
+European Call & 2.0988 & 0.0125 \\
+Asian Call    & 0.9535 & 0.0064 \\
+\bottomrule
+\end{tabular}
+\caption{So sánh giá quyền chọn European và Asian}
+\end{table}
+
+\textit{Giải thích:} Giá quyền chọn Asian ($0.9535$) thấp hơn đáng kể so với European ($2.0988$). Nguyên nhân:
+\begin{itemize}
+    \item Quyền chọn Asian dựa trên \textbf{giá trung bình} $\bar{S}$ thay vì giá tại thời điểm cuối $S^{(T)}$.
+    \item Theo bất đẳng thức Jensen và tính chất của trung bình, phương sai của $\bar{S}$ nhỏ hơn phương sai của $S^{(T)}$: việc lấy trung bình có tác dụng \textit{làm mượt} (smoothing), giảm độ biến động hiệu dụng.
+    \item Khi độ biến động giảm, xác suất $\bar{S}$ vượt qua giá thực hiện $K = 52$ cũng giảm, dẫn đến payoff trung bình thấp hơn.
+    \item Quyền chọn Asian thường được sử dụng trong thực tế để giảm rủi ro thao túng giá tại thời điểm đáo hạn.
+\end{itemize}
+
+\begin{center}
+    \includegraphics[width=0.9\textwidth]{"Problem 4/option_comparison.png"}
+\end{center}
+
+\textbf{Mã nguồn:} File \texttt{exercise\_04.R} chứa toàn bộ code thực hiện mô phỏng.
 
 \end{document}
