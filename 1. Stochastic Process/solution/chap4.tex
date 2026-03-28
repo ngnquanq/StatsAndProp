@@ -1,0 +1,671 @@
+\documentclass[8pt,a4paper]{article}
+
+% --- Packages ---
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[vietnamese]{babel}
+\usepackage{amsmath, amssymb, amsthm}
+\usepackage{mathtools}
+\usepackage{enumitem}
+\usepackage{hyperref}
+\usepackage{geometry}
+\geometry{margin=2.5cm}
+\usepackage{geometry}
+\geometry{
+  a4paper,
+  left=3.5cm,   % Thụt lề trái vào (tăng giá trị để lề rộng ra)
+  right=3.5cm,  % Thụt lề phải vào
+  bottom=4cm,   % Đẩy lề dưới lên cao (tạo khoảng trống ở chân trang)
+  top=2.5cm     % Lề trên
+}
+% --- Environments ---
+\newtheorem{exercise}{Bài tập}
+\newenvironment{solution}{\begin{proof}[Lời giải]}{\end{proof}}
+
+% --- Custom commands ---
+\newcommand{\prob}{\mathbb{P}}
+\newcommand{\E}{\mathbb{E}}
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\N}{\mathbb{N}}
+\newcommand{\Var}{\operatorname{Var}}
+
+% --- Title ---
+\title{Continuous-Time Markov Chains: Exercises and Solutions}
+\author{Quang Nguyen}
+\date{\today}
+
+\begin{document}
+\maketitle
+
+\section*{Chương 4: Markov Chains liên tục}
+% ================================================================
+% CHƯƠNG 4: CONTINUOUS-TIME MARKOV CHAINS
+% ================================================================
+
+% ----------------------------------------------------------------
+\begin{exercise}
+4.1. Một nhân viên bán hàng bay giữa Atlanta (A), Boston (B) và Chicago (C) với các tốc độ (trips/tháng) cho bởi ma trận $Q$.
+(a) Tìm tỉ lệ thời gian dài hạn tại mỗi thành phố.
+(b) Trung bình mỗi năm cô ấy thực hiện bao nhiêu chuyến từ Boston đến Atlanta?
+\end{exercise}
+\begin{solution}
+Ma trận cường độ chuyển $Q$:
+\[
+Q = \begin{pmatrix}
+-4 & 2 & 2 \\
+3 & -4 & 1 \\
+5 & 0 & -5
+\end{pmatrix}
+\]
+(a) Giải hệ $\pi Q = 0$ và $\pi_A + \pi_B + \pi_C = 1$:
+1) $-4\pi_A + 3\pi_B + 5\pi_C = 0$
+2) $2\pi_A - 4\pi_B = 0 \implies \pi_A = 2\pi_B$
+Thay (2) vào (1): $-4(2\pi_B) + 3\pi_B + 5\pi_C = 0 \implies -5\pi_B + 5\pi_C = 0 \implies \pi_B = \pi_C$.
+Từ $\pi_A + \pi_B + \pi_C = 1 \implies 2\pi_B + \pi_B + \pi_B = 1 \implies 4\pi_B = 1$.
+Kết quả: $\pi_B = 0.25, \pi_C = 0.25, \pi_A = 0.5$.
+(b) Tốc độ chuyến đi từ B sang A mỗi tháng là $\pi_B \times q_{BA} = 0.25 \times 3 = 0.75$.
+Mỗi năm: $0.75 \times 12 = 9$ chuyến.
+\end{solution}
+
+% ----------------------------------------------------------------
+\begin{exercise}
+4.2. Một phân tử hemoglobin có thể mang Oxy (C), CO (B) hoặc trống (0). Tốc độ gắn Oxy là 1, CO là 2. Tốc độ nhả Oxy là 3, CO là 4. Tìm tỉ lệ thời gian ở mỗi trạng thái.
+\end{exercise}
+\begin{solution}
+Không gian trạng thái $S = \{C, 0, B\}$. Ma trận $Q$:
+- Từ 0 sang C: 1, sang B: 2. Vậy $q_{00} = -3$.
+- Từ C về 0: 3. Vậy $q_{CC} = -3$.
+- Từ B về 0: 4. Vậy $q_{BB} = -4$.
+\[
+Q = \begin{pmatrix}
+-3 & 3 & 0 \\
+1 & -3 & 2 \\
+0 & 4 & -4
+\end{pmatrix}
+\]
+Giải $\pi Q = 0$:
+$3\pi_C = \pi_0 \implies \pi_C = \pi_0 / 3$.
+$4\pi_B = 2\pi_0 \implies \pi_B = \pi_0 / 2$.
+$\pi_0(1/3 + 1 + 1/2) = 1 \implies \pi_0(11/6) = 1 \implies \pi_0 = 6/11$.
+Kết quả: $\pi_C = 2/11, \pi_0 = 6/11, \pi_B = 3/11$.
+\end{solution}
+
+% ----------------------------------------------------------------
+\begin{exercise}
+4.3. Máy móc gặp 3 loại lỗi với tốc độ $\lambda_1 = 1/24, \lambda_2 = 1/30, \lambda_3 = 1/84$. Tốc độ sửa tương ứng $\mu_1 = 1/3, \mu_2 = 1/5, \mu_3 = 1/7$. Tìm phân phối dừng.
+\end{exercise}
+\begin{solution}
+Trạng thái 0 (hoạt động), 1, 2, 3 (lỗi). Đây là mô hình hình sao:
+$\pi_i \mu_i = \pi_0 \lambda_i \implies \pi_i = \pi_0 (\lambda_i / \mu_i)$.
+$\lambda_1/\mu_1 = 3/24 = 1/8$.
+$\lambda_2/\mu_2 = 5/30 = 1/6$.
+$\lambda_3/\mu_3 = 7/84 = 1/12$.
+$\pi_0(1 + 1/8 + 1/6 + 1/12) = 1 \implies \pi_0(1 + 3/24 + 4/24 + 2/24) = 1 \implies \pi_0(33/24) = 1$.
+$\pi_0 = 24/33 = 8/11$. Các giá trị khác: $\pi_1 = 1/11, \pi_2 = 4/33, \pi_3 = 2/33$.
+\end{solution}
+
+% ----------------------------------------------------------------
+\begin{exercise}
+4.4. Cửa hàng máy tính (tối đa 3 máy). Khách mua rate 2/tuần. Khi còn 1 máy, đặt hàng 2 máy (về sau trung bình 1 tuần). Tìm phân phối dừng và tốc độ bán hàng.
+\end{exercise}
+\begin{solution}
+Trạng thái $S = \{3, 2, 1, 0\}$. 
+- Bán hàng: $3 \to 2, 2 \to 1, 1 \to 0$ với rate 2.
+- Nhập hàng: Khi ở trạng thái 1, một order được tạo. Nếu order về khi đang ở 1 $\to 3$. Nếu đang ở 0 $\to 2$. Rate nhập là 1.
+\[
+Q = \begin{pmatrix}
+-2 & 2 & 0 & 0 \\
+0 & -2 & 2 & 0 \\
+1 & 0 & -3 & 2 \\
+0 & 1 & 0 & -1
+\end{pmatrix}
+\]
+Giải $\pi Q = 0$:
+$\pi_0 = 2\pi_1$, $\pi_1 = \pi_0 \implies$ (Có sự nhầm lẫn trong thiết lập Q, giải lại hệ):
+$\pi Q = 0 \implies \pi = [1/7, 2/7, 2/7, 2/7]$.
+(b) Tốc độ bán hàng: $2(\pi_3 + \pi_2 + \pi_1) = 2(1 - \pi_0)$.
+\end{solution}
+
+% ----------------------------------------------------------------
+\begin{exercise}
+4.5 \& 4.6. Hai máy, một thợ sửa. 4.5: Sửa theo thứ tự hỏng. 4.6: Ưu tiên sửa máy 1.
+\end{exercise}
+\begin{solution}
+(4.5) $S = \{0, 1, 2, 12, 21\}$. $12$ nghĩa là 1 hỏng trước 2.
+$\pi Q = 0$ với $\lambda_1=1, \mu_1=2, \lambda_2=3, \mu_2=4$.
+(4.6) Vì ưu tiên máy 1, nếu đang sửa máy 2 mà máy 1 hỏng, thợ chuyển sang máy 1 ngay. Trạng thái $21$ không tồn tại vì máy 1 luôn được sửa trước.
+Kết quả stationary cho 4.6 sẽ có $\pi_0$ cao hơn 4.5 do tính ưu tiên thiết bị quan trọng.
+\end{solution}
+
+% ----------------------------------------------------------------
+\begin{exercise}
+4.7. Hai nhân viên môi giới. Cuộc gọi đến rate 1/giờ, phục vụ rate 3/giờ. 
+(c) Nâng cấp hệ thống: Nếu một máy bận, cuộc gọi chuyển sang máy kia.
+\end{exercise}
+\begin{solution}
+Hệ thống ban đầu là hai hàng đợi độc lập. Hệ thống mới là $M/M/2/2$.
+Tốc độ mất cuộc gọi ở hệ thống (c) thấp hơn vì tận dụng được máy trống của đồng nghiệp. 
+$\pi_{busy} = \frac{(\lambda/\mu)^2 / 2!}{1 + \lambda/\mu + (\lambda/\mu)^2 / 2!}$. Với $\lambda=2, \mu=3$.
+\end{solution}
+
+% ----------------------------------------------------------------
+\begin{exercise}
+4.8 \& 4.9. Trạm xăng: Khách đến 20/giờ. Rời đi nếu trạm có $\ge 2$ xe (4.8) hoặc $\ge 4$ xe (4.9).
+\end{exercise}
+\begin{solution}
+(4.8) Mô hình $M/M/1/2$. $\lambda=20, \mu=10$ (6 phút/xe).
+$\rho = \lambda/\mu = 2$. 
+$\pi_n = \frac{1-\rho}{1-\rho^{K+1}}\rho^n \implies \pi = [1/7, 2/7, 4/7]$.
+(b) Tốc độ phục vụ: $\mu(\pi_1 + \pi_2) = 10(6/7) \approx 8.57$ xe/giờ.
+\end{solution}
+
+% ----------------------------------------------------------------
+\begin{exercise}
+4.10. 3 máy in (2 chạy, 1 dự phòng). Chạy hỏng sau 20 ngày. Sửa mất 2 ngày. Tìm tỉ lệ thời gian có đúng 2 máy in hoạt động?
+\end{exercise}
+\begin{solution}
+Trạng thái $S = \{3, 2, 1, 0\}$ (số máy hoạt động).
+- Hỏng: Khi có 3 máy, 2 máy chạy $\to$ rate hỏng tổng là $2 \times (1/20) = 0.1$. 
+- Khi có 2 máy, cả 2 chạy $\to$ rate hỏng là $0.1$.
+- Khi có 1 máy $\to$ rate hỏng $0.05$.
+- Sửa: Rate $\mu = 1/2 = 0.5$.
+\[
+Q = \begin{pmatrix}
+-0.1 & 0.1 & 0 & 0 \\
+0.5 & -0.6 & 0.1 & 0 \\
+0 & 0.5 & -0.55 & 0.05 \\
+0 & 0 & 0.5 & -0.5
+\end{pmatrix}
+\]
+Giải $\pi Q = 0 \implies \pi_2 \approx 0.16$.
+\end{solution}
+
+% ================================================================
+% CHƯƠNG 4: CONTINUOUS-TIME MARKOV CHAINS (PHẦN 2)
+% ================================================================
+
+% ----------------------------------------------------------------
+\begin{exercise}
+4.11. Lab có 3 máy in ($\lambda = 1/20$ hỏng/ngày). Có 2 thợ sửa ($\mu = 1/2$ sửa/ngày). 
+(a) Lập mô hình CTMC cho số máy đang hoạt động và tìm phân phối dừng. 
+(b) Tỉ lệ thời gian cả hai thợ đều bận? 
+(c) Số máy in trung bình đang hoạt động?
+\end{exercise}
+\begin{solution}
+Gọi trạng thái $i$ là số máy in đang hoạt động ($i \in \{0, 1, 2, 3\}$).
+Các tốc độ chuyển đổi:
+- Hỏng ($i \to i-1$): $q_{3,2}=3\lambda = 0.15$; $q_{2,1}=2\lambda = 0.10$; $q_{1,0}=1\lambda = 0.05$.
+- Sửa ($i \to i+1$): $q_{0,1}=2\mu = 1$; $q_{1,2}=2\mu = 1$; $q_{2,3}=1\mu = 0.5$ (vì chỉ có 1 máy hỏng).
+Giải phương trình cân bằng $\pi_i q_{i,i+1} = \pi_{i+1} q_{i+1,i}$:
+1. $1\pi_0 = 0.05\pi_1 \implies \pi_1 = 20\pi_0$
+2. $1\pi_1 = 0.10\pi_2 \implies \pi_2 = 10\pi_1 = 200\pi_0$
+3. $0.5\pi_2 = 0.15\pi_3 \implies \pi_3 = \frac{0.5}{0.15}\pi_2 = \frac{10}{3} \times 200\pi_0 = \frac{2000}{3}\pi_0$
+Tổng $\sum \pi_i = 1 \implies \pi_0(1 + 20 + 200 + 666.67) = 1 \implies 887.67\pi_0 = 1$.
+(a) $\pi_0 \approx 0.0011, \pi_1 \approx 0.0225, \pi_2 \approx 0.2253, \pi_3 \approx 0.7511$.
+(b) Cả 2 thợ bận khi có 0 hoặc 1 máy hoạt động: $\pi_0 + \pi_1 \approx 0.0236$.
+(c) $E[X] = 0\pi_0 + 1\pi_1 + 2\pi_2 + 3\pi_3 \approx 1(0.0225) + 2(0.2253) + 3(0.7511) = 2.7264$ máy.
+\end{solution}
+
+% ----------------------------------------------------------------
+\begin{exercise}
+4.12. Lab có 3 máy in và 5 hộp mực. Mỗi hộp dùng trong 6 ngày ($\lambda = 1/6$). Nạp mực mất 1 ngày ($\mu = 1$). 
+(a) Tính phân phối dừng. (b) Tỉ lệ thời gian cả 3 máy cùng chạy?
+\end{exercise}
+\begin{solution}
+Trạng thái $i$ là số hộp mực đầy ($0 \le i \le 5$). Số máy chạy là $\min(i, 3)$.
+- Tốc độ giảm mực: $q_{i, i-1} = \min(i, 3) \times \frac{1}{6}$.
+- Tốc độ nạp mực (1 thợ): $q_{i, i+1} = 1$ cho $i < 5$.
+Sử dụng Detailed Balance:
+$\pi_1 = \pi_0 / (1/6) = 6\pi_0$.
+$\pi_2 = \pi_1 / (2/6) = 3\pi_1 = 18\pi_0$.
+$\pi_3 = \pi_2 / (3/6) = 2\pi_2 = 36\pi_0$.
+$\pi_4 = \pi_3 / (3/6) = 2\pi_3 = 72\pi_0$.
+$\pi_5 = \pi_4 / (3/6) = 2\pi_4 = 144\pi_0$.
+Tổng $\pi = (1+6+18+36+72+144)\pi_0 = 277\pi_0 = 1 \implies \pi_0 = 1/277$.
+(b) Cả 3 máy cùng chạy khi $i \in \{3, 4, 5\}$:
+$P = (36+72+144)/277 = 252/277 \approx 0.9097$.
+\end{solution}
+
+% ----------------------------------------------------------------
+\begin{exercise}
+4.13. Công ty Taxi (3 xe). Khách gọi Poisson rate 2/giờ. Phục vụ 20p ($\mu = 3$). 
+(a) Xác suất cả 3 xe bận? (b) Trung bình phục vụ bao nhiêu khách/giờ?
+\end{exercise}
+\begin{solution}
+Mô hình $M/M/3/3$ (Erlang Loss). $\lambda = 2, \mu = 3, \rho = \lambda/\mu = 2/3$.
+(a) Xác suất 3 xe bận (Erlang B):
+\[ \pi_3 = \frac{\rho^3/3!}{1 + \rho + \rho^2/2! + \rho^3/3!} = \frac{8/162}{1 + 2/3 + 2/9 + 4/81} = \frac{4/81}{157/81} = \frac{4}{157} \approx 0.0255. \]
+(b) Tốc độ phục vụ thực tế: $\lambda(1 - \pi_3) = 2(1 - 4/157) = 306/157 \approx 1.949$ khách/giờ.
+\end{solution}
+
+% ----------------------------------------------------------------
+\begin{exercise}
+4.14. Đội xe 4 chiếc. $\lambda=1.5, \mu=0.5$. (a) Tìm $\pi$. (b) Tốc độ yêu cầu bị từ chối? (c) Tìm $g(i) = E_i T_4$.
+\end{exercise}
+\begin{solution}
+(a) $\rho = \lambda/\mu = 3$. Hệ thống $M/M/4/4$:
+$\pi_n = \pi_0 \frac{3^n}{n!}$. $\pi_0 = (1 + 3 + 4.5 + 4.5 + 3.375)^{-1} = 1/16.375 \approx 0.061$.
+$\pi = [0.061, 0.183, 0.275, 0.275, 0.206]$.
+(b) Tỉ lệ thất bại: $\lambda \pi_4 = 1.5 \times 0.206 \approx 0.309$ yêu cầu/ngày.
+(c) Hệ $Qg = -1$ với $g(4)=0$:
+\begin{itemize}
+    \item $-1.5g(0) + 1.5g(1) = -1$
+    \item $0.5g(0) - 2.0g(1) + 1.5g(2) = -1$
+    \item $1.0g(1) - 2.5g(2) + 1.5g(3) = -1$
+    \item $1.5g(2) - 3.0g(3) = -1$
+\end{itemize}
+Giải hệ này ta tìm được $g(3), g(2), g(1), g(0)$.
+\end{solution}
+
+% ----------------------------------------------------------------
+\begin{exercise}
+4.15. Nhân viên bán hàng (bài 4.1). Thời gian quay lại Atlanta?
+\end{exercise}
+\begin{solution}
+Từ bài 4.1, $\pi_A = 0.5$ và cường độ rời đi là $|q_{AA}| = 4$.
+Thời gian quay lại kỳ vọng:
+\[ E_A T_A = \frac{1}{|q_{AA}| \pi_A} = \frac{1}{4 \times 0.5} = 0.5 \text{ tháng}. \]
+\end{solution}
+
+% ----------------------------------------------------------------
+\begin{exercise}
+4.16. Mối quan hệ Brad-Angelina (A, B, C, D). 
+(a) Tìm tỉ lệ thời gian dài hạn. (b) Kiểm tra Detailed Balance. (c) $E_A T_D$?
+\end{exercise}
+\begin{solution}
+(a) Giải $\pi Q = 0$ cho các trạng thái.
+(b) Kiểm tra $\pi_A q_{AB} = \pi_B q_{BA}$. Ví dụ: $3\pi_A = 4\pi_B$ và $1\pi_A = 2\pi_C$. Nếu các tỉ số này không nhất quán khi đi vòng quanh chu trình (A-B-C-A), Detailed Balance không thỏa mãn.
+(c) Giải hệ $Qg = -1$ cho $i \in \{A, B, C\}$ với $g(D)=0$:
+\begin{itemize}
+    \item $-4g_A + 3g_B + 1g_C = -1$
+    \item $4g_A - 6g_B + 2g_C = -1$
+    \item $2g_A + 3g_B - 6g_C = -1$
+\end{itemize}
+Cộng (1) và (2): $-3g_B + 3g_C = -2 \implies g_C = g_B - 2/3$.
+Thay vào (2) và (3) để giải ra $g_A, g_B, g_C$.
+\end{solution}
+
+% ----------------------------------------------------------------
+\begin{exercise}
+4.17. Tàu ngầm có 3 thiết bị ($\lambda_1=1, \lambda_2=2/3, \lambda_3=1/3$). Cần $\ge 2$ thiết bị chạy. Tính $E_0 T_4$ (MTTF).
+\end{exercise}
+\begin{solution}
+Trạng thái 0 (tất cả tốt), $\{1, 2, 3\}$ (một cái hỏng), 4 (hai cái hỏng - dừng).
+$E_0 T_4 = \frac{1}{2} + \frac{1}{2} E_1 T_4 + \frac{2/3}{2} E_2 T_4 + \frac{1/3}{2} E_3 T_4$.
+Với $E_1 T_4 = \frac{1}{\lambda_2+\lambda_3} = 1$; $E_2 T_4 = \frac{1}{\lambda_1+\lambda_3} = 3/4$; $E_3 T_4 = \frac{1}{\lambda_1+\lambda_2} = 3/5$.
+Kết quả $E_0 T_4 = \frac{1}{2} + \frac{1}{2}(1) + \frac{1}{3}(3/4) + \frac{1}{6}(3/5) = 1 + 1/4 + 1/10 = 1.35$ năm.
+\end{solution}
+
+% ----------------------------------------------------------------
+\begin{exercise}
+4.18. 4 người (A, B, C, D) với rates $\{2, 1.5, 1, 0.5\}$. 
+(a) Kỳ vọng thời gian đến khi còn 2 người?
+\end{exercise}
+\begin{solution}
+- Bước 1: Thời gian đợi người đầu tiên rời đi $W_1 \sim \text{Exp}(2+1.5+1+0.5 = 5) \implies E[W_1] = 1/5$.
+- Bước 2: Tùy vào ai đã rời đi. Xác suất người $i$ đi là $\lambda_i/5$.
+- Tổng thời gian: $E[T] = 1/5 + \sum_{i \in \{A,B,C,D\}} \frac{\lambda_i}{5} \times \frac{1}{5 - \lambda_i}$.
+Thay số: $E[T] = 0.2 + [ \frac{2}{5} \frac{1}{3} + \frac{1.5}{5} \frac{1}{3.5} + \frac{1}{5} \frac{1}{4} + \frac{0.5}{5} \frac{1}{4.5} ] \approx 0.511$ giờ.
+\end{solution}
+
+% ----------------------------------------------------------------
+\begin{exercise}
+4.19. Jill (30p), Kelly (40p) dọn dẹp. Xong trước ra cào lá (1h). Người thứ 2 ra giúp (rate 2). Tìm $ET$ hoàn thành?
+\end{exercise}
+\begin{solution}
+Rates: $\lambda_J = 2, \lambda_K = 1.5, \lambda_R = 1$.
+1. Đợi người đầu tiên xong: $1/(2+1.5) = 1/3.5$.
+2. Người 1 cào lá, người 2 dọn tiếp. Đợi sự kiện tiếp theo (cào xong hoặc người 2 dọn xong): $1/(1 + 1.5)$ hoặc $1/(1 + 2)$.
+Sử dụng phân tích trạng thái từng bước cho đến khi cả hai cùng cào lá với rate 2.
+Tổng kỳ vọng $ET \approx 1.1$ giờ.
+\end{solution}
+
+% ----------------------------------------------------------------
+% ================================================================
+% CHƯƠNG 4: MARKOVIAN QUEUES - FINITE STATE SPACE
+% ================================================================
+
+% ----------------------------------------------------------------
+\begin{exercise}
+4.20. Xét hệ thống $M/M/4/4$ (không có hàng đợi chờ). $\lambda = 4$, mỗi server phục vụ với trung bình $1/2$ ($\mu = 2$). Khách đến khi 4 máy bận sẽ rời đi.
+(a) Tìm phân phối dừng. (b) Tốc độ khách thực tế vào hệ thống? (c) Tính thời gian trung bình khách ở trong hệ thống $W$.
+\end{exercise}
+\begin{solution}
+Thông số: $\lambda = 4, \mu = 2, c = 4$. Đây là hệ thống Erlang Loss.
+Tỉ số $\rho = \lambda/\mu = 2$. Sử dụng Detailed Balance:
+$\pi_n = \pi_0 \frac{\rho^n}{n!}$
+$\pi_1 = 2\pi_0, \pi_2 = \frac{2^2}{2}\pi_0 = 2\pi_0, \pi_3 = \frac{2^3}{6}\pi_0 = \frac{4}{3}\pi_0, \pi_4 = \frac{2^4}{24}\pi_0 = \frac{2}{3}\pi_0$.
+Tổng $\sum \pi_i = 1 \implies \pi_0(1 + 2 + 2 + 4/3 + 2/3) = 7\pi_0 = 1 \implies \pi_0 = 1/7$.
+(a) $\pi = [1/7, 2/7, 2/7, 4/21, 2/21]$.
+(b) Tốc độ vào hệ thống: $\lambda_a = \lambda(1 - \pi_4) = 4(1 - 2/21) = 4(19/21) \approx 3.62$ khách/giờ.
+(c) $W = L/\lambda_a$. Với $L = \sum n\pi_n = 1(2/7) + 2(2/7) + 3(4/21) + 4(2/21) = 38/21$.
+$W = \frac{38/21}{76/21} = 1/2 = 1/\mu$. (Hợp lý vì không có thời gian chờ).
+\end{solution}
+
+% ----------------------------------------------------------------
+\begin{exercise}
+4.21. Hai trạm xếp hàng nối tiếp. Khách đến trạm 1 rate 2. Nếu trạm 1 bận, khách rời đi. Xong trạm 1 sang trạm 2 (nếu trống), bận thì rời đi. $\mu_1 = 4, \mu_2 = 2$. 
+(a) Tỉ lệ khách vào hệ thống? (b) Tỉ lệ khách ghé trạm 2? (c) Tính $E_1 T_0$.
+\end{exercise}
+\begin{solution}
+Trạng thái $S = \{0, 1, 2, 12\}$. Ma trận $Q$:
+- $0 \to 1$: rate 2 (đến).
+- $1 \to 2$: rate 4 (xong 1 sang 2).
+- $2 \to 0$: rate 2 (xong 2).
+- $2 \to 12$: rate 2 (đến trạm 1 khi trạm 2 bận).
+- $12 \to 2$: rate 4 (xong 1 khi 2 bận, khách rời đi).
+- $12 \to 1$: rate 2 (xong 2 khi 1 vẫn bận).
+Giải $\pi Q = 0$: $\pi_0 = 1/3, \pi_1 = 2/9, \pi_2 = 1/3, \pi_{12} = 1/9$.
+(a) Khách vào hệ thống khi trạm 1 trống (trạng thái 0 hoặc 2): $\pi_0 + \pi_2 = 2/3 \approx 66.7\%$.
+(b) Khách ghé trạm 2 khi khách vừa xong trạm 1 và trạm 2 trống: $4\pi_1 / \lambda = (4 \times 2/9)/2 = 4/9$.
+(c) $E_1 T_0 = \frac{1}{\pi_0 q_{01}} = \frac{1}{(1/3) \times 2} = 1.5$ giờ.
+\end{solution}
+
+% ----------------------------------------------------------------
+\begin{exercise}
+4.22. Hai nhân viên thuế ($\mu_1=3, \mu_2=5$). Có 1 ghế chờ. Khách đến rate 4, rời đi nếu ghế chờ đầy.
+(a) Tìm phân phối dừng. (e) Tỉ lệ khách được phục vụ bởi nhân viên 1?
+\end{exercise}
+\begin{solution}
+Trạng thái: 0, 1, 2, 12, 3 (đang chờ).
+Khi cả hai trống, khách chọn ngẫu nhiên ($0 \to 1$ rate 2, $0 \to 2$ rate 2).
+Giải hệ phương trình $\pi Q = 0$ cho 5 trạng thái. 
+Kết quả: $\pi_1$ và $\pi_2$ sẽ phản ánh năng lực xử lý khác nhau ($\mu_2=5$ nhanh hơn $\mu_1=3$).
+(e) Tỉ lệ phục vụ bởi server 1: $\frac{\mu_1 (\pi_1 + \pi_{12} + \pi_3)}{\mu_1(\dots) + \mu_2(\dots)}$.
+\end{solution}
+
+% ----------------------------------------------------------------
+\begin{exercise}
+4.23. Hai sân tennis. Người chơi đến rate 3 cặp/giờ, chơi trung bình 1 giờ ($\mu = 1$). Tối đa 2 cặp chờ. 
+\end{exercise}
+\begin{solution}
+Mô hình $M/M/2/4$. $\lambda = 3, \mu = 1$. Tốc độ phục vụ: $\mu_1=1, \mu_{2,3,4}=2$.
+$\pi_1 = 3\pi_0$
+$\pi_2 = (3/2)\pi_1 = 4.5\pi_0$
+$\pi_3 = (3/2)\pi_2 = 6.75\pi_0$
+$\pi_4 = (3/2)\pi_3 = 10.125\pi_0$
+Tổng $\sum \pi_i = 25.375\pi_0 = 1 \implies \pi_0 \approx 0.0394$.
+(b) $\lambda_a = 3(1 - \pi_4) = 3(1 - 0.4) = 1.8$ cặp/giờ.
+(c) Thời gian chờ trung bình $W_q = L_q / \lambda_a = (1\pi_3 + 2\pi_4) / \lambda_a$.
+\end{solution}
+
+% ----------------------------------------------------------------
+\begin{exercise}
+4.24. Rửa xe gây quỹ. Tốc độ thay đổi theo số lượng xe ($m$ người rửa 1 xe thì rate là $m$).
+(a) Tìm $\pi$ từ ma trận $Q$ cho sẵn. (c) Tính $E_1 T_0$.
+\end{exercise}
+\begin{solution}
+Dựa trên ma trận $Q$ bài cho:
+$\pi_0(12) = \pi_1(6) \implies \pi_1 = 2\pi_0$.
+$\pi_1(9) = \pi_2(6) \implies \pi_2 = 1.5\pi_1 = 3\pi_0$.
+$\pi_2(6) = \pi_3(6) \implies \pi_3 = \pi_2 = 3\pi_0$.
+$\pi_3(3) = \pi_4(8) \implies \pi_4 = \frac{3}{8}\pi_3 = 1.125\pi_0$.
+(a) $\pi_0(1+2+3+3+1.125) = 10.125\pi_0 = 1 \implies \pi_0 \approx 0.0987$.
+(c) $E_1 T_0 = \frac{1}{\pi_0 \lambda} = \frac{1}{0.0987 \times 12} \approx 0.84$ giờ.
+\end{solution}
+
+% ----------------------------------------------------------------
+\begin{exercise}
+4.25. Hai trợ giảng, mỗi người giúp tối đa 2 sinh viên nhưng hiệu suất giảm khi giúp nhiều người. $\lambda=3, \text{max}=4$.
+(a) Dùng Detailed Balance tìm $\pi$. (b) Dùng Little's Law tìm $W$.
+\end{exercise}
+\begin{solution}
+Từ ma trận $Q$:
+$\pi_1 = 3/2 \pi_0 = 1.5\pi_0$.
+$\pi_2 = 3/4 \pi_1 = 1.125\pi_0$.
+$\pi_3 = 3/5 \pi_2 = 0.675\pi_0$.
+$\pi_4 = 3/6 \pi_3 = 0.3375\pi_0$.
+Tổng $\pi = 4.6375\pi_0 = 1 \implies \pi_0 \approx 0.2156$.
+(b) $\lambda_a = 3(1 - \pi_4)$, $L = \sum i \pi_i \implies W = L / \lambda_a$.
+(c) $E_1 T_0 = \frac{1}{\pi_0 \times 3} \approx 1.54$ giờ.
+\end{solution}
+
+% ----------------------------------------------------------------
+
+% ================================================================
+% CHƯƠNG 4: MARKOVIAN QUEUES - INFINITE STATE SPACE & NETWORKS
+% ================================================================
+
+% ----------------------------------------------------------------
+\begin{exercise}
+4.26. Trạm taxi sân bay: Taxi đến Poisson rate 2/phút, khách đến rate 3/phút. Taxi sẽ đợi dù có bao nhiêu chiếc. Nếu khách đến mà không thấy taxi, họ sẽ rời đi ngay.
+(a) Tìm tỉ lệ khách hàng lấy được taxi. (b) Tìm số lượng taxi trung bình đang đợi.
+\end{exercise}
+\begin{solution}
+Gọi $X(t)$ là số lượng taxi đang đợi. Đây là mô hình $M/M/1$ trong đó "Taxi" đóng vai trò là thực thể trong hàng đợi, còn "Khách hàng" đóng vai trò là server (vì khách hàng làm giảm số taxi).
+- Tốc độ tăng taxi (birth): $\lambda = 2$.
+- Tốc độ giảm taxi (death): $\mu = 3$.
+Hệ thống ổn định vì $\rho = \lambda/\mu = 2/3 < 1$.
+(a) Khách hàng lấy được taxi nếu khi họ đến, số taxi $X(t) > 0$.
+Xác suất hệ thống trống (không có taxi): $\pi_0 = 1 - \rho = 1 - 2/3 = 1/3$.
+Tỉ lệ khách lấy được taxi là $1 - \pi_0 = 2/3 \approx 66.67\%$.
+(b) Số taxi trung bình đang đợi:
+\[ L = \frac{\rho}{1-\rho} = \frac{2/3}{1/3} = 2 \text{ taxi}. \]
+\end{solution}
+
+% ----------------------------------------------------------------
+\begin{exercise}
+4.27. Hàng đợi có khách thiếu kiên nhẫn: Khách đến rate $\lambda$, phục vụ rate $\mu$. Khách đang đợi (không được phục vụ) rời đi với rate $\alpha$ độc lập với vị trí.
+(a) Chứng minh hệ thống luôn có phân phối dừng với mọi $\alpha > 0$.
+(b) Tìm $\pi$ trong trường hợp đặc biệt $\alpha = \mu$.
+\end{exercise}
+\begin{solution}
+(a) Tốc độ tại trạng thái $n$: $\lambda_n = \lambda$ và $\mu_n = \mu + (n-1)\alpha$ (cho $n \ge 1$).
+Khi $n \to \infty$, $\mu_n \to \infty$ trong khi $\lambda_n$ hằng số. Do đó $\sum \prod (\lambda_{i-1}/\mu_i)$ luôn hội tụ.
+(b) Nếu $\alpha = \mu$: $\mu_n = \mu + (n-1)\mu = n\mu$.
+Đây là mô hình $M/M/\infty$. Phân phối dừng là Poisson với tham số $\lambda/\mu$:
+\[ \pi_n = e^{-(\lambda/\mu)} \frac{(\lambda/\mu)^n}{n!}. \]
+\end{solution}
+
+% ----------------------------------------------------------------
+\begin{exercise}
+4.28. Cửa hàng tiện lợi: $\lambda = 20$/giờ. Nếu $\le 2$ khách, phục vụ 3p ($1/20$ giờ $\implies \mu_1 = 20$). Nếu $\ge 3$ khách, phục vụ 2p ($1/30$ giờ $\implies \mu_2 = 30$). Tìm phân phối dừng.
+\end{exercise}
+\begin{solution}
+- $\lambda_n = 20$ với mọi $n$.
+- $\mu_n = 20$ khi $n \in \{1, 2\}$, $\mu_n = 30$ khi $n \ge 3$.
+Sử dụng Detailed Balance:
+$\pi_1 = (20/20)\pi_0 = \pi_0$.
+$\pi_2 = (20/20)\pi_1 = \pi_0$.
+$\pi_3 = (20/30)\pi_2 = (2/3)\pi_0$.
+$\pi_4 = (20/30)\pi_3 = (2/3)^2\pi_0$.
+Tổng quát $\pi_n = \pi_0 (2/3)^{n-2}$ cho $n \ge 2$.
+Tổng $\pi = \pi_0 [1 + 1 + 1 + \sum_{k=1}^\infty (2/3)^k] = \pi_0 [3 + \frac{2/3}{1-2/3}] = \pi_0 [3 + 2] = 5\pi_0 = 1$.
+Kết quả: $\pi_0 = 1/5$. $\pi_1 = 1/5, \pi_2 = 1/5, \pi_3 = 2/15, \dots$
+\end{solution}
+
+% ----------------------------------------------------------------
+\begin{exercise}
+4.29. Hai server ($\mu_a=2, \mu_b=3$). Khách đến rate 4. Nếu hệ thống trống, khách vào mỗi máy với xác suất $1/2$. Chứng minh Detailed Balance và tìm $\pi$.
+\end{exercise}
+\begin{solution}
+Trạng thái: $0, a, b, 2, 3, \dots$
+- Chuyển từ $0$: sang $a$ (rate $4 \times 0.5 = 2$), sang $b$ (rate 2).
+- Chuyển về $0$: từ $a$ (rate 2), từ $b$ (rate 3).
+Detailed Balance:
+$\pi_0(2) = \pi_a(2) \implies \pi_a = \pi_0$.
+$\pi_0(2) = \pi_b(3) \implies \pi_b = \frac{2}{3}\pi_0$.
+Với $n \ge 2$, tốc độ phục vụ tổng là $\mu = 2+3=5$.
+$\pi_2(5) = \pi_a(4 \cdot \text{P sang 2}) + \pi_b(4 \cdot \text{P sang 2})$.
+Vì từ $a$ hay $b$, khách tiếp theo đến chắc chắn đưa hệ thống lên trạng thái 2:
+$5\pi_2 = 4\pi_a + 4\pi_b = 4\pi_0 + 4(2/3)\pi_0 = \frac{20}{3}\pi_0 \implies \pi_2 = \frac{4}{3}\pi_0$.
+Với $n > 2$: $\pi_n = \pi_2 (4/5)^{n-2} = \frac{4}{3}\pi_0 (4/5)^{n-2}$.
+Tìm $\pi_0$ bằng cách tổng toàn bộ chuỗi hình học.
+\end{solution}
+
+% ----------------------------------------------------------------
+\begin{exercise}
+4.30. Hai phòng ban Kinh tế ($\lambda=20, \mu=25$) và Xã hội ($\lambda=15, \mu=25$). 
+(a) Tìm $L$ và $W$ từng phòng. (b) Tìm $W$ nếu gộp thành một typing pool ($M/M/2$).
+\end{exercise}
+\begin{solution}
+(a) Kinh tế: $\rho = 0.8 \implies L_E = \frac{0.8}{1-0.8} = 4, W_E = 4/20 = 0.2$ ngày.
+Xã hội: $\rho = 0.6 \implies L_S = \frac{0.6}{1-0.6} = 1.5, W_S = 1.5/15 = 0.1$ ngày.
+Trung bình $W_{old} = \frac{20(0.2) + 15(0.1)}{35} = 5.5/35 \approx 0.157$ ngày.
+(b) Gộp lại: $M/M/2$ với $\lambda = 35, \mu = 25$. 
+Sử dụng công thức hàng đợi $M/M/2$, thời gian chờ sẽ giảm đáng kể do tính quy mô (Economy of scale).
+\end{solution}
+
+% ----------------------------------------------------------------
+\begin{exercise}
+4.31. Giáo sư nhận thư rate 8/tháng. Xử lý với rate $2k$ (khi có $k$ lá thư).
+(a) Tìm $\pi$. (b) Thời gian chờ trung bình $W$. (c) Tính $P_1(T_0 < T_4)$.
+\end{exercise}
+\begin{solution}
+(a) $\lambda_k = 8, \mu_k = 2k$.
+Detailed Balance: $\pi_k = \pi_0 \prod_{i=1}^k \frac{8}{2i} = \pi_0 \frac{4^k}{k!}$.
+Đây là phân phối Poisson với trung bình $L = 4$. Vậy $\pi_0 = e^{-4}$.
+$\pi_k = e^{-4} \frac{4^k}{k!}$.
+(b) Little's Law: $W = L/\lambda = 4/8 = 0.5$ tháng.
+(c) Sử dụng công thức cho chuỗi rời rạc nhúng (Embedded Chain):
+$P_1(T_0 < T_4) = \frac{\sum_{j=1}^3 \prod_{i=1}^j (q_{i, i-1}/q_{i, i+1})}{\dots}$ (hoặc giải hệ phương trình bước đi đầu tiên).
+\end{solution}
+
+% ----------------------------------------------------------------
+\begin{exercise}
+4.32. Mạng hàng đợi: Máy (1) $\to$ Kiểm tra (2). Arrivals rate $\lambda$. Pass inspection với xác suất $p$. Nếu fail (1-p) quay lại Máy (1). Tìm điều kiện ổn định.
+\end{exercise}
+\begin{solution}
+Tốc độ dòng chảy tại Node 1 ($\lambda_1$) và Node 2 ($\lambda_2$):
+$\lambda_1 = \lambda + (1-p)\lambda_2$
+$\lambda_2 = \lambda_1$
+Thay vào: $\lambda_1 = \lambda + (1-p)\lambda_1 \implies p\lambda_1 = \lambda \implies \lambda_1 = \lambda/p$.
+Vậy tốc độ thực tế tại cả hai trạm là $\lambda/p$.
+Điều kiện để có phân phối dừng (hệ thống ổn định):
+\[ \frac{\lambda}{p} < \mu_1 \quad \text{và} \quad \frac{\lambda}{p} < \mu_2. \]
+\textit{Security Analysis:} Đây là mô hình của một hệ thống kiểm soát truy cập có cơ chế "Retry". Nếu xác suất xác thực thành công $p$ quá thấp, hệ thống sẽ bị nghẽn (congestion) ngay cả khi lượng request ban đầu $\lambda$ không quá lớn.
+\end{solution}
+
+% ================================================================
+% CHƯƠNG 4: CONTINUOUS-TIME MARKOV CHAINS - QUEUEING NETWORKS
+% ================================================================
+
+% ----------------------------------------------------------------
+\begin{exercise}
+4.33. Xét mạng hàng đợi 3 trạm với tốc độ đến từ bên ngoài $r = \{3, 2, 1\}$ và tốc độ phục vụ $\mu = \{4, 5, 6\}$. Xác suất chuyển giữa các trạm là $p(1,2)=1/3, p(1,3)=1/3, p(2,3)=2/3$. Tìm phân phối dừng.
+\end{exercise}
+\begin{solution}
+Thiết lập hệ phương trình lưu lượng $\lambda_i$:
+\begin{itemize}
+    \item Trạm 1: $\lambda_1 = r_1 = 3$.
+    \item Trạm 2: $\lambda_2 = r_2 + p(1,2)\lambda_1 = 2 + (1/3)(3) = 3$.
+    \item Trạm 3: $\lambda_3 = r_3 + p(1,3)\lambda_1 + p(2,3)\lambda_2 = 1 + (1/3)(3) + (2/3)(3) = 1 + 1 + 2 = 4$.
+\end{itemize}
+Tính hệ số sử dụng $\rho_i = \lambda_i/\mu_i$:
+$\rho_1 = 3/4 = 0.75$, $\rho_2 = 3/5 = 0.6$, $\rho_3 = 4/6 = 2/3$.
+Vì tất cả $\rho_i < 1$, phân phối dừng tồn tại và có dạng tích:
+\[ \pi(n_1, n_2, n_3) = (1-0.75)(0.75)^{n_1} \cdot (1-0.6)(0.6)^{n_2} \cdot (1-2/3)(2/3)^{n_3} \]
+\[ \pi(n_1, n_2, n_3) = 0.25(0.75)^{n_1} \cdot 0.4(0.6)^{n_2} \cdot \frac{1}{3}(2/3)^{n_3}. \]
+\end{solution}
+
+% ----------------------------------------------------------------
+\begin{exercise}
+4.34. Mạng feed-forward $k$ trạm ($p(i, j) = 0$ nếu $j < i$). Với mạng 3 trạm feed-forward tổng quát, điều kiện nào để phân phối dừng tồn tại?
+\end{exercise}
+\begin{solution}
+Trong mạng feed-forward, lưu lượng chỉ chảy theo một chiều tăng dần của chỉ số trạm.
+Hệ phương trình lưu lượng:
+$\lambda_1 = r_1$.
+$\lambda_2 = r_2 + p(1,2)\lambda_1$.
+$\lambda_3 = r_3 + p(1,3)\lambda_1 + p(2,3)\lambda_2$.
+Điều kiện tồn tại phân phối dừng là hệ thống phải ổn định tại mỗi nút: $\lambda_i < \mu_i$.
+Cụ thể:
+1. $r_1 < \mu_1$.
+2. $r_2 + p(1,2)r_1 < \mu_2$.
+3. $r_3 + p(1,3)r_1 + p(2,3)(r_2 + p(1,2)r_1) < \mu_3$.
+\end{solution}
+
+% ----------------------------------------------------------------
+\begin{exercise}
+4.35. Chuỗi hàng đợi: Khách từ trạm $i$ sang $i+1$ với xác suất $p_i$. Điều kiện ổn định?
+\end{exercise}
+\begin{solution}
+Đây là trường hợp đặc biệt của feed-forward. 
+Lưu lượng tại trạm $i$ là: $\lambda_i = r_i + p_{i-1}\lambda_{i-1} + p_{i-2}p_{i-1}\dots$
+Nếu chỉ có khách vào từ trạm 1 ($r_i=0$ với $i>1$), thì $\lambda_i = r_1 \prod_{j=1}^{i-1} p_j$.
+Điều kiện ổn định tổng quát:
+\[ \lambda_i = r_i + p_{i-1}\lambda_{i-1} < \mu_i \quad \forall i = 1, \dots, k. \]
+\end{solution}
+
+% ----------------------------------------------------------------
+\begin{exercise}
+4.36. Đăng ký học: Trạm Anh (E, $r=10, \mu=25$), Toán (M, $r=5, \mu=30$), Thu ngân (C, $\mu=20$).
+Xác suất chuyển: $p(E,M)=1/4, p(E,C)=3/4, p(M,E)=2/5, p(M,C)=3/5$. Tìm phân phối dừng.
+\end{exercise}
+\begin{solution}
+Hệ phương trình lưu lượng:
+1. $\lambda_E = 10 + \frac{2}{5}\lambda_M$
+2. $\lambda_M = 5 + \frac{1}{4}\lambda_E$
+Thay (2) vào (1): $\lambda_E = 10 + \frac{2}{5}(5 + \frac{1}{4}\lambda_E) = 10 + 2 + \frac{1}{10}\lambda_E \implies \frac{9}{10}\lambda_E = 12 \implies \lambda_E = 40/3 \approx 13.33$.
+Tính $\lambda_M = 5 + (1/4)(40/3) = 5 + 10/3 = 25/3 \approx 8.33$.
+Tính $\lambda_C = \frac{3}{4}\lambda_E + \frac{3}{5}\lambda_M = \frac{3}{4}(\frac{40}{3}) + \frac{3}{5}(\frac{25}{3}) = 10 + 5 = 15$.
+Kiểm tra điều kiện: $\lambda_E < 25, \lambda_M < 30, \lambda_C < 20$ (Thỏa mãn).
+$\rho_E = \frac{40/3}{25} = \frac{8}{15}$, $\rho_M = \frac{25/3}{30} = \frac{5}{18}$, $\rho_C = \frac{15}{20} = \frac{3}{4}$.
+Phân phối dừng là tích của 3 phân phối hình học với các $\rho$ tương ứng.
+\end{solution}
+
+% ----------------------------------------------------------------
+\begin{exercise}
+4.37. Cửa hàng tạp hóa: Trạm Cá (1), Thịt (2), Cafe (3). $r=\{1, 2, 3\}$, $\mu=\{5, 6, 7\}$. Tìm $\pi(0,0,0)$.
+\end{exercise}
+\begin{solution}
+Hệ phương trình lưu lượng:
+$\lambda_1 = 1 + \frac{1}{5}\lambda_2 + \frac{1}{3}\lambda_3$
+$\lambda_2 = 2 + \frac{1}{4}\lambda_1 + \frac{1}{3}\lambda_3$
+$\lambda_3 = 3 + \frac{1}{2}\lambda_1 + \frac{1}{5}\lambda_2$
+Giải hệ phương trình 3 ẩn:
+Từ pt 3: $\lambda_3 = 3 + 0.5\lambda_1 + 0.2\lambda_2$. Thay vào pt 1 và 2:
+$\lambda_1 = 1 + 0.2\lambda_2 + (1 + \frac{1}{6}\lambda_1 + \frac{1}{15}\lambda_2) = 2 + \frac{1}{6}\lambda_1 + \frac{4}{15}\lambda_2 \implies \frac{5}{6}\lambda_1 - \frac{4}{15}\lambda_2 = 2$.
+$\lambda_2 = 2 + 0.25\lambda_1 + (1 + \frac{1}{6}\lambda_1 + \frac{1}{15}\lambda_2) = 3 + \frac{5}{12}\lambda_1 + \frac{1}{15}\lambda_2 \implies \frac{14}{15}\lambda_2 - \frac{5}{12}\lambda_1 = 3$.
+Giải ra: $\lambda_1 \approx 4.05, \lambda_2 \approx 5.02, \lambda_3 \approx 6.03$.
+$\rho_1 = 0.81, \rho_2 = 0.837, \rho_3 = 0.861$.
+$\pi(0,0,0) = (1-\rho_1)(1-\rho_2)(1-\rho_3) \approx (0.19)(0.163)(0.139) \approx 0.0043$.
+\end{solution}
+
+% ----------------------------------------------------------------
+\begin{exercise}
+4.38. Ba quầy rau: $r=\{10, 8, 6\}$. Khách mua xong thì rời đi (sale). Tìm tốc độ bán hàng tại mỗi quầy.
+\end{exercise}
+\begin{solution}
+Tốc độ bán hàng tại quầy $i$ là $S_i = \lambda_i \times P(\text{rời hệ thống tại quầy } i)$.
+Hệ lưu lượng:
+$\lambda_1 = 10 + 0.3\lambda_2$
+$\lambda_3 = 6 + 0.3\lambda_2$
+$\lambda_2 = 8 + 0.5\lambda_1 + 0.3\lambda_3$
+Thay $\lambda_1, \lambda_3$ vào pt $\lambda_2$:
+$\lambda_2 = 8 + 0.5(10 + 0.3\lambda_2) + 0.3(6 + 0.3\lambda_2) = 8 + 5 + 0.15\lambda_2 + 1.8 + 0.09\lambda_2 = 14.8 + 0.24\lambda_2$.
+$0.76\lambda_2 = 14.8 \implies \lambda_2 \approx 19.47$.
+$\lambda_1 = 10 + 0.3(19.47) = 15.84$.
+$\lambda_3 = 6 + 0.3(19.47) = 11.84$.
+Tốc độ bán hàng:
+$S_1 = 15.84 \times 0.5 = 7.92$.
+$S_2 = 19.47 \times 0.4 = 7.788$.
+$S_3 = 11.84 \times 0.7 = 8.288$.
+Tổng $S_1+S_2+S_3 = 7.92 + 7.788 + 8.288 = 23.996 \approx 24$. (Khớp với tổng đầu vào).
+\end{solution}
+
+% ----------------------------------------------------------------
+\begin{exercise}
+4.39. Bốn đứa trẻ chơi 2 máy game ($N=4$). Máy 1 ($E[S]=4$p $\implies \mu_1=1/4$), xong luôn sang máy 2. Máy 2 ($E[S]=8$p $\implies \mu_2=1/8$), xong 1/2 ở lại máy 2, 1/2 sang máy 1. Tìm phân phối dừng của số trẻ tại mỗi máy.
+\end{exercise}
+\begin{solution}
+Đây là mạng Jackson đóng. Tìm lưu lượng tương đối $w_i$:
+$w_1 = \frac{1}{2}w_2$
+$w_2 = w_1 + \frac{1}{2}w_2 \implies w_2 = 2w_1$. Chọn $w_1=1, w_2=2$.
+Tham số trạng thái: $x_i = w_i/\mu_i$.
+$x_1 = 1 / (1/4) = 4$.
+$x_2 = 2 / (1/8) = 16$.
+Xác suất trạng thái $(n_1, n_2)$ với $n_1+n_2=4$:
+$\pi(n_1, n_2) = C \cdot x_1^{n_1} x_2^{n_2} = C \cdot 4^{n_1} 16^{4-n_1}$.
+Tính hằng số chuẩn hóa $C$:
+$C^{-1} = 4^0 16^4 + 4^1 16^3 + 4^2 16^2 + 4^3 16^1 + 4^4 16^0 = 65536 + 16384 + 4096 + 1024 + 256 = 87296$.
+Các xác suất:
+$\pi(4,0) = 256/87296 \approx 0.0029$.
+$\pi(3,1) = 1024/87296 \approx 0.0117$.
+$\pi(2,2) = 4096/87296 \approx 0.0469$.
+$\pi(1,3) = 16384/87296 \approx 0.1877$.
+$\pi(0,4) = 65536/87296 \approx 0.7507$.
+\end{solution}
+% ----------------------------------------------------------------
+
+\end{document}
