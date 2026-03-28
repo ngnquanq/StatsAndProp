@@ -1,0 +1,75 @@
+name: Sync to Google Drive
+
+# Only triggers on push to main — never on pull_request.
+# This is a security boundary: pull_request events from forks can
+# access workflow code but NOT repository secrets. By using push-only,
+# we avoid any ambiguity about secret exposure.
+on:
+  push:
+    branches:
+      - master
+      # To sync all branches instead, replace the above with:
+      # - '**'
+
+# Least-privilege: workflow only needs to read repo contents.
+# This prevents a compromised step from pushing code, creating releases, etc.
+permissions:
+  contents: read
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout repository
+        # PIN TO FULL SHA — tags can be force-pushed by upstream
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683  # v4.2.2
+
+      - name: Install rclone
+        run: |
+          curl -fsSL https://rclone.org/install.sh | sudo bash
+          rclone version
+
+      - name: Configure rclone
+        env:
+          GDRIVE_CLIENT_ID: ${{ secrets.GDRIVE_CLIENT_ID }}
+          GDRIVE_CLIENT_SECRET: ${{ secrets.GDRIVE_CLIENT_SECRET }}
+          GDRIVE_TOKEN: ${{ secrets.GDRIVE_TOKEN }}
+          GDRIVE_FOLDER_ID: ${{ secrets.GDRIVE_FOLDER_ID }}
+        run: |
+          mkdir -p ~/.config/rclone
+          chmod 700 ~/.config/rclone
+
+          cat > ~/.config/rclone/rclone.conf <<EOF
+          [gdrive]
+          type = drive
+          scope = drive
+          client_id = ${GDRIVE_CLIENT_ID}
+          client_secret = ${GDRIVE_CLIENT_SECRET}
+          token = ${GDRIVE_TOKEN}
+          root_folder_id = ${GDRIVE_FOLDER_ID}
+          EOF
+
+          chmod 600 ~/.config/rclone/rclone.conf
+
+      - name: Copy new files to Google Drive
+        run: |
+          rclone copy . gdrive: \
+            --include "*.pdf" \
+            --include "*.png" \
+            --include "*.jpeg" \
+            --include "*.jpg" \
+            --exclude "*" \
+            --ignore-existing \
+            --log-level NOTICE \
+            --stats-log-level NOTICE
+
+      # CRITICAL: Always clean up credential files, even if any step above fails
+      - name: Cleanup credentials
+        if: always()
+        run: |
+          # Remove rclone config which contains OAuth2 tokens and folder ID
+          if [ -f ~/.config/rclone/rclone.conf ]; then
+            shred -u ~/.config/rclone/rclone.conf 2>/dev/null || rm -f ~/.config/rclone/rclone.conf
+          fi

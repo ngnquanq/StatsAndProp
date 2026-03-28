@@ -1,0 +1,36 @@
+\documentclass[aspectratio=169]{beamer}
+
+% Import preamble (theme, colors, fonts, packages)
+\input{sections/00_preamble.tex}
+
+% Title page information
+\title[Mean Shift]{Mean Shift Clustering}  % Short title for footer
+\subtitle{A Non-Parametric Clustering Algorithm}
+\author[Q. Nguyen, H. Nguyen, V. Pham]{Quang Nguyen, Hoai Nguyen, Vu Pham}  % Short author for footer
+\institute{Computational Statistics Lab}
+\date[\the\year]{\today}  % Short date for footer
+
+\begin{document}
+
+% Title slide
+\begin{frame}
+    \titlepage
+\end{frame}
+
+% Table of contents
+\begin{frame}{Outline}
+    \tableofcontents
+\end{frame}
+
+% Import content sections
+\input{sections/01_introduction.tex}
+\input{sections/02_mathematics.tex}
+\input{sections/03_advantages_limitations.tex}
+% \input{sections/04_experimental_results.tex}
+\input{sections/05_conclusion.tex}
+
+% Backup slides
+% \appendix
+% \input{sections/06_backup_slides.tex}
+
+\end{document}

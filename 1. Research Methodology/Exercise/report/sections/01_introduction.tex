@@ -1,0 +1,43 @@
+\section{Introduction}
+\label{sec:introduction}
+
+\subsection{Motivation}
+
+Large Language Models (LLMs) have rapidly become integral to software development, education, healthcare
+, and decision-making systems. However, their susceptibility to adversarial prompts (carefully crafted inputs designed to elicit
+ incorrect, harmful, or fabricated responses) poses significant risks to their reliable 
+ deployment~\cite{perez2022red,wang2023adversarial,sun2024trustllm}.
+
+Unlike traditional software systems where vulnerabilities are typically well-defined, LLM failure modes span 
+a complex spectrum: from subtle mathematical reasoning errors triggered by misleading framing, to complete 
+safety bypass through jailbreak techniques~\cite{zou2023universal}, to confident fabrication of non-existent facts. 
+Understanding these failure patterns is essential for both deploying LLMs responsibly and improving their robustness.
+
+\subsection{Research Questions}
+
+This study addresses the following research questions:
+
+\begin{enumerate}
+    \item \textbf{RQ1:} What is the overall deception rate of modern LLMs when confronted with adversarial prompts across diverse categories?
+    \item \textbf{RQ2:} Which categories of adversarial attacks are most effective at deceiving LLMs?
+    \item \textbf{RQ3:} Can automated AI-based evaluation (``LLM-as-judge'') provide reliable assessments of adversarial robustness?
+    \item \textbf{RQ4:} What specific vulnerability patterns emerge, and what do they reveal about underlying model weaknesses?
+\end{enumerate}
+
+\subsection{Scope and Contributions}
+
+This work contributes:
+\begin{itemize}
+    \item A set of \textbf{20 adversarial test prompts} spanning four categories with documented ground truth and deception criteria.
+    \item A \textbf{hybrid benchmark pipeline} using Gemini 2.5 Flash Lite as target and Claude as cross-model judge,
+     supplemented by estimated scores where API quota was exhausted.
+    \item \textbf{Quantitative analysis} of category-specific vulnerability patterns with statistical metrics.
+    % \item A \textbf{reproducible framework} released as open-source for future adversarial AI research.
+\end{itemize}
+
+\subsection{Paper Organization}
+
+Section~\ref{sec:methodology} describes the benchmark methodology, including the evaluation pipeline and scoring guideline.
+ Section~\ref{sec:test_cases} details the 20 adversarial test cases.
+  Section~\ref{sec:results} presents quantitative results and analysis. 
+  Section~\ref{sec:conclusion} summarizes findings, discusses limitations, and outlines future work.

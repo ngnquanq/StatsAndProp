@@ -1,0 +1,38 @@
+\documentclass[8pt,a4paper]{article}
+
+% --- Packages ---
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[vietnamese]{babel}
+\usepackage{amsmath, amssymb, amsthm}
+\usepackage{mathtools}
+\usepackage{enumitem}
+\usepackage{hyperref}
+\usepackage{geometry}
+\geometry{margin=2.5cm}
+\usepackage{geometry}
+\geometry{
+  a4paper,
+  left=3.5cm,   % Thụt lề trái vào (tăng giá trị để lề rộng ra)
+  right=3.5cm,  % Thụt lề phải vào
+  bottom=4cm,   % Đẩy lề dưới lên cao (tạo khoảng trống ở chân trang)
+  top=2.5cm     % Lề trên
+}
+% --- Environments ---
+\newtheorem{exercise}{Bài tập}
+\newenvironment{solution}{\begin{proof}[Lời giải]}{\end{proof}}
+
+% --- Custom commands ---
+\newcommand{\prob}{\mathbb{P}}
+\newcommand{\E}{\mathbb{E}}
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\N}{\mathbb{N}}
+\newcommand{\Var}{\operatorname{Var}}
+
+% --- Title ---
+\title{Probability Theory: Exercises and Solutions}
+\author{Quang Nguyen}
+\date{\today}
+
+\begin{document}
+\maketitle
