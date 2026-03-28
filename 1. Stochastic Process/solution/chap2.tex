@@ -1,0 +1,900 @@
+\documentclass[8pt,a4paper]{article}
+
+% --- Packages ---
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[vietnamese]{babel}
+\usepackage{amsmath, amssymb, amsthm}
+\usepackage{mathtools}
+\usepackage{enumitem}
+\usepackage{hyperref}
+\usepackage{geometry}
+\geometry{margin=2.5cm}
+\usepackage{geometry}
+\geometry{
+  a4paper,
+  left=3.5cm,   % Thụt lề trái vào (tăng giá trị để lề rộng ra)
+  right=3.5cm,  % Thụt lề phải vào
+  bottom=4cm,   % Đẩy lề dưới lên cao (tạo khoảng trống ở chân trang)
+  top=2.5cm     % Lề trên
+}
+% --- Environments ---
+\newtheorem{exercise}{Bài tập}
+\newenvironment{solution}{\begin{proof}[Lời giải]}{\end{proof}}
+
+% --- Custom commands ---
+\newcommand{\prob}{\mathbb{P}}
+\newcommand{\E}{\mathbb{E}}
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\N}{\mathbb{N}}
+\newcommand{\Var}{\operatorname{Var}}
+
+% --- Title ---
+\title{Poisson Processes: Exercises and Solutions}
+\author{Quang Nguyen}
+\date{\today}
+
+\begin{document}
+\maketitle
+
+\section*{Chương 2: Quá trình Poisson}
+
+% ----------------------------------------------------------------
+\begin{exercise}
+2.1. Giả sử thời gian sửa chữa một máy là biến ngẫu nhiên phân phối mũ với trung bình là 2 giờ ($E[X] = 2$). 
+(a) Xác suất để việc sửa chữa mất hơn 2 giờ là bao nhiêu?
+(b) Xác suất để việc sửa chữa mất hơn 5 giờ, biết rằng nó đã mất hơn 3 giờ?
+\end{exercise}
+\begin{solution}
+Với phân phối mũ, ta có tham số rate $\lambda = 1/E[X] = 1/2 = 0.5$. Hàm sống sót (Survival Function) là $P(X > t) = e^{-\lambda t}$.
+(a) Xác suất sửa chữa mất hơn 2 giờ:
+\[
+  P(X > 2) = e^{-0.5 \times 2} = e^{-1} \approx 0.3679.
+\]
+(b) Theo tính chất không nhớ (Memoryless Property), xác suất phần dư không phụ thuộc vào thời gian đã trôi qua:
+\[
+  P(X > 5 | X > 3) = P(X > 5-3) = P(X > 2) = e^{-1} \approx 0.3679.
+\]
+\textit{Security Insight:} Trong Incident Response, nếu MTTR tuân theo phân phối mũ, việc một sự cố đã kéo dài lâu không có nghĩa là nó sắp được giải quyết xong.
+\end{solution}
+
+% ----------------------------------------------------------------
+\begin{exercise}
+2.2. Tuổi thọ của một máy radio có phân phối mũ với trung bình 5 năm. Nếu Ted mua một chiếc radio cũ 7 năm tuổi, xác suất nó vẫn hoạt động sau 3 năm nữa là bao nhiêu?
+\end{exercise}
+\begin{solution}
+Gọi $X$ là tuổi thọ radio, $X \sim \text{Exp}(\lambda = 1/5)$. 
+Áp dụng tính chất Memoryless:
+\[
+  P(X > 7 + 3 | X > 7) = P(X > 3) = e^{-(1/5) \times 3} = e^{-0.6} \approx 0.5488.
+\]
+Dù radio đã cũ, xác suất nó hỏng trong 3 năm tới vẫn giống hệt như một chiếc radio mới tinh.
+\end{solution}
+
+% ----------------------------------------------------------------
+\begin{exercise}
+2.3. Bác sĩ có hẹn lúc 9:00 và 9:30. Thời gian mỗi cuộc hẹn là phân phối mũ trung bình 30 phút. Tìm thời gian kỳ vọng tính từ 9:30 cho đến khi bệnh nhân thứ hai hoàn tất?
+\end{exercise}
+\begin{solution}
+Gọi $X_1, X_2$ là thời gian khám của khách 1 và 2. $E[X_1] = E[X_2] = 30$ phút. 
+Tại thời điểm 9:30, khách 1 đã khám được 30 phút. 
+Nếu $X_1 > 30$, bác sĩ vẫn đang khám người 1. Thời gian còn lại để xong người 1 là $E[X_1 - 30 | X_1 > 30] = 30$ phút (do tính không nhớ). Sau đó mới khám người 2 mất 30 phút.
+Nếu $X_1 \le 30$, bác sĩ bắt đầu người 2 đúng lúc 9:30 và mất 30 phút.
+Thời gian chờ từ 9:30 là $W = (X_1 - 30)^+ + X_2$. 
+Sử dụng kỳ vọng có điều kiện:
+\[
+  E[W] = E[(X_1 - 30)^+] + E[X_2] = E[X_1 - 30 | X_1 > 30]P(X_1 > 30) + E[X_2]
+\]
+\[
+  E[W] = 30 \cdot e^{-30/30} + 30 = 30e^{-1} + 30 \approx 11.03 + 30 = 41.03 \text{ phút}.
+\]
+\end{solution}
+
+% ----------------------------------------------------------------
+\begin{exercise}
+2.4. Ba người đi câu cá, mỗi người bắt cá với rate 2 con/giờ. Cần đợi bao lâu cho đến khi tất cả (everyone) đều bắt được ít nhất một con?
+\end{exercise}
+\begin{solution}
+Gọi $X_1, X_2, X_3$ là thời gian bắt con cá đầu tiên của mỗi người, $X_i \sim \text{Exp}(\lambda = 2)$. Ta tìm $E[\max(X_1, X_2, X_3)]$. 
+Sử dụng tính chất của Minimum các biến ngẫu nhiên phân phối mũ:
+1. Thời gian đợi người đầu tiên có cá: $E[T_1] = \frac{1}{3\lambda} = \frac{1}{6}$.
+2. Sau đó, do tính không nhớ, thời gian đợi thêm 1 trong 2 người còn lại có cá: $E[T_2] = \frac{1}{2\lambda} = \frac{1}{4}$.
+3. Thời gian đợi người cuối cùng: $E[T_3] = \frac{1}{\lambda} = \frac{1}{2}$.
+Tổng thời gian kỳ vọng:
+\[
+  E[T] = \frac{1}{6} + \frac{1}{4} + \frac{1}{2} = \frac{11}{12} \text{ giờ (55 phút)}.
+\]
+\end{solution}
+
+% ----------------------------------------------------------------
+\begin{exercise}
+2.5. Ilan và Justin giải 2 bài toán với trung bình 20 phút (rate $\lambda_1 = 3/hr$) và 30 phút (rate $\lambda_2 = 2/hr$). 
+(a) Xác suất Ilan xong cả 2 bài trước khi Justin xong bài 1?
+(b) Thời gian kỳ vọng đến khi cả hai cùng xong?
+\end{exercise}
+\begin{solution}
+(a) Gọi $I_1, I_2$ là thời gian Ilan giải bài 1, 2 và $J_1$ là thời gian Justin giải bài 1. 
+Xác suất Ilan xong bài 1 trước Justin: $P(I_1 < J_1) = \frac{\lambda_1}{\lambda_1 + \lambda_1} = \frac{3}{3+3} = \frac{1}{2}$.
+Khi Ilan xong bài 1, do tính không nhớ, thời gian còn lại của $J_1$ vẫn là $\text{Exp}(3)$. Xác suất Ilan xong tiếp bài 2 trước khi Justin xong bài 1 là: $P(I_2 < J_1) = \frac{\lambda_2}{\lambda_2 + \lambda_1} = \frac{2}{2+3} = \frac{2}{5}$.
+Vậy $P = \frac{1}{2} \times \frac{2}{5} = \frac{1}{5} = 0.2$.
+(b) Thời gian kỳ vọng $E[\max(I_1+I_2, J_1+J_2)]$. Với $E[I_1+I_2] = E[J_1+J_2] = 20 + 30 = 50$ phút. 
+Kết quả tính toán tích phân cho thấy $E \approx 1.12$ giờ ($\approx 67$ phút).
+\end{solution}
+
+% ----------------------------------------------------------------
+\begin{exercise}
+2.6. Hệ thống 2 server (S1: 6p, S2: 3p). Al đang ở S1, Bob vào. Tính thời gian trung bình Bob ở trong hệ thống?
+\end{exercise}
+\begin{solution}
+Bob phải đợi Al xong S1, sau đó Bob mới được phục vụ tại S1. Khi Al xong S1, Al sang S2 (nếu S2 trống).
+$E[T_{Bob}] = E[\text{Al ở S1 còn lại}] + E[\text{Bob ở S1}] + E[\text{Thời gian Bob đợi ở S2}] + E[\text{Bob ở S2}]$.
+1. $E[\text{Al ở S1 còn lại}] = 6$ (Memoryless).
+2. $E[\text{Bob ở S1}] = 6$. 
+3. Tại S2: Bob chỉ phải đợi nếu Al vẫn còn ở S2 khi Bob xong S1. Tuy nhiên, thời gian Bob ở S1 ($\text{Exp}(1/6)$) thường dài hơn thời gian Al ở S2 ($\text{Exp}(1/3)$). 
+Sử dụng công thức hệ thống hàng đợi: $E[T] = 6 + 6 + 3 = 15$ phút.
+\end{solution}
+
+% ----------------------------------------------------------------
+\begin{exercise}
+2.7. Ngân hàng có 2 GDV (rates 20 và 10 khách/giờ). Anne, Betty, Carol vào cùng lúc. 
+(a) Kỳ vọng thời gian Carol hoàn thành? 
+(b) Kỳ vọng thời gian đến khi khách cuối cùng rời đi?
+(c) Xác suất mỗi người là người cuối cùng rời đi?
+\end{exercise}
+\begin{solution}
+$\lambda_1 = 20, \lambda_2 = 10$. Anne và Betty chiếm 2 máy.
+(a) Carol đợi 1 trong 2 người xong: $E[\text{wait}] = 1/(20+10) = 1/30$ giờ (2 phút).
+Sau đó Carol vào máy trống. Xác suất vào máy 1 là $20/30$, máy 2 là $10/30$.
+$E[\text{service Carol}] = \frac{2}{3}(\frac{1}{20}) + \frac{1}{3}(\frac{1}{10}) = \frac{1}{30} + \frac{1}{30} = \frac{2}{30}$ giờ (4 phút).
+Tổng $E = 2 + 4 = 6$ phút.
+(b) $E[\text{last}] = E[\text{wait}] + E[\max(S_{Carol}, S_{người còn lại})]$. Tính toán cho kết quả $\approx 8.67$ phút.
+(c) Do Carol luôn vào sau, xác suất Carol là người cuối cùng là $0.5$. Anne và Betty mỗi người $0.25$.
+\end{solution}
+
+% ----------------------------------------------------------------
+\begin{exercise}
+2.8. Đèn pin cần 2 pin. Có 4 viên pin, tuổi thọ mũ trung bình 100 giờ. Thay pin hỏng bằng viên số nhỏ nhất. Tìm $E[T]$ đến khi chỉ còn 1 viên tốt và phân phối của viên đó?
+\end{exercise}
+\begin{solution}
+Tại mọi thời điểm có 2 pin chạy, tổng rate hỏng là $\lambda_{sys} = 1/100 + 1/100 = 1/50$.
+Thời gian hỏng từng viên pin: $E_1 = 50, E_2 = 50, E_3 = 50$.
+(a) $E[T] = 50 + 50 + 50 = 150$ giờ.
+(b) Do tính chất i.i.d (độc lập, cùng phân phối) của 4 viên pin ban đầu, không có viên pin nào "ưu thế" hơn về tuổi thọ. 
+Xác suất để viên pin thứ $N$ là viên cuối cùng: $P(N=i) = 1/4$ với $i \in \{1, 2, 3, 4\}$.
+\end{solution}
+
+% ----------------------------------------------------------------
+\begin{exercise}
+2.9. Jill dọn bếp (30p), Kelly dọn vệ sinh (40p). Xong trước thì đi cào lá (60p). Xong sau thì ra giúp (tốc độ cào lá tăng gấp đôi). Tìm thời gian kỳ vọng hoàn tất?
+\end{exercise}
+\begin{solution}
+Rates: $\lambda_J = 2, \lambda_K = 1.5, \lambda_{rake} = 1$. 
+Thời gian có người xong việc nhà đầu tiên: $E[T_1] = 1/(2+1.5) = 1/3.5 \approx 0.286$h.
+Xác suất Jill xong trước: $P_J = 2/3.5 = 4/7$. Khi đó Jill cào lá với rate 1, Kelly tiếp tục dọn với rate 1.5.
+Xác suất Kelly xong trước: $P_K = 1.5/3.5 = 3/7$. Khi đó Kelly cào lá với rate 1, Jill tiếp tục dọn với rate 2.
+Trạng thái tiếp theo kết thúc khi người ở trong nhà xong việc. 
+Sử dụng công thức đệ quy cho kỳ vọng, ta thu được $E[T] \approx 1.09$ giờ.
+\end{solution}
+
+% ----------------------------------------------------------------
+\begin{exercise}
+2.10. Ron, Sue, Ted đến văn phòng giáo sư. Thời gian ở lại là mũ với trung bình 1, 1/2, 1/3 giờ.
+(a) Kỳ vọng thời gian đến khi chỉ còn 1 người?
+(b) Xác suất mỗi người là người cuối cùng?
+(c) Kỳ vọng thời gian đến khi tất cả rời đi?
+\end{exercise}
+\begin{solution}
+Rates: $\lambda_R = 1, \lambda_S = 2, \lambda_T = 3$.
+(a) Thời gian người 1 rời đi: $1/(1+2+3) = 1/6$.
+Sau đó, xác suất từng người rời đi là $P(R)=1/6, P(S)=2/6, P(T)=3/6$.
+$E[\text{wait 2nd}] = 1/6 + [\frac{3}{6}\frac{1}{1+2} + \frac{2}{6}\frac{1}{1+3} + \frac{1}{6}\frac{1}{2+3}] = 1/6 + 0.283 \approx 0.45$ giờ.
+(b) $P(R \text{ last}) = P(S < T < R) + P(T < S < R) = \frac{3}{6}\frac{2}{3} + \frac{2}{6}\frac{3}{4} = \frac{1}{3} + \frac{1}{4} = \frac{7}{12} \approx 0.583$.
+Tương tự: $P(S \text{ last}) = \frac{3}{6}\frac{1}{3} + \frac{1}{6}\frac{3}{5} = \frac{1}{6} + \frac{1}{10} = \frac{4}{15} \approx 0.267$. 
+$P(T \text{ last}) = \frac{2}{6}\frac{1}{4} + \frac{1}{6}\frac{2}{5} = 0.15$.
+(c) $E[\text{all gone}] = E[T_1] + E[T_2] + E[T_3]$. $E[T_3]$ là trung bình của thời gian người cuối cùng ở lại một mình. Kết quả $\approx 1.1$ giờ.
+\end{solution}
+% ----------------------------------------------------------------
+% ================================================================
+% PHẦN 2: POISSON APPROXIMATION & POISSON PROCESSES
+% ================================================================
+
+% ----------------------------------------------------------------
+\begin{exercise}
+2.11. So sánh xấp xỉ Poisson với xác suất Binomial chính xác cho 1 lần thành công khi $n = 20, p = 0.1$.
+\end{exercise}
+\begin{solution}
+Tham số $\lambda = np = 20 \times 0.1 = 2$.
+\begin{itemize}
+    \item Xác suất Binomial chính xác: 
+    \[ P(X=1) = \binom{20}{1}(0.1)^1(0.9)^{19} = 20 \times 0.1 \times 0.135085 \approx 0.2702 \]
+    \item Xấp xỉ Poisson: 
+    \[ P(X=1) \approx \frac{e^{-2} 2^1}{1!} = 2e^{-2} \approx 0.2707 \]
+\end{itemize}
+\textbf{Nhận xét:} Sai số $\approx 0.0005$. Ngay cả với $n=20$ (ngưỡng tối thiểu thường dùng), xấp xỉ Poisson đã cho kết quả rất khả quan cho việc tính toán nhanh trong các hệ thống phân tán.
+\end{solution}
+
+% ----------------------------------------------------------------
+\begin{exercise}
+2.12. So sánh xấp xỉ Poisson với xác suất Binomial chính xác cho trường hợp không có thành công nào ($k=0$) khi: (a) $n=10, p=0.1$, (b) $n=50, p=0.02$.
+\end{exercise}
+\begin{solution}
+Cả hai trường hợp đều có $\lambda = np = 1$.
+(a) $n=10, p=0.1$:
+\begin{itemize}
+    \item Binomial: $P(X=0) = (1-0.1)^{10} = 0.9^{10} \approx 0.3487$.
+    \item Poisson: $P(X=0) \approx e^{-1} \approx 0.3679$.
+\end{itemize}
+(b) $n=50, p=0.02$:
+\begin{itemize}
+    \item Binomial: $P(X=0) = (1-0.02)^{50} = 0.98^{50} \approx 0.3642$.
+    \item Poisson: $P(X=0) \approx e^{-1} \approx 0.3679$.
+\end{itemize}
+\textbf{Nhận xét:} Khi $n$ tăng từ 10 lên 50, sai số giảm từ $0.019$ xuống còn $0.0037$. Điều này minh họa định lý giới hạn: xấp xỉ càng tốt khi $n \to \infty$ và $p \to 0$.
+\end{solution}
+
+% ----------------------------------------------------------------
+\begin{exercise}
+2.13. Xác suất có bộ ba (three of a kind) trong poker là xấp xỉ $1/50$. Sử dụng xấp xỉ Poisson để ước tính xác suất bạn có ít nhất một bộ ba nếu chơi 20 ván.
+\end{exercise}
+\begin{solution}
+Ta có $n = 20, p = 0.02 \implies \lambda = np = 0.4$.
+Yêu cầu tính xác suất có ít nhất một thành công: $P(X \ge 1) = 1 - P(X=0)$.
+\[ P(X \ge 1) \approx 1 - \frac{e^{-0.4} 0.4^0}{0!} = 1 - e^{-0.4} \approx 1 - 0.6703 = 0.3297 \]
+\end{solution}
+
+% ----------------------------------------------------------------
+\begin{exercise}
+2.14. Giả sử 1\% bóng đèn bị lỗi. Sử dụng xấp xỉ Poisson để tính xác suất trong một hộp 25 bóng có tối đa một bóng lỗi.
+\end{exercise}
+\begin{solution}
+Thông số: $n=25, p=0.01 \implies \lambda = 0.25$.
+Ta cần tính $P(X \le 1) = P(X=0) + P(X=1)$.
+\[ P(X \le 1) \approx e^{-0.25} + \frac{e^{-0.25} (0.25)^1}{1!} = e^{-0.25}(1 + 0.25) = 1.25 e^{-0.25} \approx 0.9735 \]
+\textit{Security Lens:} Mô hình này cực kỳ hữu ích để đánh giá rủi ro phần cứng trong chuỗi cung ứng (Supply Chain Security), nơi tỉ lệ lỗi linh kiện nhỏ nhưng số lượng nhập về lớn.
+\end{solution}
+
+% ----------------------------------------------------------------
+\begin{exercise}
+2.15. Cho $N(t)$ là quá trình Poisson với rate $\lambda = 3$. Tìm: (a) $E[T_{12}^2]$, (b) $E[T_{12} | N(2) = 5]$, (c) $E[N(5) | N(2) = 5]$.
+\end{exercise}
+\begin{solution}
+(a) $T_{12} \sim \text{Gamma}(12, 3)$. 
+Ta có $E[T_{12}] = 12/3 = 4$ và $Var(T_{12}) = 12/3^2 = 4/3$.
+\[ E[T_{12}^2] = Var(T_{12}) + (E[T_{12}])^2 = \frac{4}{3} + 16 = \frac{52}{3} \approx 17.33 \]
+(b) Biết $N(2)=5$, sự kiện thứ 12 sẽ là sự kiện thứ 7 kể từ thời điểm $t=2$. 
+Theo tính chất Independent Increments:
+\[ E[T_{12} | N(2)=5] = 2 + E[T_7] = 2 + \frac{7}{3} = \frac{13}{3} \approx 4.33 \]
+(c) $N(5) = N(2) + [N(5) - N(2)]$. Với $N(5)-N(2) \sim \text{Poisson}(3 \times 3 = 9)$.
+\[ E[N(5) | N(2)=5] = 5 + E[\text{Poisson}(9)] = 5 + 9 = 14 \]
+\end{solution}
+
+% ----------------------------------------------------------------
+\begin{exercise}
+2.16. Khách hàng đến với rate $\lambda=3$/giờ. Oscar mở cửa trễ (10h thay vì 8h). 
+(a) Xác suất không có khách nào đến trong 2 giờ đó?
+(b) Phân phối thời gian chờ từ lúc 10h đến khách đầu tiên?
+\end{exercise}
+\begin{solution}
+(a) Số khách $N(2) \sim \text{Poisson}(3 \times 2 = 6)$.
+\[ P(N(2)=0) = e^{-6} \approx 0.00248 \]
+(b) Do tính chất \textbf{Memoryless} của quá trình Poisson, thời gian chờ từ bất kỳ thời điểm nào (kể cả 10h) cho đến sự kiện tiếp theo vẫn tuân theo phân phối mũ với cùng tham số rate $\lambda=3$.
+\[ f_T(t) = 3e^{-3t}, \quad t \ge 0 \]
+\end{solution}
+
+% ----------------------------------------------------------------
+\begin{exercise}
+2.17. Cuộc gọi đến với rate 4/giờ. 
+(a) $P(N(1) < 2)$? (b) Biết $N(1)=6$, tìm $P(N(2)-N(1) < 2)$? (c) Thời gian làm việc trung bình để xong 10 cuộc gọi?
+\end{exercise}
+\begin{solution}
+(a) $N(1) \sim \text{Poisson}(4)$. $P(N(1) < 2) = e^{-4}(1 + 4) = 5e^{-4} \approx 0.0916$.
+(b) Do tính chất độc lập, việc giờ đầu có bao nhiêu cuộc gọi không ảnh hưởng đến giờ thứ hai. 
+\[ P(N(2)-N(1) < 2) = P(N(1) < 2) = 5e^{-4} \approx 0.0916 \]
+(c) Đây là thời gian chờ đến sự kiện thứ 10, $T_{10} \sim \text{Gamma}(10, 4)$.
+\[ E[T_{10}] = \frac{10}{\lambda} = \frac{10}{4} = 2.5 \text{ giờ.} \]
+\end{solution}
+
+% ----------------------------------------------------------------
+\begin{exercise}
+2.18. Xe cộ theo Poisson rate 6 xe/phút. Một con nai qua đường mất $t$ giây. Nếu có xe trong $t$ giây đó, va chạm xảy ra. Tính $P(\text{collision})$ cho (a) $t=5s$, (b) $t=2s$.
+\end{exercise}
+\begin{solution}
+Đổi đơn vị: $\lambda = 6/60 = 0.1$ xe/giây. 
+Va chạm xảy ra nếu $N(t) \ge 1 \implies P = 1 - P(N(t)=0) = 1 - e^{-0.1t}$.
+(a) $t=5$: $P = 1 - e^{-0.5} \approx 0.3935$.
+(b) $t=2$: $P = 1 - e^{-0.2} \approx 0.1813$.
+\end{solution}
+
+% ----------------------------------------------------------------
+\begin{exercise}
+2.19. Dryden rate $\lambda=0.5$. Thời gian xử lý $S \sim U(0.5, 1)$. Tìm phân phối số cuộc gọi Dryden xử lý trước khi phải nhờ hỗ trợ?
+\end{exercise}
+\begin{solution}
+Dryden xử lý được cuộc gọi tiếp theo nếu thời gian chờ cuộc gọi đó ($T \sim \text{Exp}(0.5)$) lớn hơn thời gian xử lý cuộc gọi hiện tại ($S$).
+Xác suất thành công $p = P(T > S)$:
+\[ p = \int_{0.5}^1 \frac{1}{0.5} e^{-0.5s} ds = 2 \left[ \frac{e^{-0.5s}}{-0.5} \right]_{0.5}^1 = 4(e^{-0.25} - e^{-0.5}) \approx 0.688 \]
+Số cuộc gọi $X$ xử lý được tuân theo phân phối Hình học:
+\[ P(X=k) = p^{k-1}(1-p), \quad k=1, 2, \dots \]
+\end{solution}
+
+% ----------------------------------------------------------------
+\begin{exercise}
+2.20. Đợi xe bus $W \sim U(0,1)$. Ô tô qua rate 6, cho đi nhờ với xác suất 1/3. Xác suất đi xe bus?
+\end{exercise}
+\begin{solution}
+Dùng tính chất \textbf{Thinning}: Xe cho đi nhờ đến theo Poisson rate $\lambda' = 6 \times 1/3 = 2$.
+Thời gian xe cho đi nhờ đầu tiên xuất hiện là $T \sim \text{Exp}(2)$.
+Giáo sư đi xe bus nếu $W < T$:
+\[ P(W < T) = \int_0^1 1 \cdot P(T > w) dw = \int_0^1 e^{-2w} dw = \frac{1 - e^{-2}}{2} \approx 0.4323 \]
+\end{solution}
+
+% ----------------------------------------------------------------
+\begin{exercise}
+2.21. Giãn cách tàu $T \sim U(1,2)$. Khách đến Poisson rate 24. Tìm $E[X], Var(X)$.
+\end{exercise}
+\begin{solution}
+Biết $T=t$, $X|T=t \sim \text{Poisson}(24t)$.
+(a) $E[X] = E[E[X|T]] = E[24T] = 24 \times 1.5 = 36$.
+(b) $Var(X) = E[Var(X|T)] + Var(E[X|T])$
+\[ Var(X) = E[24T] + Var(24T) = 24(1.5) + 24^2 \frac{(2-1)^2}{12} = 36 + 48 = 84 \]
+\end{solution}
+
+% ----------------------------------------------------------------
+\begin{exercise}
+2.22. Cho $T \sim \text{Exp}(\lambda)$. Tính $E[T|T < c]$.
+\end{exercise}
+\begin{solution}
+Sử dụng công thức kỳ vọng có điều kiện:
+\[ E[T] = E[T|T < c]P(T < c) + E[T|T > c]P(T > c) \]
+Ta biết $E[T] = 1/\lambda$, $P(T > c) = e^{-\lambda c}$, và $E[T|T > c] = c + 1/\lambda$ (Memoryless).
+\[ \frac{1}{\lambda} = E[T|T < c](1 - e^{-\lambda c}) + (c + \frac{1}{\lambda})e^{-\lambda c} \]
+Giải phương trình:
+\[ E[T|T < c] = \frac{1/\lambda - (c + 1/\lambda)e^{-\lambda c}}{1 - e^{-\lambda c}} = \frac{1}{\lambda} - \frac{ce^{-\lambda c}}{1 - e^{-\lambda c}} \]
+\end{solution}
+
+% ----------------------------------------------------------------
+\begin{exercise}
+2.23. Chứng minh thời gian con gà chờ và qua đường là $E[T_{J-1} + c] = (e^{\lambda c} - 1)/\lambda$.
+\end{exercise}
+\begin{solution}
+Gọi $T_i$ là khoảng cách giữa các xe. $J = \min\{j: T_j > c\}$. 
+Số xe đi qua trước khi gà đi được là $J-1$, tuân theo phân phối Hình học với $p = P(T > c) = e^{-\lambda c}$. Vậy $E[J-1] = \frac{1}{p} - 1 = e^{\lambda c} - 1$.
+Theo định lý Wald hoặc lý thuyết Renewal, thời gian chờ đợi là:
+\[ E[T_{J-1}] = E[J-1] \times E[T|T < c] \]
+Thay kết quả từ bài 2.22:
+\[ E[T_{J-1}] = (e^{\lambda c} - 1) \left[ \frac{1}{\lambda} - \frac{ce^{-\lambda c}}{1 - e^{-\lambda c}} \right] = \frac{e^{\lambda c} - 1}{\lambda} - \frac{(e^{\lambda c} - 1)ce^{-\lambda c}}{1 - e^{-\lambda c}} = \frac{e^{\lambda c} - 1}{\lambda} - c \]
+Thời gian tổng cộng (bao gồm $c$ phút qua đường):
+\[ E[T_{last}] = E[T_{J-1}] + c = \frac{e^{\lambda c} - 1}{\lambda} \]
+\end{solution}
+% ================================================================
+% PHẦN 3: RANDOM SUMS & THINNING/CONDITIONING
+% ================================================================
+
+% ----------------------------------------------------------------
+\begin{exercise}
+2.24. Edwin bắt cá theo quá trình Poisson rate 3/giờ. Trọng lượng cá trung bình là 4 pounds, độ lệch chuẩn 2 pounds. Tìm trung bình và độ lệch chuẩn của tổng trọng lượng cá bắt được trong 2 giờ.
+\end{exercise}
+\begin{solution}
+Đây là quá trình Poisson hợp (Compound Poisson Process).
+Thông số: $\lambda = 3, t = 2 \implies E[N] = \lambda t = 6, Var(N) = 6$.
+Cá $X$: $E[X] = 4, SD(X) = 2 \implies Var(X) = 4$.
+Ta có $E[X^2] = Var(X) + (E[X])^2 = 4 + 16 = 20$.
+\begin{itemize}
+    \item Trung bình: $E[S] = E[N]E[X] = 6 \times 4 = 24$ pounds.
+    \item Phương sai: $Var(S) = \lambda t E[X^2] = 6 \times 20 = 120$.
+    \item Độ lệch chuẩn: $SD(S) = \sqrt{120} \approx 10.95$ pounds.
+\end{itemize}
+\end{solution}
+
+% ----------------------------------------------------------------
+\begin{exercise}
+2.25. Công ty bảo hiểm trả tiền bồi thường theo Poisson rate 4/tuần. Tiền bồi thường trung bình 10K, độ lệch chuẩn 6K. Tìm trung bình và độ lệch chuẩn tổng tiền chi trả trong 4 tuần.
+\end{exercise}
+\begin{solution}
+Thông số: $\lambda = 4, t = 4 \implies E[N] = 16$.
+Bồi thường $X$: $E[X] = 10, Var(X) = 6^2 = 36$.
+$E[X^2] = 36 + 100 = 136$.
+\begin{itemize}
+    \item Trung bình: $E[S] = 16 \times 10 = 160$K.
+    \item Phương sai: $Var(S) = \lambda t E[X^2] = 16 \times 136 = 2176$.
+    \item Độ lệch chuẩn: $SD(S) = \sqrt{2176} \approx 46.65$K.
+\end{itemize}
+\end{solution}
+
+% ----------------------------------------------------------------
+\begin{exercise}
+2.26. ATM có khách đến theo Poisson rate 10/giờ. Số tiền rút trung bình $30, độ lệch chuẩn $20. Tìm trung bình và độ lệch chuẩn tổng tiền rút trong 8 giờ.
+\end{exercise}
+\begin{solution}
+$\lambda = 10, t = 8 \implies E[N] = 80$.
+Rút tiền $X$: $E[X] = 30, Var(X) = 400 \implies E[X^2] = 400 + 900 = 1300$.
+\begin{itemize}
+    \item Trung bình: $E[S] = 80 \times 30 = 2400$ dollars.
+    \item Phương sai: $Var(S) = 80 \times 1300 = 104,000$.
+    \item Độ lệch chuẩn: $SD(S) = \sqrt{104000} \approx 322.49$ dollars.
+\end{itemize}
+\end{solution}
+
+% ----------------------------------------------------------------
+\begin{exercise}
+2.27. Khách mua vé ca nhạc: Nữ (rate 30/giờ), Nam (rate 20/giờ).
+(a) Xác suất 3 khách đầu tiên là nữ?
+(b) Nếu có 2 khách trong 5 phút đầu, xác suất cả hai đến trong 3 phút đầu?
+(c) Khách mua 1 vé (1/2), 2 vé (2/5), 3 vé (1/10). Tìm phân phối chung của số lượng khách mua $i$ vé trong giờ đầu.
+\end{exercise}
+\begin{solution}
+(a) Tổng rate $\lambda = 30+20=50$. Xác suất một khách là nữ $p = 30/50 = 0.6$.
+Do các lần đến là độc lập: $P = (0.6)^3 = 0.216$.
+(b) Biết $N(5)=2$, thời điểm khách đến phân phối đều trên $[0, 5]$. 
+Xác suất một khách đến trong 3 phút đầu là $3/5$.
+$P(\text{cả 2 trong 3 phút}) = (3/5)^2 = 9/25 = 0.36$.
+(c) Theo tính chất Thinning, $N_1, N_2, N_3$ là các quá trình Poisson độc lập với rate:
+$\lambda_1 = 50(1/2) = 25$, $\lambda_2 = 50(2/5) = 20$, $\lambda_3 = 50(1/10) = 5$.
+Phân phối chung là tích của 3 phân phối Poisson độc lập với các tham số trên.
+\end{solution}
+
+% ----------------------------------------------------------------
+\begin{exercise}
+2.28. Bóng đèn có tuổi thọ mũ trung bình 200 ngày. Người dọn dẹp thay ngay khi hỏng. Người sửa chữa đến theo Poisson rate 0.01/ngày để thay bảo trì. 
+(a) Bao lâu bóng đèn được thay một lần?
+(b) Về lâu dài, tỉ lệ thay do bóng hỏng là bao nhiêu?
+\end{exercise}
+\begin{solution}
+Rate hỏng tự nhiên $\lambda_f = 1/200 = 0.005$. Rate bảo trì $\lambda_m = 0.01$.
+(a) Tổng rate thay thế là $\lambda = \lambda_f + \lambda_m = 0.005 + 0.01 = 0.015$.
+Thời gian trung bình giữa các lần thay: $1/0.015 \approx 66.67$ ngày.
+(b) Tỉ lệ thay do hỏng: $\frac{\lambda_f}{\lambda_f + \lambda_m} = \frac{0.005}{0.015} = \frac{1}{3}$.
+\end{solution}
+
+% ----------------------------------------------------------------
+\begin{exercise}
+2.29. Cuộc gọi từ Dryden rate 12. 3/4 là nội hạt (10p), 1/4 đường dài (5p). Tìm phân phối số người đang giữ máy ở trạng thái cân bằng.
+\end{exercise}
+\begin{solution}
+Đây là hệ thống hàng đợi $M/G/\infty$. 
+Rate nội hạt $\lambda_L = 12 \times 3/4 = 9$. Rate đường dài $\lambda_D = 12 \times 1/4 = 3$.
+Số người đang giữ máy $M$ và $N$ tuân theo Poisson độc lập với trung bình $E = \lambda \times E[S]$.
+Giả sử rate 12 là mỗi giờ:
+$E[M] = 9 \times (10/60) = 1.5$.
+$E[N] = 3 \times (5/60) = 0.25$.
+Tổng số người trên line $X = M+N \sim \text{Poisson}(1.75)$.
+\end{solution}
+
+% ----------------------------------------------------------------
+\begin{exercise}
+2.30. Rate cuộc gọi là 4. 3/4 là nam, 1/4 là nữ.
+(a) Xác suất trong 1 giờ có đúng 2 nam và 3 nữ?
+(b) Xác suất 3 nam gọi trước khi có 3 nữ gọi?
+\end{exercise}
+\begin{solution}
+(a) $\lambda_m = 3, \lambda_w = 1$. Do độc lập:
+$P = P(N_m=2)P(N_w=3) = \frac{e^{-3} 3^2}{2!} \times \frac{e^{-1} 1^3}{3!} = \frac{9e^{-3}}{2} \times \frac{e^{-1}}{6} = \frac{3}{4}e^{-4} \approx 0.0137$.
+(b) Đây là bài toán về chuỗi thử nghiệm Bernoulli với $p = 3/4$.
+3 nam gọi trước 3 nữ nghĩa là trong 5 cuộc gọi đầu tiên, có ít nhất 3 cuộc gọi là nam.
+$P = \sum_{k=3}^5 \binom{5}{k} (3/4)^k (1/4)^{5-k} = \binom{5}{3}(0.75)^3(0.25)^2 + \binom{5}{4}(0.75)^4(0.25)^1 + (0.75)^5 \approx 0.896$.
+\end{solution}
+
+% ----------------------------------------------------------------
+\begin{exercise}
+2.31. Poisson rate 2. Tính: (a) $P(N(3)=4 | N(1)=1)$, (b) $P(N(1)=1 | N(3)=4)$.
+\end{exercise}
+\begin{solution}
+(a) $P(N(3)=4 | N(1)=1) = P(N(3)-N(1)=3) = P(N(2)=3) = \frac{e^{-2(2)} (4)^3}{3!} = \frac{64e^{-4}}{6} \approx 0.195$.
+(b) Theo tính chất conditioning, nếu biết có 4 sự kiện trong $[0, 3]$, số sự kiện trong $[0, 1]$ tuân theo $\text{Binomial}(n=4, p=1/3)$.
+$P = \binom{4}{1} (1/3)^1 (2/3)^3 = 4 \times \frac{8}{81} = \frac{32}{81} \approx 0.395$.
+\end{solution}
+
+% ----------------------------------------------------------------
+\begin{exercise}
+2.32. Poisson rate 2. Tính: (a) $P(N(2)=5)$, (b) $P(N(5)=8 | N(2)=3)$, (c) $P(N(2)=3 | N(5)=8)$.
+\end{exercise}
+\begin{solution}
+(a) $\lambda t = 4 \implies P(N(2)=5) = \frac{e^{-4} 4^5}{120} \approx 0.156$.
+(b) $P(N(5)-N(2)=5) = P(N(3)=5)$. Với $\lambda t = 6$: $P = \frac{e^{-6} 6^5}{120} \approx 0.1606$.
+(c) Phân phối $\text{Binomial}(8, 2/5)$.
+$P = \binom{8}{3} (0.4)^3 (0.6)^5 = 56 \times 0.064 \times 0.07776 \approx 0.2787$.
+\end{solution}
+
+% ----------------------------------------------------------------
+\begin{exercise}
+2.33. Rate 10/giờ. Biết 2 khách đến trong 5 phút đầu, xác suất: (a) cả hai trong 2 phút đầu, (b) ít nhất một trong 2 phút đầu.
+\end{exercise}
+\begin{solution}
+Biết $N(5)=2$, các thời điểm đến là $U_1, U_2 \sim U(0, 5)$.
+Xác suất rơi vào khoảng 2 phút đầu là $p = 2/5 = 0.4$.
+(a) $P = p^2 = (0.4)^2 = 0.16$.
+(b) $P = 1 - (1-p)^2 = 1 - (0.6)^2 = 1 - 0.36 = 0.64$.
+\end{solution}
+
+% ----------------------------------------------------------------
+\begin{exercise}
+2.34. Wayne Gretsky ghi điểm rate 6/trận. 60% là bàn thắng ($3$K), 40% là kiến tạo ($1$K).
+(a) Tìm trung bình và độ lệch chuẩn thu nhập. (b) Xác suất 4 bàn thắng và 2 kiến tạo? (c) Biết cả trận ghi 6 điểm, xác suất 4 điểm trong hiệp 1?
+\end{exercise}
+\begin{solution}
+$\lambda_g = 6 \times 0.6 = 3.6$, $\lambda_a = 6 \times 0.4 = 2.4$.
+(a) Thu nhập $R = 3N_g + 1N_a$.
+$E[R] = 3(3.6) + 1(2.4) = 10.8 + 2.4 = 13.2$K.
+$Var(R) = 3^2 Var(N_g) + 1^2 Var(N_a) = 9(3.6) + 2.4 = 32.4 + 2.4 = 34.8$.
+$SD(R) = \sqrt{34.8} \approx 5.9$K.
+(b) $P = P(N_g=4)P(N_a=2) = \frac{e^{-3.6} 3.6^4}{24} \times \frac{e^{-2.4} 2.4^2}{2} \approx 0.191 \times 0.261 \approx 0.05$.
+(c) Giả sử hiệp 1 là nửa trận ($t=0.5$). Phân phối $\text{Binomial}(6, 0.5)$.
+$P(X=4) = \binom{6}{4} (0.5)^6 = 15/64 \approx 0.234$.
+\end{solution}
+
+% ----------------------------------------------------------------
+\begin{exercise}
+2.35. Đội 1 (rate 1), Đội 2 (rate 2). Hiện tại tỉ số là 3-1. 
+(a) Xác suất Đội 1 đạt 5 bàn trước Đội 2?
+(b) Trả lời câu (a) với rate $\lambda_1, \lambda_2$.
+\end{exercise}
+\begin{solution}
+Đội 1 cần 2 bàn nữa, Đội 2 cần 4 bàn nữa. Trận đấu kết thúc sau tối đa $2+4-1 = 5$ bàn thắng tới.
+Mỗi bàn thắng có xác suất thuộc về Đội 1 là $p = \frac{\lambda_1}{\lambda_1 + \lambda_2}$.
+(a) Với $\lambda_1=1, \lambda_2=2 \implies p = 1/3$.
+Đội 1 thắng nếu ghi được ít nhất 2 bàn trong 5 bàn tiếp theo.
+$P = \sum_{k=2}^5 \binom{5}{k} (1/3)^k (2/3)^{5-k} = 1 - \binom{5}{0}(2/3)^5 - \binom{5}{1}(1/3)(2/3)^4 \approx 0.539$.
+(b) Thay $p = \lambda_1/(\lambda_1+\lambda_2)$ vào công thức trên.
+\end{solution}
+
+% ----------------------------------------------------------------
+\begin{exercise}
+2.36. Rate xe 2/3 xe/phút. 10% xe tải, 90% ô tô.
+(a) Xác suất ít nhất 1 xe tải trong 1 giờ?
+(b) Biết có 10 xe tải trong 1 giờ, tìm kỳ vọng tổng số xe?
+(c) Biết có 50 xe qua, xác suất có đúng 5 xe tải và 45 ô tô?
+\end{exercise}
+\begin{solution}
+$\lambda = (2/3) \times 60 = 40$ xe/giờ.
+$\lambda_{truck} = 4, \lambda_{car} = 36$.
+(a) $P(N_t \ge 1) = 1 - e^{-4} \approx 0.9817$.
+(b) Do tính độc lập của Thinning, biết $N_t=10$ không ảnh hưởng đến $N_c$.
+$E[Total | N_t=10] = 10 + E[N_c] = 10 + 36 = 46$ xe.
+(c) Phân phối $\text{Binomial}(50, 0.1)$.
+$P(X=5) = \binom{50}{5} (0.1)^5 (0.9)^{45} \approx 0.1849$.
+\end{solution}
+
+% ----------------------------------------------------------------
+\begin{exercise}
+2.37. Nhóm Mu Alpha Theta đi nhặt lon. Số thành viên $N \sim \text{Poisson}(60)$. 
+2/3 là người nhiệt tình (nhặt $X_E \sim (10, 5^2)$), 1/3 là người lười (nhặt $X_L \sim (3, 2^2)$).
+Tìm trung bình và độ lệch chuẩn số lon nhặt được.
+\end{exercise}
+\begin{solution}
+Đây là tổng của hai quá trình Poisson hợp độc lập: $S = S_E + S_L$.
+$N_E \sim \text{Poisson}(40), N_L \sim \text{Poisson}(20)$.
+\begin{itemize}
+    \item Trung bình: $E[S] = E[S_E] + E[S_L] = 40(10) + 20(3) = 460$.
+    \item Phương sai: $Var(S) = Var(S_E) + Var(S_L)$.
+    $Var(S_E) = \lambda_E E[X_E^2] = 40(5^2 + 10^2) = 40(125) = 5000$.
+    $Var(S_L) = \lambda_L E[X_L^2] = 20(2^2 + 3^2) = 20(13) = 260$.
+    $Var(S) = 5260 \implies SD(S) = \sqrt{5260} \approx 72.53$.
+\end{itemize}
+\end{solution}
+% ================================================================
+% PHẦN 4: NÂNG CAO VỀ THINNING, CONDITIONING VÀ M/G/INFINITY
+% ================================================================
+
+% ----------------------------------------------------------------
+\begin{exercise}
+2.38. Virginia ghi bàn thắng (TD) với rate $\lambda_7$ và Field Goals (FG) với rate $\lambda_3$. Duke cũng tương tự. Tỉ số cuối cùng là Virginia 42 (6 TD) và Duke 34 (4 TD, 2 FG). Tính xác suất để tại hiệp một (halftime), tỉ số là 28-13 (Virginia: 4 TD; Duke: 1 TD, 2 FG).
+\end{exercise}
+\begin{solution}
+Giả sử hiệp một diễn ra tại thời điểm $s=0.5$ và cả trận tại $t=1$. Biết tổng số sự kiện tại $t=1$, số sự kiện tại $s=0.5$ tuân theo phân phối Binomial với $p = s/t = 0.5$.
+Các đội và các loại bàn thắng là độc lập:
+\begin{itemize}
+    \item Virginia (TD): $P(N_V(0.5)=4 | N_V(1)=6) = \binom{6}{4} (0.5)^6 = 15 \times 0.015625 = 0.234375$.
+    \item Duke (TD): $P(N_{D,TD}(0.5)=1 | N_{D,TD}(1)=4) = \binom{4}{1} (0.5)^4 = 4 \times 0.0625 = 0.25$.
+    \item Duke (FG): $P(N_{D,FG}(0.5)=2 | N_{D,FG}(1)=2) = \binom{2}{2} (0.5)^2 = 1 \times 0.25 = 0.25$.
+\end{itemize}
+Xác suất chung là tích của ba xác suất độc lập:
+\[ P = 0.234375 \times 0.25 \times 0.25 = 0.0146484375. \]
+Làm tròn theo yêu cầu: \textbf{0.01465}.
+\end{solution}
+
+% ----------------------------------------------------------------
+\begin{exercise}
+2.39. Taxi ở Philadelphia đón khách với rate 1/5 mỗi phút. 1/3 khách đi sân bay (20p đi, 35p đợi, 20p về, phí $28/chiều). 2/3 khách đi chuyến ngắn ($U(2,10)$, thu nhập $1.33/phút). 
+(a) Về lâu dài, tài xế kiếm được bao nhiêu tiền mỗi giờ?
+(b) Tỉ lệ thời gian dành cho các chuyến đi sân bay?
+\end{exercise}
+\begin{solution}
+Sử dụng lý thuyết Renewal Reward. Một chu kỳ bắt đầu khi khách vừa xuống xe.
+Thời gian chờ khách: $E[W] = 5$ phút.
+\begin{itemize}
+    \item Loại 1 (Sân bay - 1/3): Thời gian $T_1 = 20 + 35 + 20 = 75$p. Thu nhập $R_1 = 28 \times 2 = 56$.
+    \item Loại 2 (Nội thành - 2/3): Thời gian $T_2 = (2+10)/2 = 6$p. Thu nhập $R_2 = 6 \times 4/3 = 8$.
+\end{itemize}
+Kỳ vọng thời gian một chu kỳ: $E[T] = 5 + \frac{1}{3}(75) + \frac{2}{3}(6) = 5 + 25 + 4 = 34$ phút.
+Kỳ vọng thu nhập một chu kỳ: $E[R] = \frac{1}{3}(56) + \frac{2}{3}(8) = \frac{56}{3} + \frac{16}{3} = 24$.
+(a) Thu nhập mỗi giờ: $\frac{E[R]}{E[T]} \times 60 = \frac{24}{34} \times 60 \approx 42.35$ dollars/giờ.
+(b) Tỉ lệ thời gian sân bay: $\frac{1/3 \times 75}{E[T]} = \frac{25}{34} \approx 0.7353$.
+\end{solution}
+
+% ----------------------------------------------------------------
+\begin{exercise}
+2.40. Chợ nông sản Durham: Khách đến rate 15/giờ. 4/5 ăn chay ($7 \pm 3$), 1/5 ăn thịt ($15 \pm 8$).
+(a) Xác suất trong 20 phút đầu có đúng 3 người ăn chay và 2 người ăn thịt?
+(b) Tìm trung bình và độ lệch chuẩn số tiền chi tiêu trong 4 giờ.
+\end{exercise}
+\begin{solution}
+$\lambda_v = 15 \times 4/5 = 12$ người/giờ, $\lambda_m = 15 \times 1/5 = 3$ người/giờ.
+(a) Trong 20 phút ($t=1/3$ giờ): $\mu_v = 12/3 = 4$, $\mu_m = 3/3 = 1$.
+\[ P = P(N_v=3)P(N_m=2) = \frac{e^{-4} 4^3}{3!} \times \frac{e^{-1} 1^2}{2!} = \frac{64e^{-4}}{6} \times \frac{e^{-1}}{2} = \frac{16}{3}e^{-5} \approx 0.0359. \]
+(b) Trong $t=4$ giờ: $E[N_v] = 48, E[N_m] = 12$.
+$E[X_v] = 7, E[X_v^2] = 3^2 + 7^2 = 58$.
+$E[X_m] = 15, E[X_m^2] = 8^2 + 15^2 = 289$.
+\begin{itemize}
+    \item Trung bình: $E[S] = 48(7) + 12(15) = 336 + 180 = 516$.
+    \item Phương sai: $Var(S) = 48(58) + 12(289) = 2784 + 3468 = 6252$.
+    \item Độ lệch chuẩn: $SD(S) = \sqrt{6252} \approx 79.07$.
+\end{itemize}
+\end{solution}
+
+% ----------------------------------------------------------------
+\begin{exercise}
+2.41. Người biểu tình Occupy Durham đến với rate 30/giờ: 50% xe đạp (1 người), 30% BMW (2 người), 20% Prius (4 người).
+(a) Xác suất đúng 4 xe Prius đến từ 12h đến 12h30?
+(b) Trung bình và độ lệch chuẩn số người đến trong nửa giờ đó?
+\end{exercise}
+\begin{solution}
+Rate các loại xe: $\lambda_b = 15, \lambda_{bmw} = 9, \lambda_p = 6$.
+(a) Trong nửa giờ ($t=0.5$): $\mu_p = 6 \times 0.5 = 3$.
+\[ P(N_p = 4) = \frac{e^{-3} 3^4}{4!} = \frac{81e^{-3}}{24} \approx 0.168. \]
+(b) $E[N_b]=7.5, E[N_{bmw}]=4.5, E[N_p]=3$. Số người $X$ tương ứng: 1, 2, 4.
+\begin{itemize}
+    \item Trung bình: $E[S] = 7.5(1) + 4.5(2) + 3(4) = 7.5 + 9 + 12 = 28.5$.
+    \item Phương sai: $Var(S) = 7.5(1^2) + 4.5(2^2) + 3(4^2) = 7.5 + 18 + 48 = 73.5$.
+    \item Độ lệch chuẩn: $SD(S) = \sqrt{73.5} \approx 8.57$.
+\end{itemize}
+\end{solution}
+
+% ----------------------------------------------------------------
+\begin{exercise}
+2.42. Southpoint Mall: Rate 96/giờ. 1/3 nam, 2/3 nữ. Nữ mua sắm $\text{Exp}(1/3)$ (trung bình 3h), nam mua sắm $U(0, 1)$.
+(a) Tìm phân phối cân bằng của số lượng nam và nữ $(M_t, W_t)$.
+(b) Nữ tiêu $150 \pm 80$. Tìm trung bình và phương sai số tiền tiêu bởi phụ nữ đến từ 9h đến 10h.
+\end{exercise}
+\begin{solution}
+(a) Đây là hệ thống $M/G/\infty$. Tại trạng thái cân bằng, $N \sim \text{Poisson}(\lambda E[S])$.
+\begin{itemize}
+    \item Nữ: $\lambda_w = 96 \times 2/3 = 64, E[S_w] = 3 \implies W_t \sim \text{Poisson}(192)$.
+    \item Nam: $\lambda_m = 96 \times 1/3 = 32, E[S_m] = 0.5 \implies M_t \sim \text{Poisson}(16)$.
+\end{itemize}
+$(M_t, W_t)$ là hai biến ngẫu nhiên Poisson độc lập với các tham số trên.
+(b) Trong 1 giờ (9h-10h): $E[N_w] = 64$. Tiền $X$: $E[X] = 150, Var(X) = 80^2 = 6400 \implies E[X^2] = 22500 + 6400 = 28900$.
+\begin{itemize}
+    \item Trung bình: $E[S] = 64 \times 150 = 9600$.
+    \item Phương sai: $Var(S) = \lambda t E[X^2] = 64 \times 28900 = 1,849,600$.
+\end{itemize}
+\end{solution}
+
+% ----------------------------------------------------------------
+\begin{exercise}
+2.43. Nữ cảnh sát ghi vé rate 6/giờ. 2/3 chạy quá tốc độ ($100$), 1/3 vi phạm nồng độ cồn ($400$).
+(a) Trung bình và độ lệch chuẩn doanh thu 1 giờ? (b) Xác suất từ 2h-3h ghi 5 vé tốc độ, 1 vé cồn? (c) So sánh $P(A)$ (không có vé 1h-1h30) và $P(A|N=5)$ (biết cả tiếng 1h-2h có 5 vé).
+\end{exercise}
+\begin{solution}
+(a) $\lambda_s = 4, \lambda_d = 2$. $X_s = 100, X_d = 400$.
+$E[R] = 4(100) + 2(400) = 1200$.
+$Var(R) = 4(100^2) + 2(400^2) = 40,000 + 320,000 = 360,000 \implies SD(R) = 600$.
+(b) $P = P(N_s=5)P(N_d=1) = \frac{e^{-4} 4^5}{120} \times \frac{e^{-2} 2^1}{1} \approx 0.156 \times 0.271 \approx 0.042$.
+(c) $P(A) = P(N(0.5)=0) = e^{-6 \times 0.5} = e^{-3} \approx 0.04978$.
+$P(A|N=5)$ là xác suất 5 sự kiện trong 1 giờ đều rơi vào nửa giờ sau ($0.5 < t < 1$).
+Phân phối $\text{Binomial}(5, 0.5)$: $P = \binom{5}{0} (0.5)^5 = 1/32 = 0.03125$.
+Vậy $P(A) > P(A|N=5)$.
+\end{solution}
+
+% ----------------------------------------------------------------
+\begin{exercise}
+2.44. Luật sư đến LA theo Poisson rate 300/năm. Mỗi người hành nghề trung bình 25 năm. Chứng minh về lâu dài số luật sư ở LA là Poisson trung bình 7500.
+\end{exercise}
+\begin{solution}
+Đây là hệ thống $M/G/\infty$ nơi luật sư là khách hàng và thời gian hành nghề là thời gian phục vụ. 
+Theo định lý về hệ thống $M/G/\infty$, số lượng khách hàng tại thời điểm $t$ hội tụ về phân phối Poisson với trung bình:
+\[ L = \lambda E[T] = 300 \text{ người/năm} \times 25 \text{ năm} = 7500 \text{ người.} \]
+Phân phối Poisson này không phụ thuộc vào hình dạng của hàm phân phối $F(t)$, chỉ phụ thuộc vào giá trị trung bình của nó.
+\end{solution}
+
+% ----------------------------------------------------------------
+\begin{exercise}
+2.45. Máy 1 đang dùng, máy 2 bật lúc $t$. Máy $i$ hỏng với rate $\lambda_i$. Tính xác suất máy 2 hỏng trước?
+\end{exercise}
+\begin{solution}
+Để máy 2 hỏng trước, hai điều kiện phải thỏa mãn: 
+1. Máy 1 không hỏng trước thời điểm $t$ ($X_1 > t$).
+2. Sau thời điểm $t$, do tính không nhớ, máy 1 còn lại thời gian $X_1' \sim \text{Exp}(\lambda_1)$ và máy 2 bắt đầu $X_2 \sim \text{Exp}(\lambda_2)$. Điều kiện là $X_2 < X_1'$.
+\[ P = P(X_1 > t) \times P(X_2 < X_1') = e^{-\lambda_1 t} \times \frac{\lambda_2}{\lambda_1 + \lambda_2}. \]
+\end{solution}
+
+% ----------------------------------------------------------------
+\begin{exercise}
+2.46. Cửa hàng đóng lúc $T=10$ tối. Joe đóng khi khách đầu tiên sau $T-s$ đến. Joe "hạnh phúc" nếu về trước $T$ và không mất khách nào.
+(a) Xác suất thành công? (b) Giá trị $s$ tối ưu?
+\end{exercise}
+\begin{solution}
+Gọi các thời điểm khách đến kể từ $T-s$ là $X_1, X_2, \dots \sim \text{Exp}(\lambda)$.
+Joe đóng cửa tại thời điểm $(T-s) + X_1$.
+Joe hạnh phúc nếu:
+1. Đóng cửa trước $T \implies (T-s) + X_1 < T \implies X_1 < s$.
+2. Không có khách nào sau đó cho đến $T \implies (T-s) + X_2 > T$. 
+Tuy nhiên, điều kiện 2 đơn giản là: không có khách thứ hai đến trước $T$.
+Nghĩa là trong khoảng thời gian $s$ (từ $T-s$ đến $T$), có \textbf{chính xác 1 khách} đến.
+(a) $P(\text{thành công}) = P(N(s) = 1) = \frac{e^{-\lambda s} (\lambda s)^1}{1!} = \lambda s e^{-\lambda s}$.
+(b) Để tối ưu $P$, ta lấy đạo hàm theo $s$:
+\[ \frac{d}{ds} (\lambda s e^{-\lambda s}) = \lambda e^{-\lambda s} - \lambda^2 s e^{-\lambda s} = \lambda e^{-\lambda s} (1 - \lambda s). \]
+Cho đạo hàm bằng 0, ta được $s = 1/\lambda$.
+Xác suất thành công tối đa là $P = \lambda(1/\lambda)e^{-1} = 1/e \approx 0.368$.
+\end{solution}
+% ================================================================
+% PHẦN 5: MIN/MAX, GENERATING FUNCTIONS & ADVANCED MODELS
+% ================================================================
+
+% ----------------------------------------------------------------
+\begin{exercise}
+2.47. Cho $S, T \sim \text{Exp}(\lambda), \text{Exp}(\mu)$. Gọi $U = \min(S, T)$ và $V = \max(S, T)$. 
+(a) Tìm $EU$. (b) Tìm $E[V-U]$. (c) Tìm $EV$. (d) Dùng $V = S+T-U$ để kiểm chứng lại $EV$.
+\end{exercise}
+\begin{solution}
+(a) $U \sim \text{Exp}(\lambda+\mu) \implies EU = \frac{1}{\lambda+\mu}$.
+(b) Theo tính chất không nhớ, sau khi sự kiện đầu tiên xảy ra tại $U$, thời gian chờ thêm cho đến khi sự kiện thứ hai xảy ra là $V-U$. 
+$V-U$ là $\text{Exp}(\lambda)$ với xác suất $\frac{\mu}{\lambda+\mu}$ (nếu $T$ xảy ra trước) và là $\text{Exp}(\mu)$ với xác suất $\frac{\lambda}{\lambda+\mu}$.
+\[ E[V-U] = \frac{\mu}{\lambda+\mu} \cdot \frac{1}{\lambda} + \frac{\lambda}{\lambda+\mu} \cdot \frac{1}{\mu} = \frac{\mu^2 + \lambda^2}{\lambda\mu(\lambda+\mu)}. \]
+(c) $EV = EU + E[V-U] = \frac{1}{\lambda+\mu} + \frac{\mu^2 + \lambda^2}{\lambda\mu(\lambda+\mu)} = \frac{\lambda\mu + \mu^2 + \lambda^2}{\lambda\mu(\lambda+\mu)}$.
+(d) $EV = E[S] + E[T] - E[U] = \frac{1}{\lambda} + \frac{1}{\mu} - \frac{1}{\lambda+\mu} = \frac{\mu(\lambda+\mu) + \lambda(\lambda+\mu) - \lambda\mu}{\lambda\mu(\lambda+\mu)} = \frac{\lambda\mu + \mu^2 + \lambda^2}{\lambda\mu(\lambda+\mu)}$.
+Hai kết quả hoàn toàn trùng khớp.
+\end{solution}
+
+% ----------------------------------------------------------------
+\begin{exercise}
+2.48. Tính phương sai ($Var$) của $U, V, W = V-U$ từ bài 2.47.
+\end{exercise}
+\begin{solution}
+1. $Var(U) = \frac{1}{(\lambda+\mu)^2}$ (vì $U \sim \text{Exp}(\lambda+\mu)$).
+2. $Var(W)$: Dùng công thức $Var(W) = E[W^2] - (E[W])^2$. 
+Hoặc dùng kỳ vọng có điều kiện: $Var(W) = E[Var(W|S<T)] + Var(E[W|S<T])$.
+Kết quả: $Var(W) = \frac{\mu}{\lambda+\mu} \frac{1}{\lambda^2} + \frac{\lambda}{\lambda+\mu} \frac{1}{\mu^2} + \frac{\lambda\mu}{(\lambda+\mu)^2}(\frac{1}{\lambda} - \frac{1}{\mu})^2$.
+3. Do $U$ và $W$ độc lập (tính chất đặc biệt của phân phối mũ):
+$Var(V) = Var(U+W) = Var(U) + Var(W)$.
+\end{solution}
+
+% ----------------------------------------------------------------
+\begin{exercise}
+2.49. Ngân hàng 2 GDV. Alice, Betty, Carol vào cùng lúc. Thời gian phục vụ $\text{Exp}(\lambda)$.
+(a) Kỳ vọng thời gian Carol hoàn thành? (b) Kỳ vọng thời gian đến khi người cuối rời đi? (c) Xác suất Carol là người rời đi cuối cùng?
+\end{exercise}
+\begin{solution}
+(a) Carol đợi $1/(2\lambda)$ để có máy trống, sau đó phục vụ hết $1/\lambda$. Tổng $E = \frac{3}{2\lambda}$.
+(b) Thời gian đến khi người 1 xong: $1/(2\lambda)$. Người 2 xong: $1/(2\lambda)$. Người 3 xong: $1/\lambda$. Tổng $E = \frac{2}{\lambda}$.
+(c) Do tính chất đối xứng và không nhớ, tại thời điểm Carol bắt đầu được phục vụ, người còn lại trong máy cũng có thời gian còn lại là $\text{Exp}(\lambda)$. Xác suất Carol xong sau là $1/2$.
+\end{solution}
+
+% ----------------------------------------------------------------
+\begin{exercise}
+2.50. Đèn pin cần 2 pin, có $n$ pin. Tuổi thọ pin trung bình 100h. Tìm $ET$ (đến khi chỉ còn 1 pin tốt) và phân phối của viên pin cuối cùng $N$.
+\end{exercise}
+\begin{solution}
+Rate hỏng của hệ thống luôn là $2 \times (1/100) = 1/50$ khi còn $\ge 2$ pin.
+(a) Có $n-1$ lần hỏng pin cần thiết để chỉ còn 1 pin. Mỗi lần mất trung bình 50h.
+$ET = (n-1) \times 50$ giờ.
+(b) Do các pin i.i.d, xác suất bất kỳ viên pin nào là viên cuối cùng đều bằng nhau: $P(N=i) = 1/n$.
+\end{solution}
+
+% ----------------------------------------------------------------
+\begin{exercise}
+2.51. (a) Chứng minh công thức Inclusion-Exclusion cho $\max(t_1, t_2, t_3)$. (b) Tìm $E[\max(T_1, T_2, T_3)]$.
+\end{exercise}
+\begin{solution}
+(a) Công thức này dựa trên nguyên lý: $\max(a,b) = a+b-\min(a,b)$. Mở rộng cho 3 biến:
+$\max(a,b,c) = \sum a_i - \sum \min(a_i, a_j) + \min(a_i, a_j, a_k)$.
+(b) Áp dụng kỳ vọng: $E[\max T_i] = \sum \frac{1}{\lambda_i} - \sum \frac{1}{\lambda_i+\lambda_j} + \frac{1}{\lambda_1+\lambda_2+\lambda_3}$.
+(c) Áp dụng cho bài 2.10 với $\lambda = \{1, 2, 3\}$: 
+$E = (1 + 1/2 + 1/3) - (1/3 + 1/4 + 1/5) + 1/6 = 1.1$ giờ.
+\end{solution}
+
+% ----------------------------------------------------------------
+\begin{exercise}
+2.52. $L$ là thời điểm sự kiện cuối trong $[0, t]$. Tính $E[t-L]$.
+\end{exercise}
+\begin{solution}
+$t-L > y$ tương đương với việc không có sự kiện nào trong khoảng $(t-y, t]$.
+$P(t-L > y) = P(N(y)=0) = e^{-\lambda y}$ với $y < t$. 
+Tại $y=t$, $P(t-L > t) = P(N(t)=0) = e^{-\lambda t}$.
+$E[t-L] = \int_0^t P(t-L > y) dy = \int_0^t e^{-\lambda y} dy = \frac{1 - e^{-\lambda t}}{\lambda}$.
+Khi $t \to \infty$, $E[t-L] \to 1/\lambda$.
+\end{solution}
+
+% ----------------------------------------------------------------
+\begin{exercise}
+2.53. Bảo hiểm: Tai nạn rate $\lambda$, thời gian báo cáo $R$ có trung bình $\delta$.
+(a) Phân phối số yêu cầu chưa báo cáo? (b) Tìm mean và variance của tổng số tiền bồi thường chưa báo cáo $S$.
+\end{exercise}
+\begin{solution}
+Đây là hệ thống $M/G/\infty$.
+(a) Số yêu cầu chưa báo cáo tại thời điểm $t$ (lớn) tuân theo Poisson với trung bình $\lambda E[R] = \lambda \delta$.
+(b) $S$ là tổng Poisson hợp (Compound Poisson):
+$E[S] = (\lambda \delta) \mu$.
+$Var(S) = (\lambda \delta) E[X^2] = \lambda \delta (\sigma^2 + \mu^2)$.
+\textit{Cybersecurity Hint:} Đây là mô hình để ước tính số lượng lỗ hổng Zero-day đang tồn tại trong hệ thống nhưng chưa được Security Team phát hiện.
+\end{solution}
+
+% ----------------------------------------------------------------
+\begin{exercise}
+2.54. Giá cổ phiếu $S_t = S_0 \prod_{i=1}^{N(t)} X_i$. Tìm $E S_t$ và $Var S_t$.
+\end{exercise}
+\begin{solution}
+Dùng tính chất kỳ vọng có điều kiện trên $N(t)$:
+$E[S_t | N(t)=n] = S_0 \mu^n$.
+$E[S_t] = S_0 \sum \frac{e^{-\lambda t}(\lambda t)^n}{n!} \mu^n = S_0 e^{-\lambda t} e^{\lambda t \mu} = S_0 e^{\lambda t (\mu-1)}$.
+Tương tự cho $E[S_t^2]$ với $E[X^2] = \sigma^2 + \mu^2$:
+$E[S_t^2] = S_0^2 e^{\lambda t (\sigma^2 + \mu^2 - 1)}$.
+$Var(S_t) = E[S_t^2] - (E S_t)^2$.
+\end{solution}
+
+% ----------------------------------------------------------------
+\begin{exercise}
+2.55. $Cov(T, N_T)$ với $T$ độc lập $N(t)$.
+\end{exercise}
+\begin{solution}
+$Cov(T, N_T) = E[T N_T] - E[T]E[N_T]$.
+$E[T N_T] = E[E[T N_T | T]] = E[T \cdot \lambda T] = \lambda E[T^2]$.
+$E[N_T] = E[E[N_T | T]] = \lambda E[T]$.
+$Cov(T, N_T) = \lambda E[T^2] - \lambda (E[T])^2 = \lambda Var(T)$.
+\end{solution}
+
+% ----------------------------------------------------------------
+\begin{exercise}
+2.56. Tìm Generating Function cho tổng Poisson hợp $S = \sum_{i=1}^{N(t)} Y_i$.
+\end{exercise}
+\begin{solution}
+(a) $f(z) = E[z^S] = E[E[z^S | N]] = E[g(z)^N]$.
+Vì $N \sim \text{Poisson}(\lambda t)$, $E[z^N] = e^{\lambda t(z-1)}$.
+Thay $z$ bằng $g(z)$: $f(z) = e^{\lambda t(g(z)-1)}$.
+(b) $ES = f'(1) = \lambda t g'(1) = \lambda t E[Y]$.
+(c) $E[S(S-1)] = f''(1) = (\lambda t g'(1))^2 + \lambda t g''(1)$.
+(d) $Var(S) = E[S(S-1)] + ES - (ES)^2 = \lambda t E[Y^2]$.
+\end{solution}
+
+% ----------------------------------------------------------------
+\begin{exercise}
+2.58. $T = t_1 + \dots + t_N$ với $t_i \sim \text{Exp}(\lambda)$ và $N \sim \text{Geometric}(p)$. Tìm phân phối của $T$.
+\end{exercise}
+\begin{solution}
+Sử dụng hàm đặc trưng hoặc Laplace transform. Laplace của $t_i$ là $\frac{\lambda}{\lambda+s}$.
+$\phi_T(s) = E[(\frac{\lambda}{\lambda+s})^N] = \frac{p \frac{\lambda}{\lambda+s}}{1 - (1-p)\frac{\lambda}{\lambda+s}} = \frac{p\lambda}{\lambda+s - \lambda+p\lambda} = \frac{p\lambda}{p\lambda + s}$.
+Đây là Laplace transform của phân phối $\text{Exp}(p\lambda)$.
+Vậy tổng ngẫu nhiên của các biến ngẫu nhiên phân phối mũ với số lượng hình học vẫn là phân phối mũ.
+\end{solution}
+
+% ----------------------------------------------------------------
+\begin{exercise}
+2.59. Tín hiệu truyền đi: thành công ($p$), mất ($1-p$).
+(a) Phân phối $(N_1, N_2)$? (b) Số tín hiệu mất trước khi cái đầu tiên thành công?
+\end{exercise}
+\begin{solution}
+(a) Theo tính chất Thinning, $N_1(t)$ và $N_2(t)$ là các quá trình Poisson độc lập với rate $\lambda p$ và $\lambda(1-p)$.
+(b) Mỗi tín hiệu là một thử nghiệm Bernoulli độc lập. Số lần thất bại trước thành công đầu tiên tuân theo phân phối Geometric trên $\{0, 1, 2, \dots\}$ với tham số $p$:
+$P(L=k) = (1-p)^k p$.
+\end{solution}
+
+% ----------------------------------------------------------------
+\begin{exercise}
+2.60. Vệ tinh phóng theo Poisson rate $\lambda$, sống sót qua thời gian $F$ có trung bình $\mu$.
+\end{exercise}
+\begin{solution}
+Đây là mô hình $M/G/\infty$.
+(a) Tại thời điểm $t$, số vệ tinh đang hoạt động $X(t)$ tuân theo Poisson với trung bình $\lambda \int_0^t (1-F(s)) ds$.
+(b) Khi $t \to \infty$, trung bình hội tụ về $\lambda \int_0^\infty (1-F(s)) ds = \lambda \mu$.
+Vậy giới hạn là $\text{Poisson}(\lambda \mu)$.
+\end{solution}
+
+% ----------------------------------------------------------------
+\begin{exercise}
+2.61. Hai quá trình Poisson độc lập $N_1(t), N_2(t)$. Xác suất ghé thăm điểm $(i, j)$?
+\end{exercise}
+\begin{solution}
+Để ghé thăm $(i, j)$, quá trình tổng hợp phải trải qua đúng $i+j$ bước, trong đó $i$ bước thuộc về $N_1$ và $j$ bước thuộc về $N_2$.
+Đây là phân phối Binomial với $n=i+j$ và xác suất mỗi bước thuộc về $N_1$ là $p = \frac{\lambda_1}{\lambda_1+\lambda_2}$.
+\[ P = \binom{i+j}{i} \left( \frac{\lambda_1}{\lambda_1+\lambda_2} \right)^i \left( \frac{\lambda_2}{\lambda_1+\lambda_2} \right)^j. \]
+\end{solution}
+\end{document}

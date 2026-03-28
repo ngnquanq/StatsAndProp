@@ -886,5 +886,221 @@ Trạng thái: $\{0, 1, 2, 3, 4\}$. Ma trận chuyển tiếp phụ thuộc vào
 \]
 Tổng quát, mỗi bước (1 đơn vị thời gian): có thể có 1 khách đến (xác suất $\lambda$) và 1 hoặc 2 khách rời đi (tùy số thợ đang bận). Giải $\pi P = \pi$ để tìm phân phối dừng.
 \end{solution}
+% ================================================================
+% CHƯƠNG 1: MARKOV CHAINS - NÂNG CAO & LÝ THUYẾT
+% ================================================================
 
+% ----------------------------------------------------------------
+\begin{exercise}
+1.58. Xét chuỗi Markov 2 trạng thái $S=\{1, 2\}$ với ma trận chuyển:
+\[
+\begin{pmatrix}
+1-a & a \\
+b & 1-b
+\end{pmatrix}
+\]
+Chứng minh $P(X_{n+1}=1) - \frac{b}{a+b} = (1-a-b)[P(X_n=1) - \frac{b}{a+b}]$ và tìm công thức tổng quát cho $P(X_n=1)$.
+\end{exercise}
+\begin{solution}
+Sử dụng công thức xác suất đầy đủ:
+\[ P(X_{n+1}=1) = P(X_{n+1}=1|X_n=1)P(X_n=1) + P(X_{n+1}=1|X_n=2)P(X_n=2) \]
+\[ P(X_{n+1}=1) = (1-a)P(X_n=1) + b(1-P(X_n=1)) = (1-a-b)P(X_n=1) + b \]
+Trừ hai vế cho $\pi_1 = \frac{b}{a+b}$:
+\[ P(X_{n+1}=1) - \frac{b}{a+b} = (1-a-b)P(X_n=1) + b - \frac{b}{a+b} \]
+Vì $b - \frac{b}{a+b} = \frac{ab+b^2-b}{a+b} = \frac{b(a+b-1)}{a+b} = -(1-a-b)\frac{b}{a+b}$, ta có:
+\[ P(X_{n+1}=1) - \frac{b}{a+b} = (1-a-b)\left[P(X_n=1) - \frac{b}{a+b}\right] \]
+Đây là một cấp số nhân. Công thức tổng quát là:
+\[ P(X_n=1) = \frac{b}{a+b} + (1-a-b)^n \left[P(X_0=1) - \frac{b}{a+b}\right] \]
+Nếu $|1-a-b| < 1$, xác suất hội tụ về $\frac{b}{a+b}$ với tốc độ hàm mũ.
+\end{solution}
+
+% ----------------------------------------------------------------
+\begin{exercise}
+1.59. Mô hình khuếch tán Bernoulli–Laplace: Hai bình mỗi bình chứa $m$ hòn bi. Tổng cộng có $b$ bi đen và $2m-b$ bi trắng. Trạng thái $i$ là số bi đen ở bình 1. Mỗi bước chọn ngẫu nhiên 1 bi từ mỗi bình và tráo đổi.
+(a) Tính xác suất chuyển. (b) Kiểm chứng phân phối dừng là siêu bội (hypergeometric).
+\end{exercise}
+\begin{solution}
+(a) Xác suất chuyển:
+\begin{itemize}
+    \item $p(i, i+1)$: Chọn bi trắng từ bình 1 và bi đen từ bình 2. 
+    $p(i, i+1) = \frac{m-i}{m} \cdot \frac{b-i}{m}$.
+    \item $p(i, i-1)$: Chọn bi đen từ bình 1 và bi trắng từ bình 2.
+    $p(i, i-1) = \frac{i}{m} \cdot \frac{m-(b-i)}{m} = \frac{i(m-b+i)}{m^2}$.
+    \item $p(i, i) = 1 - p(i, i+1) - p(i, i-1)$.
+\end{itemize}
+(b) Phân phối dừng $\pi(i) = \frac{\binom{b}{i}\binom{2m-b}{m-i}}{\binom{2m}{m}}$. 
+Kiểm tra tính thuận nghịch (reversibility): $\pi(i)p(i, i+1) = \pi(i+1)p(i+1, i)$.
+Sau khi rút gọn các giai thừa, ta sẽ thấy đẳng thức này đúng.
+(c) Giải thích trực quan: Trạng thái dừng tương ứng với việc chọn ngẫu nhiên $m$ viên bi từ tổng số $2m$ viên bi để cho vào bình 1. Đây chính là bản chất của phân phối siêu bội.
+\end{solution}
+
+% ----------------------------------------------------------------
+\begin{exercise}
+1.60. Library chain (Move-to-front): Cuốn sách $i$ được chọn với xác suất $p_i$, sau đó được đặt lên đầu giá sách. Chứng minh phân phối dừng là $\pi(i_1, \dots, i_n) = p_{i_1} \frac{p_{i_2}}{1-p_{i_1}} \dots \frac{p_{i_n}}{1-p_{i_1}-\dots-p_{i_{n-1}}}$.
+\end{exercise}
+\begin{solution}
+Trạng thái là một hoán vị của các cuốn sách. Để đạt được hoán vị $(i_1, i_2, \dots, i_n)$ ở bước tiếp theo, cuốn sách $i_1$ phải được chọn ở bước hiện tại, và thứ tự tương đối của $(i_2, \dots, i_n)$ phải đã được thiết lập từ trước.
+Điều kiện dừng $\pi P = \pi$ được thỏa mãn vì xác suất chọn cuốn $i_1$ là $p_{i_1}$, và các vị trí còn lại giữ nguyên thứ tự tương đối, tương ứng với việc "thu hẹp" không gian mẫu. 
+\textit{Ghi chú Security:} Đây là cơ sở toán học cho thuật toán Cache LRU, giúp tối ưu hóa việc tìm kiếm các quyền hạn (permissions) thường xuyên được sử dụng trong IAM.
+\end{solution}
+
+% ----------------------------------------------------------------
+\begin{exercise}
+1.61. Random walk trên đồng hồ: (a) Số bước kỳ vọng để quay lại điểm xuất phát? (b) Xác suất đi qua tất cả các điểm khác trước khi quay lại?
+\end{exercise}
+\begin{solution}
+Đây là random walk trên đồ thị vòng (ring graph) với 12 nút.
+(a) Do tính đối xứng, phân phối dừng là đều: $\pi_i = 1/12$. 
+Thời gian quay lại kỳ vọng $E_i T_i = 1/\pi_i = 12$ bước.
+(b) Bài toán "Gambler's Ruin" trên đường thẳng: Để thăm tất cả các nút $1, \dots, 11$ trước khi quay lại $0$, chuỗi phải đi tới nút $1$ hoặc $11$, sau đó đi hết vòng mà không chạm vào $0$.
+Xác suất để thăm tất cả $N-1$ nút trước khi quay lại nút xuất phát trong một vòng $N$ nút là $\frac{1}{N-1}$. 
+Với đồng hồ ($N=12$), xác suất là $1/11$.
+\end{solution}
+
+% ----------------------------------------------------------------
+\begin{exercise}
+1.62 \& 1.63. King's \& Queen's random walk trên bàn cờ $8 \times 8$.
+\end{exercise}
+\begin{solution}
+Đối với random walk trên đồ thị, $\pi_i = \frac{d_i}{\sum d_j}$, với $d_i$ là số bước đi hợp lệ từ ô $i$.
+(1.62) King:
+- Góc: $d=3$, Cạnh: $d=5$, Giữa: $d=8$.
+- Tổng bậc $\sum d_j = 4(3) + 24(5) + 36(8) = 12 + 120 + 288 = 420$.
+- $\pi(1,1) = 3/420 = 1/140$. $E_{(1,1)} T_{(1,1)} = 140$ bước.
+(1.63) Queen:
+- Ô $(i,j)$ có $d_{i,j} = (8-1) + (8-1) + (\text{số ô chéo})$.
+- Tại góc $(1,1)$, số ô chéo là 7. $d_{(1,1)} = 7+7+7 = 21$.
+- Tổng bậc cho Queen là 1456.
+- $\pi(1,1) = 21/1456 = 3/208$. $E_{(1,1)} T_{(1,1)} = 208/3 \approx 69.33$ bước.
+\end{solution}
+
+% ----------------------------------------------------------------
+\begin{exercise}
+1.65. Ehrenfest chain: $p(i, i+1) = (N-i)/N, p(i, i-1) = i/N$. Chứng minh $\mu_{n+1} = 1 + (1-2/N)\mu_n$.
+\end{exercise}
+\begin{solution}
+Kỳ vọng tại bước $n+1$:
+\[ E[X_{n+1} | X_n=i] = (i+1)\frac{N-i}{N} + (i-1)\frac{i}{N} \]
+\[ = \frac{iN - i^2 + N - i + i^2 - i}{N} = \frac{iN + N - 2i}{N} = i(1 - \frac{2}{N}) + 1 \]
+Lấy kỳ vọng hai vế theo $X_n$:
+\[ \mu_{n+1} = E[X_n](1 - \frac{2}{N}) + 1 = 1 + (1 - \frac{2}{N})\mu_n \]
+Giải phương trình sai phân này với điều kiện đầu $\mu_0 = x$, ta được:
+\[ \mu_n = \frac{N}{2} + (1 - \frac{2}{N})^n (x - \frac{N}{2}) \]
+Khi $n \to \infty$, $\mu_n \to N/2$ với tốc độ hội tụ hàm mũ.
+\end{solution}
+
+% ----------------------------------------------------------------
+\begin{exercise}
+1.66. Brother-sister mating: 6 trạng thái \{22, 21, 20, 11, 10, 00\}. 
+(b) Xác suất hấp thụ vào 22 bằng tỉ lệ allele A ban đầu.
+\end{exercise}
+\begin{solution}
+Gọi $h(x)$ là xác suất hấp thụ vào trạng thái 22 xuất phát từ $x$. 
+Tỉ lệ allele A trong các cặp: 22 (1), 21 (0.75), 20 (0.5), 11 (0.5), 10 (0.25), 00 (0).
+Ta kiểm tra xem tỉ lệ này có phải là một hàm điều hòa (harmonic function) $h = Ph$ hay không.
+Ví dụ tại trạng thái 11 (Aa x Aa), xác suất đời con là AA (1/4), Aa (1/2), aa (1/4). 
+Xác suất trạng thái tiếp theo có thể tính được từ bảng phối giống. 
+Hàm tỉ lệ allele A là một martingale cho quá trình này, do đó xác suất hấp thụ vào trạng thái "thuần chủng" AA (22) chính bằng tỉ lệ A ban đầu.
+\end{solution}
+% ----------------------------------------------------------------
+% ================================================================
+% CHƯƠNG 1: MARKOV CHAINS - COUPON COLLECTOR & INFINITE STATE SPACE
+% ================================================================
+
+% ----------------------------------------------------------------
+\begin{exercise}
+1.67. Gieo một con xúc xắc công bằng liên tục. Gọi $X_n$ là số lượng các giá trị khác nhau xuất hiện trong $n$ lần gieo đầu tiên.
+(a) Tìm xác suất chuyển. (b) Tìm $ET$ (thời gian để thấy đủ cả 6 mặt).
+\end{exercise}
+\begin{solution}
+(a) Trạng thái $X_n \in \{1, 2, 3, 4, 5, 6\}$. 
+Nếu ta đã thấy $i$ giá trị khác nhau, trong lần gieo tiếp theo:
+- Xác suất thấy lại một giá trị đã có: $p(i, i) = i/6$.
+- Xác suất thấy một giá trị mới: $p(i, i+1) = (6-i)/6$.
+(b) Gọi $T_i$ là thời gian chờ để số lượng giá trị tăng từ $i$ lên $i+1$. 
+Khoảng thời gian này tuân theo phân phối Hình học với xác suất thành công $p_i = (6-i)/6$.
+Kỳ vọng $E[T_i] = 1/p_i = 6/(6-i)$.
+Tổng thời gian kỳ vọng để thấy đủ 6 mặt:
+\[
+  ET = \sum_{i=0}^5 \frac{6}{6-i} = 6 \left( 1 + \frac{1}{2} + \frac{1}{3} + \frac{1}{4} + \frac{1}{5} + \frac{1}{6} \right) = 14.7 \text{ lần}.
+\]
+\end{solution}
+
+% ----------------------------------------------------------------
+\begin{exercise}
+1.68. Bài toán thu thập thẻ (Coupon collector’s problem). Chứng minh thời gian trung bình để thu thập $N$ loại thẻ là $N \log N$ và tìm phương sai.
+\end{exercise}
+\begin{solution}
+Tương tự bài 1.67, thời gian chờ $T = \sum_{k=0}^{N-1} W_k$ với $W_k \sim \text{Geometric}(p_k = (N-k)/N)$.
+- Trung bình: $ET = \sum_{k=0}^{N-1} \frac{N}{N-k} = N \sum_{j=1}^N \frac{1}{j} \approx N(\ln N + \gamma)$.
+- Phương sai: Do các lần chờ $W_k$ độc lập:
+\[
+  Var(T) = \sum_{k=0}^{N-1} Var(W_k) = \sum_{k=0}^{N-1} \frac{1-p_k}{p_k^2} = \sum_{k=0}^{N-1} \frac{k/N}{(N-k)^2/N^2} = N \sum_{k=0}^{N-1} \frac{k}{(N-k)^2}
+\]
+Thay đổi chỉ số $j = N-k$:
+\[
+  Var(T) = N \sum_{j=1}^N \frac{N-j}{j^2} = N^2 \sum_{j=1}^N \frac{1}{j^2} - N \sum_{j=1}^N \frac{1}{j}.
+\]
+\textit{Security Note:} Bài toán này giúp ước tính số lượng log cần thiết để "quét" hết các lỗ hổng tiềm ẩn nếu ta giả định hacker tấn công ngẫu nhiên các endpoint.
+\end{solution}
+
+% ----------------------------------------------------------------
+\begin{exercise}
+1.69. Hiệu suất thuật toán (Simplex method). Nhảy từ điểm cực đại $i$ xuống bất kỳ điểm $j < i$ nào với xác suất bằng nhau $1/(i-1)$.
+(a) Chứng minh $E_i T_1 = 1 + 1/2 + \dots + 1/(i-1)$.
+\end{exercise}
+\begin{solution}
+(a) Gọi $e_i = E_i T_1$. Ta có phương trình:
+\[ e_i = 1 + \sum_{j=2}^{i-1} p(i, j) e_j = 1 + \frac{1}{i-1} \sum_{j=2}^{i-1} e_j \]
+Thay $i$ bằng $i+1$: $e_{i+1} = 1 + \frac{1}{i} \sum_{j=2}^{i} e_j$.
+Suy ra $i e_{i+1} = i + \sum_{j=2}^{i-1} e_j + e_i = i + (i-1)(e_i - 1) + e_i = i e_i + 1$.
+Vậy $e_{i+1} = e_i + 1/i$. Vì $e_2 = 1$, ta có $e_i = \sum_{j=1}^{i-1} 1/j$.
+\end{solution}
+
+% ----------------------------------------------------------------
+\begin{exercise}
+1.70 \& 1.71. Chuỗi Sinh tử (Birth and Death Chains) trên không gian vô hạn. Điều kiện hồi quy (recurrent).
+\end{exercise}
+\begin{solution}
+Điều kiện để chuỗi sinh tử là hồi quy (recurrent) là:
+\[ \sum_{y=1}^\infty \prod_{x=1}^{y-1} \frac{q_x}{p_x} = \infty \]
+Với bài 1.71: $p_x = 1/2$, $q_x = \frac{1}{2} e^{-cx^{-\alpha}}$. 
+Khi $x$ lớn, $q_x/p_x = e^{-cx^{-\alpha}} \approx 1 - cx^{-\alpha}$.
+Tích $\prod (q_x/p_x) \approx \exp(-\sum cx^{-\alpha})$.
+Chuỗi $\sum x^{-\alpha}$ hội tụ khi $\alpha > 1$ và phân kỳ khi $\alpha \le 1$. 
+- Nếu $\alpha > 1$, tích hội tụ về hằng số $> 0$, dẫn đến tổng $\sum \text{const} = \infty \implies$ Hồi quy.
+- Nếu $\alpha = 1$, tích $\prod \approx \exp(-c \ln y) = y^{-c}$. Tổng $\sum y^{-c}$ phân kỳ nếu $c \le 1 \implies$ Hồi quy.
+- Nếu $\alpha < 1$, tích giảm nhanh hơn bất kỳ lũy thừa nào, tổng hội tụ $\implies$ Không hồi quy (transient).
+\end{solution}
+
+% ----------------------------------------------------------------
+\begin{exercise}
+1.74. Chuỗi già hóa (Aging chain): $p(n, n+1) = p_n$, $p(n, 0) = 1-p_n$.
+\end{exercise}
+\begin{solution}
+(a) 0 là hồi quy nếu xác suất không bao giờ quay lại 0 là 0. 
+$P_0(T_0 = \infty) = \prod_{n=0}^\infty p_n$. Hồi quy khi $\prod p_n = 0 \iff \sum (1-p_n) = \infty$.
+(b) Hồi quy dương (positive recurrent) nếu $E_0 T_0 < \infty$.
+$E_0 T_0 = 1 + p_0 + p_0 p_1 + p_0 p_1 p_2 + \dots = \sum_{n=0}^\infty \prod_{k=0}^{n-1} p_k < \infty$.
+(c) Phân phối dừng: $\pi(n) = \pi(0) \prod_{k=0}^{n-1} p_k$. Với $\pi(0) = 1 / (\sum_{n=0}^\infty \prod_{k=0}^{n-1} p_k)$.
+\end{solution}
+
+% ----------------------------------------------------------------
+\begin{exercise}
+1.76 \& 1.77. Quá trình nhánh (Branching process). Tìm xác suất tuyệt diệt (extinction probability).
+\end{exercise}
+\begin{solution}
+(1.76) Gia đình có 3 con, trung bình 1.5 con gái $\implies p = 0.5$. Số con gái $X \sim \text{Binomial}(3, 0.5)$.
+$p_0 = 1/8, p_1 = 3/8, p_2 = 3/8, p_3 = 1/8$.
+Hàm tạo: $\phi(s) = \frac{1}{8} + \frac{3}{8}s + \frac{3}{8}s^2 + \frac{1}{8}s^3$.
+Giải $\rho = \phi(\rho)$: $\rho = 1/8 + 3/8\rho + 3/8\rho^2 + 1/8\rho^3 \iff (\rho-1)(\rho^2 + 4\rho - 1) = 0$.
+Nghiệm $\rho \in [0, 1]$ là $\rho = \sqrt{5}-2 \approx 0.236$.
+
+(1.77) $p_k = p(1-p)^k$ (Phân phối Hình học dịch chuyển).
+Hàm tạo $\phi(s) = \sum_{k=0}^\infty p(1-p)^k s^k = \frac{p}{1-(1-p)s}$.
+Giải $\rho = \phi(\rho)$: $\rho = \frac{p}{1-(1-p)\rho} \iff (1-p)\rho^2 - \rho + p = 0$.
+$\iff (\rho-1)((1-p)\rho - p) = 0$.
+Xác suất tuyệt diệt $\rho = \min(1, \frac{p}{1-p})$.
+\end{solution}
+% ----------------------------------------------------------------
 \end{document}
