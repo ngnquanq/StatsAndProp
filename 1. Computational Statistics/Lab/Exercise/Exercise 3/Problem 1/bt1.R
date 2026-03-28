@@ -16,8 +16,6 @@ f_denom <- function(x, data) {
      prod((3 + (data - m)^2)^(-2))
   })
 }
-
-
 g_mu <- f_denom
 mu_prop_mean <- mean(x_obs)
 mu_prop_sd <- sd(x_obs)

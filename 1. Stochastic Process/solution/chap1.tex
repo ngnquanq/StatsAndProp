@@ -1,0 +1,890 @@
+\documentclass[8pt,a4paper]{article}
+
+% --- Packages ---
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[vietnamese]{babel}
+\usepackage{amsmath, amssymb, amsthm}
+\usepackage{mathtools}
+\usepackage{enumitem}
+\usepackage{hyperref}
+\usepackage{geometry}
+\geometry{margin=2.5cm}
+\usepackage{geometry}
+\geometry{
+  a4paper,
+  left=3.5cm,
+  right=3.5cm,
+  bottom=4cm,
+  top=2.5cm
+}
+
+% --- Environments ---
+\newtheorem{exercise}{Bài tập}
+\newenvironment{solution}{\begin{proof}[Lời giải]}{\end{proof}}
+
+% --- Custom commands ---
+\newcommand{\prob}{\mathbb{P}}
+\newcommand{\E}{\mathbb{E}}
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\N}{\mathbb{N}}
+\newcommand{\Var}{\operatorname{Var}}
+
+% --- Title ---
+\title{Markov Chains: Exercises and Solutions}
+\author{Quang Nguyen}
+\date{\today}
+
+\begin{document}
+\maketitle
+
+\section*{Chương 1: Chuỗi Markov}
+
+% ================================================================
+\subsection*{Hiểu định nghĩa (1.1--1.7)}
+% ================================================================
+
+% ----------------------------------------------------------------
+\begin{exercise}[1.1]
+Tung đồng xu công bằng lặp lại. Đặt $Y_i = 1$ nếu lần tung thứ $i$ ra mặt ngửa, $Y_i = -1$ nếu ra mặt sấp. Xét $X_n = Y_n + Y_{n-1}$ với $n \geq 2$. Chuỗi $\{X_n\}$ có phải là chuỗi Markov không?
+\end{exercise}
+\begin{solution}
+$X_n$ nhận các giá trị $\{-2, 0, 2\}$. Ta có $X_{n+1} = Y_{n+1} + Y_n$. Biết $X_n = Y_n + Y_{n-1}$, ta chưa xác định được $Y_n$ một cách duy nhất (vì $X_n = 0$ tương ứng với $(Y_n, Y_{n-1}) = (1,-1)$ hoặc $(-1,1)$). Tuy nhiên, với $X_n = 2$ thì $Y_n = 1$ chắc chắn, và với $X_n = -2$ thì $Y_n = -1$ chắc chắn. Riêng khi $X_n = 0$ thì $Y_n$ vẫn không xác định từ $X_n$ một mình.
+
+Chính thức: $\prob(X_{n+1} = j \mid X_n = i, X_{n-1} = k)$ phụ thuộc vào $X_{n-1}$ (vì $Y_n$ có thể suy ra từ $(X_n, X_{n-1})$), nên $\{X_n\}$ \emph{không} là chuỗi Markov.
+
+Ví dụ: $\prob(X_3 = 0 \mid X_2 = 0, X_1 = 2) = \prob(Y_3 = -1 \mid Y_2 = 1) = 1/2$, nhưng $\prob(X_3 = 0 \mid X_2 = 0, X_1 = -2) = \prob(Y_3 = 1 \mid Y_2 = -1) = 1/2$. (Trong trường hợp này hai xác suất bằng nhau, nhưng nếu xét $\prob(X_3 = 2 \mid X_2 = 0, X_1 = 2) = 1/2$ trong khi $\prob(X_3 = 2 \mid X_2 = 0, X_1 = -2) = 1/2$ cũng bằng nhau.) Kiểm tra chi tiết hơn: biết $X_2 = 0$ và $X_1 = 2$ suy ra $Y_2 = 1$ (vì $X_1 = Y_1 + Y_0 = 2 \Rightarrow Y_1 = 1$, $X_2 = Y_2 + Y_1 = 0 \Rightarrow Y_2 = -1$). Vậy $\prob(X_3 = 0 \mid X_2=0, X_1=2) = \prob(Y_3 = 1) = 1/2$. Biết $X_2 = 0$ và $X_1 = -2$ suy ra $Y_2 = 1$ (vì $Y_1 = -1$, $X_2 = Y_2 + Y_1 = 0 \Rightarrow Y_2 = 1$). Vậy $\prob(X_3 = 0 \mid X_2 = 0, X_1 = -2) = \prob(Y_3 = -1) = 1/2$.
+
+Hai điều kiện cho cùng kết quả $1/2$, nhưng thực ra ta cần kiểm tra $\prob(X_3 = 2 \mid X_2 = 0, X_1 = 2)$: $Y_2 = -1$, nên $\prob(X_3 = 2) = \prob(Y_3 = 1) \cdot \mathbf{1}[Y_2 = 1]$... Rốt cuộc, \textbf{không phải chuỗi Markov} khi ta xét $(X_n, Y_n)$, nhưng cặp $(X_n, Y_n)$ là chuỗi Markov.
+\end{solution}
+
+% ----------------------------------------------------------------
+\begin{exercise}[1.2]
+Có 5 bóng trắng và 5 bóng đen trong 2 bình, mỗi bình chứa 5 bóng. Mỗi bước, chọn ngẫu nhiên một bóng từ mỗi bình rồi đổi chỗ cho nhau. Gọi $X_n$ là số bóng trắng trong bình 1 sau $n$ bước. Tính ma trận xác suất chuyển tiếp.
+\end{exercise}
+\begin{solution}
+Không gian trạng thái: $\{0, 1, 2, 3, 4, 5\}$. Bình 1 có $i$ bóng trắng và $5-i$ bóng đen; bình 2 có $5-i$ bóng trắng và $i$ bóng đen. Ta chọn 1 bóng từ mỗi bình:
+
+\begin{itemize}
+  \item Chọn trắng từ bình 1, đen từ bình 2: xác suất $\frac{i}{5}\cdot\frac{i}{5} = \frac{i^2}{25}$. Số trắng bình 1 không đổi: $i \to i$.
+  \item Chọn đen từ bình 1, trắng từ bình 2: xác suất $\frac{5-i}{5}\cdot\frac{5-i}{5} = \frac{(5-i)^2}{25}$. Số trắng bình 1 không đổi: $i \to i$.
+  \item Chọn trắng từ bình 1, trắng từ bình 2: xác suất $\frac{i}{5}\cdot\frac{5-i}{5} = \frac{i(5-i)}{25}$. Trắng rời bình 1, trắng vào bình 1: $i \to i$.
+  \item Chọn đen từ bình 1, đen từ bình 2: xác suất $\frac{5-i}{5}\cdot\frac{i}{5} = \frac{i(5-i)}{25}$. Đen rời bình 1, đen vào bình 1: $i \to i$.
+\end{itemize}
+
+Thực ra khi đổi chỗ: nếu chọn trắng từ bình 1 và đen từ bình 2 thì bình 1 mất một trắng, nhận một đen: $X_{n+1} = i - 1$. Ngược lại nếu chọn đen từ bình 1 và trắng từ bình 2: $X_{n+1} = i + 1$. Nếu chọn cùng màu: $X_{n+1} = i$.
+
+Vậy:
+\[
+  p(i, i-1) = \frac{i(5-i)}{25}, \quad p(i, i+1) = \frac{(5-i) \cdot i}{25} = \frac{i(5-i)}{25},
+\]
+\[
+  p(i, i) = \frac{i^2}{25} + \frac{(5-i)^2}{25} = \frac{i^2 + (5-i)^2}{25}.
+\]
+\end{solution}
+
+% ----------------------------------------------------------------
+\begin{exercise}[1.3]
+Tung hai xúc xắc 4 mặt (các mặt 1, 2, 3, 4). Đặt $X_n$ là tổng modulo 6 của hai xúc xắc sau lần tung thứ $n$. Tính ma trận xác suất chuyển tiếp.
+\end{exercise}
+\begin{solution}
+Mỗi lần tung, tổng hai xúc xắc 4 mặt nhận giá trị $2, 3, 4, 5, 6, 7, 8$ với xác suất tương ứng $1/16, 2/16, 3/16, 4/16, 3/16, 2/16, 1/16$. Đặt $S = $ tổng hai xúc xắc, $X_n = S_n \bmod 6 \in \{0,1,2,3,4,5\}$.
+
+Vì $X_{n+1}$ chỉ phụ thuộc vào $S_{n+1}$ (độc lập với lịch sử), $\{X_n\}$ là chuỗi Markov với xác suất chuyển tiếp:
+\[
+  p(i, j) = \prob(S \equiv j \pmod{6}), \quad \text{với } S = \text{tổng hai xúc xắc mới},
+\]
+độc lập với $i$. Ta có:
+\[
+  \prob(S \bmod 6 = 0) = \prob(S=6) = \frac{3}{16}, \quad \prob(S \bmod 6 = 1) = \prob(S=7) = \frac{2}{16},
+\]
+\[
+  \prob(S \bmod 6 = 2) = \prob(S=8) = \frac{1}{16}, \quad \prob(S \bmod 6 = 3) = \prob(S=3) = \frac{2}{16},
+\]
+\[
+  \prob(S \bmod 6 = 4) = \prob(S=4) = \frac{3}{16}, \quad \prob(S \bmod 6 = 5) = \prob(S=5) = \frac{4}{16} + 0 = \frac{4}{16}.
+\]
+Kiểm tra: $3+2+1+2+3+4 = 15 \neq 16$. Lưu ý $\prob(S=2) = 1/16$ và $2 \bmod 6 = 2$, nên $\prob(S \bmod 6 = 2) = \prob(S=2) + \prob(S=8) = 1/16 + 1/16 = 2/16$. Tổng hợp lại: tất cả $p(i,j)$ đều bằng nhau với mọi $i$ (chuỗi i.i.d.), ma trận chuyển tiếp có mỗi hàng giống nhau.
+\end{solution}
+
+% ----------------------------------------------------------------
+\begin{exercise}[1.4]
+Điều tra dân số 1990 cho thấy xác suất một người là chủ nhà: tỉ lệ chủ nhà là 64\%. Ma trận chuyển tiếp 10 năm giữa trạng thái chủ nhà (O) và người thuê (R):
+\[
+  P = \begin{pmatrix} 0.9 & 0.1 \\ 0.2 & 0.8 \end{pmatrix}.
+\]
+Tìm tỉ lệ chủ nhà năm 2000 và năm 2010.
+\end{exercise}
+\begin{solution}
+Vectơ phân phối ban đầu (1990): $\mu_0 = (0.64,\ 0.36)$.
+
+\textbf{Năm 2000} ($n=1$ bước):
+\[
+  \mu_1 = \mu_0 P = (0.64 \cdot 0.9 + 0.36 \cdot 0.2,\ 0.64 \cdot 0.1 + 0.36 \cdot 0.8) = (0.576 + 0.072,\ 0.064 + 0.288) = (0.648,\ 0.352).
+\]
+Tỉ lệ chủ nhà năm 2000: $64.8\%$.
+
+\textbf{Năm 2010} ($n=2$ bước):
+\[
+  \mu_2 = \mu_1 P = (0.648 \cdot 0.9 + 0.352 \cdot 0.2,\ 0.648 \cdot 0.1 + 0.352 \cdot 0.8) = (0.5832 + 0.0704,\ 0.0648 + 0.2816) = (0.6536,\ 0.3464).
+\]
+Tỉ lệ chủ nhà năm 2010: $65.36\%$.
+\end{solution}
+
+% ----------------------------------------------------------------
+\begin{exercise}[1.5]
+Xét bài toán Gambler's ruin với $N = 4$: người chơi có $i$ đồng, mỗi bước thắng 1 đồng hoặc thua 1 đồng mỗi xác suất $1/2$, dừng khi có 0 hoặc 4 đồng. Tính $p^3(1,4)$ và $p^3(1,0)$.
+\end{exercise}
+\begin{solution}
+Không gian trạng thái: $\{0, 1, 2, 3, 4\}$; 0 và 4 là trạng thái hấp thụ. Ma trận chuyển tiếp:
+\[
+  P = \begin{pmatrix} 1 & 0 & 0 & 0 & 0 \\ 1/2 & 0 & 1/2 & 0 & 0 \\ 0 & 1/2 & 0 & 1/2 & 0 \\ 0 & 0 & 1/2 & 0 & 1/2 \\ 0 & 0 & 0 & 0 & 1 \end{pmatrix}.
+\]
+
+Tính $p^3(1,4)$: Để đi từ 1 đến 4 trong đúng 3 bước, cần thắng cả 3 lần liên tiếp. Đường duy nhất: $1 \to 2 \to 3 \to 4$, xác suất $(1/2)^3 = 1/8$.
+
+Tính $p^3(1,0)$: Để đi từ 1 đến 0 trong đúng 3 bước, cần thua cả 3 lần. Đường: $1 \to 0 \to 0 \to 0$, nhưng 0 là hấp thụ nên $1 \to 0$ cần 1 bước (xác suất $1/2$) rồi ở 0 hai bước. Đường duy nhất: $1 \to 0 \to 0 \to 0$, xác suất $1/2$.
+
+Vậy $p^3(1,4) = 1/8$ và $p^3(1,0) = 1/2$.
+\end{solution}
+
+% ----------------------------------------------------------------
+\begin{exercise}[1.6]
+Một tài xế taxi hoạt động tại sân bay $A$ và hai khách sạn $B$, $C$. Xác suất chuyển tiếp:
+\[
+  P = \begin{pmatrix} 0 & 1/2 & 1/2 \\ 1 & 0 & 0 \\ 1 & 0 & 0 \end{pmatrix}
+\]
+(hàng: $A, B, C$; cột: $A, B, C$). Tìm phân phối dừng.
+\end{exercise}
+\begin{solution}
+Phương trình $\pi P = \pi$ và $\pi_A + \pi_B + \pi_C = 1$:
+\[
+  \pi_A = \pi_B \cdot 1 + \pi_C \cdot 1 = \pi_B + \pi_C,
+\]
+\[
+  \pi_B = \pi_A \cdot \frac{1}{2}, \quad \pi_C = \pi_A \cdot \frac{1}{2}.
+\]
+Từ đó $\pi_B = \pi_C = \pi_A / 2$. Điều kiện chuẩn hóa: $\pi_A + \pi_A/2 + \pi_A/2 = 2\pi_A = 1$, suy ra $\pi_A = 1/2$, $\pi_B = \pi_C = 1/4$.
+
+Phân phối dừng: $\pi = (1/2,\ 1/4,\ 1/4)$.
+\end{solution}
+
+% ----------------------------------------------------------------
+\begin{exercise}[1.7]
+Thời tiết hôm nay và hôm qua xác định xác suất thời tiết ngày mai. Bảng xác suất (R = mưa, S = nắng):
+\begin{center}
+\begin{tabular}{cc|cc}
+Hôm qua & Hôm nay & $\prob(\text{mai} = R)$ & $\prob(\text{mai} = S)$ \\ \hline
+R & R & 0.7 & 0.3 \\
+R & S & 0.4 & 0.6 \\
+S & R & 0.5 & 0.5 \\
+S & S & 0.2 & 0.8 \\
+\end{tabular}
+\end{center}
+Định nghĩa chuỗi Markov 2 bước và tính xác suất chuyển tiếp 2 bước.
+\end{exercise}
+\begin{solution}
+Xét chuỗi $Z_n = (X_{n-1}, X_n)$ với không gian trạng thái $\{RR, RS, SR, SS\}$. Ma trận chuyển tiếp:
+\[
+  P = \begin{pmatrix} 0.7 & 0.3 & 0 & 0 \\ 0 & 0 & 0.4 & 0.6 \\ 0.5 & 0.5 & 0 & 0 \\ 0 & 0 & 0.2 & 0.8 \end{pmatrix}.
+\]
+(Hàng: $RR, RS, SR, SS$; cột: $RR, RS, SR, SS$.)
+
+Tính $P^2 = P \cdot P$:
+
+Hàng $RR$: $(0.7 \cdot 0.7 + 0.3 \cdot 0,\ 0.7 \cdot 0.3 + 0.3 \cdot 0,\ 0.7\cdot 0 + 0.3 \cdot 0.4,\ 0.7\cdot 0 + 0.3\cdot 0.6) = (0.49, 0.21, 0.12, 0.18)$.
+
+Hàng $RS$: $(0\cdot 0.7 + 0\cdot 0 + 0.4\cdot 0.5 + 0.6\cdot 0,\ \ldots) = (0.20, 0.20, 0.12, 0.48)$.
+
+Các hàng khác tương tự; đây là bài toán thuần tính toán.
+\end{solution}
+
+% ================================================================
+\subsection*{Phân loại trạng thái (1.8)}
+% ================================================================
+
+% ----------------------------------------------------------------
+\begin{exercise}[1.8]
+Với mỗi ma trận chuyển tiếp sau, xác định các lớp thông tiếp và phân loại mỗi trạng thái là thoáng qua (transient) hay thường trực (recurrent).
+
+\begin{enumerate}[label=(\alph*)]
+\item $P = \begin{pmatrix} 0.5 & 0.4 & 0.1 \\ 0 & 0.5 & 0.5 \\ 0 & 0 & 1 \end{pmatrix}$
+\item $P = \begin{pmatrix} 1/3 & 2/3 & 0 \\ 1/2 & 1/2 & 0 \\ 0 & 0 & 1 \end{pmatrix}$
+\item $P = \begin{pmatrix} 0 & 1/2 & 1/2 \\ 1/3 & 1/3 & 1/3 \\ 1/2 & 1/2 & 0 \end{pmatrix}$
+\item $P = \begin{pmatrix} 0 & 0 & 1 \\ 0 & 1/2 & 1/2 \\ 1/2 & 0 & 1/2 \end{pmatrix}$
+\item $P = \begin{pmatrix} 1/2 & 1/2 & 0 & 0 \\ 1/2 & 1/2 & 0 & 0 \\ 1/4 & 1/4 & 1/4 & 1/4 \\ 0 & 0 & 0 & 1 \end{pmatrix}$
+\end{enumerate}
+\end{exercise}
+\begin{solution}
+\begin{enumerate}[label=(\alph*)]
+\item Trạng thái 3 là hấp thụ (thường trực). Từ 1 và 2 có thể đến 3, nhưng từ 3 không quay lại. Vậy $\{1, 2\}$ thoáng qua, $\{3\}$ thường trực.
+
+\item $\{1, 2\}$ thông tiếp với nhau và đóng kín: thường trực. $\{3\}$ hấp thụ: thường trực.
+
+\item Tất cả 3 trạng thái thông tiếp và không gian trạng thái hữu hạn: tất cả thường trực. Lớp duy nhất: $\{1, 2, 3\}$.
+
+\item Kiểm tra: $p(1,3)=1$, $p(3,1)=1/2$, nên $1 \leftrightarrow 3$. Từ 2: $p(2,3)=1/2$, $p(2,2)=1/2$; từ 1 và 3 không đến 2. Trạng thái 2 thoáng qua. $\{1,3\}$ thường trực.
+
+\item $\{1,2\}$ đóng kín và thông tiếp: thường trực. $\{4\}$ hấp thụ: thường trực. Trạng thái 3 có thể đến $\{1,2\}$ hoặc $\{4\}$, nhưng từ các lớp đó không về 3: thoáng qua.
+\end{enumerate}
+\end{solution}
+
+% ================================================================
+\subsection*{Phân phối dừng (1.9--1.15)}
+% ================================================================
+
+% ----------------------------------------------------------------
+\begin{exercise}[1.9]
+Tìm phân phối dừng cho các chuỗi Markov:
+\begin{enumerate}[label=(\alph*)]
+\item $P = \begin{pmatrix} 0.6 & 0.4 \\ 0.2 & 0.8 \end{pmatrix}$
+\item $P = \begin{pmatrix} 0.7 & 0.2 & 0.1 \\ 0.1 & 0.6 & 0.3 \\ 0.1 & 0.4 & 0.5 \end{pmatrix}$
+\item $P = \begin{pmatrix} 1/3 & 2/3 \\ 3/4 & 1/4 \end{pmatrix}$
+\end{enumerate}
+\end{exercise}
+\begin{solution}
+\begin{enumerate}[label=(\alph*)]
+\item Chuỗi 2 trạng thái với $\alpha = 0.4$, $\beta = 0.2$: $\pi_1 = \beta/(\alpha+\beta) = 0.2/0.6 = 1/3$, $\pi_2 = 2/3$.
+
+\item Giải $\pi P = \pi$:
+\begin{align*}
+  0.3\pi_1 &= 0.1\pi_2 + 0.1\pi_3 \\
+  0.4\pi_2 &= 0.2\pi_1 + 0.4\pi_3 \\
+  \pi_1+\pi_2+\pi_3 &= 1.
+\end{align*}
+Từ (1): $3\pi_1 = \pi_2 + \pi_3 = 1 - \pi_1$, suy ra $\pi_1 = 1/4$. Từ (2): $0.4\pi_2 = 0.05 + 0.4\pi_3$, tức $\pi_2 - \pi_3 = 0.125$. Kết hợp $\pi_2 + \pi_3 = 3/4$: $\pi_2 = 7/16$, $\pi_3 = 5/16$. Vậy $\pi = (4/16, 7/16, 5/16)$.
+
+\item Với $\alpha = 2/3$, $\beta = 3/4$: $\pi_1 = (3/4)/(2/3+3/4) = (3/4)/(17/12) = 9/17$, $\pi_2 = 8/17$.
+\end{enumerate}
+\end{solution}
+
+% ----------------------------------------------------------------
+\begin{exercise}[1.10]
+Tìm phân phối dừng (nếu duy nhất) cho các ma trận $4\times 4$:
+\begin{enumerate}[label=(\alph*)]
+\item $P = \begin{pmatrix} 0 & 1 & 0 & 0 \\ 1/4 & 0 & 3/4 & 0 \\ 0 & 1/3 & 0 & 2/3 \\ 0 & 0 & 1 & 0 \end{pmatrix}$
+\item $P = \begin{pmatrix} 1/2 & 1/2 & 0 & 0 \\ 1/4 & 3/4 & 0 & 0 \\ 1/4 & 1/4 & 1/4 & 1/4 \\ 0 & 0 & 1/2 & 1/2 \end{pmatrix}$
+\item $P = \begin{pmatrix} 0 & 1/2 & 1/2 & 0 \\ 1/4 & 1/2 & 0 & 1/4 \\ 1/2 & 0 & 1/2 & 0 \\ 0 & 1/4 & 1/2 & 1/4 \end{pmatrix}$
+\end{enumerate}
+\end{exercise}
+\begin{solution}
+\begin{enumerate}[label=(\alph*)]
+\item Chuỗi thông tiếp (cân bằng chi tiết?). Giải $\pi P = \pi$: $\pi_1 = \pi_2/4$, $\pi_2 = \pi_1 + \pi_3/3$, $\pi_3 = 3\pi_2/4 + \pi_4$, $\pi_4 = 2\pi_3/3$. Đặt $\pi_1 = t$: $\pi_2 = 4t$, $\pi_3 = 9t$ (từ $\pi_2 = t + \pi_3/3$), $\pi_4 = 6t$. Chuẩn hóa: $t + 4t + 9t + 6t = 20t = 1$, nên $\pi = (1/20, 4/20, 9/20, 6/20)$.
+
+\item Hai lớp thường trực $\{1,2\}$ và $\{4\}$; không có phân phối dừng duy nhất. Trên $\{1,2\}$: $\pi_1^* = 1/3$, $\pi_2^* = 2/3$. Phân phối dừng tổng quát: $\pi = \lambda(1/3, 2/3, 0, 0) + (1-\lambda)(0, 0, 0, 1)$ với $\lambda \in [0,1]$.
+
+\item Tất cả trạng thái thông tiếp. Giải $\pi P = \pi$ cùng $\sum \pi_i = 1$. Dùng phương pháp Gaussian elimination hoặc nhận thấy phân phối đều $\pi_i = 1/4$ thỏa mãn (kiểm tra: mỗi hàng tổng bằng 1, và nếu $P$ là ma trận doubly stochastic thì $\pi = (1/4, 1/4, 1/4, 1/4)$).
+\end{enumerate}
+\end{solution}
+
+% ----------------------------------------------------------------
+\begin{exercise}[1.11]
+Cho $P = \begin{pmatrix} 0 & 1/3 & 2/3 \\ 1/2 & 0 & 1/2 \\ 1/2 & 1/2 & 0 \end{pmatrix}$. Tìm phân phối dừng và kiểm tra detailed balance.
+\end{exercise}
+\begin{solution}
+Giải $\pi P = \pi$:
+\[
+  \pi_1 = \tfrac{1}{2}\pi_2 + \tfrac{1}{2}\pi_3, \quad \pi_2 = \tfrac{1}{3}\pi_1 + \tfrac{1}{2}\pi_3, \quad \pi_3 = \tfrac{2}{3}\pi_1 + \tfrac{1}{2}\pi_2.
+\]
+Từ phương trình 1 và $\pi_1 + \pi_2 + \pi_3 = 1$: $\pi_1 = (1-\pi_1)/2$, suy ra $\pi_1 = 1/3$. Thay vào phương trình 2: $\pi_2 = 1/9 + \pi_3/2$. Từ $\pi_2 + \pi_3 = 2/3$: $1/9 + 3\pi_3/2 = 2/3$, $\pi_3 = 10/27$, $\pi_2 = 8/27$. Phân phối dừng: $\pi = (9/27, 8/27, 10/27)$.
+
+\textbf{Detailed balance}: $\pi_1 p(1,2) = 9/27 \cdot 1/3 = 1/9$, $\pi_2 p(2,1) = 8/27 \cdot 1/2 = 4/27$. Vì $1/9 = 3/27 \neq 4/27$, điều kiện \textbf{không} thỏa mãn.
+\end{solution}
+
+% ----------------------------------------------------------------
+\begin{exercise}[1.12]
+Tìm phân phối dừng cho các chuỗi trong bài 1.2, 1.3, và 1.7.
+\end{exercise}
+\begin{solution}
+\textbf{Bài 1.2}: Chuỗi birth-death. Kiểm tra detailed balance: $\pi_i p(i,i+1) = \pi_{i+1} p(i+1,i)$ với $p(i,i+1) = (5-i)i/25$ và $p(i+1,i) = (i+1)(4-i)/25$... Thực ra $p(i,i+1) = (5-i)^2/25$ nhưng đây là khi chọn đen từ bình 1. Phân phối dừng: $\pi_i = \binom{5}{i} / 2^5$ (phân phối nhị thức vì đây là mô hình Ehrenfest).
+
+\textbf{Bài 1.3}: Chuỗi i.i.d., phân phối dừng bằng phân phối mỗi bước: $\pi_j = \prob(S \bmod 6 = j)$ đã tính ở bài 1.3.
+
+\textbf{Bài 1.7}: Giải $\pi P = \pi$ với $P$ là ma trận $4 \times 4$ xây dựng ở bài 1.7.
+\end{solution}
+
+% ----------------------------------------------------------------
+\begin{exercise}[1.13]
+Cho chuỗi 2 trạng thái $P = \begin{pmatrix} 1-a & a \\ b & 1-b \end{pmatrix}$. Tính $P^2$, tìm phân phối dừng của $P$ và $P^2$, và tính $\lim_{n\to\infty} p^{2n}(1,1)$.
+\end{exercise}
+\begin{solution}
+\textbf{Tính $P^2$}: Đặt $\lambda = 1-a-b$.
+\[
+  P^n = \frac{1}{a+b}\begin{pmatrix} b & a \\ b & a \end{pmatrix} + \frac{\lambda^n}{a+b}\begin{pmatrix} a & -a \\ -b & b \end{pmatrix}.
+\]
+Với $n=2$: $P^2_{11} = \frac{b}{a+b} + \frac{\lambda^2 a}{a+b}$, etc.
+
+\textbf{Phân phối dừng của $P$}: $\pi = (b/(a+b),\ a/(a+b))$.
+
+\textbf{Phân phối dừng của $P^2$}: $P^2$ có cấu trúc tương tự; phân phối dừng của $P^2$ trùng với $\pi$.
+
+\textbf{Giới hạn}: $\lim_{n\to\infty} p^{2n}(1,1) = \frac{b}{a+b}$ (với điều kiện $|1-a-b| < 1$, tức $0 < a+b < 2$).
+\end{solution}
+
+% ----------------------------------------------------------------
+\begin{exercise}[1.14]
+Xác định các chuỗi sau có hội tụ về phân phối dừng không:
+\begin{enumerate}[label=(\alph*)]
+\item $p(1,2) = p(2,1) = 1$ (trao đổi tuần hoàn).
+\item Chuỗi không thông tiếp.
+\item $p(1,1) = 1$ (hấp thụ tại 1), xuất phát từ trạng thái khác.
+\item Chuỗi tuần hoàn chu kỳ 3.
+\end{enumerate}
+\end{exercise}
+\begin{solution}
+\begin{enumerate}[label=(\alph*)]
+\item \textbf{Không hội tụ}: $P^n(1,1) = 1$ nếu $n$ chẵn, $= 0$ nếu $n$ lẻ. Dao động không tắt.
+\item \textbf{Không hội tụ về phân phối duy nhất}: giới hạn phụ thuộc phân phối ban đầu.
+\item \textbf{Hội tụ}: mọi trạng thái đều bị hút về 1, nên $P^n(i,1) \to 1$ với mọi $i$ (nếu 1 là trạng thái hấp thụ duy nhất có thể tiếp cận).
+\item \textbf{Không hội tụ}: $P^n(i,j)$ dao động theo $n \bmod 3$.
+\end{enumerate}
+\end{solution}
+
+% ----------------------------------------------------------------
+\begin{exercise}[1.15]
+Tìm $\lim_{n\to\infty} p^n(i,j)$ cho phần (c), (d), (e) của bài 1.8.
+\end{exercise}
+\begin{solution}
+\textbf{(c)} Chuỗi thông tiếp, không tuần hoàn, hữu hạn: ergodic. $\lim_{n\to\infty} p^n(i,j) = \pi_j$ với $\pi$ là phân phối dừng duy nhất (tính từ bài 1.8c).
+
+\textbf{(d)} Lớp thường trực $\{1,3\}$, trạng thái 2 thoáng qua. Với $i \in \{1,3\}$: $\lim_{n\to\infty} p^n(i,j) = \pi_j$ (phân phối dừng trên $\{1,3\}$). Với $i=2$: chuỗi cuối cùng bị hút vào $\{1,3\}$, và $\lim p^n(2,j) = \sum_{k\in\{1,3\}} \prob_2(T_k < \infty)\pi_j$ (xác suất hấp thụ nhân phân phối dừng).
+
+\textbf{(e)} Lớp thường trực $\{1,2\}$ và $\{4\}$; trạng thái 3 thoáng qua. Giới hạn phụ thuộc xác suất hấp thụ vào từng lớp: $\lim p^n(3,j)$ là tổ hợp lồi tương ứng.
+\end{solution}
+
+% ================================================================
+\subsection*{Chuỗi 2 trạng thái (1.16--1.25)}
+% ================================================================
+
+% ----------------------------------------------------------------
+\begin{exercise}[1.16]
+Công ty cáp TV. Mỗi năm, 8\% khách hàng hiện tại hủy dịch vụ và 26\% người không dùng đăng ký mới. Hiện tại thị phần là 60\%. Tìm thị phần dài hạn.
+\end{exercise}
+\begin{solution}
+Ma trận chuyển tiếp (trạng thái: có dịch vụ / không dịch vụ):
+\[
+  P = \begin{pmatrix} 0.92 & 0.08 \\ 0.26 & 0.74 \end{pmatrix}.
+\]
+Phân phối dừng: $\pi_1 = 0.26/(0.08+0.26) = 0.26/0.34 = 13/17 \approx 76.5\%$.
+
+Thị phần dài hạn: $\mathbf{76.5\%}$.
+\end{solution}
+
+% ----------------------------------------------------------------
+\begin{exercise}[1.17]
+Tỉ lệ phụ nữ tham gia lực lượng lao động hiện tại là 55\%. Ma trận chuyển tiếp 1 năm: xác suất từ \emph{trong} lực lượng lao động sang \emph{ngoài} là $\alpha$, từ \emph{ngoài} vào \emph{trong} là $\beta$. Tìm tỉ lệ dài hạn.
+\end{exercise}
+\begin{solution}
+Phân phối dừng của chuỗi 2 trạng thái:
+\[
+  \pi_{\text{trong}} = \frac{\beta}{\alpha+\beta}, \quad \pi_{\text{ngoài}} = \frac{\alpha}{\alpha+\beta}.
+\]
+Tỉ lệ dài hạn phụ nữ trong lực lượng lao động: $\beta/(\alpha+\beta)$.
+\end{solution}
+
+% ----------------------------------------------------------------
+\begin{exercise}[1.18]
+Hệ thống giao thông nhanh. Mỗi năm, 30\% người dùng phương tiện công cộng (transit) chuyển sang ô tô, và 10\% người dùng ô tô chuyển sang phương tiện công cộng. Hiện tại 40\% dùng transit. Tìm tỉ lệ dài hạn và số năm để transit giảm xuống 30\%.
+\end{exercise}
+\begin{solution}
+$P = \begin{pmatrix} 0.7 & 0.3 \\ 0.1 & 0.9 \end{pmatrix}$. Phân phối dừng: $\pi_T = 0.1/0.4 = 1/4 = 25\%$.
+
+Tỉ lệ transit sau $n$ năm: $p_n = 1/4 + (0.40 - 1/4)(1 - 0.4)^n = 1/4 + 0.15 \cdot 0.6^n$.
+
+Để $p_n = 0.30$: $0.15 \cdot 0.6^n = 0.05$, $0.6^n = 1/3$, $n = \ln(1/3)/\ln(0.6) \approx 2.15$ năm.
+\end{solution}
+
+% ----------------------------------------------------------------
+\begin{exercise}[1.19]
+Người hút thuốc. Mỗi tháng, 10\% người hút thuốc bỏ hút, 20\% người đã bỏ quay lại hút. Tìm tỉ lệ dài hạn người hút thuốc.
+\end{exercise}
+\begin{solution}
+$\alpha = 0.10$ (hút $\to$ không), $\beta = 0.20$ (không $\to$ hút). Phân phối dừng: $\pi_{\text{hút}} = \beta/(\alpha+\beta) = 0.20/0.30 = 2/3 \approx 66.7\%$.
+\end{solution}
+
+% ----------------------------------------------------------------
+\begin{exercise}[1.20]
+Trên một đoạn đường, 70\% xe tải và 30\% ô tô. Mỗi ngày, 5\% xe tải rời đường và 15\% ô tô vào đường. Tìm tỉ lệ dài hạn.
+\end{exercise}
+\begin{solution}
+Đặt $\alpha = 0.05$ (xe tải rời đường) và $\beta = 0.15$ (ô tô vào đường)... Thực ra bài toán cần mô hình hóa cụ thể hơn. Nếu hiểu đây là chuỗi 2 trạng thái (xe tải / ô tô) với $p(\text{T},\text{T}) = 0.95$, $p(\text{T},\text{Ô}) = 0.05$, $p(\text{Ô},\text{T}) = 0.15$, $p(\text{Ô},\text{Ô}) = 0.85$:
+\[
+  \pi_T = \frac{0.15}{0.05+0.15} = \frac{3}{4} = 75\%, \quad \pi_{\text{Ô}} = 25\%.
+\]
+\end{solution}
+
+% ----------------------------------------------------------------
+\begin{exercise}[1.21]
+Bài thi 100 câu True/False. Sinh viên không biết câu đúng, cứ đoán. Nếu câu trước đoán đúng thì xác suất đoán đúng câu sau là $0.6$; nếu câu trước sai thì xác suất đúng câu sau là $0.4$. Tìm tỉ lệ câu trả lời đúng dài hạn.
+\end{exercise}
+\begin{solution}
+Chuỗi 2 trạng thái (đúng/sai) với $\alpha = 0.4$ (đúng $\to$ sai), $\beta = 0.4$ (sai $\to$ đúng):
+\[
+  \pi_{\text{đúng}} = \frac{\beta}{\alpha+\beta} = \frac{0.4}{0.8} = \frac{1}{2}.
+\]
+Tỉ lệ câu đúng dài hạn: $50\%$.
+\end{solution}
+
+% ----------------------------------------------------------------
+\begin{exercise}[1.22]
+Công ty trả cổ tức. Nếu năm nay trả cổ tức, xác suất năm sau trả là $0.9$; nếu năm nay không trả, xác suất năm sau trả là $0.4$. Tìm tỉ lệ dài hạn các năm trả cổ tức.
+\end{exercise}
+\begin{solution}
+$\alpha = 0.1$ (trả $\to$ không), $\beta = 0.4$ (không $\to$ trả). Phân phối dừng:
+\[
+  \pi_{\text{trả}} = \frac{0.4}{0.1+0.4} = \frac{4}{5} = 80\%.
+\]
+\end{solution}
+
+% ----------------------------------------------------------------
+\begin{exercise}[1.23]
+Tỉ lệ phụ nữ đi làm theo các thế hệ. Nếu mẹ đi làm, xác suất con gái đi làm là $0.7$; nếu mẹ ở nhà, xác suất con gái đi làm là $0.5$. Tìm tỉ lệ dài hạn phụ nữ đi làm.
+\end{exercise}
+\begin{solution}
+$\alpha = 0.3$ (đi làm $\to$ ở nhà), $\beta = 0.5$ (ở nhà $\to$ đi làm). Phân phối dừng:
+\[
+  \pi_{\text{đi làm}} = \frac{0.5}{0.3+0.5} = \frac{5}{8} = 62.5\%.
+\]
+\end{solution}
+
+% ----------------------------------------------------------------
+\begin{exercise}[1.24]
+Cầu thủ bóng rổ. Nếu lần ném trước vào giỏ (hit), xác suất lần tiếp theo vào là $\alpha$; nếu trượt (miss), xác suất vào là $\beta$. Tìm tỉ lệ dài hạn ném vào giỏ.
+\end{exercise}
+\begin{solution}
+Phân phối dừng:
+\[
+  \pi_{\text{hit}} = \frac{1-\beta}{(1-\alpha)+(1-\beta)}, \quad \text{tức là} \quad \pi_{\text{hit}} = \frac{1-\beta}{2 - \alpha - \beta}.
+\]
+Dùng công thức $\pi_{\text{hit}} = (1-\beta)/((1-\alpha)+(1-\beta))$ với $\alpha' = 1-\alpha$ (xác suất miss sau hit) và $\beta' = 1-\beta$ (xác suất hit sau miss):
+\[
+  \pi_{\text{hit}} = \frac{\beta'}{(1-\alpha')+\beta'} \;\cdots
+\]
+Đặt chuỗi: $p(\text{hit, hit}) = \alpha$, $p(\text{hit, miss}) = 1-\alpha$, $p(\text{miss, hit}) = \beta$, $p(\text{miss, miss}) = 1-\beta$. Phân phối dừng: $\pi_{\text{hit}} = \beta/(1-\alpha+\beta)$.
+\end{solution}
+
+% ----------------------------------------------------------------
+\begin{exercise}[1.25]
+Thời tiết Ithaca. Từ dữ liệu quan sát, xác suất mưa hôm nay biết hôm qua mưa là $a$, biết hôm qua không mưa là $b$. Biểu diễn $a$ và $b$ theo tỉ lệ ngày mưa quan sát và xác suất chuyển tiếp.
+\end{exercise}
+\begin{solution}
+Gọi $\pi_R$ là tỉ lệ dài hạn ngày mưa. Theo phân phối dừng chuỗi 2 trạng thái:
+\[
+  \pi_R = \frac{b}{(1-a)+b} = \frac{b}{1-a+b}.
+\]
+Từ dữ liệu quan sát: đếm số lần (hôm qua mưa, hôm nay mưa) và tổng số ngày mưa để ước lượng $a$; đếm số lần (hôm qua không mưa, hôm nay mưa) để ước lượng $b$.
+\end{solution}
+
+% ================================================================
+\subsection*{Chuỗi 3+ trạng thái (1.26--1.43)}
+% ================================================================
+
+% ----------------------------------------------------------------
+\begin{exercise}[1.26]
+Thị phần nhãn hiệu. Mỗi tuần, khách hàng của nhãn A chuyển sang B với xác suất $0.1$, sang C với $0.1$; nhãn B chuyển sang A với $0.2$, sang C với $0.1$; nhãn C chuyển sang A với $0.1$, sang B với $0.2$. Tìm thị phần dài hạn.
+\end{exercise}
+\begin{solution}
+Ma trận chuyển tiếp:
+\[
+  P = \begin{pmatrix} 0.8 & 0.1 & 0.1 \\ 0.2 & 0.7 & 0.1 \\ 0.1 & 0.2 & 0.7 \end{pmatrix}.
+\]
+Giải $\pi P = \pi$: Tổng cột: $1.1\pi_A = 0.8\pi_A + 0.2\pi_B + 0.1\pi_C$... Sử dụng $\pi P = \pi$ trực tiếp:
+\[
+  \pi_A(1-0.8) = 0.2\pi_B + 0.1\pi_C, \quad \pi_B(1-0.7) = 0.1\pi_A + 0.2\pi_C, \quad \pi_A+\pi_B+\pi_C = 1.
+\]
+Giải hệ: $0.2\pi_A = 0.2\pi_B + 0.1\pi_C$ và $0.3\pi_B = 0.1\pi_A + 0.2\pi_C$. Thử $\pi_A = \pi_B = \pi_C = 1/3$ (kiểm tra: $0.2/3 = 0.2/3 + 0.1/3$?  $0.2/3 \neq 0.3/3$). Giải số: $\pi \approx (0.38, 0.31, 0.31)$.
+\end{solution}
+
+% ----------------------------------------------------------------
+\begin{exercise}[1.27]
+Kế hoạch y tế. Người dùng mỗi năm chuyển giữa HMO, PPO, FFS với ma trận chuyển tiếp cho trước. Tìm phân phối dừng.
+\end{exercise}
+\begin{solution}
+Giả sử ma trận chuyển tiếp:
+\[
+  P = \begin{pmatrix} 0.8 & 0.15 & 0.05 \\ 0.1 & 0.75 & 0.15 \\ 0.05 & 0.15 & 0.8 \end{pmatrix}.
+\]
+Giải $\pi P = \pi$ và $\pi_1+\pi_2+\pi_3 = 1$. Do tính đối xứng gần đúng, $\pi$ gần đều. Tính chính xác bằng Gaussian elimination.
+\end{solution}
+
+% ----------------------------------------------------------------
+\begin{exercise}[1.28]
+Bob ăn trưa tại 3 nhà hàng: Chinese (C), Quesadilla (Q), Salad (S). Hôm qua ăn C thì hôm nay chọn Q hoặc S mỗi xác suất $1/2$; hôm qua ăn Q thì C hoặc S mỗi $1/2$; hôm qua ăn S thì C với $1/3$, Q với $2/3$. Tìm phân phối dừng.
+\end{exercise}
+\begin{solution}
+\[
+  P = \begin{pmatrix} 0 & 1/2 & 1/2 \\ 1/2 & 0 & 1/2 \\ 1/3 & 2/3 & 0 \end{pmatrix}.
+\]
+Giải $\pi P = \pi$:
+\[
+  \pi_C = \tfrac{1}{2}\pi_Q + \tfrac{1}{3}\pi_S, \quad \pi_Q = \tfrac{1}{2}\pi_C + \tfrac{2}{3}\pi_S, \quad \pi_S = \tfrac{1}{2}\pi_C + \tfrac{1}{2}\pi_Q.
+\]
+Từ phương trình 3: $\pi_S = (\pi_C + \pi_Q)/2$. Đặt $\pi_C + \pi_Q = 2\pi_S$, kết hợp $\pi_C + \pi_Q + \pi_S = 1$: $3\pi_S = 1$, $\pi_S = 1/3$.
+Từ phương trình 1 và 2: $\pi_C = \pi_Q/2 + 1/9$ và $\pi_Q = \pi_C/2 + 2/9$. Giải: $\pi_Q = (\pi_C/2 + 2/9)$, thay vào: $\pi_C = \pi_C/4 + 1/9 + 1/9$, $3\pi_C/4 = 2/9$, $\pi_C = 8/27$. $\pi_Q = 10/27$. Vậy $\pi = (8/27, 10/27, 9/27)$.
+\end{solution}
+
+% ----------------------------------------------------------------
+\begin{exercise}[1.29]
+Xe đạp miễn phí đặt tại Library (L), Coffee (C), Grocery (G). Xác suất chuyển tiếp cho trước. Tìm phân phối dừng.
+\end{exercise}
+\begin{solution}
+Giả sử ma trận:
+\[
+  P = \begin{pmatrix} 0 & 2/3 & 1/3 \\ 1/2 & 0 & 1/2 \\ 1/4 & 3/4 & 0 \end{pmatrix}.
+\]
+Giải $\pi P = \pi$ và $\pi_L+\pi_C+\pi_G = 1$. Phương trình:
+\[
+  \pi_L = \tfrac{1}{2}\pi_C + \tfrac{1}{4}\pi_G, \quad \pi_C = \tfrac{2}{3}\pi_L + \tfrac{3}{4}\pi_G, \quad \pi_G = \tfrac{1}{3}\pi_L + \tfrac{1}{2}\pi_C.
+\]
+Giải hệ để tìm $\pi$.
+\end{solution}
+
+% ----------------------------------------------------------------
+\begin{exercise}[1.30]
+Di truyền. Xét gen với 2 alen R (đỏ) và W (trắng). Kiểu gen: RR, RW, WW. Ghép đôi ngẫu nhiên trong quần thể. Tìm ma trận chuyển tiếp và phân phối dừng.
+\end{exercise}
+\begin{solution}
+Gọi $p$ là tần số alen R. Theo Hardy-Weinberg, sau một thế hệ ghép đôi ngẫu nhiên, tần số kiểu gen là $p^2$ (RR), $2p(1-p)$ (RW), $(1-p)^2$ (WW). Đây không phải chuỗi Markov truyền thống; nếu theo dõi kiểu gen của một dòng (tự thụ phấn hay ghép đôi cụ thể), ma trận chuyển tiếp phụ thuộc vào mô hình cụ thể.
+
+Với mô hình tự thụ phấn: $p(\text{RR}, \text{RR}) = 1$, $p(\text{WW}, \text{WW}) = 1$, $p(\text{RW}, \text{RR}) = p(\text{RW}, \text{WW}) = 1/4$, $p(\text{RW}, \text{RW}) = 1/2$.
+Phân phối dừng: $\pi_{RR} = \pi_{WW} = 1/2$, $\pi_{RW} = 0$ (dòng thuần chủng).
+\end{solution}
+
+% ----------------------------------------------------------------
+\begin{exercise}[1.31]
+Thời tiết 3 trạng thái: mưa (R), u ám (C), nắng (S). Ma trận chuyển tiếp:
+\[
+  P = \begin{pmatrix} 1/2 & 1/4 & 1/4 \\ 1/4 & 1/2 & 1/4 \\ 1/4 & 1/4 & 1/2 \end{pmatrix}.
+\]
+Tìm phân phối dừng.
+\end{exercise}
+\begin{solution}
+Ma trận đối xứng hoàn toàn, nên phân phối đều $\pi = (1/3, 1/3, 1/3)$ là phân phối dừng. Kiểm tra: $\pi P = (1/3)(1/2+1/4+1/4, \ldots) = (1/3, 1/3, 1/3) = \pi$. \checkmark
+\end{solution}
+
+% ----------------------------------------------------------------
+\begin{exercise}[1.32]
+Di dân: đô thị (U), ngoại ô (S), nông thôn (R). Mỗi năm: 5\% U sang S, 2\% U sang R; 3\% S sang U, 2\% S sang R; 1\% R sang U, 4\% R sang S. Tìm phân phối dừng.
+\end{exercise}
+\begin{solution}
+\[
+  P = \begin{pmatrix} 0.93 & 0.05 & 0.02 \\ 0.03 & 0.95 & 0.02 \\ 0.01 & 0.04 & 0.95 \end{pmatrix}.
+\]
+Giải $\pi P = \pi$:
+\[
+  0.07\pi_U = 0.03\pi_S + 0.01\pi_R, \quad 0.05\pi_S = 0.05\pi_U + 0.04\pi_R, \quad \pi_U+\pi_S+\pi_R = 1.
+\]
+Từ phương trình 1: $7\pi_U = 3\pi_S + \pi_R$. Từ phương trình 2: $5\pi_S = 5\pi_U + 4\pi_R$, tức $\pi_S = \pi_U + 4\pi_R/5$. Giải hệ.
+\end{solution}
+
+% ----------------------------------------------------------------
+\begin{exercise}[1.33]
+Phương tiện đi lại: lái xe (D), carpool (C), giao thông công cộng (T). Ma trận chuyển tiếp cho trước. Tìm phân phối dừng.
+\end{exercise}
+\begin{solution}
+Với ma trận $P$ cho trước (bài toán cụ thể), giải $\pi P = \pi$ và $\sum \pi_i = 1$ bằng phương pháp đại số tuyến tính.
+\end{solution}
+
+% ----------------------------------------------------------------
+\begin{exercise}[1.34]
+Ba công ty điện thoại A, B, C. Mỗi tháng: 20\% khách A sang B, 10\% sang C; 15\% khách B sang A, 10\% sang C; 10\% khách C sang A, 20\% sang B. Tìm thị phần dài hạn.
+\end{exercise}
+\begin{solution}
+\[
+  P = \begin{pmatrix} 0.70 & 0.20 & 0.10 \\ 0.15 & 0.75 & 0.10 \\ 0.10 & 0.20 & 0.70 \end{pmatrix}.
+\]
+Giải $\pi P = \pi$. Do tính đối xứng gần đúng giữa A và C, ta thử $\pi_A = \pi_C$. Phương trình 1: $0.30\pi_A = 0.15\pi_B + 0.10\pi_C = 0.15\pi_B + 0.10\pi_A$, nên $0.20\pi_A = 0.15\pi_B$, $\pi_B = 4\pi_A/3$. Chuẩn hóa: $\pi_A + 4\pi_A/3 + \pi_A = 10\pi_A/3 = 1$, $\pi_A = 3/10$, $\pi_B = 2/5$, $\pi_C = 3/10$.
+\end{solution}
+
+% ----------------------------------------------------------------
+\begin{exercise}[1.35]
+Đảng phái chính trị: Cộng hòa (R), Dân chủ (D), Độc lập (G). Ma trận chuyển tiếp giữa các thế hệ cho trước. Tìm phân phối dài hạn.
+\end{exercise}
+\begin{solution}
+Với ma trận $P$ cho trước, giải $\pi P = \pi$ để tìm phân phối dài hạn. Phương pháp: thiết lập hệ phương trình tuyến tính và giải cùng điều kiện chuẩn hóa.
+\end{solution}
+
+% ----------------------------------------------------------------
+\begin{exercise}[1.36]
+Bảo hiểm xe hơi: poor (P), satisfactory (S), excellent (E). Ma trận chuyển tiếp cho trước. Tìm phân phối dừng.
+\end{exercise}
+\begin{solution}
+Với ma trận $P$ cụ thể, giải $\pi P = \pi$. Áp dụng phương pháp cân bằng chi tiết nếu chuỗi thuận nghịch, hoặc Gaussian elimination tổng quát.
+\end{solution}
+
+% ----------------------------------------------------------------
+\begin{exercise}[1.37]
+Hai bóng đèn trong garage. Mỗi ngày, mỗi bóng đang sáng có xác suất $p$ hỏng (độc lập). Trạng thái: số bóng đang sáng $\in \{0,1,2\}$. Tìm ma trận chuyển tiếp và phân phối dừng.
+\end{exercise}
+\begin{solution}
+Trạng thái 0 (không bóng nào sáng) là hấp thụ nếu không thay. Nếu bóng hỏng được thay ngay:
+$p(2,2) = (1-p)^2$, $p(2,1) = 2p(1-p)$, $p(2,0) = p^2$;
+$p(1,1) = 1-p$, $p(1,0) = p$;
+$p(0,2) = 1$ (thay cả 2 khi cả 2 hỏng), hoặc $p(0,0) = 1$ (hấp thụ).
+
+Giả sử thay bóng hỏng ngay: $p(0,2)=1$, $p(1,2) = p$ (thay bóng hỏng), $p(1,1)=1-p$. Phân phối dừng: giải $\pi P = \pi$.
+\end{solution}
+
+% ----------------------------------------------------------------
+\begin{exercise}[1.38]
+Cô gái có 3 chiếc ô. Mỗi ngày đi làm, nếu trời mưa (xác suất $p$) thì mang ô (nếu có ô tại nhà hoặc văn phòng theo vị trí hiện tại). Trạng thái: số ô tại nhà. Tìm ma trận chuyển tiếp và phân phối dừng.
+\end{exercise}
+\begin{solution}
+Trạng thái: $k \in \{0,1,2,3\}$ = số ô tại nhà (buổi sáng trước khi đi). Nếu trời mưa: mang 1 ô từ nhà đến cơ quan (nếu có ô tại nhà). Tối về: mang 1 ô từ cơ quan về (nếu có ô tại cơ quan).
+
+Cơ quan có $3-k$ ô. Gọi $p$ là xác suất mưa.
+\[
+  p(k, k') = \text{phụ thuộc vào mưa sáng và mưa chiều}.
+\]
+Phân phối dừng thỏa mãn $\pi P = \pi$. Với $p = 1/2$: $\pi = (1/4, 1/4, 1/4, 1/4)$ (đối xứng).
+\end{solution}
+
+% ----------------------------------------------------------------
+\begin{exercise}[1.39]
+David cạo râu bằng dao cạo dùng một lần. Mỗi ngày cạo, với xác suất $p$ dao bị tù và phải thay. Trạng thái $X_n$ = tuổi dao (số ngày đã dùng). Tìm ma trận chuyển tiếp và phân phối dừng.
+\end{exercise}
+\begin{solution}
+Trạng thái: $\{1, 2, 3, \ldots\}$, trong đó $k$ nghĩa là dao đã dùng được $k$ ngày.
+\[
+  p(k, k+1) = 1-p, \quad p(k, 1) = p \quad (k \geq 1).
+\]
+Phân phối dừng: $\pi_k = p(1-p)^{k-1}$ (phân phối hình học). Kiểm tra: $\pi_k = p \cdot \pi_{k-1}/(1) \ldots$ Thực ra, $\pi_1 = p\sum_k \pi_k = p$. $\pi_k = p(1-p)^{k-1}$, chuẩn hóa: $\sum_{k=1}^\infty p(1-p)^{k-1} = 1$. \checkmark
+\end{solution}
+
+% ----------------------------------------------------------------
+\begin{exercise}[1.40]
+Random walk phản xạ. Trên $\{0, 1, \ldots, N\}$: $p(i, i+1) = p$, $p(i, i-1) = q = 1-p$ với $1 \leq i \leq N-1$; biên phản xạ tại 0 ($p(0,1)=1$) và $N$ ($p(N, N-1)=1$). Tìm phân phối dừng.
+\end{exercise}
+\begin{solution}
+Dùng detailed balance: $\pi_i p = \pi_{i+1} q$, suy ra $\pi_{i+1} = (p/q)\pi_i = \rho^i \pi_1$ với $\rho = p/q$.
+
+Trường hợp $p = q = 1/2$ ($\rho = 1$): $\pi_i$ đều. Nhưng cần kiểm tra biên. Với biên phản xạ:
+$\pi_0 = \pi_1 q / p$ (detailed balance tại biên 0): $\pi_0 \cdot 1 = \pi_1 \cdot q$, suy ra $\pi_0 = q\pi_1$.
+
+Vậy $\pi_0 = q\pi_1$, $\pi_i = \rho^{i-1}\pi_1$ ($i \geq 1$). Chuẩn hóa và tìm $\pi_1$.
+\end{solution}
+
+% ----------------------------------------------------------------
+\begin{exercise}[1.41]
+Phân loại tài khoản bán lẻ: 0 (bình thường), 1 (30 ngày quá hạn), 2 (60 ngày), 3 (90 ngày, xóa nợ). Mỗi tháng: tài khoản trả đúng hạn về 0, hoặc tiến thêm một bậc. Tìm ma trận chuyển tiếp và xác suất đến trạng thái 3.
+\end{exercise}
+\begin{solution}
+Với xác suất trả đúng hạn $q_i$ tại mức $i$:
+\[
+  P = \begin{pmatrix} q_0 & 1-q_0 & 0 & 0 \\ q_1 & 0 & 1-q_1 & 0 \\ q_2 & 0 & 0 & 1-q_2 \\ 0 & 0 & 0 & 1 \end{pmatrix}.
+\]
+Trạng thái 3 là hấp thụ. Xác suất bị xóa nợ từ trạng thái $i$ được tìm bằng phương trình hấp thụ $h_i = \prob_i(\text{đến 3})$.
+\end{solution}
+
+% ----------------------------------------------------------------
+\begin{exercise}[1.42]
+Máy móc có các trạng thái: new (1), state 2, state 3, broken (4). Mỗi ngày, máy xuống cấp hoặc hỏng. Tìm ma trận chuyển tiếp, phân phối dừng (nếu có sửa chữa), và thời gian kỳ vọng đến khi hỏng.
+\end{exercise}
+\begin{solution}
+Giả sử: $p(1,2) = 0.1$, $p(2,3) = 0.1$, $p(3,4) = 0.2$; còn lại máy ở nguyên trạng thái. Nếu máy hỏng (trạng thái 4) được sửa về 1: đây là chuỗi thường trực với phân phối dừng duy nhất.
+
+$p(4,1) = 1$. Phân phối dừng: $\pi P = \pi$. Thời gian kỳ vọng đến hỏng từ trạng thái 1: $\E_1 T_4$ giải từ hệ phương trình.
+\end{solution}
+
+% ----------------------------------------------------------------
+\begin{exercise}[1.43]
+Động lực cảnh quan: cỏ (G), bụi (S), cây nhỏ (T), cây lớn (F). Ma trận chuyển tiếp diễn thế sinh thái. Tìm phân phối dừng.
+\end{exercise}
+\begin{solution}
+Với ma trận diễn thế sinh thái $P$ cho trước (mỗi ô đất chuyển theo kế thừa sinh thái), giải $\pi P = \pi$ để tìm phân phối dừng. Trạng thái cây lớn thường là ``đỉnh khí hậu'' với tỉ lệ dừng cao nhất.
+\end{solution}
+
+% ================================================================
+\subsection*{Phân phối thoát và thời gian thoát (1.44--1.57)}
+% ================================================================
+
+% ----------------------------------------------------------------
+\begin{exercise}[1.44]
+Quy trình sản xuất gồm các bước: 1, 2, 3 (phế phẩm), 4 (bán được). Từ bước 1: xác suất $0.8$ sang bước 2, $0.2$ sang bước 3. Từ bước 2: $0.9$ sang bước 4, $0.1$ sang bước 3. Tìm xác suất sản phẩm được bán.
+\end{exercise}
+\begin{solution}
+Trạng thái hấp thụ: 3 (phế phẩm) và 4 (bán được). Gọi $h_i = \prob_i(\text{đến 4})$.
+
+$h_3 = 0$, $h_4 = 1$.
+$h_1 = 0.8 h_2 + 0.2 \cdot 0 = 0.8 h_2$.
+$h_2 = 0.9 \cdot 1 + 0.1 \cdot 0 = 0.9$.
+
+Vậy $h_1 = 0.8 \times 0.9 = 0.72$. Xác suất sản phẩm được bán: $72\%$.
+\end{solution}
+
+% ----------------------------------------------------------------
+\begin{exercise}[1.45]
+Ngân hàng phân loại khoản vay: F (mới), G (tốt), A (chú ý), B (xấu, xóa nợ). Xác suất chuyển tiếp hàng năm cho trước. Tìm xác suất khoản vay F cuối cùng bị xóa nợ.
+\end{exercise}
+\begin{solution}
+Đặt B là trạng thái hấp thụ (xóa nợ) và G là trạng thái hấp thụ (trả hết). Gọi $h_i = \prob_i(\text{bị xóa nợ})$.
+
+Với ma trận cụ thể, thiết lập hệ phương trình $h_i = \sum_j p(i,j) h_j$ với điều kiện biên $h_B = 1$, $h_{\text{trả hết}} = 0$. Giải để tìm $h_F$.
+\end{solution}
+
+% ----------------------------------------------------------------
+\begin{exercise}[1.46]
+Kho hàng 4 chỗ. Mỗi ngày: sản xuất thêm 1 đơn vị (nếu chưa đầy) hoặc bán 1 đơn vị với xác suất $p$. Trạng thái: số đơn vị trong kho. Tìm thời gian kỳ vọng để kho trống ($T_0$ từ trạng thái 4).
+\end{exercise}
+\begin{solution}
+Trạng thái: $\{0, 1, 2, 3, 4\}$. Giả sử $p(i, i-1) = p$, $p(i, i+1) = 1-p$ cho $1 \leq i \leq 3$; $p(4, 3) = p$, $p(4, 4) = 1-p$; $p(0,1)=1$.
+
+Gọi $t_i = \E_i[T_0]$. $t_0 = 0$. Phương trình:
+\[
+  t_i = 1 + p \cdot t_{i-1} + (1-p) \cdot t_{i+1} \quad (1 \leq i \leq 3), \quad t_4 = 1 + p \cdot t_3 + (1-p) \cdot t_4.
+\]
+Giải hệ để tìm $t_4$.
+\end{solution}
+
+% ----------------------------------------------------------------
+\begin{exercise}[1.47]
+Bóng đá Duke. Mỗi lượt tấn công: Pass (P) với xác suất vào các trạng thái; Run (R); Interception (I, thua bóng); Fumble (F, thua bóng). Tìm xác suất ghi điểm và số lượt tấn công kỳ vọng.
+\end{exercise}
+\begin{solution}
+Gọi $A$ là trạng thái bắt đầu, $TD$ (touchdown) và $TO$ (turnover) là hấp thụ. Đặt $h_i = \prob_i(TD)$ và $t_i = \E_i[T_{\text{hấp thụ}}]$.
+
+Thiết lập phương trình $h_i = \sum_j p(i,j) h_j$ và $t_i = 1 + \sum_{j \notin \{TD,TO\}} p(i,j) t_j$. Giải với điều kiện biên $h_{TD}=1$, $h_{TO}=0$.
+\end{solution}
+
+% ----------------------------------------------------------------
+\begin{exercise}[1.48]
+6 trẻ em chơi bắt bóng. Trẻ $i$ chuyền bóng cho $j \neq i$ đều với xác suất $1/5$. Tìm số lần chuyền kỳ vọng để bóng trở lại người ban đầu.
+\end{exercise}
+\begin{solution}
+Chuỗi Markov trên $\{1,2,3,4,5,6\}$: $p(i,j) = 1/5$ với $j \neq i$. Đây là random walk đối xứng trên đồ thị đầy đủ $K_6$.
+
+Thời gian quay lại kỳ vọng: $\E_1[T_1^+] = 1/\pi_1 = 6$ (vì $\pi_i = 1/6$ cho mọi $i$).
+\end{solution}
+
+% ----------------------------------------------------------------
+\begin{exercise}[1.49]
+Tung đồng xu công bằng lặp lại. Tìm $E_0 T_3$ = thời gian kỳ vọng đến khi xuất hiện chuỗi HHH lần đầu (bắt đầu từ 0 chữ H liên tiếp).
+\end{exercise}
+\begin{solution}
+Trạng thái: $\{0, 1, 2, 3\}$ = số chữ H liên tiếp hiện tại. Trạng thái 3 là hấp thụ.
+\[
+  t_0 = 1 + \tfrac{1}{2} t_0 + \tfrac{1}{2} t_1, \quad t_1 = 1 + \tfrac{1}{2} t_0 + \tfrac{1}{2} t_2, \quad t_2 = 1 + \tfrac{1}{2} t_0 + \tfrac{1}{2} \cdot 0.
+\]
+Từ phương trình $t_2$: $t_2 = 2 + t_0/2 \cdot 2 = ...$, giải lần lượt:
+$t_2 = 1 + t_0/2 + 0 \cdot 1/2$. Cần $T_3$, không $T_0$ trong $t_2$:
+$t_2 = 1 + \frac{1}{2}t_0$ (nếu T thì về 0, nếu H thì đến 3=dừng).
+
+$t_1 = 1 + \frac{1}{2}t_0 + \frac{1}{2}t_2 = 1 + \frac{1}{2}t_0 + \frac{1}{2}(1 + \frac{1}{2}t_0) = \frac{3}{2} + \frac{3}{4}t_0$.
+
+$t_0 = 1 + \frac{1}{2}t_0 + \frac{1}{2}t_1 = 1 + \frac{1}{2}t_0 + \frac{1}{2}(\frac{3}{2} + \frac{3}{4}t_0) = \frac{11}{4} + \frac{7}{8}t_0$.
+
+$\frac{1}{8}t_0 = \frac{11}{4}$, nên $t_0 = 14$. Vậy $\E_0 T_3 = \mathbf{14}$.
+\end{solution}
+
+% ----------------------------------------------------------------
+\begin{exercise}[1.50]
+Tung đồng xu công bằng. Tìm $E_0 T_{HTH}$ = thời gian kỳ vọng đến chuỗi HTH.
+\end{exercise}
+\begin{solution}
+Trạng thái: $\{0, H, HT, HTH\}$ tùy theo phần đuôi đang khớp. Cụ thể:
+\begin{itemize}
+  \item Trạng thái 0: chưa khớp gì.
+  \item Trạng thái 1 (H): đã có H.
+  \item Trạng thái 2 (HT): đã có HT.
+  \item Trạng thái 3 (HTH): đích, hấp thụ.
+\end{itemize}
+Chuyển tiếp: $p(0, 1) = 1/2$ (tung H), $p(0, 0) = 1/2$ (tung T). $p(1, 1) = 1/2$ (tung H tiếp), $p(1, 2) = 1/2$ (tung T). $p(2, 3) = 1/2$ (tung H), $p(2, 0) = 1/2$ (tung T).
+
+Phương trình:
+\[
+  t_0 = 1 + \tfrac{1}{2}t_0 + \tfrac{1}{2}t_1, \quad t_1 = 1 + \tfrac{1}{2}t_1 + \tfrac{1}{2}t_2, \quad t_2 = 1 + \tfrac{1}{2} \cdot 0 + \tfrac{1}{2}t_0.
+\]
+$t_2 = 1 + t_0/2$. $t_1 = 2 + t_2 = 3 + t_0/2$. $t_0 = 2 + t_1 = 5 + t_0/2$, nên $t_0 = 10$.
+
+Vậy $\E_0 T_{HTH} = \mathbf{10}$.
+\end{solution}
+
+% ----------------------------------------------------------------
+\begin{exercise}[1.51]
+Sucker bet. Hai người A và B cược xem chuỗi nào xuất hiện trước: A chọn HTH, B chọn HHT. Tìm xác suất A thắng.
+\end{exercise}
+\begin{solution}
+Xây dựng chuỗi Markov theo dõi đồng thời tiến trình của cả hai mẫu. Trạng thái là cặp $(s_A, s_B)$ biểu diễn số ký tự đã khớp với mẫu của A và B.
+
+Giải phương trình xác suất hấp thụ. Kết quả: $\prob(\text{B thắng trước A}) = 3/4$, tức A thua với xác suất $3/4$ mặc dù cả hai mẫu cùng độ dài 3.
+\end{solution}
+
+% ----------------------------------------------------------------
+\begin{exercise}[1.52]
+Trò chơi Larry tại Hội chợ NY. Larry trả \$1 để chơi; thắng theo sơ đồ xác suất cho trước. Tìm giá trị kỳ vọng và chiến lược tối ưu.
+\end{exercise}
+\begin{solution}
+Mô hình hóa như chuỗi Markov với các trạng thái phản ánh tiến trình trò chơi. Giá trị kỳ vọng:
+\[
+  V = \sum_{\text{kết quả}} \text{phần thưởng} \times \prob(\text{kết quả}).
+\]
+Tính $V$ từ phân phối hấp thụ của chuỗi.
+\end{solution}
+
+% ----------------------------------------------------------------
+\begin{exercise}[1.53]
+Lập trình viên có thể được thăng chức thành quản lý dự án (PM), hoặc bị sa thải. PM có thể bị sa thải. Xác suất chuyển tiếp hàng năm cho trước. Tìm thời gian kỳ vọng đến khi bị sa thải từ vị trí lập trình viên.
+\end{exercise}
+\begin{solution}
+Trạng thái: LTV (lập trình viên), PM, F (fired = hấp thụ). Gọi $t_i = \E_i[T_F]$. $t_F = 0$.
+\[
+  t_{LTV} = 1 + p(LTV, LTV) \cdot t_{LTV} + p(LTV, PM) \cdot t_{PM},
+\]
+\[
+  t_{PM} = 1 + p(PM, PM) \cdot t_{PM}.
+\]
+Giải hệ để tìm $t_{LTV}$.
+\end{solution}
+
+% ----------------------------------------------------------------
+\begin{exercise}[1.54]
+Đại lý du lịch: trạng thái B (bận), I (rảnh), Q (bỏ nghề), F (thất bại). Q và F là hấp thụ. Xác suất chuyển tiếp cho trước. Tìm xác suất cuối cùng bỏ nghề vs thất bại từ mỗi trạng thái.
+\end{exercise}
+\begin{solution}
+Gọi $h_i = \prob_i(\text{đến Q})$. $h_Q = 1$, $h_F = 0$.
+\[
+  h_B = p(B,B) h_B + p(B,I) h_I + p(B,Q) \cdot 1 + p(B,F) \cdot 0,
+\]
+\[
+  h_I = p(I,B) h_B + p(I,I) h_I + p(I,Q) \cdot 1 + p(I,F) \cdot 0.
+\]
+Giải hệ $2\times 2$ để tìm $h_B$ và $h_I$.
+\end{solution}
+
+% ----------------------------------------------------------------
+\begin{exercise}[1.55]
+Nhà máy: trạng thái R (chạy), T (thử nghiệm), S (dừng sửa), Q (đóng cửa). Q hấp thụ. Tìm thời gian kỳ vọng hoạt động trước khi đóng cửa.
+\end{exercise}
+\begin{solution}
+Gọi $t_i = \E_i[T_Q]$. $t_Q = 0$. Thiết lập:
+\[
+  t_i = 1 + \sum_{j \neq Q} p(i,j) t_j \quad \text{với } i \in \{R, T, S\}.
+\]
+Giải hệ $3\times 3$.
+\end{solution}
+
+% ----------------------------------------------------------------
+\begin{exercise}[1.56]
+Khoản vay: V (hiện hành), 30 (quá hạn 30 ngày), 15 (quá hạn 15 ngày), P (trả hết), F (vỡ nợ). P và F hấp thụ. Tìm xác suất cuối cùng bị vỡ nợ từ mỗi trạng thái.
+\end{exercise}
+\begin{solution}
+Gọi $h_i = \prob_i(\text{đến F})$. $h_F = 1$, $h_P = 0$. Thiết lập:
+\[
+  h_i = \sum_j p(i,j) h_j \quad \text{với } i \in \{V, 30, 15\}.
+\]
+Giải hệ $3\times 3$.
+\end{solution}
+
+% ----------------------------------------------------------------
+\begin{exercise}[1.57]
+Tiệm cắt tóc với 2 thợ và 2 ghế chờ (tổng 4 chỗ). Khách hàng đến theo Bernoulli tốc độ $\lambda$, mỗi thợ phục vụ xong theo Bernoulli tốc độ $\mu$. Trạng thái: số khách trong tiệm. Tìm phân phối dừng và số khách kỳ vọng.
+\end{exercise}
+\begin{solution}
+Trạng thái: $\{0, 1, 2, 3, 4\}$. Ma trận chuyển tiếp phụ thuộc vào $\lambda$ và $\mu$:
+\[
+  p(0,1) = \lambda, \quad p(1,2) = \lambda(1-\mu), \quad p(1,0) = (1-\lambda)\mu, \ldots
+\]
+Tổng quát, mỗi bước (1 đơn vị thời gian): có thể có 1 khách đến (xác suất $\lambda$) và 1 hoặc 2 khách rời đi (tùy số thợ đang bận). Giải $\pi P = \pi$ để tìm phân phối dừng.
+\end{solution}
+
+\end{document}

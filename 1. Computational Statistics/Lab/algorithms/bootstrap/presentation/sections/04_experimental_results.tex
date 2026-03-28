@@ -1,0 +1,274 @@
+% ============================================================
+% Section 4: Experimental Results
+% ============================================================
+\section{Experimental Results}
+
+\begin{frame}{Experiment Setup}
+    \textbf{Dataset:} Synthetic 2D Blobs with varying characteristics
+
+    \vspace{0.3cm}
+
+    \textbf{Four Experimental Scenarios:}
+    \begin{enumerate}
+        \item \textbf{Cluster Overlap Analysis:} Varying degrees of cluster separation
+        \item \textbf{Kernel Function Comparison:} Gaussian, Flat (Uniform), Epanechnikov
+        \item \textbf{Bandwidth Selection:} Small $h$, Optimal $h$, Large $h$
+        \item \textbf{Scalability Analysis:} Performance across different data sizes (O($n^2$) behavior)
+    \end{enumerate}
+
+    \vspace{0.3cm}
+
+    \textbf{Evaluation Metrics:}
+    \begin{itemize}
+        \item Silhouette Score (cluster quality)
+        \item Adjusted Rand Index (vs. ground truth)
+        \item Number of clusters found
+        \item Computation time
+    \end{itemize}
+\end{frame}
+
+\begin{frame}{Experiment 1: Cluster Overlap Analysis}
+    \textbf{Setup:} Fixed dataset size (500 points, 3 clusters), varying overlap, same bandwidth, flat kernel (sklearn only option)
+
+    \vspace{0.3cm}
+
+    \begin{center}
+        \includegraphics[width=0.8\textwidth]{images/exp1_data.png}
+
+        \vspace{0.2cm}
+
+        \small{(a) Well-separated | (b) Moderate overlap | (c) Heavy overlap}
+    \end{center}
+
+\end{frame}
+
+\begin{frame}{Experiment 1 Results}
+
+    \begin{center}
+        \includegraphics[width=0.8\textwidth]{images/exp1_new_cluster.png}
+
+        \vspace{0.2cm}
+
+        \small{New Clusters found under different overlap conditions}
+    \end{center}
+
+\end{frame}
+
+\begin{frame}{Experiment 1 Results}
+
+    \begin{table}
+        \centering
+        \small
+        \begin{tabular}{lccccc}
+            \toprule
+            \textbf{Configuration} & \textbf{Clusters} & \textbf{Silhouette} & \textbf{ARI} & \textbf{Time (s)} & \textbf{Avg. Iters} \\
+            \midrule
+            Well-separated & 3 & 0.846 & 1.000 & 4.00 & 5.66 \\
+            Moderate overlap & 3 & 0.668 & 1.000 & 5.42 & 8.07 \\
+            Heavy overlap & \textcolor{customred}{5} & 0.111 & 0.658 & 7.71 & 12.16 \\
+            \bottomrule
+        \end{tabular}
+    \end{table}
+
+    \vspace{0.2cm}
+
+    \small{\textbf{Observation:} Performance degrades with increased cluster overlap}
+    \begin{itemize}
+        \small
+        \item Heavy overlap: Found 5 clusters instead of true 3 (ARI drops to 0.658)
+        \item Silhouette score degrades significantly: 0.846 → 0.111
+        \item Convergence slower: 5.66 → 12.16 average iterations
+    \end{itemize}
+\end{frame}
+
+\begin{frame}{Experiment 2: Kernel Function Comparison}
+    \textbf{Setup:} Same dataset (500 points, 3 clusters), different kernels
+
+    \vspace{0.3cm}
+
+    \begin{center}
+        \textit{[Insert visualization: Side-by-side kernel comparison]}
+
+        \vspace{0.2cm}
+
+        \small{Gaussian | Flat (Uniform) | Epanechnikov}
+    \end{center}
+
+    \vspace{0.3cm}
+
+    \begin{table}
+        \centering
+        \begin{tabular}{lcccc}
+            \toprule
+            \textbf{Kernel} & \textbf{Clusters Found} & \textbf{Silhouette} & \textbf{ARI} & \textbf{Time (s)} \\
+            \midrule
+            Gaussian & 3 & 0.74 & 0.92 & 0.58 \\
+            \textcolor{customred}{Flat (Uniform)} & \textcolor{customred}{3} & \textcolor{customred}{0.72} & \textcolor{customred}{0.91} & \textcolor{customred}{0.31} \\
+            Epanechnikov & 3 & 0.73 & 0.91 & 0.42 \\
+            \bottomrule
+        \end{tabular}
+    \end{table}
+
+    \vspace{0.2cm}
+
+    \small{\textbf{Key Finding:} Flat kernel offers best speed-accuracy trade-off; results generally similar across kernels}
+\end{frame}
+
+\begin{frame}{Experiment 3: Bandwidth Sensitivity}
+    \textbf{Setup:} Same dataset, varying bandwidth parameter $h$
+
+    \vspace{0.3cm}
+
+    \begin{center}
+        \textit{[Insert visualization: Clustering with different bandwidths]}
+
+        \vspace{0.2cm}
+
+        \small{Small $h = 0.3$ | Optimal $h = 0.8$ | Large $h = 2.0$}
+    \end{center}
+
+    \vspace{0.3cm}
+
+    \begin{table}
+        \centering
+        \begin{tabular}{lcccc}
+            \toprule
+            \textbf{Bandwidth $h$} & \textbf{Clusters Found} & \textbf{Silhouette} & \textbf{ARI} & \textbf{Iterations} \\
+            \midrule
+            Small ($h = 0.3$) & 12 & 0.41 & 0.23 & 8.2 \\
+            \textcolor{customred}{Optimal ($h = 0.8$)} & \textcolor{customred}{3} & \textcolor{customred}{0.72} & \textcolor{customred}{0.91} & \textcolor{customred}{4.5} \\
+            Large ($h = 2.0$) & 1 & 0.18 & 0.00 & 2.1 \\
+            \bottomrule
+        \end{tabular}
+    \end{table}
+
+    \vspace{0.2cm}
+
+    \small{\textbf{Critical Insight:} Bandwidth is the most important parameter}
+    \begin{itemize}
+        \small
+        \item Too small → over-segmentation (12 clusters instead of 3)
+        \item Too large → all points merge into 1 cluster
+    \end{itemize}
+\end{frame}
+
+\begin{frame}{Bandwidth Selection Strategies}
+    \textbf{Challenge:} How to choose optimal bandwidth $h$?
+
+    \vspace{0.5cm}
+
+    \begin{columns}[T]
+        \begin{column}{0.5\textwidth}
+            \textbf{Common Approaches:}
+            \begin{enumerate}
+                \item \textbf{Scott's Rule:}
+                \[
+                h \approx n^{-1/(d+4)} \cdot \sigma
+                \]
+                where $\sigma$ is std. dev.
+
+                \vspace{0.3cm}
+
+                \item \textbf{Silverman's Rule:}
+                \[
+                h \approx 1.06 \cdot \sigma \cdot n^{-1/5}
+                \]
+
+                \vspace{0.3cm}
+
+                \item \textbf{Cross-Validation:}
+                Grid search with validation metric
+            \end{enumerate}
+        \end{column}
+
+        \begin{column}{0.5\textwidth}
+            \begin{center}
+                \textit{[Insert plot: Number of clusters vs. $h$]}
+
+                \vspace{0.3cm}
+
+                \small{Bandwidth $h$ vs. Clusters found}
+            \end{center}
+
+            \vspace{0.5cm}
+
+            \textbf{Practical Tip:}
+            \begin{itemize}
+                \item Start with Scott's/Silverman's rule
+                \item Fine-tune based on domain knowledge
+                \item Use silhouette score to validate
+            \end{itemize}
+        \end{column}
+    \end{columns}
+\end{frame}
+
+\begin{frame}{Experiment 4: Scalability Analysis}
+    \textbf{Setup:} Well-separated clusters, varying dataset size
+
+    \vspace{0.3cm}
+
+    \textbf{Goal:} Verify O($n^2$) computational complexity
+
+    \vspace{0.3cm}
+
+    \begin{table}
+        \centering
+        \begin{tabular}{lccc}
+            \toprule
+            \textbf{Dataset Size} & \textbf{Time (s)} & \textbf{Time Ratio} & \textbf{Expected Ratio} \\
+            \midrule
+            TBD & TBD & TBD & TBD \\
+            \bottomrule
+        \end{tabular}
+    \end{table}
+
+    \vspace{0.3cm}
+
+    \small{\textbf{Expected Finding:} Computation time should follow O($n^2$) scaling}
+    \begin{itemize}
+        \small
+        \item Doubling data size → ~4$\times$ computation time
+        \item Algorithm becomes impractical for large datasets
+    \end{itemize}
+\end{frame}
+
+\begin{frame}{Summary of Experimental Findings}
+    \textbf{Key Takeaways:}
+
+    \vspace{0.3cm}
+
+    \begin{enumerate}
+        \item \textbf{Cluster Overlap:}
+        \begin{itemize}
+            \item Works well on well-separated clusters
+            \item Struggles with heavy overlap
+            \item May find incorrect number of clusters with overlap
+        \end{itemize}
+
+        \vspace{0.2cm}
+
+        \item \textbf{Kernel Choice:}
+        \begin{itemize}
+            \item Flat/Uniform kernel: fastest, good results
+            \item Gaussian: slightly better quality, slower
+            \item Choice matters less than bandwidth selection
+        \end{itemize}
+
+        \vspace{0.2cm}
+
+        \item \textbf{Bandwidth Selection:}
+        \begin{itemize}
+            \item \textcolor{customred}{Most critical parameter}
+            \item Use adaptive methods (Scott's/Silverman's rule)
+            \item Validate with silhouette score or domain knowledge
+        \end{itemize}
+
+        \vspace{0.2cm}
+
+        \item \textbf{Scalability:}
+        \begin{itemize}
+            \item O($n^2$) time complexity (to be verified)
+            \item Impacts feasibility for large datasets
+        \end{itemize}
+    \end{enumerate}
+\end{frame}

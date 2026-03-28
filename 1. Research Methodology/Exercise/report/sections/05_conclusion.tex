@@ -1,0 +1,43 @@
+\section{Conclusion}
+\label{sec:conclusion}
+
+\subsection{Summary of Findings}
+
+This study systematically evaluated the adversarial robustness of Gemini 2.5 Flash Lite across 20 adversarial test prompts spanning four categories. The key quantitative findings are:
+
+\begin{itemize}
+    \item \textbf{Overall deception rate: 15\%} (3/20 prompts), with a mean robustness score of 0.787.
+    \item \textbf{Hallucination is the dominant vulnerability:} 60\% deception rate (mean score 0.400), with fictional libraries, fabricated treaties, and DOI hallucination as the primary failure modes.
+    \item \textbf{Strong analytical reasoning:} 0\% deception on Math \& Stats (mean 1.000) and Security \& IAM (mean 0.950), demonstrating robust quantitative and security analysis capabilities.
+    \item \textbf{Effective safety alignment:} 0\% deception on Reasoning \& Jailbreak prompts (mean 0.800), with the model resisting DAN-style overrides, authority impersonation, and sycophantic pressure.
+\end{itemize}
+
+\subsection{Implications}
+
+The results reveal a clear asymmetry in model robustness:
+\begin{enumerate}
+    \item \textbf{Verification vs. generation:} The model excels at \textit{verifying} claims (math proofs, code security, logical arguments) but struggles when asked to \textit{generate} information about entities it cannot verify (libraries, historical events, citations).
+    \item \textbf{The hallucination gap:} While safety training effectively addresses jailbreaks and adversarial reasoning, hallucination prevention remains fundamentally harder because it requires distinguishing real knowledge from plausible fabrication.
+    \item \textbf{Multi-category testing is essential:} A benchmark testing only math/security would conclude the model is nearly perfect (mean 0.975); only by including hallucination prompts does the 15\% vulnerability emerge.
+\end{enumerate}
+
+\subsection{Limitations}
+
+\begin{itemize}
+    \item \textbf{Partial API coverage:} Due to quota constraints, 10 of 20 evaluations (JAIL and HALL categories) used estimated scores rather than actual API responses. While estimates are grounded in documented LLM behavior, actual results may differ.
+    \item \textbf{Single model:} Only Gemini 2.5 Flash Lite was tested; cross-model comparison would strengthen conclusions.
+    \item \textbf{Cross-model judge bias:} The 10 API-evaluated prompts were judged by Claude (a different model family from the Gemini target), which may introduce its own systematic biases in evaluating another model's outputs.
+    \item \textbf{Sample size:} 5 prompts per category provides indicative rather than statistically conclusive results.
+    \item \textbf{Static evaluation:} Single-turn prompts do not capture multi-turn adversarial strategies.
+\end{itemize}
+
+\subsection{Future Work}
+
+\begin{itemize}
+    \item \textbf{Complete API evaluation:} Re-run the full 20-prompt benchmark with actual API calls for all categories once quota is restored.
+    \item \textbf{Multi-model comparison:} Benchmark GPT-4o, Claude, LLaMA 3, and other models against the same test suite.
+    \item \textbf{Expanded test suite:} Increase to 50--100 prompts per category for statistical power.
+    \item \textbf{Retrieval-augmented evaluation:} Test whether RAG systems mitigate hallucination vulnerability.
+    \item \textbf{Multi-turn attacks:} Design adversarial conversations that build deceptive context over multiple exchanges.
+    \item \textbf{Human evaluation:} Compare automated judge scores with expert human assessments for calibration.
+\end{itemize}

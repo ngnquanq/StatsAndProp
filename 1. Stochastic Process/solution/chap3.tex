@@ -1,0 +1,411 @@
+\documentclass[8pt,a4paper]{article}
+
+% --- Packages ---
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[vietnamese]{babel}
+\usepackage{amsmath, amssymb, amsthm}
+\usepackage{mathtools}
+\usepackage{enumitem}
+\usepackage{hyperref}
+\usepackage{geometry}
+\geometry{margin=2.5cm}
+\usepackage{geometry}
+\geometry{
+  a4paper,
+  left=3.5cm,   % Thụt lề trái vào (tăng giá trị để lề rộng ra)
+  right=3.5cm,  % Thụt lề phải vào
+  bottom=4cm,   % Đẩy lề dưới lên cao (tạo khoảng trống ở chân trang)
+  top=2.5cm     % Lề trên
+}
+% --- Environments ---
+\newtheorem{exercise}{Bài tập}
+\newenvironment{solution}{\begin{proof}[Lời giải]}{\end{proof}}
+
+% --- Custom commands ---
+\newcommand{\prob}{\mathbb{P}}
+\newcommand{\E}{\mathbb{E}}
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\N}{\mathbb{N}}
+\newcommand{\Var}{\operatorname{Var}}
+
+% --- Title ---
+\title{Renewal Processes: Exercises and Solutions}
+\author{Quang Nguyen}
+\date{\today}
+
+\begin{document}
+\maketitle
+
+\section*{Chương 3: Quá trình Tái sinh}
+
+% ----------------------------------------------------------------
+\begin{exercise}
+Thời tiết ở một thành phố được mô hình hóa bằng quá trình tái sinh xen kẽ: các đợt khô kéo dài $\text{Exp}(\lambda)$ và các đợt mưa kéo dài $\text{Exp}(\mu)$, bắt đầu từ đợt khô. Tìm tỉ lệ thời gian mưa trong dài hạn.
+\end{exercise}
+\begin{solution}
+Gọi $F$ là phân phối thời gian đợt khô và $G$ là phân phối thời gian đợt mưa. Theo Định lý 3.4 (quá trình tái sinh xen kẽ), tỉ lệ thời gian ở trạng thái mưa là
+\[
+  p_{\text{mưa}} = \frac{\E[G]}{\E[F] + \E[G]} = \frac{1/\mu}{1/\lambda + 1/\mu} = \frac{\lambda}{\lambda + \mu}.
+\]
+Tương tự, tỉ lệ thời gian khô là $\mu/(\lambda+\mu)$.
+\end{solution}
+
+% ----------------------------------------------------------------
+\begin{exercise}
+Monica làm các công việc tạm thời: thời gian làm việc có phân phối $F$ với kỳ vọng $\mu_F$, thời gian tìm việc có phân phối $G$ với kỳ vọng $\mu_G$. Tìm tỉ lệ thời gian dài hạn Monica đang có việc làm.
+\end{exercise}
+\begin{solution}
+Đây là quá trình tái sinh xen kẽ với trạng thái ``có việc'' và ``không việc''. Theo Định lý 3.4, tỉ lệ thời gian có việc là
+\[
+  p = \frac{\mu_F}{\mu_F + \mu_G}.
+\]
+\end{solution}
+
+% ----------------------------------------------------------------
+\begin{exercise}
+Những chiếc xe đỗ gần UCLA chiếm các khoảng trên vỉa hè. Chiều dài xe có phân phối $F$ với kỳ vọng $\mu_{\ell}$; khoảng trống giữa hai xe có phân phối $G$ với kỳ vọng $\mu_g$. Tìm tỉ lệ dài hạn của vỉa hè bị xe chiếm.
+\end{exercise}
+\begin{solution}
+Mô hình hóa vỉa hè như một quá trình tái sinh xen kẽ dọc theo không gian (thay vì thời gian), trong đó một chu kỳ gồm một chiếc xe (độ dài $\sim F$) và một khoảng trống ($\sim G$). Tỉ lệ vỉa hè bị chiếm là
+\[
+  p = \frac{\mu_\ell}{\mu_\ell + \mu_g}.
+\]
+\end{solution}
+
+% ----------------------------------------------------------------
+\begin{exercise}
+Tại một bến taxi, khách hàng đến theo quá trình Poisson tốc độ $\lambda$. Taxi thứ $n$ đón $N_n$ hành khách; tiền xe thu được là $f(N_n)$ với $\E[f(N_n)] = r$. Thời gian mỗi chuyến có kỳ vọng $\mu$. Tìm $\lim_{t\to\infty} \E[W(t)]/t$, với $W(t)$ là tổng tiền xe thu được đến thời điểm $t$.
+\end{exercise}
+\begin{solution}
+Đây là quá trình phần thưởng tái sinh. Chu kỳ tái sinh là thời gian một chuyến taxi, có kỳ vọng $\mu$. Phần thưởng mỗi chu kỳ là $r_i = f(N_i)$ với kỳ vọng $r$. Theo Định lý 3.3,
+\[
+  \lim_{t\to\infty} \frac{\E[W(t)]}{t} = \frac{\E[r_i]}{\E[t_i]} = \frac{r}{\mu}.
+\]
+\end{solution}
+
+% ----------------------------------------------------------------
+\begin{exercise}
+Tại sân bay Chicago, hành khách đến theo quá trình Poisson tốc độ $\lambda$ người/phút. Xe bus chở khách cứ 7 phút một lần (định kỳ). Tìm số hành khách kỳ vọng trên mỗi chuyến xe và tỉ lệ người/phút được phục vụ.
+\end{exercise}
+\begin{solution}
+Trong khoảng thời gian 7 phút giữa hai chuyến xe, số hành khách tới là $\text{Poisson}(7\lambda)$. Vậy số hành khách kỳ vọng mỗi chuyến là $\E[N] = 7\lambda$. Tỉ lệ hành khách được phục vụ mỗi phút là $7\lambda/7 = \lambda$, tức là toàn bộ lưu lượng đến được phục vụ (không có tắc nghẽn nếu xe đủ chỗ).
+\end{solution}
+
+% ----------------------------------------------------------------
+\begin{exercise}
+Ba đứa trẻ A, B, C thay nhau ném bóng rổ. Nếu A ném, A chuyền cho B hoặc C mỗi xác suất $1/2$. Nếu B ném, B chuyền cho A hoặc C mỗi xác suất $1/2$. Nếu C ném, C chuyền cho A hoặc C mỗi xác suất $1/2$. Thời gian mỗi lần ném: A $\sim \text{Exp}(1)$, B $\sim \text{Exp}(2)$, C $\sim \text{Exp}(3)$. Bắt đầu từ A. Tìm tỉ lệ thời gian dài hạn mỗi người ném.
+\end{exercise}
+\begin{solution}
+Chuỗi Markov trên $\{A, B, C\}$ có ma trận chuyển tiếp
+\[
+  P = \begin{pmatrix} 0 & 1/2 & 1/2 \\ 1/2 & 0 & 1/2 \\ 1/2 & 1/2 & 0 \end{pmatrix}.
+\]
+Phân phối dừng: $\pi_A = \pi_B = \pi_C = 1/3$.
+
+Thời gian kỳ vọng mỗi lần ném: $\E[t_A]=1,\ \E[t_B]=1/2,\ \E[t_C]=1/3$.
+
+Tỉ lệ thời gian mỗi người ném (theo phần thưởng tái sinh trên chuỗi nhúng):
+\[
+  p_i = \frac{\pi_i \E[t_i]}{\sum_j \pi_j \E[t_j]} = \frac{(1/3)\E[t_i]}{(1/3)(1 + 1/2 + 1/3)}.
+\]
+Mẫu số: $(1/3)(11/6) = 11/18$. Vậy
+\[
+  p_A = \frac{(1/3)\cdot 1}{11/18} = \frac{6}{11}, \quad p_B = \frac{(1/3)\cdot(1/2)}{11/18} = \frac{3}{11}, \quad p_C = \frac{(1/3)\cdot(1/3)}{11/18} = \frac{2}{11}.
+\]
+\end{solution}
+
+% ----------------------------------------------------------------
+\begin{exercise}
+Một cảnh sát viết phạt nguội. Anh ta đi dạo trong $U[0, T]$ phút, rồi về đồn $U[0, S]$ phút. Trong mỗi phút đi dạo, anh gặp một xe vi phạm với xác suất $p$ (độc lập). Tìm tốc độ phiếu phạt dài hạn.
+\end{exercise}
+\begin{solution}
+Đây là quá trình phần thưởng tái sinh. Mỗi chu kỳ gồm thời gian đi dạo $D \sim U[0,T]$ và thời gian về đồn $V \sim U[0,S]$. Phần thưởng: số phiếu phạt trong đợt đi dạo $= p \cdot D$.
+
+Kỳ vọng chu kỳ: $\E[D+V] = T/2 + S/2$.
+
+Kỳ vọng phần thưởng: $\E[pD] = pT/2$.
+
+Tốc độ phiếu phạt dài hạn:
+\[
+  \lim_{t\to\infty} \frac{\text{số phiếu}}{t} = \frac{pT/2}{T/2 + S/2} = \frac{pT}{T+S}.
+\]
+\end{solution}
+
+% ----------------------------------------------------------------
+\begin{exercise}
+Xét một bộ đếm Geiger-Müller kiểu ``khoá cứng''. Các hạt tới theo quá trình Poisson tốc độ $\lambda$. Mỗi hạt được ghi nhận khi đến thì khoá bộ đếm trong thời gian $\tau$ (hằng số). Tìm tốc độ ghi nhận dài hạn.
+\end{exercise}
+\begin{solution}
+Đây là quá trình tái sinh. Sau mỗi lần ghi nhận, chu kỳ tiếp theo bắt đầu: bộ đếm bị khoá $\tau$ giây, rồi chờ hạt tiếp theo (thời gian chờ $\sim \text{Exp}(\lambda)$). Kỳ vọng chu kỳ:
+\[
+  \E[\text{chu kỳ}] = \tau + \frac{1}{\lambda}.
+\]
+Mỗi chu kỳ ghi nhận đúng 1 hạt, nên tốc độ ghi nhận dài hạn:
+\[
+  \lim_{t\to\infty} \frac{N(t)}{t} = \frac{1}{\tau + 1/\lambda} = \frac{\lambda}{1 + \lambda\tau}.
+\]
+\end{solution}
+
+% ----------------------------------------------------------------
+\begin{exercise}
+Một người buôn cocaine phục vụ khách hàng đến theo Poisson tốc độ $\lambda$. Mỗi giao dịch mất thời gian $s$ (hằng số). Khách đến khi đang bận thì bỏ đi. Tìm tỉ lệ khách bị mất.
+\end{exercise}
+\begin{solution}
+Đây là hệ $M/D/1/1$ (hàng đợi mất mát). Chu kỳ tái sinh gồm: thời gian phục vụ $s$ (bận) và thời gian chờ khách tiếp theo $\sim \text{Exp}(\lambda)$ (rảnh). Kỳ vọng chu kỳ $= s + 1/\lambda$.
+
+Tỉ lệ thời gian bận = $s/(s + 1/\lambda) = \lambda s/(1+\lambda s)$.
+
+Mỗi khách đến khi bận thì mất. Tỉ lệ khách bị mất bằng tỉ lệ thời gian bận:
+\[
+  p_{\text{mất}} = \frac{\lambda s}{1 + \lambda s}.
+\]
+\end{solution}
+
+% ----------------------------------------------------------------
+\begin{exercise}
+(Giống Bài 2.19) Trạm cứu hỏa Ithaca và Cornell phục vụ các vụ cháy theo quá trình tái sinh xen kẽ. Thời gian xử lý vụ cháy của Ithaca $\sim F$ (kỳ vọng $\mu_F$), thời gian rảnh $\sim G$ (kỳ vọng $\mu_G$). Tìm tỉ lệ dài hạn các vụ do Ithaca xử lý.
+\end{exercise}
+\begin{solution}
+Theo quá trình tái sinh xen kẽ, tỉ lệ thời gian Ithaca đang bận là
+\[
+  p = \frac{\mu_F}{\mu_F + \mu_G}.
+\]
+Vì các vụ cháy đến theo Poisson (PASTA), tỉ lệ vụ do Ithaca xử lý cũng bằng $p = \mu_F/(\mu_F+\mu_G)$.
+\end{solution}
+
+% ----------------------------------------------------------------
+\begin{exercise}
+Một bác sĩ trực phòng cấp cứu ngủ khi không có bệnh nhân. Bệnh nhân đến theo Poisson tốc độ $\lambda$. Thời gian điều trị $\sim \text{Exp}(\mu)$ (đơn phục vụ). Khi hết bệnh nhân, bác sĩ ngủ ngay. Tìm tỉ lệ thời gian bác sĩ ngủ.
+\end{exercise}
+\begin{solution}
+Đây là hàng đợi $M/M/1$ không có hàng đợi giữa bệnh nhân (hoặc hệ $M/M/1$ thông thường). Tải hệ thống $\rho = \lambda/\mu$. Khi $\rho < 1$, xác suất hệ rảnh là $1 - \rho = 1 - \lambda/\mu$.
+
+Theo quá trình tái sinh xen kẽ (bận/rảnh), tỉ lệ thời gian bác sĩ ngủ là
+\[
+  p_{\text{ngủ}} = 1 - \frac{\lambda}{\mu} = \frac{\mu - \lambda}{\mu}.
+\]
+\end{solution}
+
+% ----------------------------------------------------------------
+\begin{exercise}
+Một công nhân sửa máy. Thời gian hoàn thành công việc $\sim \text{Exp}(\mu)$, nhưng trong quá trình làm xảy ra lỗi theo Poisson tốc độ $\lambda$ (mỗi lỗi bắt buộc bắt đầu lại từ đầu). Tìm tốc độ hoàn thành công việc dài hạn.
+\end{exercise}
+\begin{solution}
+Mỗi lần thử, công nhân hoàn thành trước khi bị lỗi nếu thời gian hoàn thành $T \sim \text{Exp}(\mu)$ nhỏ hơn thời gian lỗi đầu tiên $E \sim \text{Exp}(\lambda)$. Thời gian mỗi lần thử là $\min(T, E) \sim \text{Exp}(\lambda+\mu)$, kỳ vọng $1/(\lambda+\mu)$.
+
+Xác suất thành công mỗi lần thử: $p = \mu/(\lambda+\mu)$.
+
+Số lần thử đến khi thành công là hình học với kỳ vọng $(\lambda+\mu)/\mu$.
+
+Kỳ vọng tổng thời gian một chu kỳ (đến khi hoàn thành):
+\[
+  \E[\text{chu kỳ}] = \frac{1}{\lambda+\mu} \cdot \frac{\lambda+\mu}{\mu} = \frac{1}{\mu}.
+\]
+Tốc độ hoàn thành: $\lim_{t\to\infty} N(t)/t = \mu$.
+\end{solution}
+
+% ----------------------------------------------------------------
+\begin{exercise}
+Duke và Wake Forest chơi bóng đá Mỹ. Duke tấn công trong thời gian $\sim F$ (kỳ vọng $\mu_D$) và ghi $r_D$ điểm/chu kỳ kỳ vọng; Wake Forest tấn công trong thời gian $\sim G$ (kỳ vọng $\mu_W$) và ghi $r_W$ điểm/chu kỳ kỳ vọng. Các hiệp xen kẽ bắt đầu từ Duke. Tìm tốc độ điểm số của mỗi đội (điểm/giờ) trong dài hạn.
+\end{exercise}
+\begin{solution}
+Đây là quá trình tái sinh xen kẽ với phần thưởng. Mỗi chu kỳ đầy đủ gồm một đợt tấn công của Duke và một của Wake Forest, kỳ vọng thời gian $\mu_D + \mu_W$.
+
+Tốc độ điểm của Duke:
+\[
+  \lim_{t\to\infty} \frac{\text{điểm Duke}}{t} = \frac{r_D}{\mu_D + \mu_W}.
+\]
+Tốc độ điểm của Wake Forest:
+\[
+  \lim_{t\to\infty} \frac{\text{điểm WF}}{t} = \frac{r_W}{\mu_D + \mu_W}.
+\]
+\end{solution}
+
+% ----------------------------------------------------------------
+\begin{exercise}
+Nhà đầu tư mua chứng chỉ tiền gửi (CD). Thời gian một CD là $T \sim F$ (kỳ vọng $\mu$); lợi nhuận trong thời gian $t$ là $g(t)$ với $\E[g(T)] = r$. Tìm lợi nhuận trung bình mỗi năm dài hạn.
+\end{exercise}
+\begin{solution}
+Mỗi CD là một chu kỳ tái sinh với thời gian $T \sim F$ và phần thưởng $g(T)$. Theo Định lý 3.3,
+\[
+  \lim_{t\to\infty} \frac{\text{tổng lợi nhuận}}{t} = \frac{\E[g(T)]}{\E[T]} = \frac{r}{\mu}.
+\]
+\end{solution}
+
+% ----------------------------------------------------------------
+\begin{exercise}
+Tuổi thọ xe có mật độ $h(t) = \lambda e^{-\lambda t}$ (phân phối mũ). Chi phí thay thế khi hỏng là $c_f$, thay thế phòng ngừa tại thời điểm $T$ là $c_r < c_f$. Tìm chiến lược tối ưu.
+\end{exercise}
+\begin{solution}
+Chi phí kỳ vọng mỗi chu kỳ và thời gian kỳ vọng chu kỳ với ngưỡng thay thế $T$:
+\[
+  \E[\text{chi phí}] = c_r \prob(X > T) + c_f \prob(X \leq T),
+\]
+\[
+  \E[\text{thời gian}] = \E[\min(X, T)] = \int_0^T \lambda e^{-\lambda t} t\, dt + T e^{-\lambda T} = \frac{1 - e^{-\lambda T}}{\lambda}.
+\]
+Với phân phối mũ, do tính không nhớ (memoryless property), thay thế phòng ngừa không có lợi: chi phí trên đơn vị thời gian tăng khi $T$ giảm. Do đó chiến lược tối ưu là $T = \infty$ (chỉ thay thế khi hỏng).
+\end{solution}
+
+% ----------------------------------------------------------------
+\begin{exercise}
+Tuổi thọ dụng cụ máy có mật độ $h(t) = 2t/900$ trên $[0, 30]$. Chi phí thay thế hỏng là $c_f$, thay thế phòng ngừa tại $T$ là $c_r$. Tìm $T$ tối ưu.
+\end{exercise}
+\begin{solution}
+Ta có $F(t) = t^2/900$ trên $[0,30]$. Chi phí trung bình mỗi đơn vị thời gian:
+\[
+  C(T) = \frac{c_r(1 - F(T)) + c_f F(T)}{\E[\min(X,T)]}.
+\]
+Với $\E[\min(X,T)] = \int_0^T (1-F(t))\,dt = \int_0^T \left(1 - \frac{t^2}{900}\right)dt = T - \frac{T^3}{2700}$.
+
+Lấy đạo hàm và đặt bằng 0 để tìm $T^*$ tối ưu. Sau khi tính toán, điều kiện tối ưu là
+\[
+  h(T)\bigl[C(T)\cdot\E[\min(X,T)] - (c_f - c_r)\bigr] = C(T)(1 - F(T)),
+\]
+dẫn đến một phương trình phi tuyến trong $T$ phụ thuộc vào tỉ số $c = c_f/c_r$.
+\end{solution}
+
+% ----------------------------------------------------------------
+\begin{exercise}
+Hướng dẫn viên du lịch dẫn đoàn thăm trường đại học. Đoàn gồm $k$ người; xác suất mỗi người tham gia xin học là $p$ (độc lập). Doanh thu từ đoàn $k$ người là $f(k, \text{số đăng ký})$. Tìm $k$ tối ưu để tối đa hóa doanh thu trên đơn vị thời gian.
+\end{exercise}
+\begin{solution}
+Giả sử thời gian mỗi buổi tham quan là $c + dk$ (hằng số cộng tuyến tính theo $k$). Số đăng ký trong đoàn $k$ người là $B \sim \text{Binomial}(k, p)$, kỳ vọng $kp$. Doanh thu kỳ vọng $\E[f] = kp \cdot v$ (với $v$ là giá trị mỗi đăng ký).
+
+Tốc độ doanh thu:
+\[
+  R(k) = \frac{kpv}{c + dk}.
+\]
+Tối ưu hóa: $\frac{d}{dk}R(k) = 0$ cho $k^* = c/d$ (nếu $c,d > 0$). Tuy nhiên, cần kiểm tra điều kiện biên và tính nguyên của $k$.
+\end{solution}
+
+% ----------------------------------------------------------------
+\begin{exercise}
+Một máy lọc ozone hoạt động cho đến khi bị nhiễu loạn Poisson tốc độ $\lambda$ làm hỏng nó. Kiểm tra định kỳ mỗi $L$ thời gian; nếu hỏng thì sửa (chi phí $c_r$), nếu không hỏng thì kiểm tra bình thường (chi phí $c_i$). Tìm $L$ tối ưu.
+\end{exercise}
+\begin{solution}
+Xác suất máy hỏng trong khoảng $[0,L]$: $p_L = 1 - e^{-\lambda L}$.
+
+Chi phí kỳ vọng mỗi chu kỳ kiểm tra:
+\[
+  \E[\text{chi phí}] = c_i(1 - p_L) + c_r p_L = c_i + (c_r - c_i)(1 - e^{-\lambda L}).
+\]
+Kỳ vọng thời gian chu kỳ: $L$ (cố định).
+
+Tốc độ chi phí: $C(L) = \frac{c_i + (c_r - c_i)(1 - e^{-\lambda L})}{L}$.
+
+Đặt $C'(L) = 0$:
+\[
+  (c_r - c_i)\lambda e^{-\lambda L} \cdot L = c_i + (c_r - c_i)(1 - e^{-\lambda L}).
+\]
+Phương trình này xác định $L^*$ tối ưu (giải số).
+\end{solution}
+
+% ----------------------------------------------------------------
+\subsection*{Tuổi thọ và Thời gian còn lại}
+
+\begin{exercise}
+Xét chuỗi Markov về tuổi $\{Z_n\}$ cho biến thời gian tái sinh rời rạc $t_1$ có phân phối $\prob(t_1 = k) = p_k$. Viết ma trận chuyển tiếp, tìm phân phối dừng, và mô tả chuỗi đối ngẫu.
+\end{exercise}
+\begin{solution}
+Chuỗi tuổi $Z_n$ có không gian trạng thái $\{0, 1, 2, \ldots\}$ (tuổi hiện tại). Ma trận chuyển tiếp:
+\[
+  P(i, 0) = \frac{p_{i+1}}{1 - F(i)}, \quad P(i, i+1) = \frac{1 - F(i+1)}{1 - F(i)}, \quad \text{(các xác suất còn lại bằng 0)},
+\]
+trong đó $F(i) = \prob(t_1 \leq i) = \sum_{k=1}^i p_k$.
+
+Theo Định lý 3.10, phân phối dừng là
+\[
+  \pi_i = \frac{\prob(t_1 > i)}{\E[t_1]}, \quad i = 0, 1, 2, \ldots
+\]
+Chuỗi đối ngẫu (time-reversal) của chuỗi tuổi là chuỗi thời gian còn lại $\{Y_n\}$, với $Y_n$ là số bước còn lại đến lần tái sinh tiếp theo.
+\end{solution}
+
+% ----------------------------------------------------------------
+\begin{exercise}
+Xét chuỗi từ Bài tập 1.39 như một chuỗi tuổi. Đây là trường hợp đặc biệt nào của Bài tập 3.19? Tính phân phối dừng.
+\end{exercise}
+\begin{solution}
+Chuỗi từ Bài 1.39 là chuỗi tuổi với $\prob(t_1 = k) = p_k$ cho phân phối cụ thể đã cho. Phân phối dừng theo Định lý 3.10:
+\[
+  \pi_i = \frac{\prob(t_1 > i)}{\E[t_1]}.
+\]
+Tính $\E[t_1] = \sum_{k=1}^\infty k p_k$ và $\prob(t_1 > i) = \sum_{k=i+1}^\infty p_k$, từ đó thu được $\pi_i$ cụ thể.
+\end{solution}
+
+% ----------------------------------------------------------------
+\begin{exercise}
+Ở Ithaca, thời gian đỗ xe có phân phối $F$ với kỳ vọng $\mu$. Bãi đỗ có giới hạn 2 giờ; cảnh sát đi tuần tra ngẫu nhiên (thời điểm kiểm tra $\sim U[0,2]$). Tìm xác suất một xe bị phạt.
+\end{exercise}
+\begin{solution}
+Gọi $A_t$ là tuổi xe tại thời điểm kiểm tra $t$ (thời gian xe đã đỗ). Thời điểm kiểm tra $t \sim U[0,2]$. Xe bị phạt khi $A_t > 2$ giờ, tức là xe đã đỗ quá 2 giờ.
+
+Theo phân phối dừng của quá trình tái sinh, mật độ của tuổi dừng:
+\[
+  g(z) = \frac{1 - F(z)}{\mu}, \quad z \geq 0.
+\]
+Xác suất bị phạt (xe đỗ quá 2 giờ):
+\[
+  \prob(A > 2) = \int_2^\infty \frac{1-F(z)}{\mu}\,dz = \frac{\E[(X-2)^+]}{\mu},
+\]
+trong đó $X$ là thời gian đỗ xe và $(x)^+ = \max(x,0)$.
+\end{solution}
+
+% ----------------------------------------------------------------
+\begin{exercise}
+Máy làm sữa chua đông lạnh hoạt động trong thời gian $\sim \Gamma(2, \lambda)$ (gamma với tham số hình dạng 2). Tìm phân phối giới hạn của tuổi (age) của máy.
+\end{exercise}
+\begin{solution}
+Phân phối $\Gamma(2,\lambda)$ có pdf $f(t) = \lambda^2 t e^{-\lambda t}$, $t \geq 0$, và kỳ vọng $\mu = 2/\lambda$.
+
+Theo Định lý 3.11, mật độ giới hạn của tuổi là
+\[
+  g(z) = \frac{1 - F(z)}{\mu} = \frac{\lambda}{2}\bigl(1 - F(z)\bigr),
+\]
+trong đó $1 - F(z) = e^{-\lambda z}(1 + \lambda z)$ (hàm sống sót của $\Gamma(2,\lambda)$). Vậy
+\[
+  g(z) = \frac{\lambda}{2}(1+\lambda z)e^{-\lambda z}, \quad z \geq 0.
+\]
+\end{solution}
+
+% ----------------------------------------------------------------
+\begin{exercise}
+Ở Haifa, Israel, taxi chung (sherut) chạy tuyến cố định. Hành khách đến ga theo Poisson tốc độ $\lambda$, xe chờ đủ $k$ người rồi chạy. Tìm phân phối thời gian chờ của một hành khách ngẫu nhiên.
+\end{exercise}
+\begin{solution}
+Gọi $W$ là thời gian chờ của hành khách thứ $j$ (hàng khách $j \in \{1,\ldots,k\}$ trong một chuyến). Hành khách thứ $j$ cần chờ thêm $k - j$ người nữa.
+
+Thời gian chờ $k - j$ người Poisson tốc độ $\lambda$: $\sim \Gamma(k-j, \lambda)$.
+
+Một hành khách ngẫu nhiên có vị trí $j$ đều với xác suất $1/k$ (bởi vì mỗi vị trí đều khả năng). Phân phối thời gian chờ:
+\[
+  \prob(W \leq t) = \frac{1}{k}\sum_{j=1}^{k} \prob(\Gamma(k-j,\lambda) \leq t) = \frac{1}{k}\sum_{m=0}^{k-1} \prob(\Gamma(m,\lambda) \leq t),
+\]
+trong đó $\Gamma(0,\lambda) \equiv 0$ (hành khách thứ $k$ không cần chờ).
+
+Kỳ vọng thời gian chờ:
+\[
+  \E[W] = \frac{1}{k}\sum_{m=0}^{k-1} \frac{m}{\lambda} = \frac{1}{k}\cdot\frac{k(k-1)/2}{\lambda} = \frac{k-1}{2\lambda}.
+\]
+\end{solution}
+
+% ----------------------------------------------------------------
+\begin{exercise}
+Cho một quá trình tái sinh với các chu kỳ $t_1, t_2, \ldots$ i.i.d. Chứng minh rằng nếu phân phối giới hạn của tuổi (age) $A_t$ khi $t \to \infty$ bằng phân phối của $t_1$ (tức là phân phối tuổi dừng bằng phân phối gốc), thì $t_1$ có phân phối mũ.
+\end{exercise}
+\begin{solution}
+Gọi $F$ là CDF của $t_1$ với kỳ vọng $\mu$. Mật độ giới hạn của tuổi là $g(z) = (1-F(z))/\mu$.
+
+Điều kiện $g \equiv f$ (mật độ tuổi bằng mật độ gốc) nghĩa là:
+\[
+  \frac{1-F(z)}{\mu} = f(z) \quad \forall z \geq 0.
+\]
+Đây là phương trình vi phân: $(1-F(z)) = \mu f(z) = -\mu F'(z)$... Đặt $S(z) = 1-F(z)$, ta có $S(z) = -\mu S'(z)$, hay $S'(z) = -\frac{1}{\mu}S(z)$.
+
+Giải phương trình: $S(z) = e^{-z/\mu}$, tức là $F(z) = 1 - e^{-\lambda z}$ với $\lambda = 1/\mu$.
+
+Vậy $t_1 \sim \text{Exp}(\lambda)$, điều phải chứng minh.
+\end{solution}
+
+\end{document}
