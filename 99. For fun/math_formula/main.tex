@@ -1,0 +1,313 @@
+\documentclass[8pt,a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T5]{fontenc}
+\usepackage[vietnam]{babel}
+\usepackage[margin=0.25in, portrait]{geometry}
+\usepackage{amsmath, amssymb, amsfonts}
+\usepackage{multicol}
+\usepackage{titlesec}
+
+% Dinh dang tieu de khong dau de tranh loi UTF-8
+\titleformat{\section}{\bfseries\small\uppercase}{}{0em}{\underline}
+\titlespacing{\section}{0pt}{4pt}{4pt}
+\pagestyle{empty}
+\setlength{\columnseprule}{0.4pt}
+\setlength{\parindent}{0pt}
+
+\begin{document}
+
+\begin{multicols*}{2}
+
+\section{1. QUY TAC DAO HAM (DERIVATIVE RULES)}
+Cho $u, v$ là các hàm số của $x$, $k$ là hằng số:
+\begin{itemize}
+    \item $(u \pm v)' = u' \pm v'$
+    \item $(ku)' = ku'$
+    \item $(uv)' = u'v + uv'$
+    \item $(\frac{u}{v})' = \frac{u'v - uv'}{v^2}$
+    \item $(f(u))' = f'(u) \cdot u'$ (Quy tắc hàm hợp)
+    \item $(f^{-1})'(y) = \frac{1}{f'(x)}$ (Đạo hàm hàm ngược)
+    \item \textbf{Đạo hàm Logarit:} $[f(x)^{g(x)}]' = f^g [g' \ln f + \frac{gf'}{f}]$
+\end{itemize}
+
+\section{2. CONG THUC DAO HAM (FORMULAS)}
+\textbf{Hàm lũy thừa va Căn thức:}
+\begin{itemize}
+    \item $(x^n)' = nx^{n-1}$ ; $(\frac{1}{x^n})' = -\frac{n}{x^{n+1}}$
+    \item $(\sqrt{x})' = \frac{1}{2\sqrt{x}}$ ; $(\sqrt[n]{x})' = \frac{1}{n\sqrt[n]{x^{n-1}}}$
+\end{itemize}
+\textbf{Hàm Mũ va Logarit:}
+\begin{itemize}
+    \item $(e^x)' = e^x$ ; $(a^x)' = a^x \ln a$
+    \item $(\ln|x|)' = \frac{1}{x}$ ; $(\log_a x)' = \frac{1}{x \ln a}$
+\end{itemize}
+\textbf{Hàm Lượng giác:}
+\begin{itemize}
+    \item $(\sin x)' = \cos x$ ; $(\cos x)' = -\sin x$
+    \item $(\tan x)' = \frac{1}{\cos^2 x} = 1 + \tan^2 x$
+    \item $(\cot x)' = -\frac{1}{\sin^2 x} = -(1 + \cot^2 x)$
+\end{itemize}
+\textbf{Hàm Lượng giác ngược:}
+\begin{itemize}
+    \item $(\arcsin x)' = \frac{1}{\sqrt{1-x^2}}$ ; $(\arccos x)' = \frac{-1}{\sqrt{1-x^2}}$
+    \item $(\arctan x)' = \frac{1}{1+x^2}$ ; $(\text{arcctg } x)' = \frac{-1}{1+x^2}$
+\end{itemize}
+\textbf{Hàm Hyperbolic:}
+\begin{itemize}
+    \item $(\sinh x)' = \cosh x$ ; $(\cosh x)' = \sinh x$
+    \item $(\tanh x)' = \frac{1}{\cosh^2 x}$ ; $(\text{coth } x)' = -\frac{1}{\sinh^2 x}$
+\end{itemize}
+
+\section{3. TICH PHAN CO BAN (BASIC INTEGRALS)}
+\begin{itemize}
+    \item $\int x^n dx = \frac{x^{n+1}}{n+1} + C$ ($n \neq -1$)
+    \item $\int \frac{1}{x} dx = \ln|x| + C$
+    \item $\int e^x dx = e^x + C$ ; $\int a^x dx = \frac{a^x}{\ln a} + C$
+    \item $\int \cos x dx = \sin x + C$ ; $\int \sin x dx = -\cos x + C$
+    \item $\int \frac{1}{\cos^2 x} dx = \tan x + C$
+    \item $\int \frac{1}{\sin^2 x} dx = -\cot x + C$
+    \item $\int \tan x dx = -\ln|\cos x| + C$
+    \item $\int \cot x dx = \ln|\sin x| + C$
+\end{itemize}
+
+\section{4. TICH PHAN NANG CAO (ADVANCED)}
+\begin{itemize}
+    \item $\int \frac{dx}{x^2 + a^2} = \frac{1}{a} \arctan(\frac{x}{a}) + C$
+    \item $\int \frac{dx}{x^2 - a^2} = \frac{1}{2a} \ln|\frac{x-a}{x+a}| + C$
+    \item $\int \frac{dx}{\sqrt{a^2 - x^2}} = \arcsin(\frac{x}{a}) + C$
+    \item $\int \frac{dx}{\sqrt{x^2 \pm a^2}} = \ln|x + \sqrt{x^2 \pm a^2}| + C$
+    \item $\int \sqrt{a^2 - x^2} dx = \frac{x}{2}\sqrt{a^2-x^2} + \frac{a^2}{2}\arcsin\frac{x}{a} + C$
+    \item $\int \frac{dx}{\sin x} = \ln|\tan \frac{x}{2}| + C$
+    \item $\int \frac{dx}{\cos x} = \ln|\tan(\frac{x}{2} + \frac{\pi}{4})| + C$
+\end{itemize}
+
+\columnbreak
+
+\section{5. PHUONG PHAP TINH (METHODS)}
+\textbf{Tích phân từng phần:}
+$$\int u dv = uv - \int v du$$
+\textit{Thứ tự ưu tiên đặt $u$: Lô - Đa - Lượng - Mũ.}
+
+\textbf{Đổi biến số Type 1:} $u = \phi(x) \Rightarrow du = \phi'(x)dx$.
+\textbf{Đổi biến số Type 2:} $x = \psi(t) \Rightarrow dx = \psi'(t)dt$.
+\textit{Các dạng lượng giác hóa:}
+\begin{itemize}
+    \item $\sqrt{a^2-x^2}$: Đặt $x = a\sin t$
+    \item $\sqrt{x^2-a^2}$: Đặt $x = a/\cos t$
+    \item $\sqrt{a^2+x^2}$: Đặt $x = a\tan t$
+\end{itemize}
+
+\section{6. GIAI TICH TRONG THONG KE (STATS CALC)}
+\textbf{Quy tắc Leibniz (Đạo hàm biên thay đổi):}
+$$\frac{d}{d\theta} \int_{a(\theta)}^{b(\theta)} f(x, \theta) dx = f(b, \theta)b' - f(a, \theta)a' + \int_{a}^{b} \frac{\partial f}{\partial \theta} dx$$
+
+\textbf{Hàm Gamma ($\Gamma$):} $\Gamma(n) = \int_0^\infty x^{n-1}e^{-x} dx$
+\begin{itemize}
+    \item $\Gamma(n+1) = n\Gamma(n)$ ; $\Gamma(n) = (n-1)!$
+    \item $\Gamma(1/2) = \sqrt{\pi}$ ; $\Gamma(3/2) = \frac{\sqrt{\pi}}{2}$
+\end{itemize}
+
+\textbf{Hàm Beta ($B$):} $B(a, b) = \int_0^1 x^{a-1}(1-x)^{b-1} dx$
+\begin{itemize}
+    \item $B(a, b) = \frac{\Gamma(a)\Gamma(b)}{\Gamma(a+b)}$
+\end{itemize}
+
+\textbf{Tích phân Gauss:} $\int_{-\infty}^{\infty} e^{-ax^2} dx = \sqrt{\frac{\pi}{a}}$
+
+\section{7. KHAI TRIEN TAYLOR va MACLAURIN}
+Công thức tổng quát tại $x=a$:
+$$f(x) \approx \sum_{n=0}^\infty \frac{f^{(n)}(a)}{n!}(x-a)^n$$
+\textbf{Các chuỗi Maclaurin ($a=0$) thường dùng:}
+\begin{itemize}
+    \item $e^x = 1 + x + \frac{x^2}{2!} + \frac{x^3}{3!} + \dots$
+    \item $\ln(1+x) = x - \frac{x^2}{2} + \frac{x^3}{3} - \dots$
+    \item $\sin x = x - \frac{x^3}{3!} + \frac{x^5}{5!} - \dots$
+    \item $\cos x = 1 - \frac{x^2}{2!} + \frac{x^4}{4!} - \dots$
+    \item $\frac{1}{1-x} = 1 + x + x^2 + \dots$ ($|x| < 1$)
+\end{itemize}
+
+\section{8. DAO HAM DA BIEN (MULTIVARIABLE)}
+\textbf{Gradient:} $\nabla f = (\frac{\partial f}{\partial x_1}, \frac{\partial f}{\partial x_2}, \dots, \frac{\partial f}{\partial x_n})^T$
+
+\textbf{Ma trận Hessian ($H$):} $H_{ij} = \frac{\partial^2 f}{\partial x_i \partial x_j}$
+\textit{(Dùng để tính Fisher Information Matrix: $I(\theta) = -E[H_{\ln L}]$)}
+
+\textbf{Jacobian (Biến đổi biến $n$ chiều):}
+$f_{\mathbf{Y}}(\mathbf{y}) = f_{\mathbf{X}}(g^{-1}(\mathbf{y})) \left| \det \frac{\partial \mathbf{x}}{\partial \mathbf{y}} \right|$
+
+\end{multicols*}
+
+\pagebreak
+
+\begin{multicols*}{2}
+
+\section{1. TINH CHAT LOGARIT (LOG PROPERTIES)}
+Với $a, b, c > 0$ và $a \neq 1$:
+\begin{itemize}
+    \item $\ln(e) = 1$ ; $\ln(1) = 0$ ; $\ln(e^x) = x$ ; $e^{\ln x} = x$
+    \item $\ln(ab) = \ln a + \ln b$
+    \item $\ln(a/b) = \ln a - \ln b$
+    \item $\ln(a^r) = r \ln a$
+    \item $\log_a b = \frac{\ln b}{\ln a}$ (Đổi cơ số)
+    \item $\log_a b = \frac{1}{\log_b a}$
+    \item \textbf{Đạo hàm logarit của hàm hợp:} $\frac{d}{dx} \ln(f(x)) = \frac{f'(x)}{f(x)}$
+    \item \textit{Ứng dụng:} Chuyển tích thành tổng trong hàm Likelihood $L(\theta)$.
+\end{itemize}
+
+\section{2. TINH CHAT HAM MU (EXP PROPERTIES)}
+Với $a, b \in \mathbb{R}$:
+\begin{itemize}
+    \item $e^a \cdot e b = e^{a+b}$
+    \item $e^a / e^b = e^{a-b}$
+    \item $(e^a)^b = e^{ab}$
+    \item $a^b = e^{b \ln a}$ (Chuyển cơ số $a$ sang $e$)
+    \item $e^x \geq 1 + x$ với mọi $x$ (BĐT cơ bản)
+    \item $\lim_{n \to \infty} (1 + \frac{x}{n})^n = e^x$
+\end{itemize}
+
+\section{3. BAT DANG THUC QUAN TRONG (INEQUALITIES)}
+Dùng để chứng minh tính tối ưu và chặn phương sai:
+\begin{itemize}
+    \item \textbf{Jensen:} Nếu $g$ là hàm lồi ($g'' \geq 0$), thì:
+    $g(E[X]) \leq E[g(X)]$
+    (Ngược lại nếu $g$ lõm: $\ln(E[X]) \geq E[\ln X]$).
+    \item \textbf{Cauchy-Schwarz:} $(E[XY])^2 \leq E[X^2]E[Y^2]$
+    \item \textbf{Markov:} $P(X \geq a) \leq \frac{E[X]}{a}$ (với $X \geq 0, a > 0$)
+    \item \textbf{Chebyshev:} $P(|X - \mu| \geq k\sigma) \leq \frac{1}{k^2}$
+    \item \textbf{Lyapunov:} $(E|X|^r)^{1/r} \leq (E|X|^s)^{1/s}$ với $1 \leq r \leq s$
+    \item \textbf{Cramer-Rao:} $Var(\hat{\theta}) \geq \frac{[g'(\theta)]^2}{n I(\theta)}$
+\end{itemize}
+
+\section{4. CHUOI VA KI HIEU TIEM CAN (ASYMPTOTICS)}
+\textbf{Kí hiệu Landau:}
+\begin{itemize}
+    \item $f(n) = O(g(n))$: $|f| \leq C|g|$ khi $n$ lớn.
+    \item $f(n) = o(g(n))$: $f/g \to 0$ khi $n \to \infty$.
+    \item $f(n) \sim g(n)$: $f/g \to 1$ khi $n \to \infty$.
+\end{itemize}
+\textbf{Xấp xỉ Stirling (Giai thừa):}
+$n! \sim \sqrt{2\pi n} \left(\frac{n}{e}\right)^n$
+$\ln(n!) \approx n \ln n - n$ (Dùng cho phân phối Poisson/Multinomial).
+
+\columnbreak
+
+\section{5. HOI TU TRONG THONG KE (CONVERGENCE)}
+\begin{itemize}
+    \item \textbf{Hội tụ xác suất ($X_n \xrightarrow{p} X$):} $\lim P(|X_n - X| > \epsilon) = 0$.
+    \item \textbf{Hội tụ phân phối ($X_n \xrightarrow{d} X$):} $\lim F_n(x) = F(x)$.
+    \item \textbf{Luật số lớn (WLLN):} $\bar{X}_n \xrightarrow{p} \mu$.
+    \item \textbf{Định lý giới hạn trung tâm (CLT):} $\frac{\bar{X}_n - \mu}{\sigma/\sqrt{n}} \xrightarrow{d} N(0, 1)$.
+    \item \textbf{Định lý Slutsky:} Nếu $X_n \xrightarrow{d} X$ và $Y_n \xrightarrow{p} c$:
+    $X_n + Y_n \xrightarrow{d} X + c$ ; $X_n Y_n \xrightarrow{d} cX$.
+    \item \textbf{Delta Method:} Nếu $\sqrt{n}(T_n - \theta) \xrightarrow{d} N(0, \sigma^2)$ và $g$ có đạo hàm tại $\theta$:
+    $\sqrt{n}(g(T_n) - g(\theta)) \xrightarrow{d} N(0, \sigma^2 [g'(\theta)]^2)$.
+\end{itemize}
+
+\section{6. BIEN DOI BIEN VA THONG KE THU TU}
+\textbf{Hàm mật độ của $Y = g(X)$ (đơn điệu):}
+$f_Y(y) = f_X(g^{-1}(y)) \left| \frac{d}{dy} g^{-1}(y) \right|$
+
+\textbf{Thống kê thứ tự $X_{(1)} \leq X_{(2)} \leq \dots \leq X_{(n)}$:}
+\begin{itemize}
+    \item Mật độ của $X_{(n)}$ (Max): $f_{(n)}(x) = n [F(x)]^{n-1} f(x)$
+    \item Mật độ của $X_{(1)}$ (Min): $f_{(1)}(x) = n [1 - F(x)]^{n-1} f(x)$
+    \item Mật độ của $X_{(k)}$: $f_{(k)}(x) = \frac{n!}{(k-1)!(n-k)!} [F(x)]^{k-1} [1-F(x)]^{n-k} f(x)$
+\end{itemize}
+
+\section{7. HAM SINH MOMENT (MGF)}
+$M_X(t) = E[e^{tX}]$
+\begin{itemize}
+    \item $E[X^k] = M_X^{(k)}(0)$ (Đạo hàm bậc $k$ tại $t=0$).
+    \item $M_{aX+b}(t) = e^{bt} M_X(at)$.
+    \item $M_{X+Y}(t) = M_X(t) M_Y(t)$ (nếu $X, Y$ độc lập).
+    \item \textbf{Quan hệ với Laplace:} $M_X(t) = \mathcal{L}\{f_X\}(-t)$.
+\end{itemize}
+
+\section{8. TO HOP (COMBINATORICS)}
+\begin{itemize}
+    \item Hoán vị: $P_n = n!$
+    \item Chỉnh hợp: $A_n^k = \frac{n!}{(n-k)!}$
+    \item Tổ hợp: $\binom{n}{k} = \frac{n!}{k!(n-k)!}$
+    \item Công thức nhị thức Newton: $(a+b)^n = \sum_{k=0}^n \binom{n}{k} a^k b^{n-k}$
+    \item Đạo hàm chuỗi hình học: $\sum_{n=0}^\infty x^n = \frac{1}{1-x} \Rightarrow \sum n x^{n-1} = \frac{1}{(1-x)^2}$
+\end{itemize}
+
+\end{multicols*}
+
+\pagebreak
+
+\begin{multicols*}{2}
+
+
+\section{1. CAC PHAN PHOI ROI RAC (DISCRETE)}
+\begin{itemize}
+    \item \textbf{Bernoulli($p$):} $E=p, V=pq, MGF=q+pe^t$.
+    \item \textbf{Binomial($n, p$):} $P(x)=\binom{n}{x}p^x q^{n-x}$. $E=np, V=npq, MGF=(q+pe^t)^n$.
+    \item \textbf{Poisson($\lambda$):} $P(x)=\frac{e^{-\lambda}\lambda^x}{x!}$. $E=\lambda, V=\lambda, MGF=e^{\lambda(e^t-1)}$.
+    \item \textbf{Geometric($p$):} $P(x)=q^{x-1}p$. $E=1/p, V=q/p^2, MGF=\frac{pe^t}{1-qe^t}$.
+    \item \textbf{Negative Binomial($r, p$):} $P(x)=\binom{x-1}{r-1}p^r q^{x-r}$. $E=r/p, V=rq/p^2, MGF=(\frac{pe^t}{1-qe^t})^r$.
+\end{itemize}
+
+\section{2. CAC PHAN PHOI LIEN TUC (CONTINUOUS)}
+\begin{itemize}
+    \item \textbf{Normal($\mu, \sigma^2$):} $E=\mu, V=\sigma^2, MGF=e^{\mu t + \sigma^2 t^2/2}$.
+    \item \textbf{Exponential($\theta$):} $f(x)=\theta e^{-\theta x}$. $E=1/\theta, V=1/\theta^2, MGF=\frac{\theta}{\theta-t}$.
+    \item \textbf{Gamma($\alpha, \beta$):} $f(x)=\frac{\beta^\alpha}{\Gamma(\alpha)}x^{\alpha-1}e^{-\beta x}$. $E=\alpha/\beta, V=\alpha/\beta^2, MGF=(1-t/\beta)^{-\alpha}$.
+    \item \textbf{Beta($\alpha, \beta$):} $f(x)=\frac{x^{\alpha-1}(1-x)^{\beta-1}}{B(\alpha, \beta)}$. $E=\frac{\alpha}{\alpha+\beta}, V=\frac{\alpha\beta}{(\alpha+\beta)^2(\alpha+\beta+1)}$.
+    \item \textbf{Chi-square($n$):} $E=n, V=2n, MGF=(1-2t)^{-n/2}$. (Là $Gamma(n/2, 1/2)$).
+    \item \textbf{Student-$t(n)$:} $E=0 (n>1), V=\frac{n}{n-2} (n>2)$.
+\end{itemize}
+
+\section{3. uoc luong diem (POINT ESTIMATION)}
+\begin{itemize}
+    \item \textbf{Fisher Information (1 quan sat):} $I(\theta) = -E[\frac{\partial^2}{\partial \theta^2} \ln f(X|\theta)] = E[(\frac{\partial \ln f}{\partial \theta})^2]$.
+    \item \textbf{Cramer-Rao (CRLB):} $Var(\hat{\theta}) \geq \frac{[g'(\theta)]^2}{n I(\theta)}$.
+    \item \textbf{Factorization (Sufficiency):} $f(\mathbf{x}|\theta) = g(T(\mathbf{x}), \theta)h(\mathbf{x}) \Rightarrow T$ là thống kê đủ.
+    \item \textbf{Lehmann-Scheffé:} $T$ đủ đầy đủ + $\hat{\theta} = \phi(T)$ ko chệch $\Rightarrow \hat{\theta}$ là UMVUE.
+\end{itemize}
+
+\section{4. KHOANG TIN CAY (CONFIDENCE INTERVAL)}
+\begin{itemize}
+    \item \textbf{Bien so chot (Pivotal):} $Q(\mathbf{X}, \theta)$ có phân phối ko phụ thuộc $\theta$.
+    \item \textbf{Cho $\mu$ (biet $\sigma$):} $Z = \frac{\bar{X}-\mu}{\sigma/\sqrt{n}} \sim N(0,1)$.
+    \item \textbf{Cho $\mu$ (chua biet $\sigma$):} $T = \frac{\bar{X}-\mu}{S/\sqrt{n}} \sim t_{n-1}$.
+    \item \textbf{Cho $\sigma^2$:} $\frac{(n-1)S^2}{\sigma^2} \sim \chi^2_{n-1}$.
+\end{itemize}
+
+\columnbreak
+
+\section{5. KIEM DINH GIA THUYET (TESTING)}
+\begin{itemize}
+    \item \textbf{LRT (Likelihood Ratio Test):} $\lambda = \frac{\sup_{\Theta_0} L(\theta)}{\sup_{\Theta} L(\theta)}$.
+    \item \textbf{LRT tiem can:} $-2\ln \lambda \xrightarrow{d} \chi^2_k$ với $k = \dim \Theta - \dim \Theta_0$.
+    \item \textbf{Wald Test:} $W = \frac{(\hat{\theta} - \theta_0)^2}{Var(\hat{\theta})} \xrightarrow{d} \chi^2_1$.
+    \item \textbf{Score Test:} $S = \frac{U(\theta_0)^2}{n I(\theta_0)} \xrightarrow{d} \chi^2_1$.
+    \item \textbf{Neyman-Pearson:} Miền bác bỏ MP (Simple vs Simple): $\frac{L(\mathbf{x}|\theta_0)}{L(\mathbf{x}|\theta_1)} \leq k$.
+\end{itemize}
+
+\section{6. QUAN HE GIUA CAC PHAN PHOI}
+\begin{itemize}
+    \item $\sum_{i=1}^n Z_i^2 \sim \chi^2_n$ với $Z_i \sim N(0,1)$.
+    \item $\frac{N(0,1)}{\sqrt{\chi^2_n/n}} \sim t_n$.
+    \item $\frac{\chi^2_m/m}{\chi^2_n/n} \sim F_{m,n}$.
+    \item $Binomial(n, p) \xrightarrow{n \to \infty, p \to 0} Poisson(np)$.
+    \item $Binomial(n, p) \xrightarrow{n \to \infty} N(np, npq)$.
+\end{itemize}
+
+\section{7. CONG THUC MA TRAN (EXTRA)}
+\begin{itemize}
+    \item \textbf{Fisher Info Matrix:} $I(\theta)_{ij} = -E[\frac{\partial^2 \ln L}{\partial \theta_i \partial \theta_j}]$.
+    \item \textbf{MLE tiem can:} $\hat{\theta}_{MLE} \xrightarrow{d} N(\theta, \frac{1}{n I(\theta)})$.
+    \item \textbf{Delta Method n-chieu:} $\sqrt{n}(g(\hat{\theta}) - g(\theta)) \xrightarrow{d} N(0, \nabla g^T I(\theta)^{-1} \nabla g)$.
+\end{itemize}
+
+\section{8. MOT SO TICH PHAN KHAC}
+\begin{itemize}
+    \item $\int_0^\infty \frac{1}{1+x^2} dx = \pi/2$.
+    \item $\int_0^\infty \frac{\sin x}{x} dx = \pi/2$.
+    \item $\int_0^\infty x^n e^{-ax} dx = \frac{n!}{a^{n+1}}$.
+    \item \textbf{Ky vong ky la:} $E[X] = \int_0^\infty [1-F(x)]dx$ (với $X \geq 0$).
+\end{itemize}
+
+\end{multicols*}
+\end{document}
