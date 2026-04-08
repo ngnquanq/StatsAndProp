@@ -1408,11 +1408,23 @@ $\Var(W) = E[\Var(W|I)] + \Var(E[W|I])$.
 2.52. $L$ là thời điểm sự kiện cuối trong $[0, t]$. Tính $E[t-L]$.
 \end{exercise}
 \begin{solution}
-$t-L > y$ tương đương với việc không có sự kiện nào trong khoảng $(t-y, t]$.
-$P(t-L > y) = P(N(y)=0) = e^{-\lambda y}$ với $y < t$. 
-Tại $y=t$, $P(t-L > t) = P(N(t)=0) = e^{-\lambda t}$.
-$E[t-L] = \int_0^t P(t-L > y) dy = \int_0^t e^{-\lambda y} dy = \frac{1 - e^{-\lambda t}}{\lambda}$.
-Khi $t \to \infty$, $E[t-L] \to 1/\lambda$.
+\textbf{Phương pháp tổng quát:} Tính kỳ vọng biến không âm bằng tích phân hàm sống sót: $E[X] = \int_0^\infty P(X > y) dy$. Biến đổi sự kiện $\{t-L > y\}$ thành sự kiện Poisson.
+
+\textbf{Bước 1 -- Biến đổi.} $t - L > y \Leftrightarrow$ không có sự kiện nào trong $(t-y, t]$:
+\[
+  P(t-L > y) = P(N(y) = 0) = e^{-\lambda y}, \quad 0 \leq y \leq t.
+\]
+
+\textbf{Bước 2 -- Tích phân.}
+\[
+  E[t-L] = \int_0^t P(t-L > y) \, dy = \int_0^t e^{-\lambda y} \, dy = \boxed{\frac{1-e^{-\lambda t}}{\lambda}}.
+\]
+
+\textbf{Bước 3 -- Giới hạn.} Khi $t \to \infty$: $E[t-L] \to 1/\lambda$ -- bằng đúng trung bình khoảng cách giữa 2 sự kiện.
+
+\textbf{Kết luận:} $E[t-L] = (1-e^{-\lambda t})/\lambda$. Khi $t$ lớn, khoảng cách từ sự kiện cuối đến $t$ trung bình $\approx 1/\lambda$.
+
+\textbf{Mẹo:} Trick $E[X] = \int P(X>y) dy$ rất hữu ích khi biết hàm sống sót nhưng khó tính CDF.
 \end{solution}
 
 % ----------------------------------------------------------------
@@ -1421,12 +1433,20 @@ Khi $t \to \infty$, $E[t-L] \to 1/\lambda$.
 (a) Phân phối số yêu cầu chưa báo cáo? (b) Tìm mean và variance của tổng số tiền bồi thường chưa báo cáo $S$.
 \end{exercise}
 \begin{solution}
-Đây là hệ thống $M/G/\infty$.
-(a) Số yêu cầu chưa báo cáo tại thời điểm $t$ (lớn) tuân theo Poisson với trung bình $\lambda E[R] = \lambda \delta$.
-(b) $S$ là tổng Poisson hợp (Compound Poisson):
-$E[S] = (\lambda \delta) \mu$.
-$Var(S) = (\lambda \delta) E[X^2] = \lambda \delta (\sigma^2 + \mu^2)$.
-\textit{Cybersecurity Hint:} Đây là mô hình để ước tính số lượng lỗ hổng Zero-day đang tồn tại trong hệ thống nhưng chưa được Security Team phát hiện.
+\textbf{Phương pháp tổng quát:} $M/G/\infty$ cho số yêu cầu ``đang xử lý'' (chưa báo cáo). Compound Poisson cho tổng tiền.
+
+\textbf{Bước 1 -- (a) Phân phối số yêu cầu chưa báo cáo.} Tai nạn đến Poisson rate $\lambda$, mỗi yêu cầu ``ở trong hệ thống'' thời gian $R$ (trung bình $\delta$). Áp dụng $M/G/\infty$:
+\[
+  \boxed{N \sim \text{Poisson}(\lambda\delta)}.
+\]
+
+\textbf{Bước 2 -- (b) Tổng tiền bồi thường chưa báo cáo.} $S = \sum_{i=1}^{N} X_i$ là Compound Poisson:
+\begin{itemize}[nosep]
+  \item $E[S] = E[N] \cdot E[X] = \boxed{\lambda\delta\mu}$.
+  \item $\Var(S) = E[N] \cdot E[X^2] = \boxed{\lambda\delta(\sigma^2 + \mu^2)}$.
+\end{itemize}
+
+\textbf{Kết luận:} (a) $N \sim \text{Poi}(\lambda\delta)$. (b) $E[S] = \lambda\delta\mu$, $\Var(S) = \lambda\delta(\sigma^2+\mu^2)$.
 \end{solution}
 
 % ----------------------------------------------------------------
@@ -1434,12 +1454,26 @@ $Var(S) = (\lambda \delta) E[X^2] = \lambda \delta (\sigma^2 + \mu^2)$.
 2.54. Giá cổ phiếu $S_t = S_0 \prod_{i=1}^{N(t)} X_i$. Tìm $E S_t$ và $Var S_t$.
 \end{exercise}
 \begin{solution}
-Dùng tính chất kỳ vọng có điều kiện trên $N(t)$:
-$E[S_t | N(t)=n] = S_0 \mu^n$.
-$E[S_t] = S_0 \sum \frac{e^{-\lambda t}(\lambda t)^n}{n!} \mu^n = S_0 e^{-\lambda t} e^{\lambda t \mu} = S_0 e^{\lambda t (\mu-1)}$.
-Tương tự cho $E[S_t^2]$ với $E[X^2] = \sigma^2 + \mu^2$:
-$E[S_t^2] = S_0^2 e^{\lambda t (\sigma^2 + \mu^2 - 1)}$.
-$Var(S_t) = E[S_t^2] - (E S_t)^2$.
+\textbf{Phương pháp tổng quát:} Giá cổ phiếu nhân (Multiplicative Compound Poisson): $S_t = S_0 \prod X_i$. Dùng $E[a^N] = e^{\lambda t(a-1)}$ (MGF Poisson tại $\ln a$) để tính $E[S_t]$.
+
+\textbf{Bước 1 -- Tính $E[S_t]$.} $E[S_t \mid N(t) = n] = S_0 \mu^n$ (vì $X_i$ i.i.d). Lấy kỳ vọng:
+\[
+  E[S_t] = S_0 \sum_{n=0}^\infty \mu^n \frac{e^{-\lambda t}(\lambda t)^n}{n!} = S_0 e^{-\lambda t} \cdot e^{\lambda t \mu} = \boxed{S_0 e^{\lambda t(\mu-1)}}.
+\]
+
+\textbf{Bước 2 -- Tính $E[S_t^2]$.} Tương tự, thay $\mu$ bằng $E[X^2] = \sigma^2 + \mu^2$:
+\[
+  E[S_t^2] = S_0^2 e^{\lambda t(\sigma^2 + \mu^2 - 1)}.
+\]
+
+\textbf{Bước 3 -- Phương sai.}
+\[
+  \boxed{\Var(S_t) = S_0^2 \left[e^{\lambda t(\sigma^2+\mu^2-1)} - e^{2\lambda t(\mu-1)}\right]}.
+\]
+
+\textbf{Kết luận:} $E[S_t] = S_0 e^{\lambda t(\mu-1)}$. Giá tăng/giảm theo $\mu \gtrless 1$.
+
+\textbf{Mẹo:} Trick chung: $E[a^N] = e^{\lambda t(a-1)}$ khi $N \sim \text{Poi}(\lambda t)$. Áp dụng cho $a = \mu$ hoặc $a = E[X^2]$.
 \end{solution}
 
 % ----------------------------------------------------------------
@@ -1447,10 +1481,26 @@ $Var(S_t) = E[S_t^2] - (E S_t)^2$.
 2.55. $Cov(T, N_T)$ với $T$ độc lập $N(t)$.
 \end{exercise}
 \begin{solution}
-$Cov(T, N_T) = E[T N_T] - E[T]E[N_T]$.
-$E[T N_T] = E[E[T N_T | T]] = E[T \cdot \lambda T] = \lambda E[T^2]$.
-$E[N_T] = E[E[N_T | T]] = \lambda E[T]$.
-$Cov(T, N_T) = \lambda E[T^2] - \lambda (E[T])^2 = \lambda Var(T)$.
+\textbf{Phương pháp tổng quát:} $T$ độc lập $N(t)$, nhưng $N_T = N(T)$ phụ thuộc $T$ (vì $T$ là thời gian quan sát). Dùng Tower Property: conditioning trên $T$ rồi lấy kỳ vọng.
+
+\textbf{Bước 1 -- Tính $E[N_T]$.}
+\[
+  E[N_T] = E[E[N_T \mid T]] = E[\lambda T] = \lambda E[T].
+\]
+
+\textbf{Bước 2 -- Tính $E[T \cdot N_T]$.}
+\[
+  E[T \cdot N_T] = E[E[T \cdot N_T \mid T]] = E[T \cdot \lambda T] = \lambda E[T^2].
+\]
+
+\textbf{Bước 3 -- Covariance.}
+\[
+  \text{Cov}(T, N_T) = E[T \cdot N_T] - E[T] \cdot E[N_T] = \lambda E[T^2] - \lambda(E[T])^2 = \boxed{\lambda \Var(T)}.
+\]
+
+\textbf{Kết luận:} $\text{Cov}(T, N_T) = \lambda \Var(T)$. Covariance luôn $\geq 0$: $T$ lớn hơn $\Rightarrow$ $N_T$ lớn hơn.
+
+\textbf{Mẹo:} Tower Property: $E[f(T) \cdot g(N_T)] = E[f(T) \cdot E[g(N_T) \mid T]]$ khi $N(t)$ Poisson.
 \end{solution}
 
 % ----------------------------------------------------------------
@@ -1458,12 +1508,35 @@ $Cov(T, N_T) = \lambda E[T^2] - \lambda (E[T])^2 = \lambda Var(T)$.
 2.56. Tìm Generating Function cho tổng Poisson hợp $S = \sum_{i=1}^{N(t)} Y_i$.
 \end{exercise}
 \begin{solution}
-(a) $f(z) = E[z^S] = E[E[z^S | N]] = E[g(z)^N]$.
-Vì $N \sim \text{Poisson}(\lambda t)$, $E[z^N] = e^{\lambda t(z-1)}$.
-Thay $z$ bằng $g(z)$: $f(z) = e^{\lambda t(g(z)-1)}$.
-(b) $ES = f'(1) = \lambda t g'(1) = \lambda t E[Y]$.
-(c) $E[S(S-1)] = f''(1) = (\lambda t g'(1))^2 + \lambda t g''(1)$.
-(d) $Var(S) = E[S(S-1)] + ES - (ES)^2 = \lambda t E[Y^2]$.
+\textbf{Phương pháp tổng quát:} Probability Generating Function (PGF) cho Compound Poisson: $f(z) = E[z^S]$. Dùng Tower Property: conditioning trên $N$, thay PGF của $Y$ vào PGF của Poisson.
+
+\textbf{Bước 1 -- (a) PGF.} Gọi $g(z) = E[z^Y]$ (PGF của $Y$). Conditioning:
+\[
+  f(z) = E[E[z^S \mid N]] = E[g(z)^N].
+\]
+PGF Poisson: $E[a^N] = e^{\lambda t(a-1)}$. Thay $a = g(z)$:
+\[
+  \boxed{f(z) = e^{\lambda t(g(z) - 1)}}.
+\]
+
+\textbf{Bước 2 -- (b) $E[S] = f'(1)$.}
+\[
+  f'(z) = \lambda t \cdot g'(z) \cdot f(z) \implies f'(1) = \lambda t \cdot g'(1) \cdot 1 = \boxed{\lambda t \cdot E[Y]}.
+\]
+
+\textbf{Bước 3 -- (c) $E[S(S-1)] = f''(1)$.}
+\[
+  f''(1) = (\lambda t \cdot g'(1))^2 + \lambda t \cdot g''(1) = (\lambda t E[Y])^2 + \lambda t E[Y(Y-1)].
+\]
+
+\textbf{Bước 4 -- (d) $\Var(S)$.}
+\[
+  \Var(S) = E[S(S-1)] + E[S] - (E[S])^2 = \boxed{\lambda t \cdot E[Y^2]}.
+\]
+
+\textbf{Kết luận:} PGF của Compound Poisson: $f(z) = e^{\lambda t(g(z)-1)}$. Các moment suy ra bằng lấy đạo hàm tại $z=1$.
+
+\textbf{Mẹo:} Kết quả $\Var(S) = \lambda t E[Y^2]$ khớp với công thức Compound Poisson đã dùng ở các bài trước.
 \end{solution}
 
 % ----------------------------------------------------------------
@@ -1471,10 +1544,31 @@ Thay $z$ bằng $g(z)$: $f(z) = e^{\lambda t(g(z)-1)}$.
 2.58. $T = t_1 + \dots + t_N$ với $t_i \sim \text{Exp}(\lambda)$ và $N \sim \text{Geometric}(p)$. Tìm phân phối của $T$.
 \end{exercise}
 \begin{solution}
-Sử dụng hàm đặc trưng hoặc Laplace transform. Laplace của $t_i$ là $\frac{\lambda}{\lambda+s}$.
-$\phi_T(s) = E[(\frac{\lambda}{\lambda+s})^N] = \frac{p \frac{\lambda}{\lambda+s}}{1 - (1-p)\frac{\lambda}{\lambda+s}} = \frac{p\lambda}{\lambda+s - \lambda+p\lambda} = \frac{p\lambda}{p\lambda + s}$.
-Đây là Laplace transform của phân phối $\text{Exp}(p\lambda)$.
-Vậy tổng ngẫu nhiên của các biến ngẫu nhiên phân phối mũ với số lượng hình học vẫn là phân phối mũ.
+\textbf{Phương pháp tổng quát:} Tổng ngẫu nhiên: $T = \sum_{i=1}^N t_i$ với $N \sim \text{Geo}(p)$, $t_i \sim \text{Exp}(\lambda)$. Dùng Laplace transform: $\mathcal{L}_T(s) = E[e^{-sT}] = g_N(\mathcal{L}_t(s))$ (PGF của $N$ thay $z$ bằng LT của $t$).
+
+\textbf{Bước 1 -- Laplace transform của $t_i$.}
+\[
+  \mathcal{L}_t(s) = E[e^{-st}] = \frac{\lambda}{\lambda+s}.
+\]
+
+\textbf{Bước 2 -- PGF của $N \sim \text{Geo}(p)$.} $P(N=k) = (1-p)^{k-1}p$, $k = 1, 2, \ldots$
+\[
+  g_N(z) = E[z^N] = \frac{pz}{1-(1-p)z}.
+\]
+
+\textbf{Bước 3 -- Thay $z = \mathcal{L}_t(s)$.}
+\[
+  \mathcal{L}_T(s) = \frac{p \cdot \frac{\lambda}{\lambda+s}}{1 - (1-p)\frac{\lambda}{\lambda+s}} = \frac{p\lambda}{(\lambda+s) - (1-p)\lambda} = \frac{p\lambda}{p\lambda + s}.
+\]
+
+\textbf{Bước 4 -- Nhận dạng.} Đây là Laplace transform của $\text{Exp}(p\lambda)$:
+\[
+  \boxed{T \sim \text{Exp}(p\lambda)}.
+\]
+
+\textbf{Kết luận:} Tổng Geometric số biến mũ vẫn là mũ, với rate nhân thêm $p$. $E[T] = 1/(p\lambda)$.
+
+\textbf{Mẹo:} Đây là ``closure property'' quan trọng: Geo $\times$ Exp = Exp. Hữu ích trong lý thuyết hàng đợi.
 \end{solution}
 
 % ----------------------------------------------------------------
@@ -1483,9 +1577,19 @@ Vậy tổng ngẫu nhiên của các biến ngẫu nhiên phân phối mũ vớ
 (a) Phân phối $(N_1, N_2)$? (b) Số tín hiệu mất trước khi cái đầu tiên thành công?
 \end{exercise}
 \begin{solution}
-(a) Theo tính chất Thinning, $N_1(t)$ và $N_2(t)$ là các quá trình Poisson độc lập với rate $\lambda p$ và $\lambda(1-p)$.
-(b) Mỗi tín hiệu là một thử nghiệm Bernoulli độc lập. Số lần thất bại trước thành công đầu tiên tuân theo phân phối Geometric trên $\{0, 1, 2, \dots\}$ với tham số $p$:
-$P(L=k) = (1-p)^k p$.
+\textbf{Phương pháp tổng quát:} Thinning chia 1 Poisson thành 2 Poisson độc lập. Số thất bại trước thành công đầu $\sim$ Geometric.
+
+\textbf{Bước 1 -- (a) Phân phối $(N_1, N_2)$.} Thinning: mỗi tín hiệu thành công ($p$) hoặc mất ($1-p$) độc lập:
+\[
+  \boxed{N_1(t) \sim \text{Poi}(\lambda p), \quad N_2(t) \sim \text{Poi}(\lambda(1-p)), \quad \text{độc lập}}.
+\]
+
+\textbf{Bước 2 -- (b) Số tín hiệu mất trước thành công đầu.} Mỗi tín hiệu là Bernoulli($p$). Số thất bại trước thành công đầu:
+\[
+  \boxed{L \sim \text{Geo}(p) \text{ trên } \{0,1,2,\ldots\}: \quad P(L=k) = (1-p)^k p}.
+\]
+
+\textbf{Kết luận:} (a) Hai Poisson độc lập. (b) $L \sim \text{Geo}(p)$, $E[L] = (1-p)/p$.
 \end{solution}
 
 % ----------------------------------------------------------------
@@ -1493,10 +1597,24 @@ $P(L=k) = (1-p)^k p$.
 2.60. Vệ tinh phóng theo Poisson rate $\lambda$, sống sót qua thời gian $F$ có trung bình $\mu$.
 \end{exercise}
 \begin{solution}
-Đây là mô hình $M/G/\infty$.
-(a) Tại thời điểm $t$, số vệ tinh đang hoạt động $X(t)$ tuân theo Poisson với trung bình $\lambda \int_0^t (1-F(s)) ds$.
-(b) Khi $t \to \infty$, trung bình hội tụ về $\lambda \int_0^\infty (1-F(s)) ds = \lambda \mu$.
-Vậy giới hạn là $\text{Poisson}(\lambda \mu)$.
+\textbf{Phương pháp tổng quát:} $M/G/\infty$ tổng quát: vệ tinh phóng Poisson rate $\lambda$, sống sót theo CDF $F$. Số đang hoạt động tại $t$ là Poisson với mean $= \lambda \int_0^t \bar{F}(s) ds$.
+
+\textbf{Bước 1 -- (a) Tại thời điểm $t$ hữu hạn.} Vệ tinh phóng tại thời điểm $s < t$ vẫn hoạt động tại $t$ nếu sống $> t-s$, xác suất $1-F(t-s)$. Theo Thinning:
+\[
+  X(t) \sim \text{Poisson}\left(\lambda \int_0^t (1-F(s)) \, ds\right).
+\]
+
+\textbf{Bước 2 -- (b) Giới hạn $t \to \infty$.}
+\[
+  \lambda \int_0^\infty (1-F(s)) \, ds = \lambda \cdot E[\text{tuổi thọ}] = \lambda\mu.
+\]
+\[
+  \boxed{X(\infty) \sim \text{Poisson}(\lambda\mu)}.
+\]
+
+\textbf{Kết luận:} (a) $X(t) \sim \text{Poi}\left(\lambda\int_0^t \bar{F}(s)ds\right)$. (b) Cân bằng: $\text{Poi}(\lambda\mu)$.
+
+\textbf{Mẹo:} $\int_0^\infty (1-F(s))ds = E[X]$ là công thức tính kỳ vọng bằng tích phân hàm sống sót.
 \end{solution}
 
 % ----------------------------------------------------------------
@@ -1504,8 +1622,15 @@ Vậy giới hạn là $\text{Poisson}(\lambda \mu)$.
 2.61. Hai quá trình Poisson độc lập $N_1(t), N_2(t)$. Xác suất ghé thăm điểm $(i, j)$?
 \end{exercise}
 \begin{solution}
-Để ghé thăm $(i, j)$, quá trình tổng hợp phải trải qua đúng $i+j$ bước, trong đó $i$ bước thuộc về $N_1$ và $j$ bước thuộc về $N_2$.
-Đây là phân phối Binomial với $n=i+j$ và xác suất mỗi bước thuộc về $N_1$ là $p = \frac{\lambda_1}{\lambda_1+\lambda_2}$.
-\[ P = \binom{i+j}{i} \left( \frac{\lambda_1}{\lambda_1+\lambda_2} \right)^i \left( \frac{\lambda_2}{\lambda_1+\lambda_2} \right)^j. \]
+\textbf{Phương pháp tổng quát:} Hai Poisson độc lập tạo bước ngẫu nhiên 2D: mỗi sự kiện tăng $N_1$ hoặc $N_2$ lên 1. Xác suất ghé thăm $(i,j)$ = xác suất đúng $i$ bước ``phải'' và $j$ bước ``trái'' trong $i+j$ bước $\Rightarrow$ Binomial.
+
+\textbf{Bước 1 -- Mô hình.} Gộp $N_1, N_2$ thành quá trình Poisson rate $\lambda_1+\lambda_2$. Mỗi sự kiện thuộc $N_1$ (xác suất $p = \lambda_1/(\lambda_1+\lambda_2)$) hoặc $N_2$ ($q = 1-p$).
+
+\textbf{Bước 2 -- Xác suất ghé $(i,j)$.} Cần đúng $i+j$ bước, trong đó $i$ thuộc $N_1$:
+\[
+  \boxed{P(\text{ghé } (i,j)) = \binom{i+j}{i} p^i q^j = \binom{i+j}{i}\left(\frac{\lambda_1}{\lambda_1+\lambda_2}\right)^i \left(\frac{\lambda_2}{\lambda_1+\lambda_2}\right)^j}.
+\]
+
+\textbf{Kết luận:} Xác suất ghé thăm $(i,j)$ tuân theo Negative Hypergeometric/Binomial. Chú ý: tổng xác suất tất cả $(i,j)$ trên đường chéo $i+j = n$ là 1 (phân phối Binomial đầy đủ).
 \end{solution}
 \end{document}

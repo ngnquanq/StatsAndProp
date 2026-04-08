@@ -11,3 +11,18 @@
 *.log
 *.synctex.gz
 *.out
+
+
+
+  Expand all exercise solutions in solution/chap4.tex for exam use. Requirements:
+
+  1. **Language**: Vietnamese
+  2. **Keep existing format**: 8pt font, 3.5cm margins, standalone LaTeX file
+  3. **Every solution must follow this structure**:
+     - `\textbf{Phương pháp tổng quát:}` — identify problem type + general formula/technique
+     - `\textbf{Bước 1 -- [Title].}` ... `\textbf{Bước N -- [Title].}` — step-by-step with WHY explanations
+     - `\textbf{Kết luận:}` — final answer + interpretation
+     - Add `\textbf{Mẹo:}` for exam shortcuts when useful
+  4. **Batch size**: ~7 exercises per batch, compile-verify after each batch with `pdflatex -interaction=nonstopmode solution/chap4.tex`
+  5. **Goal**: When the same problem type appears on an exam, I can recognize the method and follow the steps to solve it
+  6. Do ALL exercises, not just selected ones
