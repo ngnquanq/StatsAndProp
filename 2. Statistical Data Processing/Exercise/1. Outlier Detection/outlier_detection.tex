@@ -3,12 +3,16 @@
 % Packages
 % ============================================================
 \usepackage[top=3.5cm,bottom=3.5cm,left=3.5cm,right=3.5cm,headheight=14pt]{geometry}
-\usepackage{fontspec}
-\usepackage{polyglossia}
-\setmainlanguage{vietnamese}
-\setotherlanguage{english}
-\setmainfont{TeX Gyre Termes}
+\usepackage[utf8]{inputenc}
+\usepackage[T5]{fontenc}
+\usepackage[vietnamese]{babel}
+\usepackage{tgtermes}
 \usepackage{amsmath, amssymb, amsthm}
+
+% Đoạn không thụt đầu dòng, có khoảng cách giữa các đoạn — tránh lệch
+% giữa đoạn đầu sau heading (LaTeX bỏ indent) và các đoạn tiếp theo.
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{0.6em plus 0.1em minus 0.1em}
 \usepackage{mathtools}
 \usepackage{textcomp}
 \usepackage{booktabs}
@@ -25,6 +29,7 @@
 \usepackage{caption}
 \captionsetup{font=small}
 \usepackage[style=authoryear, backend=biber, maxbibnames=3, maxcitenames=2]{biblatex}
+\DeclareLanguageMapping{vietnamese}{english}
 \addbibresource{references.bib}
 
 % ============================================================
@@ -39,8 +44,18 @@
 % ============================================================
 % Section formatting
 % ============================================================
-\titleformat{\section}[block]{\large\bfseries\color{blue!70!black}}{}{0em}{}[\titlerule]
-\titleformat{\subsection}[runin]{\bfseries}{}{0em}{}[.\ ]
+\titleformat{\section}[block]
+  {\large\bfseries\color{blue!70!black}}
+  {\thesection.}{0.6em}{}[\titlerule]
+\titleformat{\subsection}[block]
+  {\normalsize\bfseries}
+  {\thesubsection}{0.6em}{}
+\titleformat{\subsubsection}[runin]
+  {\bfseries}
+  {\thesubsubsection}{0.5em}{}[.\ ]
+\titlespacing*{\section}{0pt}{1.6ex plus 0.4ex minus 0.2ex}{1.0ex plus 0.2ex}
+\titlespacing*{\subsection}{0pt}{1.2ex plus 0.3ex minus 0.2ex}{0.6ex plus 0.2ex}
+\titlespacing*{\subsubsection}{0pt}{0.8ex plus 0.2ex minus 0.1ex}{0.4ex plus 0.1ex}
 
 % ============================================================
 % Theorem-like environments
@@ -95,6 +110,20 @@
 \newcommand{\lrd}{\operatorname{lrd}}
 \newcommand{\LOF}{\operatorname{LOF}}
 
+% Khối "Minh họa thực nghiệm" — dùng đồng nhất cho cả 11 phương pháp.
+% #1: tỉ lệ chiều rộng so với \textwidth, ví dụ 0.72
+% #2: tên file PDF trong figs/
+% #3: dòng kết quả số (Precision/Recall/F1/AUC...)
+\newcommand{\minhhoa}[3]{%
+  \par\addvspace{0.8em}%
+  \noindent\textbf{Minh họa thực nghiệm.}%
+  \par\nobreak\vspace{0.3em}%
+  {\centering\includegraphics[width=#1\textwidth]{#2}\par}%
+  \nobreak\vspace{0.3em}%
+  \noindent #3\par
+  \addvspace{0.8em}%
+}
+
 % ============================================================
 \begin{document}
 % ============================================================
@@ -125,7 +154,7 @@ NGUYỄN NHẬT QUANG & 25C23 \\
 \section{Giới thiệu}
 % ============================================================
 
-Trong thực tế phân tích dữ liệu, không phải mọi quan sát đều tuân theo cùng một cơ chế sinh dữ liệu.
+Trong thực tế phân tích dữ liệu, không phải mọi quan sát đều tuân theo cùng một cơ chế sinh dữ liệu (data generation process - dgp).
 Một số điểm dữ liệu có thể xuất hiện do lỗi đo lường, sự cố hệ thống, hoặc chính xác là các sự kiện bất thường cần được phát hiện.
 \textcite{hawkins1980} định nghĩa điểm ngoại lai (outlier) như sau:
 
@@ -134,6 +163,7 @@ Một số điểm dữ liệu có thể xuất hiện do lỗi đo lường, s�
 \end{quote}
 
 \subsection{Phân loại điểm ngoại lai}
+
 \textcite{chandola2009} phân loại điểm ngoại lai thành ba loại chính:
 
 \begin{enumerate}[noitemsep]
@@ -143,6 +173,7 @@ Một số điểm dữ liệu có thể xuất hiện do lỗi đo lường, s�
 \end{enumerate}
 
 \subsection{Tầm quan trọng trong thực tiễn}
+
 Phát hiện điểm ngoại lai có ứng dụng rộng rãi trong công nghiệp:
 gian lận tài chính (phát hiện giao dịch đáng ngờ), kiểm soát chất lượng sản xuất (phát hiện sản phẩm lỗi),
 an ninh mạng (phát hiện xâm nhập), chăm sóc sức khỏe (phát hiện kết quả xét nghiệm bất thường),
@@ -155,21 +186,22 @@ và giám sát thiết bị IoT (phát hiện lỗi cảm biến).
 Các phương pháp đơn biến xem xét từng thuộc tính độc lập và phù hợp khi dữ liệu có ít chiều hoặc khi cần một phương pháp nhanh, dễ giải thích.
 
 % --------------------------------------------------
-\subsection{Z-score (Điểm chuẩn hóa)}
+\subsection{Z-score}
 
 \textbf{Ý tưởng.} Chuẩn hóa mỗi quan sát theo trung bình và độ lệch chuẩn mẫu, sau đó đặt ngưỡng dựa trên phân phối chuẩn.
 
 \textbf{Công thức.} Với tập dữ liệu $\{x_1, \ldots, x_n\}$, Z-score của quan sát $x_i$ là:
-\begin{equation}
-  z_i = \frac{x_i - \bar{x}}{s}, \quad
-  \bar{x} = \frac{1}{n}\sum_{i=1}^n x_i, \quad
-  s = \sqrt{\frac{1}{n-1}\sum_{i=1}^n (x_i - \bar{x})^2}.
-\end{equation}
+\begin{align}
+  z_i &= \frac{x_i - \bar{x}}{s}, \\
+  \bar{x} &= \frac{1}{n}\sum_{i=1}^n x_i, \\
+  s &= \sqrt{\frac{1}{n-1}\sum_{i=1}^n (x_i - \bar{x})^2}.
+\end{align}
 
-\textbf{Quy tắc phán quyết.} Quan sát $x_i$ được coi là ngoại lai nếu $|z_i| > 3$.
+\textbf{Cách ra quyết định.} Quan sát $x_i$ được coi là ngoại lai nếu $|z_i| > 3$.
 Dưới phân phối chuẩn, $\Prob(|Z| > 3) \approx 0{,}27\%$, nên ngưỡng này tương ứng với mức ý nghĩa thực tế rất nhỏ.
 
-\textbf{Ưu điểm:} đơn giản, nhanh, dễ giải thích.\\
+\textbf{Ưu điểm:} đơn giản, nhanh, dễ giải thích.
+
 \textbf{Nhược điểm:} giả định phân phối Gaussian; bị ảnh hưởng bởi chính các điểm ngoại lai (masking effect); không hiệu quả với phân phối đuôi nặng.
 
 \begin{lstlisting}[style=pseudo, caption={Thuật toán Z-score}, label={lst:zscore}]
@@ -186,11 +218,9 @@ for each x_i in x:
 return O
 \end{lstlisting}
 
-\noindent\textbf{Minh họa thực nghiệm.}
-\begin{center}
-\includegraphics[width=0.72\textwidth]{zscore.pdf}
-\end{center}
-\noindent Trên dataset UD ($n = 210$, 10 ngoại lai thực): phát hiện $10/10$ ngoại lai, không có dương tính giả; $F_1 = 1{,}000$, AUC $= 1{,}000$.
+\minhhoa{0.72}{zscore.pdf}{%
+  Trên dataset UD ($n = 210$, 10 ngoại lai thực): phát hiện $10/10$ ngoại lai, không có dương tính giả; $F_1 = 1{,}000$, AUC $= 1{,}000$.%
+}
 
 % --------------------------------------------------
 \subsection{Modified Z-score (Iglewicz \& Hoaglin)}
@@ -204,7 +234,7 @@ return O
 \end{equation}
 Hệ số $0{,}6745 = \Phi^{-1}(3/4)$ được chọn để $\MAD / 0{,}6745$ là ước lượng nhất quán của $\sigma$ dưới phân phối chuẩn.
 
-\textbf{Quy tắc phán quyết.} Quan sát $x_i$ là ngoại lai nếu $|M_i| > 3{,}5$.
+\textbf{Cách ra quyết định.} Quan sát $x_i$ là ngoại lai nếu $|M_i| > 3{,}5$.
 
 \textbf{Ưu điểm:} robust -- ngay cả khi có nhiều điểm ngoại lai trong dữ liệu, ước lượng $\tilde{x}$ và $\MAD$ vẫn ổn định. Breakdown point đạt 50\%.
 
@@ -222,11 +252,9 @@ for each x_i in x:
 return O
 \end{lstlisting}
 
-\noindent\textbf{Minh họa thực nghiệm.}
-\begin{center}
-\includegraphics[width=0.72\textwidth]{modz.pdf}
-\end{center}
-\noindent Trên dataset UD: phát hiện $10/10$ ngoại lai, không có dương tính giả; $F_1 = 1{,}000$, AUC $= 1{,}000$. Kết quả khẳng định robustness của ước lượng dựa trên trung vị và MAD.
+\minhhoa{0.72}{modz.pdf}{%
+  Trên dataset UD: phát hiện $10/10$ ngoại lai, không có dương tính giả; $F_1 = 1{,}000$, AUC $= 1{,}000$. Kết quả khẳng định robustness của ước lượng dựa trên trung vị và MAD.%
+}
 
 % --------------------------------------------------
 \subsection{Phương pháp IQR (Tukey's Fences)}
@@ -239,7 +267,7 @@ return O
 \end{equation}
 với $Q_1$, $Q_3$ lần lượt là tứ phân vị thứ nhất và thứ ba.
 
-\textbf{Quy tắc phán quyết.} Hai cặp hàng rào được định nghĩa:
+\textbf{Cách ra quyết định.} Hai cặp hàng rào được định nghĩa:
 \begin{align}
   \text{Hàng rào trong:} &\quad L_{\text{in}} = Q_1 - 1{,}5\cdot\text{IQR}, \quad U_{\text{in}} = Q_3 + 1{,}5\cdot\text{IQR}; \\
   \text{Hàng rào ngoài:} &\quad L_{\text{out}} = Q_1 - 3\cdot\text{IQR}, \quad U_{\text{out}} = Q_3 + 3\cdot\text{IQR}.
@@ -261,11 +289,9 @@ O_out = {x_i : x_i < L_out or x_i > U_out}
 return O_in, O_out
 \end{lstlisting}
 
-\noindent\textbf{Minh họa thực nghiệm.}
-\begin{center}
-\includegraphics[width=0.72\textwidth]{iqr.pdf}
-\end{center}
-\noindent Trên dataset UD: phát hiện $11$ điểm trong đó $10/10$ là ngoại lai thực và $1$ dương tính giả nằm ngay rìa hàng rào trong; $F_1 = 0{,}952$, AUC $= 1{,}000$. Đây là biểu hiện tự nhiên của hệ số $1{,}5$ — một số quan sát đuôi nhẹ của phân phối nội tại bị xếp vào nhóm ``nghi ngờ''.
+\minhhoa{0.72}{iqr.pdf}{%
+  Trên dataset UD: phát hiện $11$ điểm trong đó $10/10$ là ngoại lai thực và $1$ dương tính giả nằm ngay rìa hàng rào trong; $F_1 = 0{,}952$, AUC $= 1{,}000$. Đây là biểu hiện tự nhiên của hệ số $1{,}5$ --- một số quan sát đuôi nhẹ của phân phối nội tại bị xếp vào nhóm ``nghi ngờ''.%
+}
 
 % --------------------------------------------------
 \subsection{Kiểm định Grubbs}
@@ -303,11 +329,9 @@ for r = 1 to r_max:
 return O
 \end{lstlisting}
 
-\noindent\textbf{Minh họa thực nghiệm.}
-\begin{center}
-\includegraphics[width=0.72\textwidth]{grubbs.pdf}
-\end{center}
-\noindent Trên dataset UD ($\alpha = 0{,}05$, lặp tối đa 15 vòng): kiểm định ESD dừng đúng tại $r^\star = 10$, phát hiện $10/10$ ngoại lai thực; $F_1 = 1{,}000$, AUC $= 1{,}000$.
+\minhhoa{0.72}{grubbs.pdf}{%
+  Trên dataset UD ($\alpha = 0{,}05$, lặp tối đa 15 vòng): kiểm định ESD dừng đúng tại $r^\star = 10$, phát hiện $10/10$ ngoại lai thực; $F_1 = 1{,}000$, AUC $= 1{,}000$.%
+}
 
 % ============================================================
 \section{Phương pháp đa biến}
@@ -329,7 +353,7 @@ Trong thực tế, $\boldsymbol{\mu}$ và $\boldsymbol{\Sigma}$ được ước 
 
 \textbf{Phân phối.} Nếu dữ liệu tuân theo $\mathcal{N}_p(\boldsymbol{\mu}, \boldsymbol{\Sigma})$ thì $D^2 \sim \chi^2(p)$.
 
-\textbf{Quy tắc phán quyết.} Quan sát $\mathbf{x}_i$ là ngoại lai nếu:
+\textbf{Cách ra quyết định.} Quan sát $\mathbf{x}_i$ là ngoại lai nếu:
 \begin{equation}
   D^2(\mathbf{x}_i) > \chi^2_{\alpha,\,p},
 \end{equation}
@@ -353,11 +377,9 @@ for each x_i in X:
 return O
 \end{lstlisting}
 
-\noindent\textbf{Minh họa thực nghiệm.}
-\begin{center}
-\includegraphics[width=0.55\textwidth]{mahalanobis.pdf}
-\end{center}
-\noindent Trên dataset MD2 ($n = 215$, 15 ngoại lai uniform xa khỏi cụm Gaussian tương quan): phát hiện $15/15$ với $\alpha = 0{,}05$, không có dương tính giả; $F_1 = 1{,}000$, AUC $= 1{,}000$. Khoảng cách Mahalanobis tính đến hướng tương quan của $\mathbf{S}$ nên các điểm chỉ ``hơi xa trục dài'' vẫn được xác định chính xác.
+\minhhoa{0.55}{mahalanobis.pdf}{%
+  Trên dataset MD2 ($n = 215$, 15 ngoại lai uniform xa khỏi cụm Gaussian tương quan): phát hiện $15/15$ với $\alpha = 0{,}05$, không có dương tính giả; $F_1 = 1{,}000$, AUC $= 1{,}000$. Khoảng cách Mahalanobis tính đến hướng tương quan của $\mathbf{S}$ nên các điểm chỉ ``hơi xa trục dài'' vẫn được xác định chính xác.%
+}
 
 % --------------------------------------------------
 \subsection{Phát hiện ngoại lai dựa trên PCA}
@@ -379,11 +401,11 @@ return O
   Q = \|\mathbf{x} - \bar{\mathbf{x}} - \mathbf{P}_k \mathbf{t}\|^2 = \|(\mathbf{I} - \mathbf{P}_k\mathbf{P}_k^\top)(\mathbf{x} - \bar{\mathbf{x}})\|^2.
 \end{equation}
 
-\textbf{Quy tắc phán quyết.} Quan sát $\mathbf{x}_i$ là ngoại lai nếu $T^2 > T^2_{\text{crit}}$ hoặc $Q > Q_{\text{crit}}$.
+\textbf{Cách ra quyết định.} Quan sát $\mathbf{x}_i$ là ngoại lai nếu $T^2 > T^2_{\text{crit}}$ hoặc $Q > Q_{\text{crit}}$.
 Giá trị tới hạn $Q_{\text{crit}}$ được tính theo công thức Jackson--Mudholkar sử dụng các trị riêng còn lại $\lambda_{k+1}, \ldots, \lambda_p$.
 
 \begin{note}
-  T² cao nhưng Q thấp: điểm bất thường trong không gian PC, vẫn nằm trong mô hình.
+  T² cao nhưng Q thấp: điểm bất thường trong không gian PC, vẫn nằm trong mô hình.\\
   Q cao: điểm nằm ngoài không gian mô hình hoàn toàn --- thường là ngoại lai thực sự.
 \end{note}
 
@@ -406,11 +428,9 @@ for each x in X:
 return O
 \end{lstlisting}
 
-\noindent\textbf{Minh họa thực nghiệm.}
-\begin{center}
-\includegraphics[width=0.55\textwidth]{pca.pdf}
-\end{center}
-\noindent Trên dataset MD2 ($k = 1$ thành phần chính giải thích $71{,}3\%$ phương sai, $\alpha = 0{,}05$): kết hợp $T^2$ và $Q$ phát hiện $15/15$ ngoại lai kèm $2$ dương tính giả; $F_1 = 0{,}938$, AUC $= 1{,}000$. Vì dữ liệu chỉ có hai chiều, $Q$ tương đương với khoảng cách vuông góc tới trục PC1 và đóng vai trò chính trong phán quyết.
+\minhhoa{0.55}{pca.pdf}{%
+  Trên dataset MD2 ($k = 1$ thành phần chính giải thích $71{,}3\%$ phương sai, $\alpha = 0{,}05$): kết hợp $T^2$ và $Q$ phát hiện $15/15$ ngoại lai kèm $2$ dương tính giả; $F_1 = 0{,}938$, AUC $= 1{,}000$. Vì dữ liệu chỉ có hai chiều, $Q$ tương đương với khoảng cách vuông góc tới trục PC1 và đóng vai trò chính trong phán quyết.%
+}
 
 % ============================================================
 \section{Phương pháp dựa trên mật độ}
@@ -464,11 +484,9 @@ function expand_cluster(p, N, id, eps, MinPts):
 
 \textbf{Lưu ý.} DBSCAN cho kết quả nhị phân (ngoại lai / không ngoại lai) và không tạo ra điểm số liên tục. Việc chọn $\varepsilon$ thường dựa trên đồ thị k-distance.
 
-\noindent\textbf{Minh họa thực nghiệm.}
-\begin{center}
-\includegraphics[width=0.55\textwidth]{dbscan.pdf}
-\end{center}
-\noindent Trên dataset MD-NL (hai cụm half-moon $+ 15$ ngoại lai uniform), chọn $\varepsilon$ tại phân vị 95 của khoảng cách 5-NN cho $\varepsilon \approx 0{,}18$ và MinPts $= 5$: phát hiện $15/15$ ngoại lai, không có dương tính giả; $F_1 = 1{,}000$. AUC dùng khoảng cách 5-NN trung bình làm điểm số đạt $1{,}000$.
+\minhhoa{0.55}{dbscan.pdf}{%
+  Trên dataset MD-NL (hai cụm half-moon $+ 15$ ngoại lai uniform), chọn $\varepsilon$ tại phân vị 95 của khoảng cách 5-NN cho $\varepsilon \approx 0{,}18$ và MinPts $= 5$: phát hiện $15/15$ ngoại lai, không có dương tính giả; $F_1 = 1{,}000$. AUC dùng khoảng cách 5-NN trung bình làm điểm số đạt $1{,}000$.%
+}
 
 % --------------------------------------------------
 \subsection{Local Outlier Factor (LOF)}
@@ -493,9 +511,11 @@ với $k$-$d(o)$ là khoảng cách từ $o$ đến lân cận thứ $k$ của n
   \LOF_k(p) = \frac{1}{|N_k(p)|}\sum_{o \in N_k(p)} \frac{\lrd_k(o)}{\lrd_k(p)}.
 \end{equation}
 
-\textbf{Giải thích.}
-$\LOF_k(p) \approx 1$: điểm $p$ có mật độ tương đương lân cận (điểm bình thường).
-$\LOF_k(p) \gg 1$: điểm $p$ nằm trong vùng thưa hơn đáng kể so với lân cận (ngoại lai).
+\textbf{Giải thích điểm số:}
+\begin{itemize}[noitemsep]
+  \item $\LOF_k(p) \approx 1$: điểm $p$ có mật độ tương đương lân cận (điểm bình thường).
+  \item $\LOF_k(p) \gg 1$: điểm $p$ nằm trong vùng thưa hơn đáng kể so với lân cận (ngoại lai).
+\end{itemize}
 
 \begin{lstlisting}[style=pseudo, caption={Local Outlier Factor}, label={lst:lof}]
 Input:  data D, k (number of neighbors), threshold tau
@@ -516,11 +536,9 @@ O = {p : LOF(p) > tau}
 return LOF scores, O
 \end{lstlisting}
 
-\noindent\textbf{Minh họa thực nghiệm.}
-\begin{center}
-\includegraphics[width=0.55\textwidth]{lof.pdf}
-\end{center}
-\noindent Trên dataset MD-NL với $k = 20$ và contamination $\approx 4{,}8\%$: phát hiện $15/15$ ngoại lai, không có dương tính giả; $F_1 = 1{,}000$, AUC $= 1{,}000$. Nhờ so sánh \emph{tỉ lệ} mật độ với lân cận, LOF không bị ràng buộc bởi hình dạng của cụm bình thường, một ưu thế rõ rệt so với Mahalanobis trên dữ liệu phi tuyến.
+\minhhoa{0.55}{lof.pdf}{%
+  Trên dataset MD-NL với $k = 20$ và contamination $\approx 4{,}8\%$: phát hiện $15/15$ ngoại lai, không có dương tính giả; $F_1 = 1{,}000$, AUC $= 1{,}000$. Nhờ so sánh \emph{tỉ lệ} mật độ với lân cận, LOF không bị ràng buộc bởi hình dạng của cụm bình thường, một ưu thế rõ rệt so với Mahalanobis trên dữ liệu phi tuyến.%
+}
 
 % ============================================================
 \section{Phương pháp học máy}
@@ -583,11 +601,9 @@ function build_iTree(X, height_limit):
 
 \textbf{Ưu điểm:} độ phức tạp tuyến tính $O(t \cdot \psi \log \psi)$, hiệu quả với dữ liệu lớn, không cần tính khoảng cách.
 
-\noindent\textbf{Minh họa thực nghiệm.}
-\begin{center}
-\includegraphics[width=0.55\textwidth]{iforest.pdf}
-\end{center}
-\noindent Trên dataset MD-NL ($n_\text{trees} = 100$, contamination $\approx 4{,}8\%$, seed $42$): phát hiện $13/15$ ngoại lai, $2$ dương tính giả, $2$ ngoại lai bị bỏ sót; $F_1 = 0{,}867$, AUC $= 0{,}993$. AUC cao cho thấy thang điểm bất thường vẫn rất phân tách; sai số chủ yếu sinh ra ở bước cắt ngưỡng theo contamination.
+\minhhoa{0.55}{iforest.pdf}{%
+  Trên dataset MD-NL ($n_\text{trees} = 100$, contamination $\approx 4{,}8\%$, seed $42$): phát hiện $13/15$ ngoại lai, $2$ dương tính giả, $2$ ngoại lai bị bỏ sót; $F_1 = 0{,}867$, AUC $= 0{,}993$. AUC cao cho thấy thang điểm bất thường vẫn rất phân tách; sai số chủ yếu sinh ra ở bước cắt ngưỡng theo contamination.%
+}
 
 % --------------------------------------------------
 \subsection{One-Class SVM}
@@ -628,11 +644,9 @@ return f, O
 
 \textbf{Nhược điểm:} tốc độ huấn luyện $O(n^2)$ đến $O(n^3)$, nhạy cảm với lựa chọn tham số $\nu$ và $\gamma$.
 
-\noindent\textbf{Minh họa thực nghiệm.}
-\begin{center}
-\includegraphics[width=0.55\textwidth]{ocsvm.pdf}
-\end{center}
-\noindent Trên dataset MD-NL (RBF, $\nu \approx 0{,}048$, $\gamma$ = 'scale', dữ liệu đã chuẩn hóa): phát hiện $10/15$ ngoại lai, $5$ dương tính giả, $5$ ngoại lai bị bỏ sót; $F_1 = 0{,}667$, AUC $= 0{,}867$. Đây là phương pháp yếu nhất trên ba phương pháp ML — biên RBF với $\gamma$ mặc định không ôm sát hai cụm half-moon, dẫn tới việc một số điểm rìa của cụm bị xếp sai loại.
+\minhhoa{0.55}{ocsvm.pdf}{%
+  Trên dataset MD-NL (RBF, $\nu \approx 0{,}048$, $\gamma$ = 'scale', dữ liệu đã chuẩn hóa): phát hiện $10/15$ ngoại lai, $5$ dương tính giả, $5$ ngoại lai bị bỏ sót; $F_1 = 0{,}667$, AUC $= 0{,}867$. Đây là phương pháp yếu nhất trên ba phương pháp ML --- biên RBF với $\gamma$ mặc định không ôm sát hai cụm half-moon, dẫn tới việc một số điểm rìa của cụm bị xếp sai loại.%
+}
 
 % --------------------------------------------------
 \subsection{Autoencoder}
@@ -683,11 +697,9 @@ return errors, O
 
 \textbf{Ứng dụng:} đặc biệt hiệu quả với dữ liệu dạng ảnh, chuỗi thời gian đa biến, và dữ liệu có cấu trúc không gian.
 
-\noindent\textbf{Minh họa thực nghiệm.}
-\begin{center}
-\includegraphics[width=0.55\textwidth]{autoencoder.pdf}
-\end{center}
-\noindent Mô phỏng autoencoder bằng \texttt{sklearn.neural\_network.MLPRegressor} với kiến trúc $2$--$8$--$2$--$8$--$2$ (cổ chai $2$ nút, kích hoạt tanh), huấn luyện target $=$ input trên dataset MD-NL: phát hiện $13/15$ ngoại lai, $2$ dương tính giả, $2$ ngoại lai bị bỏ sót; $F_1 = 0{,}867$, AUC $= 0{,}920$. Hiệu năng tương đương Isolation Forest trong khi yêu cầu nhiều tài nguyên hơn — autoencoder chỉ thực sự bộc lộ sức mạnh trên dữ liệu chiều cao và có cấu trúc.
+\minhhoa{0.55}{autoencoder.pdf}{%
+  Mô phỏng autoencoder bằng \texttt{sklearn.neural\_network.MLPRegressor} với kiến trúc $2$--$8$--$2$--$8$--$2$ (cổ chai $2$ nút, kích hoạt tanh), huấn luyện target $=$ input trên dataset MD-NL: phát hiện $13/15$ ngoại lai, $2$ dương tính giả, $2$ ngoại lai bị bỏ sót; $F_1 = 0{,}867$, AUC $= 0{,}920$. Hiệu năng tương đương Isolation Forest trong khi yêu cầu nhiều tài nguyên hơn --- autoencoder chỉ thực sự bộc lộ sức mạnh trên dữ liệu chiều cao và có cấu trúc.%
+}
 
 \medskip
 \noindent\textit{Lưu ý kỹ thuật.} Một \texttt{MLPRegressor} với hàm kích hoạt phi tuyến và các lớp ẩn dạng cổ chai là một autoencoder thực sự. Cách triển khai này tương đương về mặt mô hình với một autoencoder trong PyTorch/Keras, chỉ khác về API và bộ tối ưu mặc định.
@@ -709,11 +721,12 @@ Ba tập dữ liệu được sinh để đại diện cho ba ngữ cảnh đi�
   \item \textbf{Dataset MD-NL --- đa biến phi tuyến} ($n = 315$). 300 quan sát từ \texttt{make\_moons} với \texttt{noise} $= 0{,}05$, cộng 15 ngoại lai phân phối đều quanh hộp bao quan sát.
 \end{enumerate}
 
-\begin{center}
-\includegraphics[width=\textwidth]{dataset_overview.pdf}\\
-\captionof{figure}{Tổng quan ba tập dữ liệu mô phỏng dùng trong thí nghiệm.}
-\label{fig:dataset-overview}
-\end{center}
+\begin{figure}[!ht]
+  \centering
+  \includegraphics[width=\textwidth]{dataset_overview.pdf}
+  \caption{Tổng quan ba tập dữ liệu mô phỏng dùng trong thí nghiệm.}
+  \label{fig:dataset-overview}
+\end{figure}
 
 Mỗi phương pháp đơn biến được áp dụng cho UD; Mahalanobis và PCA cho MD2; còn DBSCAN, LOF, Isolation Forest, One-Class SVM và Autoencoder cho MD-NL. Đối với các phương pháp cần biết tỉ lệ ngoại lai, chúng tôi đặt \texttt{contamination} $= 15/315 \approx 0{,}048$ để khớp với tỉ lệ thực tế. Tham số khác giữ nguyên giá trị được đề xuất trong phần lý thuyết của từng phương pháp.
 
@@ -727,11 +740,12 @@ Bảng~\ref{tab:experiment-results} tóm tắt số TP/FP/FN cùng các chỉ s�
 
 Hình~\ref{fig:score-comparison} biểu diễn cùng kết quả dưới dạng biểu đồ thanh, giúp dễ đối chiếu giữa các phương pháp.
 
-\begin{center}
-\includegraphics[width=\textwidth]{score_comparison.pdf}\\
-\captionof{figure}{So sánh F1 và ROC-AUC giữa 11 phương pháp.}
-\label{fig:score-comparison}
-\end{center}
+\begin{figure}[!ht]
+  \centering
+  \includegraphics[width=\textwidth]{score_comparison.pdf}
+  \caption{So sánh F1 và ROC-AUC giữa 11 phương pháp.}
+  \label{fig:score-comparison}
+\end{figure}
 
 \subsection{Thảo luận}
 
@@ -778,6 +792,7 @@ Autoencoder         & Đa biến  & Không có      & phụ thuộc kiến trúc
 \end{table}
 
 \subsection{Hướng dẫn lựa chọn}
+
 Căn cứ vào đặc điểm bài toán, người thực hành có thể tham khảo các gợi ý sau:
 
 \begin{enumerate}[noitemsep]
