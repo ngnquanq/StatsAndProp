@@ -1,0 +1,10 @@
+name: outlier-detection
+channels:
+  - defaults
+dependencies:
+  - python=3.12
+  - numpy=1.26
+  - scipy=1.13
+  - scikit-learn=1.5
+  - matplotlib=3.9
+  - pandas=2.2

@@ -1,0 +1,27 @@
+% Bảng được sinh tự động từ code/run_all.py — KHÔNG sửa tay.
+\begin{table}[ht]
+\centering
+\caption{Kết quả thực nghiệm của 11 phương pháp trên 3 dataset mô phỏng (seed = 42).}
+\label{tab:experiment-results}
+\small
+\begin{tabular}{llccccccc}
+\toprule
+\textbf{Phương pháp} & \textbf{Dataset} & \textbf{TP} & \textbf{FP} & \textbf{FN} & \textbf{Precision} & \textbf{Recall} & \textbf{F1} & \textbf{AUC} \\
+\midrule
+Z-score & UD & 10 & 0 & 0 & 1,000 & 1,000 & 1,000 & 1,000 \\
+Modified Z-score & UD & 10 & 0 & 0 & 1,000 & 1,000 & 1,000 & 1,000 \\
+IQR (Tukey) & UD & 10 & 1 & 0 & 0,909 & 1,000 & 0,952 & 1,000 \\
+Grubbs (ESD) & UD & 10 & 0 & 0 & 1,000 & 1,000 & 1,000 & 1,000 \\
+Mahalanobis & MD2 & 15 & 0 & 0 & 1,000 & 1,000 & 1,000 & 1,000 \\
+PCA (T$^2$, Q) & MD2 & 15 & 2 & 0 & 0,882 & 1,000 & 0,938 & 1,000 \\
+DBSCAN & MD-NL & 15 & 0 & 0 & 1,000 & 1,000 & 1,000 & 1,000 \\
+LOF & MD-NL & 15 & 0 & 0 & 1,000 & 1,000 & 1,000 & 1,000 \\
+Isolation Forest & MD-NL & 13 & 2 & 2 & 0,867 & 0,867 & 0,867 & 0,993 \\
+One-Class SVM & MD-NL & 10 & 5 & 5 & 0,667 & 0,667 & 0,667 & 0,867 \\
+Autoencoder (MLP) & MD-NL & 13 & 2 & 2 & 0,867 & 0,867 & 0,867 & 0,920 \\
+\bottomrule
+\end{tabular}
+\medskip
+
+\textit{Ghi chú}: TP = số ngoại lai phát hiện đúng; FP = số điểm bình thường bị gắn nhầm là ngoại lai; FN = số ngoại lai bị bỏ sót. Mỗi dataset có số ngoại lai thực: UD = 10, MD2 = 15, MD-NL = 15.
+\end{table}
