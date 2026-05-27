@@ -1,0 +1,21 @@
+\section*{Tổng Kết}
+\addcontentsline{toc}{section}{Tổng Kết}
+% =============================================================================
+
+\begin{center}
+\begin{tabular}{@{}lll@{}}
+\toprule
+ & \textbf{Giả định Tuyến tính} & \textbf{Giả định Chuẩn tắc} \\
+\midrule
+\textbf{Phát biểu} & $E[Y|X] = X\beta$ & $\varepsilon \sim \mathcal{N}(0, \sigma^2)$ \\
+\textbf{Vi phạm ảnh hưởng đến} & Ước lượng $\hat{\beta}$ chệch & $p$-value, CI không chính xác \\
+\textbf{Phát hiện} & Đồ thị phần dư theo giá trị khớp & Đồ thị xác suất chuẩn, biểu đồ tần suất \\
+\textbf{Kiểm định} & không áp dụng & Shapiro-Wilk, Jarque-Bera \\
+\textbf{Khắc phục} & Đa thức, biến đổi logarit & Sai số chuẩn vững, Bootstrap \\
+\textbf{Dataset ví dụ} & \texttt{mtcars}: hp $\to$ mpg & \texttt{Boston}: lstat+rm $\to$ medv \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\textbf{Lời khuyên tổng quát.} Không có mô hình nào thỏa mãn hoàn hảo tất cả giả định trong thực tế. Mục tiêu là đánh giá \textit{mức độ vi phạm} và \textit{hậu quả thực tế} của nó, không phải tìm kiếm sự hoàn hảo về mặt thống kê.
+

@@ -1,0 +1,119 @@
+---
+title: "R Lecture: Writing Pipeline-Structured Functions"
+author: "TS.To Duc Khanh"
+date: "17/05/2026"
+output: html_document
+---
+
+In R data processing, a "pipeline-friendly" function typically has these characteristics:
+
+- The first argument is the data (`.data`)
+- Uses the `%>%` pipe or the native `|>` pipe
+- Returns a `tibble`/`data.frame`
+- Supports non-standard evaluation (NSE) with `{{ }}` or `.data`
+- Compatible with `dplyr`, `purrr`, `tidyr`, `ggplot2`
+
+The example below illustrates how to write a standard `tidyverse` function that:
+
+- groups data,
+- computes descriptive statistics,
+- filters by a threshold,
+- and returns a tibble.
+
+```{r, message=FALSE, warning=FALSE}
+library(dplyr)
+
+summarise_by_group <- function(.data, group_var, target_var,
+                               threshold = NULL, ...) {
+  result <- .data |>
+    group_by({{ group_var }}) |>
+    summarise(
+      mean = mean({{ target_var }}, ...),
+      sd   = sd({{ target_var }}, ...),
+      n    = n(),
+      .groups = "drop"
+    )
+
+  if (!is.null(threshold)) {
+    result <- result |>
+      filter(mean >= threshold)
+  }
+
+  result
+}
+
+iris |> summarise_by_group(Species, Sepal.Length)
+
+iris |> summarise_by_group(Species, Sepal.Length, threshold = 6)
+```
+
+In the pipeline function above, the arguments are interpreted as follows:
+
+- `.data` is always the first argument, which allows the function to work well with pipes
+- `{{ }}` enables variable name look-up following the tidy evaluation standard
+
+---
+
+**Exercise 1:** Write a pipeline function that standardizes a variable:
+
+$$y = \frac{x - \bar{x}}{s},$$
+
+where $\bar{x}$ and $s$ are the sample mean and sample standard deviation of the variable to be standardized.
+
+```{r}
+standardize <- function(.data, target_var, ...) {
+  col_name <- paste0(deparse(substitute(target_var)), "_scaled")
+  x        <- pull(.data, {{ target_var }})
+  mean_x   <- mean(x, na.rm = TRUE)
+  sd_x     <- sd(x, na.rm = TRUE)
+  result <- .data |>
+    mutate(.scaled = ({{ target_var }} - mean_x) / sd_x) |>
+    as_tibble()
+  names(result)[names(result) == ".scaled"] <- col_name
+  result
+}
+
+iris |>
+  standardize(Sepal.Length) |>
+  select(Species, Sepal.Length, Sepal.Length_scaled) |>
+  head()
+```
+
+---
+
+**Exercise 2:** Write a pipeline function that identifies outliers using the Hampel filter.
+
+The Hampel filter detects outliers based on the **Median Absolute Deviation (MAD)**:
+
+$$\text{MAD} = \text{median}(|x_i - \text{median}(x)|)$$
+
+An observation $x_i$ is flagged as an outlier if:
+
+$$|x_i - \text{median}(x)| > k \times 1.4826 \times \text{MAD}$$
+
+where $k = 3$ by default (the constant $1.4826$ makes MAD consistent with the standard deviation under a normal distribution).
+
+```{r}
+detect_outliers_hampel <- function(.data, target_var, k = 3, ...) {
+  x     <- pull(.data, {{ target_var }})
+  med_x <- median(x, na.rm = TRUE)
+  mad_x <- mad(x, na.rm = TRUE)
+  .data |>
+    mutate(is_outlier = abs({{ target_var }} - med_x) > k * mad_x) |>
+    as_tibble()
+}
+
+iris |>
+  detect_outliers_hampel(Sepal.Length) |>
+  filter(is_outlier == TRUE)
+
+iris |>
+  detect_outliers_hampel(Sepal.Length) |>
+  count(Species, is_outlier)
+```
+
+**Note:** Some principles to keep in mind:
+
+- Do not use `attach()`
+- Use `.data[[ ]]` when a variable name is passed as a string
+- Prefer `tibble` over `data.frame`

@@ -1,0 +1,67 @@
+\subsection{Ví Dụ R: Dataset \texttt{Boston}}
+% -----------------------------------------------------------------------------
+
+\textbf{Bài toán:} Dự báo giá trị nhà trung vị (\texttt{medv}) từ \texttt{lstat} và \texttt{rm}.
+
+\subsubsection*{Bước 1--2: Fit mô hình và trực quan hóa}
+
+\begin{lstlisting}[style=Rstyle]
+library(MASS); data(Boston)
+
+model_boston <- lm(medv ~ lstat + rm, data = Boston)
+resid_boston <- residuals(model_boston)
+
+par(mfrow = c(1, 2))
+hist(resid_boston, breaks = 30, freq = FALSE,
+     col = "lightblue", border = "white",
+     main = "Histogram of Residuals", xlab = "Residuals")
+curve(dnorm(x, mean = 0, sd = sd(resid_boston)),
+      add = TRUE, col = "red", lwd = 2)
+
+qqnorm(resid_boston, main = "Normal Q-Q Plot")
+qqline(resid_boston, col = "red", lwd = 2)
+\end{lstlisting}
+
+\textbf{Quan sát.} Biểu đồ tần suất lệch phải, đồ thị xác suất chuẩn có đuôi phải nằm cao hơn đường thẳng: dấu hiệu phân phối lệch phải.
+
+\subsubsection*{Bước 3: Kiểm định hình thức}
+
+\begin{lstlisting}[style=Rstyle]
+shapiro.test(resid_boston)
+
+library(tseries)
+jarque.bera.test(resid_boston)
+\end{lstlisting}
+
+\begin{lstlisting}[style=output]
+Shapiro-Wilk: W = 0.9266, p-value = 2.7e-17   <- bac bo H0
+Jarque-Bera:  X-squared = 256.8, p-value < 2.2e-16  <- bac bo H0
+\end{lstlisting}
+
+Cả hai kiểm định đều bác bỏ chuẩn tắc với $n = 506$: ví dụ điển hình về ``kiểm định quá nhạy với $n$ lớn''. Cần xem xét thêm mức độ nghiêm trọng thực tế.
+
+\subsubsection*{Bước 4--5: Robust SE và Bootstrap CI}
+
+\begin{lstlisting}[style=Rstyle]
+library(sandwich); library(lmtest); library(boot)
+
+# Robust SE
+coeftest(model_boston, vcov = vcovHC(model_boston, type = "HC3"))
+
+# Bootstrap CI
+boot_fn <- function(data, indices) {
+  coef(lm(medv ~ lstat + rm, data = data[indices, ]))
+}
+set.seed(123)
+boot_out <- boot(Boston, boot_fn, R = 2000)
+boot.ci(boot_out, type = c("perc", "bca"), index = 2)  # lstat
+boot.ci(boot_out, type = c("perc", "bca"), index = 3)  # rm
+
+# Tom tat 3 phuong phap cho lstat
+cat("OLS    :", round(confint(model_boston)["lstat", ], 4), "\n")
+cat("Robust :", round(coefci(model_boston,
+                    vcov = vcovHC(model_boston))["lstat", ], 4), "\n")
+\end{lstlisting}
+
+\textbf{Kết luận phần 2.} Dataset \texttt{Boston} vi phạm giả định chuẩn tắc ở mức đáng chú ý. Với $n = 506$, Robust SE là lựa chọn hợp lý. Bootstrap CI cho kết quả tương tự và cung cấp xác nhận độc lập.
+

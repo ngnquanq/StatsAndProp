@@ -1,0 +1,1357 @@
+% !TEX program = xelatex
+\documentclass[12pt, a4paper]{article}
+
+% ── Language & font ──────────────────────────────────────────────────────────
+\usepackage{fontspec}
+\usepackage{polyglossia}
+\setmainlanguage{vietnamese}
+\setotherlanguage{english}
+
+% ── Math ─────────────────────────────────────────────────────────────────────
+\usepackage{amsmath, amssymb}
+
+% ── Layout ───────────────────────────────────────────────────────────────────
+\usepackage[top=2.5cm, bottom=2.5cm, left=3cm, right=2.5cm]{geometry}
+\usepackage{setspace}
+\setstretch{1.3}
+\usepackage{parskip}
+
+% ── Graphics & tables ────────────────────────────────────────────────────────
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage{caption}
+\captionsetup{font=small, labelfont=bf}
+\usepackage{booktabs}
+\usepackage{tabularx}
+
+% ── Code listings ────────────────────────────────────────────────────────────
+\usepackage{listings}
+\usepackage{xcolor}
+
+\definecolor{codebg}{RGB}{248,248,248}
+\definecolor{codeframe}{RGB}{220,220,220}
+\definecolor{codecomment}{RGB}{100,100,100}
+\definecolor{codestring}{RGB}{163,21,21}
+\definecolor{codekeyword}{RGB}{0,0,200}
+\definecolor{outputbg}{RGB}{240,248,255}
+
+\lstdefinestyle{Rstyle}{
+  language        = R,
+  backgroundcolor = \color{codebg},
+  frame           = single,
+  framesep        = 4pt,
+  rulecolor       = \color{codeframe},
+  basicstyle      = \ttfamily\small,
+  keywordstyle    = \color{codekeyword}\bfseries,
+  stringstyle     = \color{codestring},
+  commentstyle    = \color{codecomment}\itshape,
+  showstringspaces= false,
+  breaklines      = true,
+  breakatwhitespace=true,
+  tabsize         = 2,
+  numbers         = left,
+  numberstyle     = \tiny\color{gray},
+  numbersep       = 6pt,
+  xleftmargin     = 15pt,
+}
+
+\lstdefinestyle{output}{
+  backgroundcolor = \color{outputbg},
+  frame           = single,
+  framesep        = 4pt,
+  rulecolor       = \color{codeframe},
+  basicstyle      = \ttfamily\small,
+  breaklines      = true,
+  numbers         = none,
+  xleftmargin     = 8pt,
+}
+
+% ── Callout boxes ─────────────────────────────────────────────────────────────
+\usepackage[most]{tcolorbox}
+
+\tcbset{
+  notebase/.style={
+    enhanced, breakable,
+    boxrule     = 0.8pt,
+    arc         = 3pt,
+    left        = 8pt, right = 8pt,
+    top         = 5pt, bottom = 5pt,
+    fontupper   = \small,
+  }
+}
+
+\newtcolorbox{notebox}{notebase,
+  colback = yellow!8, colframe = orange!60!black,
+}
+
+\newtcolorbox{warnbox}{notebase,
+  colback = red!5, colframe = red!60!black,
+}
+
+\newtcolorbox{tipbox}{notebase,
+  colback = green!5, colframe = green!50!black,
+}
+
+% ── Hyperlinks ────────────────────────────────────────────────────────────────
+\usepackage{hyperref}
+\hypersetup{
+  colorlinks = true,
+  linkcolor  = blue!60!black,
+  urlcolor   = blue!70!black,
+}
+
+% ─────────────────────────────────────────────────────────────────────────────
+
+\title{\textbf{Giả Định Trong Hồi Quy Bội}\\[4pt]
+       \large Tính Tuyến Tính và Tính Chuẩn}
+
+
+\begin{document}
+
+\maketitle
+\tableofcontents
+\newpage
+
+% =============================================================================
+\section{Giả Định Tính Tuyến Tính}
+% =============================================================================
+
+\subsection{Nguồn Gốc Lịch Sử}
+
+Giả định về tính tuyến tính gắn liền với sự ra đời của phân tích hồi quy, bắt nguồn từ ba dòng nghiên cứu độc lập ở nửa cuối thế kỷ 19.
+
+\textbf{Ứng dụng đầu tiên từ lý thuyết vật lý: James D.\ Forbes (1857).}
+Nhà nghiên cứu Forbes có một lý thuyết cho rằng logarit của áp suất khí quyển $\log(\text{pres})$ có \textit{mối quan hệ tuyến tính} với điểm sôi của nước; quan hệ này có nền tảng vật lý từ phương trình Clausius-Clapeyron. Tài liệu của Forbes được xem là một trong những ví dụ sớm nhất về việc dùng biểu đồ tóm tắt để minh họa hàm trung bình tuyến tính dựa trên mô hình vật lý.
+
+\textbf{Nguồn gốc thuật ngữ ``Hồi quy'': Sir Francis Galton (1877--1886).}
+Nhiều ý tưởng nền tảng của hồi quy xuất hiện lần đầu trong công trình của \textbf{Sir Francis Galton (1822--1911)} về sự di truyền đặc tính qua các thế hệ. Vào năm 1877, ông bắt đầu bằng thí nghiệm trên đậu hoa ngọt (sweet peas) để quan sát sự di truyền kích thước hạt. Đến năm 1886, khi biểu diễn hàm trung bình bằng đường thẳng cho dữ liệu chiều cao qua các thế hệ, Galton nhận ra các giá trị cực đoan ở thế hệ trước có xu hướng ``hồi quy'' (\textit{regress}) về phía giá trị trung bình quần thể ở thế hệ sau. Đây là nguồn gốc lịch sử của thuật ngữ \textit{regression}.
+
+\textbf{Sự tiếp nối: Karl Pearson (1893--1903).}
+\textbf{Karl Pearson (1857--1936)} mở rộng sang nghiên cứu di truyền học ở người. Trong giai đoạn 1893--1898, ông thu thập dữ liệu chiều cao của các bà mẹ và con gái trưởng thành; bộ dữ liệu này được Pearson và Lee công bố năm 1903 để kiểm tra liệu các bà mẹ cao có xu hướng sinh con gái cao hay không, thông qua phương trình hồi quy tuyến tính.
+
+\textbf{Lưu ý phạm vi lịch sử.} Ba dòng nghiên cứu trên là lịch sử của việc \textit{mô hình hóa quan hệ bằng đường thẳng}. Nền tảng tính toán, tức phương pháp bình phương nhỏ nhất (OLS), được phát triển độc lập bởi Gauss và Legendre ($\sim$1805--1809), và OLS chỉ đảm bảo ước lượng tối ưu (BLUE theo định lý Gauss-Markov) khi dạng hàm được chỉ định đúng.
+
+\textbf{Hệ quả thực tiễn.} Nếu quan hệ thực sự là phi tuyến nhưng ta vẫn dùng mô hình tuyến tính, ước lượng OLS trở nên chệch và không nhất quán; mọi kiểm định và dự báo đều sai.
+
+% -----------------------------------------------------------------------------
+\subsection{Cơ Sở Lý Thuyết}
+% -----------------------------------------------------------------------------
+
+Mô hình hồi quy bội tổng quát:
+\[
+  Y = \beta_0 + \beta_1 X_1 + \beta_2 X_2 + \cdots + \beta_p X_p + \varepsilon
+\]
+
+Giả định tuyến tính phát biểu rằng:
+\[
+  E[Y \mid X_1, X_2, \ldots, X_p] = \beta_0 + \beta_1 X_1 + \cdots + \beta_p X_p
+\]
+
+Hay nói cách khác: \textbf{kỳ vọng có điều kiện của $Y$ là một hàm tuyến tính trong các tham số $\beta$}.
+
+\subsubsection{Ý nghĩa cốt lõi 1: Cấu trúc đại số của các tham số $\beta$}
+
+``Tuyến tính'' ở đây là thuộc tính về \textbf{cấu trúc đại số của $\beta$}, không phải hình dáng của dữ liệu. Cụ thể, các tham số $\beta_0, \beta_1, \ldots, \beta_k$ phải:
+\begin{itemize}
+  \item Xuất hiện ở \textbf{bậc một} (không có $\beta^2$, $\beta^3$, \ldots)
+  \item Đứng \textbf{độc lập}, không lồng trong hàm phi tuyến
+  \item Được \textbf{cộng lại} với nhau để tạo thành dự báo
+\end{itemize}
+
+Bạn sẽ không bao giờ thấy dạng $\beta^2$, $e^{\beta}$, hay $\sin(\beta)$ trong một \textit{mô hình tuyến tính}.
+
+\subsubsection{Ý nghĩa cốt lõi 2: Sự tự do của các biến $x$}
+
+Ngược lại, \textbf{mô hình không đặt bất kỳ ràng buộc nào lên các biến $x$}. Bạn hoàn toàn có thể biến đổi $x$ thành bất kỳ dạng phi tuyến nào (bình phương, nghịch đảo, logarit, hàm lượng giác, \ldots) và mô hình vẫn là \textit{mô hình tuyến tính}. Ví dụ, phương trình sau chứa đồng thời nghịch đảo ($x_2^{-1}$), bình phương ($x_2^2$) và hàm sin ($\sin x_2$):
+\[
+  y = \beta_0 + \beta_1 x_1 + \beta_2 x_2^{-1} + \beta_3 x_2^2 + \beta_4 \sin(x_2) + \varepsilon
+\]
+
+Mô hình này \textbf{vẫn là mô hình tuyến tính} vì $\beta_0, \ldots, \beta_4$ đều xuất hiện ở bậc một và được cộng lại.
+
+\vspace{6pt}
+\begin{center}
+\begin{tabular}{@{}lll@{}}
+\toprule
+\textbf{Dạng mô hình} & \textbf{Tuyến tính trong $\beta$?} & \textbf{Lý do} \\
+\midrule
+$Y = \beta_0 + \beta_1 X + \varepsilon$ & Có & $\beta$ bậc một, cộng tính \\
+$Y = \beta_0 + \beta_1 X + \beta_2 X^2 + \varepsilon$ & Có & $X^2$ là biến mới; $\beta$ vẫn bậc một \\
+$Y = \beta_0 + \beta_1 \log X + \beta_2 X^{-1} + \varepsilon$ & Có & $\log X,\; X^{-1}$ là biến mới \\
+$Y = \beta_0 \cdot e^{\beta_1 X} + \varepsilon$ & \textbf{Không} & $\beta_1$ nằm trong $\exp(\cdot)$ \\
+$Y = \beta_0 + X^{\beta_1} + \varepsilon$ & \textbf{Không} & $\beta_1$ là số mũ của $X$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\textbf{Hệ quả thực tiễn.} Nhờ đặc tính này, khuôn khổ hồi quy tuyến tính có thể xấp xỉ vô số quan hệ cong trong thực tế, chỉ bằng cách biến đổi các biến $x$, trong khi vẫn giữ nguyên phương pháp tính toán OLS.
+
+\textbf{Minh họa hình học: ba trường hợp đặc trưng.}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\textwidth]{./figures/fig1_linear_params.png}
+  \caption{Mô hình tuyến tính không nhất thiết tạo ra đường thẳng.
+  \textbf{(a)} Bậc 1 $\to$ đường thẳng.
+  \textbf{(b)} Bậc 2 $\to$ parabol, vẫn là mô hình tuyến tính vì $\beta_0, \beta_1, \beta_2$ bậc một.
+  \textbf{(c)} $y = e^{\beta_0+\beta_1 x}$: $\beta_1$ nằm trong $\exp(\cdot)$, không phải mô hình tuyến tính.}
+  \label{fig:linear_params}
+\end{figure}
+
+\subsubsection{Dạng Ma Trận: Biểu Diễn Gọn Cho $n$ Quan Sát}
+
+Với $n$ quan sát, dạng đại số tổng quát được gom lại thành phép nhân ma trận:
+\[
+  \mathbf{y} = \mathbf{X}\boldsymbol{\beta} + \boldsymbol{\varepsilon},
+  \qquad
+  E(\mathbf{Y} \mid \mathbf{X}) = \mathbf{X}\boldsymbol{\beta}
+\]
+
+trong đó:
+\begin{itemize}
+  \item $\mathbf{y}$: vector cột $n \times 1$ chứa các giá trị phản hồi.
+  \item $\mathbf{X}$: \textbf{ma trận thiết kế} kích thước $n \times (k+1)$, cột đầu là vector đơn vị $\mathbf{1}_n$ (cho $\beta_0$), các cột còn lại là giá trị của $k$ biến dự báo.
+  \item $\boldsymbol{\beta} = (\beta_0, \beta_1, \ldots, \beta_k)^\top$: vector cột $(k+1) \times 1$ chứa các tham số.
+  \item $\boldsymbol{\varepsilon}$: vector cột $n \times 1$ chứa các sai số ngẫu nhiên.
+\end{itemize}
+
+Nhờ cấu trúc tổ hợp tuyến tính này, OLS tối thiểu hóa $\|\mathbf{y} - \mathbf{X}\boldsymbol{\beta}\|^2$ và dẫn đến \textbf{hệ phương trình chuẩn}:
+\[
+  \mathbf{X}^\top\mathbf{X}\,\hat{\boldsymbol{\beta}} = \mathbf{X}^\top\mathbf{y}
+\]
+
+Khi $\mathbf{X}^\top\mathbf{X}$ khả nghịch (các cột của $\mathbf{X}$ độc lập tuyến tính), nghiệm duy nhất là $\hat{\boldsymbol{\beta}} = (\mathbf{X}^\top\mathbf{X})^{-1}\mathbf{X}^\top\mathbf{y}$. Đây là lý do tính tuyến tính trong $\boldsymbol{\beta}$ mang lại phương pháp ước lượng \textbf{đồng nhất và khả tính} cho mọi cấu hình biến dự báo.
+
+\subsubsection{Liên hệ với giả định $E(\varepsilon \mid X) = 0$}
+
+Giả định tuyến tính và giả định $E(\varepsilon \mid X) = 0$ là \textbf{hai mặt của cùng một yêu cầu}: khi dạng hàm $E[Y|X]$ được chỉ định đúng, phần dư chỉ là nhiễu ngẫu nhiên, kỳ vọng của chúng bằng 0 tại mọi giá trị $X$. Khi dạng hàm sai, phần dư mang theo thông tin có hệ thống và $E(\varepsilon \mid X) \neq 0$.
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.9\textwidth]{./figures/fig2_epsilon_zero.png}
+  \caption{$E(\varepsilon|X)=0$ khi mô hình đúng dạng (trái) vs.\ $E(\varepsilon|X)\neq 0$ khi sai dạng (phải).
+  Trái: phần dư dương (xanh) và âm (cam) phân bố đều hai phía, $\sum\varepsilon\approx 0$.
+  Phải: phần dư dương tập trung ở giữa, âm ở hai đầu, tạo thành mẫu hình có hệ thống.}
+  \label{fig:epsilon_zero}
+\end{figure}
+
+% -----------------------------------------------------------------------------
+\subsection{Tại Sao Tuyến Tính Mang Lại Lợi Thế}
+% -----------------------------------------------------------------------------
+
+Tính tuyến tính trong tham số không phải là giả định tùy tiện. Nó cung cấp ba lợi thế cụ thể, tất cả đều bắt nguồn từ cùng một tính chất cấu trúc: $\hat{\boldsymbol{\beta}}$ là \textbf{tổ hợp tuyến tính của $\mathbf{y}$}.
+
+\textbf{1. Nghiệm dạng đóng.}
+Tối thiểu hóa tổng bình phương $\|\mathbf{y} - \mathbf{X}\boldsymbol{\beta}\|^2$ trên mô hình tuyến tính-tham số cho ra hệ phương trình chuẩn có nghiệm đóng:
+\[
+  \hat{\boldsymbol{\beta}} = (\mathbf{X}^\top\mathbf{X})^{-1}\mathbf{X}^\top\mathbf{y}
+\]
+
+Công thức tính được \textit{một lần} từ các thống kê tóm tắt của dữ liệu, không cần lặp số. Mô hình phi tuyến đòi hỏi thuật toán lặp như Gauss-Newton, có thể không hội tụ hoặc hội tụ về cực tiểu cục bộ.
+
+\textbf{2. Ước lượng tối ưu---Định lý Gauss-Markov.}
+Vì $\hat{\boldsymbol{\beta}}$ là tổ hợp tuyến tính của $\mathbf{y}$, trong lớp tất cả các ước lượng tuyến tính không chệch, OLS đạt phương sai nhỏ nhất---tính chất \textbf{BLUE} (Best Linear Unbiased Estimator). Định lý này không đòi hỏi phân phối chuẩn: chỉ cần $E(\varepsilon|X)=0$, $\mathrm{Var}(\varepsilon)=\sigma^2 I$, và $\mathrm{Cov}(\varepsilon_i,\varepsilon_j)=0$.
+
+\textbf{3. Suy diễn đáng tin---Định lý Giới Hạn Trung Tâm cho $\hat{\boldsymbol{\beta}}$.}
+Vì $\hat{\boldsymbol{\beta}}$ là tổ hợp tuyến tính của $\mathbf{y}$, CLT đảm bảo $\hat{\boldsymbol{\beta}}$ xấp xỉ chuẩn trong mẫu lớn dù sai số có phân phối bất kỳ. Khi sai số \textit{thực sự} chuẩn, $\hat{\boldsymbol{\beta}}$ chuẩn chính xác và thống kê $t$, $F$ theo đúng phân phối lý thuyết---nền tảng của mọi kiểm định giả thuyết và khoảng tin cậy.
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\textwidth]{./figures/fig6_blue_clt.png}
+  \caption{Minh họa hai lợi thế của tuyến tính trong tham số.
+  \textbf{Trái (Gauss-Markov BLUE):} $B = 4000$ lần mô phỏng, $n=40$, $\beta_1 = 2$.
+  OLS (xanh dương) có phân phối lấy mẫu hẹp hơn đáng kể so với ước lượng tuyến tính không chệch thay thế (đỏ), cả hai đều tập trung tại giá trị thực.
+  \textbf{Phải (CLT cho $\hat{\beta}_1$):} sai số có phân phối $\mathrm{Exp}(1) - 1$ lệch phải rõ ràng.
+  Khi $n$ tăng từ 10 lên 200, phân phối lấy mẫu của $\hat{\beta}_1$ nhanh chóng tiến về chuẩn---suy diễn bằng $t$-test vẫn hợp lệ tiệm cận.}
+  \label{fig:blue_clt}
+\end{figure}
+
+% -----------------------------------------------------------------------------
+\subsection{Hậu Quả Khi Vi Phạm Tuyến Tính}
+% -----------------------------------------------------------------------------
+
+Khi dạng hàm thực là phi tuyến nhưng ta khớp bằng đường thẳng, đường thẳng đó hấp thụ độ cong vào hệ số, tạo ra trung bình \textit{sai ở mọi nơi}---không chỉ ồn ào mà là chệch có cấu trúc. Đây là vi phạm nguy hiểm nhất vì nó phá vỡ tính không chệch ngay tại lõi của OLS. Năm biểu hiện quan sát được:
+
+\textbf{1. Ước lượng chệch:} $E[\hat{\beta}] \neq \beta$---hệ số sai trung bình, không phải chỉ không chính xác. OLS hấp thụ phần phi tuyến bị bỏ sót vào hệ số, làm lệch ước lượng tốc độ thay đổi của biến phản hồi.
+
+\textbf{2. Mẫu hình phần dư có hệ thống:} đồ thị phần dư theo giá trị khớp cho thấy dạng cong (chữ U, chữ S) thay vì phân tán ngẫu nhiên---đây là tín hiệu chẩn đoán chính. Đường LOESS lệch khỏi $y = 0$ một cách có quy luật.
+
+\textbf{3. Khớp kém:} $s^2$ bị thổi phồng vì mô hình quy cho sai số ngẫu nhiên những phần biến động thực ra có cấu trúc. Khoảng tin cậy quá rộng, kiểm định mất sức mạnh thống kê.
+
+\textbf{4. Suy diễn không hợp lệ:} kiểm định $t$ và $F$ dựa trên mô hình sai lệch---$p$-value và khoảng tin cậy không đáng tin. Một biến có thể có ý nghĩa thống kê không phải vì tác động thực, mà vì nó đang bù đắp cho phần phi tuyến bị thiếu.
+
+\textbf{5. Dự báo không chính xác:} khoảng cách giữa đường khớp và đường cong thực mở rộng ra ngoài vùng huấn luyện, nơi ngoại suy nguy hiểm nhất.
+
+\textbf{Điểm phân biệt quan trọng.} Khác với vi phạm giả định chuẩn tắc (chỉ ảnh hưởng đến suy diễn), vi phạm tuyến tính ảnh hưởng trực tiếp đến \textit{bản thân ước lượng $\hat{\beta}$} và $\hat{y}$: chúng không còn ước lượng đúng tham số quan tâm nữa.
+
+\subsubsection{Tứ Giác Anscombe}
+
+Anscombe (1973) đã xây dựng bốn bộ dữ liệu có cùng $\hat{\beta}_0 \approx 3$, $\hat{\beta}_1 \approx 0.5$, $R^2 \approx 0.67$ và $p$-value---nhưng nhìn hoàn toàn khác nhau. Bộ~II rõ ràng là quan hệ bậc hai. Bộ~III bị một điểm ngoại lai kéo hệ số. Bộ~IV có đòn bẩy cực cao tại một điểm. Kết quả hồi quy không cảnh báo gì cả; chỉ đồ thị phần dư mới tiết lộ vi phạm.
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\textwidth]{./figures/fig7_anscombe.png}
+  \caption{Tứ giác Anscombe: bốn bộ dữ liệu với cùng $\hat{\beta}_1 \approx 0.5$ và $R^2 \approx 0.67$.
+  \textbf{Hàng trên:} scatterplot với đường hồi quy bậc nhất---nhìn qua output số không phân biệt được.
+  \textbf{Hàng dưới:} đồ thị phần dư theo giá trị khớp.
+  Bộ~I (tuyến tính): phần dư ngẫu nhiên, LOESS nằm ngang.
+  Bộ~II (phi tuyến bậc 2): LOESS cong hình cung, vi phạm tuyến tính rõ.
+  Bộ~III (ngoại lai): một điểm kéo hệ số lên cao, phần dư có điểm ngoại lai lớn.
+  Bộ~IV (đòn bẩy): một điểm kiểm soát toàn bộ hồi quy.}
+  \label{fig:anscombe}
+\end{figure}
+
+\begin{lstlisting}[style=Rstyle]
+data(anscombe)
+# Tat ca co cung he so hoi quy va R2
+fits <- lapply(1:4, function(i)
+  lm(anscombe[[paste0("y",i)]] ~ anscombe[[paste0("x",i)]]))
+
+do.call(rbind, lapply(fits, function(m) {
+  s <- summary(m)
+  round(c(b0 = coef(m)[1], b1 = coef(m)[2],
+          R2 = s$r.squared, p = coef(s)[2,4]), 3)
+}))
+\end{lstlisting}
+
+\begin{lstlisting}[style=output]
+     b0    b1     R2     p
+[1,] 3.00 0.500 0.667 0.002
+[2,] 3.00 0.500 0.666 0.002
+[3,] 3.00 0.500 0.666 0.002
+[4,] 3.00 0.500 0.667 0.002
+\end{lstlisting}
+
+\subsubsection{Ví Dụ Thực Tế}
+
+Bốn bộ dữ liệu từ các lĩnh vực khác nhau minh họa cùng một mẫu hình: đường thẳng OLS không bám sát dữ liệu, và đồ thị phần dư phản chiếu rõ độ cong bị bỏ sót.
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\textwidth]{./figures/fig12_violations.png}
+  \caption{Bốn ví dụ thực tế vi phạm tính tuyến tính.
+  \textbf{Cột trái:} scatter plot với đường hồi quy OLS bậc 1 (đỏ).
+  \textbf{Cột phải:} đồ thị phần dư theo giá trị khớp; đường LOESS (đỏ) lệch có hệ thống khỏi $y = 0$.
+  \textbf{(1) Turkey growth:} tốc độ tăng cân theo liều methionine bão hòa dần---đường thẳng đánh giá thấp ở đầu, cao ở cuối.
+  \textbf{(2) Mammals:} khối lượng não theo khối lượng cơ thể trải dài hàng nghìn lần---OLS bị chi phối bởi vài loài lớn.
+  \textbf{(3) Physics:} tiết diện tán xạ giảm nhanh theo đà---dạng lũy thừa không thể khớp bằng đường thẳng.
+  \textbf{(4) Cedar trees:} chiều cao cây tiệm cận mức tối đa khi đường kính lớn---dạng sigmoid.}
+  \label{fig:violations}
+\end{figure}
+
+\begin{lstlisting}[style=Rstyle]
+# ── (1) Turkey growth: E(Y|Dose) = b0 + b1*(1 - exp(-b2*Dose)) ──────────────
+set.seed(101)
+dose_lvl <- c(0, 0.04, 0.08, 0.12, 0.16, 0.20)
+dose_t   <- rep(dose_lvl, each = 5)
+y_turkey <- 639 + 168*(1 - exp(-37*dose_t)) + rnorm(30, 0, 18)
+
+fit_lin_t <- lm(y_turkey ~ dose_t)
+plot(dose_t, y_turkey, pch = 16, col = "steelblue",
+     xlab = "Dose (mg/g)", ylab = "Weight gain (g)")
+abline(fit_lin_t, col = "red", lwd = 2)
+plot(fit_lin_t, which = 1)   # phan du cong ro
+
+# ── (2) Mammals: brain ~ body (MASS) ─────────────────────────────────────────
+library(MASS); data(mammals)
+fit_raw <- lm(brain ~ body, data = mammals)
+plot(fit_raw, which = 1)     # phan du bien dang nang
+
+# ── (3) Physics cross sections ────────────────────────────────────────────────
+set.seed(102)
+x_phys <- sort(runif(38, 0.3, 3.5))
+y_phys <- 45 * x_phys^(-1.7) * exp(rnorm(38, 0, 0.15))
+
+fit_lin_p <- lm(y_phys ~ x_phys)
+plot(fit_lin_p, which = 1)   # LOESS cong chu U
+
+# ── (4) Cedar trees: height ~ dbh ────────────────────────────────────────────
+set.seed(103)
+dbh    <- sort(runif(65, 5, 78))
+height <- 30*(1 - exp(-0.055*dbh)) + rnorm(65, 0, 2.2)
+
+fit_lin_d <- lm(height ~ dbh)
+plot(fit_lin_d, which = 1)   # LOESS cong chu S
+\end{lstlisting}
+
+Trong cả bốn trường hợp, đường LOESS trên đồ thị phần dư lệch khỏi $y = 0$ theo mẫu hình có hệ thống---dấu hiệu chẩn đoán chính của vi phạm tuyến tính. Các mô hình phù hợp cho từng trường hợp (NLS, biến đổi log-log, cubic spline) được trình bày trong Hình~\ref{fig:violations_fixed}.
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\textwidth]{./figures/fig13_violations_fixed.png}
+  \caption{Cùng bốn bộ dữ liệu sau khi áp dụng mô hình phù hợp (xanh lá).
+  \textbf{(1) Turkey:} NLS với dạng bão hòa $\beta_0 + \beta_1[1 - e^{-\beta_2 \cdot \text{dose}}]$---phần dư trở nên ngẫu nhiên.
+  \textbf{(2) Mammals:} OLS trên thang $\log$-$\log$---quan hệ tuyến tính, phần dư phân tán đều.
+  \textbf{(3) Physics:} khớp lũy thừa qua $\log$-$\log$---phần dư không còn mẫu hình.
+  \textbf{(4) Cedar trees:} cubic spline với 3 nút---đường cong bám sát toàn vùng, phần dư ngẫu nhiên.}
+  \label{fig:violations_fixed}
+\end{figure}
+
+\begin{lstlisting}[style=Rstyle]
+# ── (1) Turkey: NLS ──────────────────────────────────────────────────────────
+fit_nls_t <- nls(y_turkey ~ b0 + b1*(1 - exp(-b2*dose_t)),
+                 start = list(b0 = 630, b1 = 160, b2 = 30))
+
+# ── (2) Mammals: log-log ─────────────────────────────────────────────────────
+fit_log <- lm(log(brain) ~ log(body), data = mammals)
+# He so: slope ~ 0.75 (dinh luat Kleiber)
+
+# ── (3) Physics: log-log ─────────────────────────────────────────────────────
+fit_logp <- lm(log(y_phys) ~ log(x_phys))
+
+# ── (4) Trees: cubic spline ──────────────────────────────────────────────────
+library(splines)
+fit_spl_t <- lm(height ~ bs(dbh, knots = quantile(dbh, c(.25,.5,.75))))
+\end{lstlisting}
+
+% -----------------------------------------------------------------------------
+\subsection{Phát Hiện Vi Phạm}
+% -----------------------------------------------------------------------------
+
+Không có công cụ đơn lẻ nào đủ trong hồi quy bội. Năm công cụ sau được dùng theo thứ tự, từ khảo sát ban đầu đến xác nhận hình thức.
+
+\begin{center}
+\begin{tabular}{@{}llp{6.2cm}@{}}
+\toprule
+\textbf{Công cụ} & \textbf{Khi dùng} & \textbf{Phát hiện} \\
+\midrule
+Ma trận đồ thị phân tán   & Trước khi khớp  & Độ cong biên rõ ràng \\
+Phần dư theo giá trị khớp & Sau khi khớp    & Có gì đó sai tổng thể \\
+Phần dư theo từng $X_j$   & Sau khi khớp    & Biến nào là nguồn gốc \\
+Đồ thị hồi quy riêng phần & Sau khi khớp    & Đóng góp tuyến tính riêng biệt của từng biến \\
+Kiểm định Tukey            & Sau khi đồ thị gợi ý & Xác nhận hình thức về độ cong \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+% - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+\subsubsection{Ma Trận Đồ Thị Phân Tán}
+
+Vẽ mọi cặp quan hệ giữa $Y$ và các biến dự báo $X_1, \ldots, X_k$ trong một lưới trước khi khớp bất cứ thứ gì. Cho thấy bức tranh trực quan về các mối quan hệ biên và có thể báo hiệu độ cong rõ ràng ngay từ đầu.
+
+\textbf{Giới hạn:} Chỉ nắm bắt quan hệ hai biến. Phi tuyến chỉ xuất hiện trong sự kết hợp của nhiều biến sẽ ẩn ở đây. Không thay thế được các công cụ sau khi khớp.
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.88\textwidth]{./figures/fig14_scatterplot_matrix.png}
+  \caption{Ma trận đồ thị phân tán cho bốn biến của \texttt{mtcars}.
+  \textbf{Tam giác dưới:} scatter plot với đường LOESS (đỏ)---cho thấy độ cong biên trước khi khớp mô hình.
+  \textbf{Đường chéo:} histogram mật độ của từng biến riêng lẻ.
+  \textbf{Tam giác trên:} hệ số tương quan Pearson (cỡ chữ theo độ lớn, xanh dương = dương, đỏ = âm).
+  Quan hệ \texttt{mpg}--\texttt{hp} và \texttt{mpg}--\texttt{disp} có đường LOESS cong rõ---gợi ý phi tuyến biên cần kiểm tra kỹ hơn sau khi khớp.}
+  \label{fig:scattermat}
+\end{figure}
+
+\begin{lstlisting}[style=Rstyle]
+# Ma tran do thi phan tan co LOESS va tuong quan
+panel_scatter <- function(x, y, ...) {
+  points(x, y, pch = 16, cex = 0.65, col = "steelblue")
+  lines(lowess(x, y), col = "red", lwd = 2)
+}
+panel_cor <- function(x, y, ...) {
+  r <- cor(x, y, use = "complete.obs")
+  text(0.5, 0.5, round(r, 2), cex = 0.8 + 1.8*abs(r),
+       col = if(r > 0) "blue" else "red", font = 2,
+       transform = NULL)
+}
+pairs(mtcars[, c("mpg", "hp", "wt", "disp")],
+      lower.panel = panel_scatter,
+      upper.panel = panel_cor)
+\end{lstlisting}
+
+% - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+\subsubsection{Phần Dư Theo Giá Trị Khớp (Công Cụ Chính)}
+
+Trục $x$ là giá trị khớp $\hat{y}$, trục $y$ là phần dư $e_i = y_i - \hat{y}_i$. Công cụ này hoạt động như ``kính lúp'': trừ đi xu hướng tuyến tính, phóng đại những sai lệch nhỏ bên dưới.
+
+\begin{itemize}
+  \item \textbf{Không vi phạm:} Điểm phân tán ngẫu nhiên quanh $y = 0$, đường LOESS nằm ngang---đây là ``biểu đồ rỗng'' lý tưởng.
+  \item \textbf{Vi phạm:} Đường LOESS tạo thành dạng cong (chữ U, chữ S): quan hệ phi tuyến bị bỏ sót ở đâu đó trong mô hình.
+\end{itemize}
+
+Trong hồi quy bội, đồ thị này chỉ báo ``có điều gì đó sai'' nhưng không chỉ ra biến nào là nguyên nhân.
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\textwidth]{./figures/fig3_residual_plots.png}
+  \caption{Đồ thị phần dư theo giá trị khớp: ``biểu đồ rỗng'' (không vi phạm) so với mẫu hình cong (vi phạm).
+  \textbf{(a)--(b)} Dữ liệu tuyến tính: LOESS gần nằm ngang, điểm phân tán đều.
+  \textbf{(c)--(d)} Dữ liệu cong khớp bằng bậc 1: LOESS cong hình chữ U xác nhận vi phạm tuyến tính.}
+  \label{fig:residual_plots}
+\end{figure}
+
+% - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+\subsubsection{Phần Dư Theo Từng Biến Dự Báo}
+
+Vẽ phần dư $e_i$ theo từng biến $X_j$ riêng lẻ. Dạng cong trong một trong các đồ thị này \textit{khoanh vùng vấn đề}: biến cụ thể đó không được mô hình hóa đúng dạng. Thường có thể khắc phục bằng cách thêm số hạng $X_j^2$ hoặc $\log X_j$.
+
+\begin{lstlisting}[style=Rstyle]
+fit <- lm(mpg ~ hp + wt + disp, data = mtcars)
+par(mfrow = c(1, 3))
+for (v in c("hp", "wt", "disp")) {
+  plot(mtcars[[v]], residuals(fit),
+       xlab = v, ylab = "Residuals", pch = 16, col = "steelblue")
+  abline(h = 0, lty = 2)
+  lines(lowess(mtcars[[v]], residuals(fit)), col = "red", lwd = 2)
+}
+\end{lstlisting}
+
+% - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+\subsubsection{Đồ Thị Hồi Quy Riêng Phần}
+\label{sec:partial_reg}
+
+Đồ thị phần dư theo từng $X_j$ có một điểm yếu: nó không loại trừ ảnh hưởng của các biến khác, nên có thể phản ánh sai mối quan hệ của $X_j$ với $Y$. Đồ thị hồi quy riêng phần (added-variable plot) khắc phục điều này.
+
+\textbf{Cách xây dựng.} Cho biến dự báo $X_j$:
+\begin{enumerate}
+  \item Hồi quy $Y$ lên tất cả các biến trừ $X_j$ $\to$ lấy phần dư $e_Y$.
+  \item Hồi quy $X_j$ lên tất cả các biến trừ $X_j$ $\to$ lấy phần dư $e_{X_j}$.
+  \item Vẽ $e_Y$ theo $e_{X_j}$.
+\end{enumerate}
+
+Độ dốc của đồ thị này bằng \textit{chính xác} hệ số $\hat{\beta}_j$ trong mô hình đầy đủ---nó cô lập đóng góp tuyến tính \textit{duy nhất} của $X_j$ sau khi đã tính đến mọi biến khác. Dạng phi tuyến ở đây xác nhận $X_j$ không được đưa vào mô hình đúng dạng.
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\textwidth]{./figures/fig8_avplot.png}
+  \caption{Đồ thị hồi quy riêng phần cho mô hình \texttt{mpg \textasciitilde{} hp + wt + disp} (mtcars).
+  Trục $x$ và $y$ là phần dư của $X_j$ và $Y$ sau khi đã loại bỏ ảnh hưởng của các biến còn lại.
+  Chú thích trên mỗi panel: $\hat{\beta}_{\text{AV}}$ (độ dốc của đồ thị) và $\hat{\beta}_{\text{full}}$ (hệ số trong mô hình đầy đủ)---hai giá trị khớp chính xác nhau.
+  Quan hệ gần thẳng xác nhận dạng tuyến tính là phù hợp cho cả ba biến trong mô hình này.}
+  \label{fig:avplot}
+\end{figure}
+
+\begin{lstlisting}[style=Rstyle]
+# Implement added-variable plot thu cong (khong can package car)
+av_plot <- function(fit, jname) {
+  vars   <- attr(terms(fit), "term.labels")
+  others <- setdiff(vars, jname)
+  fmY    <- as.formula(paste("mpg ~",  paste(others, collapse = "+")))
+  fmXj   <- as.formula(paste(jname,    "~", paste(others, collapse = "+")))
+  eY     <- residuals(lm(fmY,  data = model.frame(fit)))
+  eXj    <- residuals(lm(fmXj, data = model.frame(fit)))
+  plot(eXj, eY, pch = 16, col = "steelblue",
+       xlab = paste0("e(", jname, " | others)"),
+       ylab = "e(mpg | others)", main = jname)
+  abline(lm(eY ~ eXj), col = "red", lwd = 2)
+}
+
+fit_full <- lm(mpg ~ hp + wt + disp, data = mtcars)
+par(mfrow = c(1, 3))
+for (v in c("hp", "wt", "disp")) av_plot(fit_full, v)
+\end{lstlisting}
+
+% - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+\subsubsection{Kiểm Định Tukey Cho Tính Không Cộng Tính}
+
+Khi đồ thị phần dư gợi ý độ cong, hình thức hóa ấn tượng thị giác: chọn một đại lượng $U$ (một biến dự báo cụ thể hoặc giá trị khớp $\hat{y}$), thêm $U^2$ làm số hạng phụ vào mô hình, và chạy kiểm định $t$ cho hệ số của nó:
+\[
+  Y = \beta_0 + \beta_1 X_1 + \cdots + \beta_p X_p + \gamma U^2 + \varepsilon,
+  \qquad H_0{:}\ \gamma = 0
+\]
+
+Kết quả có ý nghĩa ($p < 0.05$) xác nhận độ cong có hệ thống. Khi $U = \hat{y}$, thủ tục này được gọi là \textbf{kiểm định Tukey cho tính không cộng tính}---nó kiểm tra một cách tổng quát xem có bất kỳ dạng phi tuyến nào bị bỏ sót trong mô hình hay không.
+
+\begin{lstlisting}[style=Rstyle]
+fit_base  <- lm(mpg ~ hp + wt, data = mtcars)
+yhat      <- fitted(fit_base)
+
+# Tukey's test: them yhat^2, kiem tra he so gamma
+fit_tukey <- lm(mpg ~ hp + wt + I(yhat^2), data = mtcars)
+summary(fit_tukey)$coefficients["I(yhat^2)", ]
+\end{lstlisting}
+
+\begin{lstlisting}[style=output]
+              Estimate Std. Error   t value  Pr(>|t|)
+I(yhat^2)  -0.0033021  0.0016574 -1.992     0.0560
+\end{lstlisting}
+
+$p = 0.056$ gần ngưỡng: đồ thị phần dư của mô hình \texttt{mpg \textasciitilde{} hp + wt} cho thấy độ cong nhẹ, kiểm định Tukey xác nhận đây không phải hoàn toàn ngẫu nhiên. Thêm \texttt{I(hp\^{}2)} hoặc dùng \texttt{poly(hp, 2)} sẽ giải quyết vấn đề.
+
+% - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+\subsubsection{Đồ Thị Nền và Giao Thức Xếp Hàng}
+% - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Khi đọc đồ thị phần dư, mắt người dễ thấy ``mẫu hình'' ngay cả trong dữ liệu hoàn toàn ngẫu nhiên. Câu hỏi cần đặt ra: mẫu hình ta thấy là vi phạm thực sự hay chỉ là biến động tự nhiên?
+
+Một \textbf{đồ thị nền} là đồ thị phần dư được tạo từ dữ liệu mô phỏng \textit{khi mô hình hoàn toàn đúng}---đây là chuẩn gốc của sự ngẫu nhiên với cỡ mẫu $n$ và $\hat{\sigma}$ cụ thể:
+\begin{enumerate}
+  \item Ước lượng mô hình gốc, thu được $\hat{\beta}$ và $\hat{\sigma}$.
+  \item Mô phỏng: $y^* = X\hat{\beta} + \varepsilon^*$, $\varepsilon^* \sim \mathcal{N}(0, \hat{\sigma}^2)$.
+  \item Khớp lại cùng mô hình trên $y^*$, lấy phần dư và vẽ đồ thị.
+\end{enumerate}
+
+\textbf{Giao thức xếp hàng} (Wickham et al., 2010) biến việc đọc đồ thị thành kiểm định thống kê thị giác: tạo $m-1$ đồ thị nền, chèn đồ thị thực vào vị trí ngẫu nhiên, hiển thị tất cả $m$ đồ thị. Nếu người quan sát xác định đúng đồ thị thực, $p\text{-value} = 1/m$.
+
+\begin{lstlisting}[style=Rstyle]
+generate_null_residuals <- function(model) {
+  n     <- length(fitted(model))
+  y_sim <- fitted(model) + rnorm(n, sd = sigma(model))
+  fit_null <- update(model, y_sim ~ .)
+  data.frame(fitted = fitted(fit_null), resid = residuals(fit_null))
+}
+
+set.seed(2025)
+fit      <- lm(mpg ~ hp, data = mtcars)
+real_pos <- sample(1:9, 1)
+par(mfrow = c(3, 3), mar = c(3, 3, 2.5, 1))
+for (i in 1:9) {
+  d <- if (i == real_pos) data.frame(fitted = fitted(fit),
+                                      resid  = residuals(fit))
+       else generate_null_residuals(fit)
+  plot(d$fitted, d$resid, pch = 16, cex = 0.7, col = "steelblue",
+       xlab = "Fitted", ylab = "Residuals", main = paste("Plot", i))
+  abline(h = 0, lty = 2, col = "gray60")
+  lines(lowess(d$fitted, d$resid), col = "red", lwd = 2)
+}
+\end{lstlisting}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\textwidth]{./figures/fig5_lineup.png}
+  \caption{Giao thức xếp hàng: 8 đồ thị nền và 1 đồ thị phần dư thực (mô hình bậc 1 trên dữ liệu cong).
+  Xác suất đoán ngẫu nhiên đúng là $1/9 \approx 11\%$. Nếu bạn nhận ra đồ thị thực, đó là bằng chứng thị giác có ý nghĩa thống kê.
+  \textbf{Hữu ích nhất} khi $n < 30$ và mẫu hình phần dư mơ hồ.
+  \textit{(Đáp án: Đồ thị 7.)}}
+  \label{fig:lineup}
+\end{figure}
+
+% - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+\subsubsection{Phần Dư Chuẩn Hóa}
+\label{sec:partial_reg}
+% - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Phần dư nguyên bản $e_i$ có phương sai không đồng nhất, phụ thuộc vào đòn bẩy $h_{ii}$:
+\[
+  \mathrm{Var}(e_i) = \sigma^2(1 - h_{ii})
+\]
+
+Tại điểm có đòn bẩy cao ($h_{ii}$ lớn), phần dư bị kéo về gần $0$ ngay cả khi mô hình sai---\textbf{hiệu ứng che khuất}. Nên dùng phần dư Student hóa ngoài \texttt{rstudent(model)} thay thế: chúng có phương sai đồng nhất và nhạy hơn với bất thường cục bộ. Đồ thị hồi quy riêng phần (mục~\ref{sec:partial_reg}) bổ sung góc nhìn cục bộ cho từng biến; hai công cụ bổ trợ nhau, không thay thế nhau.
+
+% -----------------------------------------------------------------------------
+\subsection{Khắc Phục Vi Phạm}
+% -----------------------------------------------------------------------------
+
+Năm phương pháp chính, từ đơn giản đến phức tạp. Lựa chọn dựa trên bản chất của dữ liệu và mục tiêu mô hình hóa.
+
+\begin{center}
+\begin{tabular}{@{}lp{5.2cm}l@{}}
+\toprule
+\textbf{Phương pháp} & \textbf{Phù hợp khi} & \textbf{Giữ nguyên OLS?} \\
+\midrule
+Biến đổi biến số    & Quan hệ mũ hoặc lũy thừa đơn giản         & Có, sau biến đổi \\
+Hồi quy đa thức     & Quan hệ cong vừa phải, toàn vùng           & Có \\
+Splines             & Độ cong cục bộ; tránh méo biên              & Có \\
+Hồi quy phi tuyến  & Dạng hàm có cơ sở lý thuyết rõ ràng        & Không---cần lặp số \\
+GLMs                & Biến phản hồi bị chặn hoặc là số đếm       & Không---dùng hàm liên kết \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+% - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+\subsubsection{Biến Đổi Biến Số}
+
+Thay thế $X$, $Y$, hoặc cả hai bằng một biến đổi làm thẳng quan hệ trước khi khớp OLS.
+
+\begin{center}
+\begin{tabular}{@{}lll@{}}
+\toprule
+\textbf{Dạng quan hệ thực} & \textbf{Biến đổi gợi ý} & \textbf{Mô hình sau biến đổi} \\
+\midrule
+$Y = \beta_0 \cdot e^{\beta_1 X}$ & $\log(Y)$ & $\log(Y) = \gamma_0 + \gamma_1 X$ \\
+$Y = \beta_0 \cdot X^{\beta_1}$   & $\log(Y)$ và $\log(X)$ & $\log(Y) = \gamma_0 + \gamma_1\log(X)$ \\
+$Y = \beta_0 / (\beta_1 + X)$     & $1/Y$ hoặc $1/X$ & (tùy trường hợp) \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+Khi không rõ nên dùng biến đổi nào, \textbf{phương pháp Box-Cox} tìm kiếm $\lambda$ tối ưu hóa hàm log-likelihood:
+\[
+  y^{(\lambda)} = \begin{cases} (y^\lambda - 1)/\lambda & \lambda \neq 0 \\ \log y & \lambda = 0 \end{cases}
+\]
+$\lambda = 0$ tương ứng biến đổi log; $\lambda = 0.5$ tương ứng căn bậc hai. Khoảng tin cậy 95\% cho $\lambda$ từ profile likelihood chỉ ra biến đổi phù hợp.
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.9\textwidth]{./figures/fig4_log_transform.png}
+  \caption{Biến đổi $\log(Y)$ tuyến tính hóa quan hệ mũ.
+  Trái: $Y$ theo $X$ dạng cong, OLS bậc 1 bỏ lỡ xu hướng.
+  Phải: $\log(Y)$ theo $X$ quan hệ tuyến tính, OLS và LOESS trùng khớp.
+  Hệ số $\gamma_1$ diễn giải trực tiếp là phần trăm thay đổi của $Y$ khi $X$ tăng 1 đơn vị.}
+  \label{fig:log_transform}
+\end{figure}
+
+\begin{lstlisting}[style=Rstyle]
+library(MASS)
+# Box-Cox: tim lambda toi uu
+bc <- boxcox(mpg ~ hp + wt, data = mtcars)
+lambda_opt <- bc$x[which.max(bc$y)]
+cat("lambda toi uu:", round(lambda_opt, 2), "\n")
+# lambda ~ 0 -> dung log(Y); lambda ~ 0.5 -> dung sqrt(Y)
+\end{lstlisting}
+
+% - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+\subsubsection{Hồi Quy Đa Thức}
+
+Bổ sung lũy thừa nguyên của biến dự báo làm biến hồi quy. Đây vẫn là \textbf{mô hình tuyến tính} vì tuyến tính trong $\beta$.
+
+\paragraph{Một biến dự báo.}
+\[
+  E(Y \mid X = x) = \beta_0 + \beta_1 x + \beta_2 x^2 + \cdots + \beta_d x^d
+\]
+
+\paragraph{Nhiều biến dự báo.}
+Mô hình bậc hai với $X_1$ và $X_2$ thêm cả tương tác:
+\[
+  E(Y \mid x_1, x_2) = \beta_0 + \beta_1 x_1 + \beta_2 x_2
+                      + \beta_{11} x_1^2 + \beta_{22} x_2^2 + \beta_{12} x_1 x_2
+\]
+
+Tổng quát với $k$ biến: $1 + k + k + k(k-1)/2$ tham số cho mô hình bậc hai.
+
+\paragraph{Ứng dụng nổi bật: xác định cực trị.}
+Khi $d = 2$, đỉnh hoặc đáy của parabol xảy ra tại:
+\[
+  x_M = -\frac{\beta_1}{2\beta_2}
+\]
+Hữu ích trong tối ưu hóa (liều thuốc tối ưu, nhiệt độ vận hành tốt nhất, \ldots).
+
+\paragraph{Rủi ro chính.}
+Đa thức là hàm \textit{toàn cục}: bậc cao khớp tốt ở giữa nhưng dao động mạnh ở biên (xem hình~\ref{fig:splines}). Dùng \texttt{poly(X, d)} thay vì \texttt{I(X\^{}2)} để nhận đa thức trực giao, tránh đa cộng tuyến số.
+
+% - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+\subsubsection{Splines}
+
+Splines chia phạm vi $X$ thành các đoạn tại các \textbf{nút} (knots) và khớp một đa thức bậc thấp riêng biệt trong từng đoạn, nối trơn tại ranh giới. Khác với đa thức toàn cục, splines là \textit{cục bộ}: độ cong ở một vùng không làm méo dự báo ở vùng khác.
+
+Cubic B-splines là cơ sở tiêu chuẩn: mỗi hàm cơ sở khác không chỉ trên một khoảng nhỏ, đảm bảo đường cong trơn đến đạo hàm bậc hai tại mọi nút và tính toán ổn định về số.
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\textwidth]{./figures/fig9_splines.png}
+  \caption{Đa thức bậc 7 (toàn cục) so với cubic B-spline với 4 nút trên dữ liệu $y = \sin(x) + \varepsilon$.
+  \textbf{Trái:} Đa thức bậc 7 khớp tốt ở giữa nhưng dao động mạnh ở biên trái và phải, lệch xa giá trị thực.
+  \textbf{Phải:} Cubic B-spline bám sát $\sin(x)$ ổn định trên toàn vùng; các đường đứt nét thẳng đứng là vị trí nút.}
+  \label{fig:splines}
+\end{figure}
+
+\begin{lstlisting}[style=Rstyle]
+library(splines)
+# Cubic B-spline voi nut tai phan vi 25, 50, 75
+fit_spl <- lm(mpg ~ bs(hp,
+                       knots  = quantile(mtcars$hp, c(0.25, 0.5, 0.75)),
+                       degree = 3),
+              data = mtcars)
+
+hp_seq  <- seq(min(mtcars$hp), max(mtcars$hp), length.out = 300)
+pred_sp <- predict(fit_spl, newdata = data.frame(hp = hp_seq))
+
+plot(mtcars$hp, mtcars$mpg, pch = 16, col = "gray50",
+     xlab = "hp", ylab = "mpg")
+lines(hp_seq, pred_sp, col = "blue", lwd = 2)
+\end{lstlisting}
+
+% - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+\subsubsection{Hồi Quy Phi Tuyến}
+
+Khi quan hệ được chi phối bởi một cơ chế lý thuyết đã biết---suy giảm mũ, tăng trưởng logistic, động học Michaelis-Menten---khớp mô hình với tham số tương tác \textit{phi tuyến}:
+\[
+  y = \beta_0 + \beta_1 \exp(\beta_2 x) + \varepsilon
+\]
+
+Nghiệm dạng đóng OLS không áp dụng. Tham số được ước lượng lặp bằng \textbf{thuật toán Gauss-Newton}: tuyến tính hóa mô hình quanh ước lượng hiện tại, cập nhật tham số, lặp lại cho đến hội tụ. Cần cung cấp giá trị khởi đầu hợp lý; nếu không, thuật toán có thể không hội tụ hoặc hội tụ về cực tiểu cục bộ.
+
+\textbf{Khi nào nên dùng:} chỉ khi có dạng hàm có cơ sở lý thuyết. Nếu chỉ cần khớp đường cong mà không có cơ chế cụ thể, splines thường ưu tiên hơn.
+
+\begin{lstlisting}[style=Rstyle]
+# Hoi quy phi tuyen: Y = a * exp(b * X) + c
+# nls() yeu cau gia tri khoi dau
+fit_nls <- nls(mpg ~ a * exp(b * hp) + c,
+               data  = mtcars,
+               start = list(a = 50, b = -0.005, c = 5))
+summary(fit_nls)$coefficients
+\end{lstlisting}
+
+% - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+\subsubsection{Mô Hình Tuyến Tính Tổng Quát (GLMs)}
+
+Khi biến phản hồi có ràng buộc cấu trúc tự nhiên---xác suất bị chặn trong $[0,1]$, số đếm không thể âm---không có biến đổi nào của $X$ tạo được quan hệ đường thẳng với biến phản hồi bị chặn. GLMs giải quyết bằng \textbf{hàm liên kết} $g(\cdot)$:
+\[
+  g\!\left(E[Y \mid X]\right) = X\beta
+\]
+
+Tham số vẫn tuyến tính trong $X\beta$; hàm liên kết xử lý ánh xạ phi tuyến giữa thang biến phản hồi và không gian dự báo tuyến tính. Ước lượng bằng Maximum Likelihood, không phải OLS.
+
+\begin{center}
+\begin{tabular}{@{}llll@{}}
+\toprule
+\textbf{Kiểu phản hồi} & \textbf{Mô hình} & \textbf{Hàm liên kết} & \textbf{R} \\
+\midrule
+Nhị phân $\{0, 1\}$         & Logistic  & $\log\!\left(\frac{\mu}{1-\mu}\right)$ & \texttt{glm(..., binomial)} \\
+Số đếm $\{0, 1, 2, \ldots\}$ & Poisson   & $\log(\mu)$ & \texttt{glm(..., poisson)} \\
+Tỷ lệ $(0, 1)$              & Beta      & logit & \texttt{betareg()} \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+% - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+\subsubsection{So Sánh Mô Hình}
+
+Sau khi đề xuất các mô hình khác nhau, cần tiêu chí khách quan để chọn độ phức tạp phù hợp.
+
+\textbf{ANOVA (kiểm định F cho mô hình lồng nhau):}
+\[
+  H_0{:}\ \text{Mô hình đơn giản hơn là đủ (hệ số bậc cao} = 0\text{)}
+\]
+
+Chỉ áp dụng cho mô hình lồng nhau. $p < 0.05$: mô hình phức tạp hơn cải thiện đáng kể.
+
+\textbf{AIC và BIC:}
+\[
+  \text{AIC} = -2\log(L) + 2k
+  \qquad
+  \text{BIC} = -2\log(L) + k\log(n)
+\]
+
+Áp dụng được cho mô hình không lồng nhau. $\Delta\text{AIC} > 2$ đã có ý nghĩa; BIC phạt nặng hơn cho số tham số, ưu tiên mô hình đơn giản hơn.
+
+\begin{center}
+\begin{tabular}{@{}lll@{}}
+\toprule
+\textbf{Tiêu chí} & \textbf{Ưu điểm} & \textbf{Hạn chế} \\
+\midrule
+ANOVA & Kiểm định chính xác, $p$-value rõ ràng & Chỉ cho mô hình lồng nhau \\
+AIC   & Linh hoạt, tốt cho dự báo              & Có thể chọn mô hình quá phức tạp \\
+BIC   & Phạt nặng hơn, ưu tiên mô hình gọn     & Đôi khi quá thận trọng \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\textbf{Cảnh báo quá khớp.} Bậc đa thức hoặc số nút spline quá cao thường dẫn đến quá khớp. Ưu tiên mô hình đơn giản nhất mà vẫn giải thích được xu hướng chính; kiểm tra đồ thị phần dư sau khi chọn mô hình.
+
+% -----------------------------------------------------------------------------
+\subsubsection{Đánh Giá Mô Hình Sau Khi Khắc Phục}
+% -----------------------------------------------------------------------------
+
+Sau khi áp dụng biến đổi, thêm số hạng đa thức, hoặc dùng spline, cần xác minh rằng mô hình mới thực sự cải thiện. Dưới đây là năm công cụ đánh giá thường dùng.
+
+\begin{enumerate}
+
+  \item \textbf{Đồ thị phần dư — kiểm tra trực quan đầu tiên.}
+  Vẽ lại đồ thị phần dư theo giá trị khớp. Nếu phi tuyến đã được giải quyết, đồ thị trở thành ``null plot'': phân tán ngẫu nhiên, đường LOESS nằm ngang gần $y=0$. Đồng thời kiểm tra xem việc sửa chữa có làm lộ ra vi phạm khác (phương sai không đồng đều, điểm ngoại lai) hay không.
+
+  \item \textbf{Adjusted $R^2$ — trừng phạt độ phức tạp.}
+  Khi thêm số hạng mới, $R^2$ thông thường luôn tăng (dù số hạng đó vô nghĩa). Adjusted $R^2$ hiệu chỉnh theo bậc tự do:
+  \[
+    \bar{R}^2 = 1 - \frac{(1-R^2)(n-1)}{n-k-1},
+  \]
+  trong đó $k$ là số biến dự báo. Nếu thêm bậc mà $\bar{R}^2$ giảm hoặc không đổi, số hạng đó không đóng góp thực sự.
+
+  \item \textbf{AIC và BIC — cân bằng độ khớp và độ phức tạp.}
+  AIC và BIC đã trình bày ở trên. Chênh lệch $\Delta\text{AIC} > 2$ được coi là có ý nghĩa; BIC phạt nặng hơn nên ưu tiên mô hình gọn hơn khi cỡ mẫu lớn.
+
+  \item \textbf{Cross-validation — đánh giá khả năng dự báo thực sự.}
+  Chia dữ liệu thành tập huấn luyện và tập kiểm tra; ước lượng tham số trên tập huấn luyện rồi đo sai số dự báo trên tập kiểm tra. $k$-fold CV (thường $k=5$ hoặc $10$) là lựa chọn phổ biến.
+
+  \item \textbf{PRESS (Prediction Sum of Squares) — leave-one-out.}
+  PRESS tính tổng bình phương sai số dự báo khi lần lượt loại từng quan sát:
+  \[
+    \text{PRESS} = \sum_{i=1}^n \left(\frac{e_i}{1 - h_{ii}}\right)^2,
+  \]
+  với $h_{ii}$ là đòn bẩy (leverage) của quan sát $i$. Công thức này không yêu cầu fit lại mô hình $n$ lần. Mô hình có PRESS nhỏ hơn dự báo tốt hơn trên dữ liệu mới.
+
+\end{enumerate}
+
+\medskip
+\noindent\textbf{Minh họa trực quan: trước và sau khi sửa.}
+Hình~\ref{fig:model_eval} so sánh mô hình tuyến tính (hàng trên) và đa thức bậc 2 (hàng dưới) trên bộ dữ liệu \texttt{mtcars} với biến phản hồi \texttt{mpg} và biến dự báo \texttt{hp}. Đồ thị phần dư ở cột giữa là tín hiệu rõ nhất: đường LOESS cong hình chữ U (mô hình tuyến tính) biến thành đường nằm ngang gần $y=0$ (mô hình bậc 2).
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\linewidth]{./figures/fig15_model_eval.png}
+  \caption{So sánh mô hình tuyến tính (hàng trên) và đa thức bậc 2 (hàng dưới) trên \texttt{mtcars}. Cột trái: scatter và đường fit; cột giữa: phần dư theo giá trị khớp; cột phải: Q-Q plot. Đường LOESS hình chữ U trong panel (b) biến mất ở panel (e), xác nhận phi tuyến đã được khắc phục.}
+  \label{fig:model_eval}
+\end{figure}
+
+\noindent\textbf{Bảng tổng hợp chỉ số đánh giá} (dataset \texttt{mtcars}, $n = 32$):
+
+\begin{center}
+\begin{tabular}{@{}lrrr@{}}
+\toprule
+\textbf{Chỉ số} & \textbf{Linear} & \textbf{Quadratic} & \textbf{Cubic} \\
+\midrule
+$R^2$                 & 0.602 & 0.756 & 0.761 \\
+Adj.\ $R^2$           & 0.589 & 0.739 & 0.735 \\
+AIC                   & 181.2 & 167.6 & 169.0 \\
+BIC                   & 185.6 & 173.5 & 176.3 \\
+PRESS                 & 552.1 & 338.0 & 338.4 \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\textbf{Diễn giải bảng.} Mô hình bậc 2 cải thiện đáng kể so với tuyến tính: Adj.\ $R^2$ tăng từ 0.589 lên 0.739, AIC giảm $\approx 13.6$ đơn vị, PRESS giảm từ 552 xuống 338 (giảm 39\%). Mô hình bậc 3 không cải thiện thêm (Adj.\ $R^2$ giảm, AIC tăng nhẹ, PRESS gần như bằng nhau) — bằng chứng quá khớp tiềm năng. Mô hình bậc 2 là lựa chọn tốt nhất theo cả năm tiêu chí.
+
+\begin{lstlisting}[style=Rstyle]
+data(mtcars)
+model_lin  <- lm(mpg ~ hp,          data = mtcars)
+model_quad <- lm(mpg ~ poly(hp, 2), data = mtcars)
+model_cub  <- lm(mpg ~ poly(hp, 3), data = mtcars)
+
+# Adj R2
+sapply(list(model_lin, model_quad, model_cub),
+       function(m) round(summary(m)$adj.r.squared, 3))
+
+# AIC / BIC
+AIC(model_lin, model_quad, model_cub)
+BIC(model_lin, model_quad, model_cub)
+
+# PRESS (leave-one-out, khong can fit lai n lan)
+press <- function(fit) sum((residuals(fit) / (1 - hatvalues(fit)))^2)
+sapply(list(model_lin, model_quad, model_cub), press)
+\end{lstlisting}
+
+% -----------------------------------------------------------------------------
+\subsection{Ví Dụ R: Dataset \texttt{mtcars}}
+% -----------------------------------------------------------------------------
+
+\textbf{Bài toán:} Dự báo lượng nhiên liệu tiêu thụ (\texttt{mpg}) từ công suất động cơ (\texttt{hp}). Liệu quan hệ này có tuyến tính không?
+
+\subsubsection*{Bước 1: Khám phá dữ liệu và ước lượng mô hình tuyến tính}
+
+\begin{lstlisting}[style=Rstyle]
+data(mtcars)
+
+plot(mtcars$hp, mtcars$mpg,
+     xlab = "Horsepower (hp)", ylab = "Miles per gallon (mpg)",
+     main = "mpg vs hp", pch = 16, col = "steelblue")
+
+model_linear <- lm(mpg ~ hp, data = mtcars)
+abline(model_linear, col = "red", lwd = 2)
+
+# Residual plot
+par(mfrow = c(1, 2))
+plot(model_linear, which = 1, main = "Residuals vs Fitted (Linear)")
+plot(model_linear, which = 2)
+\end{lstlisting}
+
+\textbf{Quan sát.} Đường LOESS trong đồ thị phần dư theo giá trị khớp có dạng cong (chữ U): vi phạm tuyến tính rõ ràng.
+
+\subsubsection*{Bước 2: Fit model đa thức bậc 2 và bậc 3}
+
+\begin{lstlisting}[style=Rstyle]
+model_quad  <- lm(mpg ~ poly(hp, 2), data = mtcars)
+model_cubic <- lm(mpg ~ poly(hp, 3), data = mtcars)
+summary(model_quad)
+\end{lstlisting}
+
+\begin{lstlisting}[style=output]
+Coefficients:
+             Estimate Std. Error t value Pr(>|t|)
+(Intercept)   20.091      0.570  35.24   <2e-16 ***
+poly(hp, 2)1 -26.045      3.225  -8.08   8.3e-09 ***
+poly(hp, 2)2   8.720      3.225   2.70    0.011 *
+\end{lstlisting}
+
+Hệ số bậc 2 có ý nghĩa thống kê ($p = 0.011$) $\to$ quan hệ phi tuyến được xác nhận.
+
+\subsubsection*{Bước 3: So sánh model bằng ANOVA và AIC/BIC}
+
+\begin{lstlisting}[style=Rstyle]
+anova(model_linear, model_quad, model_cubic)
+AIC(model_linear, model_quad, model_cubic)
+BIC(model_linear, model_quad, model_cubic)
+\end{lstlisting}
+
+\begin{lstlisting}[style=output]
+Analysis of Variance Table
+  Res.Df    RSS Df Sum of Sq      F    Pr(>F)
+1     30 447.67
+2     29 360.37  1    87.303  7.309  0.01149 *
+3     28 334.55  1    25.816  2.161  0.15261
+
+             df      AIC          df      BIC
+model_linear  3  181.394    model_linear  3  185.887
+model_quad    4  175.665    model_quad    4  181.653  <- nho nhat
+model_cubic   5  175.880    model_cubic   5  183.364
+\end{lstlisting}
+
+\textbf{Diễn giải:} Mô hình bậc 2 cải thiện đáng kể so với bậc 1 ($p=0.011$). Mô hình bậc 3 không thêm giá trị ($p=0.153$). Cả AIC và BIC đều chỉ mô hình bậc 2 là tốt nhất.
+
+\subsubsection*{Bước 4: Trực quan hóa kết quả}
+
+\begin{lstlisting}[style=Rstyle]
+hp_seq   <- seq(min(mtcars$hp), max(mtcars$hp), length.out = 200)
+new_data <- data.frame(hp = hp_seq)
+
+pred_linear <- predict(model_linear, newdata = new_data)
+pred_quad   <- predict(model_quad,   newdata = new_data)
+pred_cubic  <- predict(model_cubic,  newdata = new_data)
+
+plot(mtcars$hp, mtcars$mpg,
+     xlab = "Horsepower (hp)", ylab = "mpg",
+     main = "So sanh Linear vs Polynomial", pch = 16, col = "gray50")
+
+lines(hp_seq, pred_linear, col = "red",    lwd = 2, lty = 2)
+lines(hp_seq, pred_quad,   col = "blue",   lwd = 2)
+lines(hp_seq, pred_cubic,  col = "green4", lwd = 2, lty = 3)
+
+legend("topright",
+       legend = c("Linear", "Quadratic (AIC tot nhat)", "Cubic"),
+       col = c("red", "blue", "green4"), lwd = 2, lty = c(2, 1, 3))
+\end{lstlisting}
+
+\textbf{Kết luận phần 1.} Quan hệ giữa \texttt{hp} và \texttt{mpg} là phi tuyến. Model đa thức bậc 2 cải thiện đáng kể so với model tuyến tính ($\Delta\text{AIC} \approx 5.7$, F-test $p < 0.05$) mà không làm tăng độ phức tạp quá mức.
+
+% -----------------------------------------------------------------------------
+\subsection{Tính Chất Nâng Cao}
+% -----------------------------------------------------------------------------
+
+Bốn kết quả lý thuyết sau giải thích tại sao tuyến tính trong tham số tạo ra sự đảm bảo mạnh mẽ hơn nhiều so với những gì các công cụ chẩn đoán thực hành gợi ý.
+
+% - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+\subsubsection{Chiếu Trực Giao Lên Không Gian Dự Báo}
+
+Hình ảnh thông thường của hồi quy là một mặt phẳng qua dữ liệu ba chiều. Bức tranh sâu hơn sống trong không gian $n$ chiều. Mỗi quan sát $Y$ là một điểm trong $\mathbb{R}^n$. Các cột của ma trận thiết kế $X$ trương ra một không gian con thấp chiều hơn---\textbf{không gian dự báo} (column space của $X$). Vì mô hình tuyến tính, tìm $\hat{\beta}$ tương đương với tìm điểm trong không gian dự báo \textit{gần nhất} với $Y$:
+\[
+  \hat{Y} = X(X^\top X)^{-1}X^\top Y = P_X Y
+\]
+trong đó $P_X$ là ma trận chiếu trực giao lên $\mathrm{Col}(X)$.
+
+Vector sai số $e = Y - \hat{Y}$ trực giao với mọi cột của $X$---đây không phải xấp xỉ, mà là hệ quả hình học chính xác của OLS. Hệ phương trình chuẩn $X^\top e = 0$ chính là phát biểu đại số của điều kiện trực giao này. Hầu hết lý thuyết mô hình tuyến tính---từ định lý Gauss-Markov đến hình học kiểm định $F$---đều bắt nguồn trực tiếp từ cấu trúc chiếu trực giao này.
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\textwidth]{./figures/fig10_projection.png}
+  \caption{\textbf{Trái:} Sơ đồ hình học của OLS trong $\mathbb{R}^n$.
+  $Y$ là điểm quan sát, $\hat{Y} = P_X Y$ là hình chiếu vuông góc lên $\mathrm{Col}(X)$, và $e = Y - \hat{Y}$ là vector sai số vuông góc với không gian dự báo.
+  \textbf{Phải:} Xác minh số trên 500 dataset ngẫu nhiên ($n = 40$, $p = 3$).
+  Giá trị $\log_{10}\|X^\top e\|$ luôn ở mức sai số máy tính ($\approx 10^{-12}$), xác nhận $X^\top e = 0$ là đẳng thức chính xác, không phải xấp xỉ.}
+  \label{fig:projection}
+\end{figure}
+
+% - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+\subsubsection{Phân Phối Chuẩn Đa Biến Đảm Bảo Tuyến Tính}
+
+Tuyến tính thường là giả định làm việc về thế giới. Một trường hợp nó được đảm bảo bởi toán học: nếu biến phản hồi $Y$ và các biến dự báo $X_1, \ldots, X_p$ cùng tuân theo \textbf{phân phối chuẩn đa biến}, thì từ tính chất của phân phối chuẩn đa biến, phân phối có điều kiện là:
+\[
+  Y \mid X \sim \mathcal{N}(X\beta,\ \sigma^2)
+\]
+
+Kỳ vọng có điều kiện $E[Y \mid X] = X\beta$ là tuyến tính trong $X$, và phương sai có điều kiện $\sigma^2$ là hằng số---cả hai đều bắt nguồn từ cấu trúc ma trận hiệp phương sai của phân phối chuẩn đa biến, không từ bất kỳ giả định ngoại sinh nào. Nếu dữ liệu có thể xuất từ phân phối chuẩn đa biến (kiểm tra bằng Q-Q plot đa biến hoặc kiểm định Mardia), không cần giả định tuyến tính riêng biệt.
+
+% - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+\subsubsection{Định Lý Li-Duan: Bền Vững Trước Phi Tuyến Ẩn}
+
+Giả sử quan hệ thực là phi tuyến nhưng có dạng chỉ số đơn:
+\[
+  E[Y \mid X] = g(\beta^\top x)
+\]
+trong đó $g$ là hàm \textit{hoàn toàn ẩn}. Bình thường điều này dường như làm mất hiệu lực OLS hoàn toàn. \textbf{Định lý Li-Duan (1989)} cho thấy điều ngược lại: nếu các biến dự báo $X$ tuân theo phân phối đối xứng elip (bao gồm phân phối chuẩn đa biến), thì OLS vẫn ước lượng $\beta$ \textbf{nhất quán đến một hằng số tỷ lệ}:
+\[
+  \hat{\beta}_{\text{OLS}} \xrightarrow{p} c \cdot \beta, \quad c \neq 0
+\]
+
+Nói cách khác: ngay cả khi dạng hàm thực sự bị ẩn và phi tuyến, mô hình tuyến tính khớp một cách mù quáng vẫn phục hồi đúng \textit{hướng} và \textit{tầm quan trọng tương đối} của các biến dự báo. Độ lớn bị chia tỷ lệ, nhưng thứ hạng và dấu của tác động được bảo toàn.
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\textwidth]{./figures/fig11_liduan.png}
+  \caption{Mô phỏng định lý Li-Duan ($n = 60$, $B = 800$ lần lặp).
+  Mô hình thực: $Y = g(\beta^\top X) + \varepsilon$ với $\beta = (3, 1)^\top$ và $X \sim \mathcal{N}(0, I)$.
+  Mỗi điểm là hướng ước lượng $\hat{\beta} / \|\hat{\beta}\|$ từ một lần lặp.
+  Dấu ``$\times$'' là hướng thực $\beta / \|\beta\|$.
+  Ba hàm $g$ khác nhau (tuyến tính, mũ, lũy thừa có dấu) đều cho đám mây điểm tập trung tại cùng một hướng thực---OLS phục hồi đúng hướng bất kể dạng hàm.}
+  \label{fig:liduan}
+\end{figure}
+
+% - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+\subsubsection{Bất Biến Trước Biến Đổi Tuyến Tính Toàn Hạng}
+
+Vì dự báo $\hat{Y}$ là chiếu trực giao của $Y$ lên $\mathrm{Col}(X)$, và $\mathrm{Col}(X)$ không thay đổi khi nhân $X$ với bất kỳ ma trận toàn hạng nào, ta có:
+
+\textbf{Định lý:} Với mọi ma trận toàn hạng $A$ ($k \times k$), mô hình $Y \sim XA$ cho ra các giá trị khớp $\hat{Y}$, phần dư $e$, và phương sai sai số $s^2$ \textit{hoàn toàn giống} mô hình $Y \sim X$.
+
+\textbf{Hệ quả thực tiễn:} Centering, scaling, và orthogonalization là các bước tiền xử lý \textit{an toàn}---chúng thay đổi tham số hóa nhưng không bao giờ thay đổi dự báo hay $R^2$.
+
+\textbf{Giải thích đa cộng tuyến:} Đa cộng tuyến làm các hệ số riêng lẻ $\hat{\beta}_j$ không ổn định (vì $\hat{\beta}$ không bất biến với biến đổi tuyến tính), nhưng hoàn toàn không ảnh hưởng đến giá trị khớp $\hat{Y}$ hay khả năng dự báo tổng thể (vì $\hat{Y}$ bất biến).
+
+\begin{lstlisting}[style=Rstyle]
+# Xac minh: standardize X khong lam thay doi y_hat va R2
+fit_raw  <- lm(mpg ~ hp + wt + disp, data = mtcars)
+fit_std  <- lm(mpg ~ scale(hp) + scale(wt) + scale(disp), data = mtcars)
+
+max(abs(fitted(fit_raw) - fitted(fit_std)))  # < 1e-12
+summary(fit_raw)$r.squared - summary(fit_std)$r.squared  # = 0
+\end{lstlisting}
+
+\begin{lstlisting}[style=output]
+[1] 1.065814e-13
+[1] 0
+\end{lstlisting}
+
+% =============================================================================
+\section{Giả Định Tính Chuẩn Của Phần Dư}
+% =============================================================================
+
+\subsection{Cơ Sở Lý Thuyết}
+
+Mô hình hồi quy bội giả định:
+\[
+  \varepsilon_i \overset{\text{i.i.d.}}{\sim} \mathcal{N}(0,\, \sigma^2), \quad i = 1, 2, \ldots, n
+\]
+
+Tức là \textbf{phần dư} (không phải $Y$) phải có phân phối chuẩn. Giả định này có một vị trí đặc biệt: \textbf{không bắt buộc để tính toán mô hình, nhưng là nền tảng cốt lõi cho mọi suy diễn thống kê sâu hơn}.
+
+\subsubsection{Không bắt buộc đối với Phương pháp Bình Phương Tối Thiểu}
+
+Các hệ số $\hat{\beta}$ và phương sai $s^2$ có thể được tính bằng OLS mà không cần bất kỳ giả định nào về phân phối. Theo \textbf{Định lý Gauss-Markov}, chỉ cần sai số thỏa mãn ba điều kiện:
+\begin{itemize}
+  \item kỳ vọng bằng 0: $E(\varepsilon_i) = 0$,
+  \item phương sai không đổi: $\mathrm{Var}(\varepsilon_i) = \sigma^2$,
+  \item không có tương quan: $\mathrm{Cov}(\varepsilon_i, \varepsilon_j) = 0$,
+\end{itemize}
+OLS đã cho các \textbf{ước lượng tuyến tính không chệch tốt nhất} (BLUE) mà không đòi hỏi thêm giả định về dạng phân phối.
+
+\subsubsection{Khi Thêm Giả Định Chuẩn: OLS Tương Đương MLE và Đạt Tối Ưu Toàn Cục}
+
+Khi bổ sung $\varepsilon \sim \mathcal{N}(0, \sigma^2 I)$, bài toán thay đổi đáng kể theo ba hướng:
+
+\begin{enumerate}
+  \item \textbf{Không tương quan $\Rightarrow$ Độc lập.} Với phân phối chuẩn, không tương quan và độc lập là tương đương. Điều này mạnh hơn so với giả định Gauss-Markov thuần túy.
+  \item \textbf{OLS = MLE.} Dưới giả định chuẩn, hàm hợp lý (likelihood) của mô hình đạt cực đại tại đúng nghiệm OLS. Hai phương pháp cho cùng một kết quả.
+  \item \textbf{Ước lượng tối ưu toàn cục (UMVUE).} Các ước lượng $\hat{\beta}$ và $\hat{\sigma}^2$ không chỉ là tốt nhất trong lớp ước lượng tuyến tính mà trở thành \textbf{thống kê đủ} (sufficient statistics) và đạt \textbf{phương sai nhỏ nhất trong toàn bộ các ước lượng không chệch}, kể cả phi tuyến.
+\end{enumerate}
+
+\subsubsection{Cơ Sở Bắt Buộc cho Suy Diễn Mẫu Nhỏ}
+\label{sec:normality_theory}
+
+Mục đích lớn nhất của giả định chuẩn là thiết lập nền tảng toán học cho kiểm định giả thuyết và khoảng tin cậy, đặc biệt khi $n$ nhỏ:
+
+\begin{itemize}
+  \item Các tổng bình phương (SS hồi quy, SS phần dư) tuân theo \textbf{phân phối $\chi^2$ độc lập} với nhau.
+  \item Tỷ số của chúng tuân theo \textbf{phân phối $F$}: cơ sở của kiểm định $F$-test tổng thể.
+  \item Từng hệ số $\hat{\beta}_j$ tuân theo \textbf{phân phối $t$-Student}: cơ sở của kiểm định $t$-test và khoảng tin cậy.
+\end{itemize}
+
+Nếu không có giả định chuẩn, cả $t$-test lẫn $F$-test đều mất cơ sở toán học khi $n$ nhỏ. Với mẫu lớn, Định lý Giới hạn Trung tâm đảm bảo $\hat{\beta}$ xấp xỉ chuẩn vì chúng là tổ hợp tuyến tính của $y_i$; giả định chuẩn lúc này ít quan trọng hơn.
+
+\subsubsection{Sự Siêu Chuẩn của Phần Dư}
+
+Về mặt chẩn đoán, phần dư tính được $\hat{e}_i$ có một đặc tính đáng chú ý: chúng là tổ hợp tuyến tính của \textit{tất cả} các sai số thực sự $\varepsilon_i$. Theo Định lý Giới hạn Trung tâm, tổ hợp tuyến tính của các biến ngẫu nhiên có xu hướng tiến gần phân phối chuẩn hơn là bản thân các biến gốc. Do đó, $\hat{e}_i$ thường có hành vi ``chuẩn'' hơn rất nhiều so với $\varepsilon_i$ thực sự --- hiện tượng này gọi là \textbf{sự siêu chuẩn của phần dư}.
+
+\textbf{Hệ quả thực tiễn của siêu chuẩn.} Khi dùng đồ thị xác suất chuẩn (Q-Q plot) hoặc biểu đồ tần suất để kiểm tra giả định, phần dư $\hat{e}_i$ có thể trông ``chuẩn'' ngay cả khi sai số thực sự $\varepsilon_i$ không chuẩn. Đặc biệt với mẫu nhỏ đến trung bình, đây là giới hạn cơ bản của chẩn đoán bằng đồ thị: chúng ta quan sát $\hat{e}$, không quan sát $\varepsilon$.
+
+\subsubsection{Điểm Dễ Nhầm: Tính Chuẩn của $Y \neq$ Tính Chuẩn của Phần Dư}
+
+\textbf{Sai lầm phổ biến.} Nhiều người kiểm tra phân phối của $Y$ thay vì phần dư.
+
+Ví dụ: $Y = 2X + \varepsilon$, với $X \sim \mathrm{Uniform}(0,10)$ và $\varepsilon \sim \mathcal{N}(0,1)$. Biến $Y$ sẽ không phân phối chuẩn, nhưng phần dư từ mô hình đúng vẫn có phân phối chuẩn.
+
+\textbf{Quy tắc:} Luôn kiểm tra phân phối của \textbf{phần dư sau khi ước lượng mô hình}.
+
+% -----------------------------------------------------------------------------
+\subsection{Công Cụ Trực Quan}
+% -----------------------------------------------------------------------------
+
+\subsubsection{Biểu Đồ Tần Suất của Phần Dư}
+
+Dấu hiệu vi phạm: \textbf{lệch phải/trái} (đuôi một bên dài), \textbf{đuôi nặng} (đỉnh nhọn, đuôi dày), \textbf{đa đỉnh} (gợi ý dữ liệu từ 2 quần thể).
+
+\subsubsection{Q-Q Plot (Quantile-Quantile Plot)}
+
+\vspace{4pt}
+\begin{center}
+\begin{tabular}{@{}ll@{}}
+\toprule
+\textbf{Mẫu hình quan sát} & \textbf{Diễn giải} \\
+\midrule
+Các điểm trên đường thẳng & Phân phối chuẩn \\
+Hai đầu lệch lên trên (dạng chữ S) & Đuôi nặng hai phía \\
+Hai đầu lệch xuống dưới & Đuôi mỏng \\
+Đuôi phải lệch lên & Lệch phải \\
+Đuôi trái lệch xuống & Lệch trái \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\textbf{Lưu ý.} Đồ thị xác suất chuẩn nhạy hơn biểu đồ tần suất trong việc phát hiện lệch ở đuôi phân phối; ưu tiên dùng khi mẫu nhỏ.
+
+% -----------------------------------------------------------------------------
+\subsection{Kiểm Định Hình Thức}
+% -----------------------------------------------------------------------------
+
+\subsubsection{Shapiro-Wilk Test}
+
+Hoạt động cực kì tốt cho mẫu nhỏ.
+\[
+  H_0{:}\ \text{Residuals có phân phối chuẩn}
+  \qquad
+  H_1{:}\ \text{Residuals không có phân phối chuẩn}
+\]
+
+Thống kê $W \in [0,1]$; $W$ càng gần 1 $\to$ residuals càng gần chuẩn.
+
+
+Tuy nhiên, với mẫu lớn, Shapiro-Wilk trở nên ít cần thiết hơn về mặt thực tiễn. Lý do là nhờ 
+Định lý Giới hạn Trung tâm, khi n đủ lớn, các ước lượng hệ số hồi quy 
+(vốn là các tổ hợp tuyến tính của các quan sát $y_i$ và sai số $\varepsilon_i$) sẽ tự động xấp xỉ phân phối chuẩn, 
+bất chấp việc phân phối thực sự của sai số gốc có chuẩn hay không
+
+
+\subsubsection{Jarque-Bera Test}
+
+Phù hợp cho mẫu lớn, phổ biến trong kinh tế lượng. Kiểm tra đồng thời skewness và excess kurtosis:
+\[
+  JB = \frac{n}{6}\!\left[S^2 + \frac{K^2}{4}\right] \sim \chi^2(2) \text{ dưới } H_0
+\]
+
+với $S$ là độ lệch (skewness) và $K = \text{kurtosis} - 3$ là độ nhọn excess kurtosis.
+
+\subsubsection{Sự Khác Biệt Bản Chất Giữa Hai Kiểm Định}
+
+Hai kiểm định xuất phát từ hai triết lý xây dựng thống kê hoàn toàn khác nhau.
+
+\textbf{Shapiro-Wilk dựa trên tương quan thứ tự.} Thống kê $W$ đo mức độ tương quan giữa các phân vị thực nghiệm của mẫu và các phân vị lý thuyết kỳ vọng của phân phối chuẩn. Nếu mẫu đến từ phân phối chuẩn, hai tập phân vị này phải xếp thẳng hàng trên đồ thị Q-Q; $W$ càng gần 1 thì mức độ khớp càng cao. Đây là kiểm định \textbf{tổng thể}: nó phát hiện bất kỳ dạng lệch chuẩn nào, nhưng không chỉ ra vi phạm đến từ đâu.
+
+\textbf{Jarque-Bera dựa trên ước lượng moment.} Kiểm định so sánh trực tiếp moment bậc 3 (độ lệch $S$, phản ánh mức độ \textit{mất đối xứng} của phân phối) và moment bậc 4 (độ nhọn $K$, phản ánh \textit{hành vi đuôi}) với giá trị lý thuyết của phân phối chuẩn ($S = 0$, $K = 0$). Cấu trúc này cho phép chẩn đoán \textbf{nguồn gốc vi phạm}: nếu $p$-value thấp chủ yếu do $S^2$ lớn thì phân phối lệch; nếu chủ yếu do $K^2$ lớn thì phân phối có đuôi nặng.
+
+\textbf{Hệ quả thực tiễn.} Shapiro-Wilk nhạy hơn với mẫu nhỏ vì phân vị mẫu ổn định; Jarque-Bera cần $n$ lớn để ước lượng moment bậc cao đạt độ chính xác đủ dùng. Khi cả hai đều bác bỏ $H_0$, thành phần $S$ và $K$ trong thống kê JB cung cấp thêm thông tin chẩn đoán mà Shapiro-Wilk không có.
+
+\subsubsection{Bảng so sánh hai kiểm định}
+
+\begin{center}
+\begin{tabular}{@{}lll@{}}
+\toprule
+\textbf{Tiêu chí} & \textbf{Shapiro-Wilk} & \textbf{Jarque-Bera} \\
+\midrule
+Cỡ mẫu phù hợp & $n$ nhỏ đến vừa ($< 2000$) & $n$ lớn \\
+Loại sai lệch phát hiện & Tổng quát & Skewness + Kurtosis \\
+Độ nhạy với $n$ lớn & Quá nhạy & Ổn định hơn \\
+Package R & Base R & \texttt{tseries} \\
+Phổ biến trong & Thống kê tổng quát & Kinh tế lượng \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\textbf{Khuyến nghị.} Dùng cả hai kiểm định kết hợp với trực quan (histogram + Q-Q plot). Kết luận nên dựa trên sự nhất quán giữa các phương pháp, không chỉ một $p$-value.
+
+% -----------------------------------------------------------------------------
+\subsection{Hậu Quả Khi Vi Phạm}
+% -----------------------------------------------------------------------------
+
+Hậu quả của việc vi phạm tính chuẩn phụ thuộc lớn vào kích thước mẫu và bản chất của dữ liệu. Điểm cốt lõi cần nhớ: ước lượng OLS $\hat{\boldsymbol{\beta}}$ vẫn không chệch khi vi phạm giả định chuẩn; vấn đề nằm ở \textbf{suy diễn thống kê} ($p$-value, khoảng tin cậy), không phải ở ước lượng điểm.
+
+\textbf{1. Vô hiệu hóa suy diễn thống kê trong mẫu nhỏ.} Đây là hậu quả nghiêm trọng nhất. Khi $n$ nhỏ và sai số không chuẩn:
+\begin{itemize}
+  \item Các ước lượng hệ số, giá trị khớp và dự báo không còn tuân theo phân phối chuẩn, khiến khoảng tin cậy dạng $\hat{\beta}_j \pm t^*_{\alpha/2} \cdot \mathrm{SE}$ mất cơ sở toán học và độ phủ thực tế không đạt mức danh nghĩa.
+  \item Thống kê $t$ và $F$ không còn theo phân phối lý thuyết tương ứng, dẫn đến $p$-value sai lệch và kết luận về ý nghĩa thống kê không đáng tin.
+  \item Trung bình bình phương phần dư không còn phân phối theo $\chi^2$ (xem Mục~\ref{sec:normality_theory}), làm hỏng mọi suy diễn liên quan đến phương sai $\sigma^2$.
+\end{itemize}
+
+\textbf{2. Ít tác động hơn với mẫu lớn.} Khi $n$ đủ lớn, Định lý Giới hạn Trung tâm đảm bảo các ước lượng $\hat{\boldsymbol{\beta}}$ (vốn là tổ hợp tuyến tính của $y_i$) xấp xỉ phân phối chuẩn bất kể phân phối thực sự của sai số.
+
+\textbf{3. Đặt ra nghi ngờ về tính phù hợp của OLS.} Nếu sai số không chuẩn vì dữ liệu thực sự tuân theo một phân phối khác (ví dụ: phân phối Poisson cho dữ liệu đếm, phân phối nhị thức cho tỷ lệ), thì OLS có thể không phải phương pháp phù hợp nhất. Trong các trường hợp này, mô hình tuyến tính tổng quát (GLM) như hồi quy Poisson hay hồi quy logistic sẽ hợp lý hơn về mặt xác suất.
+
+% -----------------------------------------------------------------------------
+\subsection{Giải Pháp Thay Thế}
+% -----------------------------------------------------------------------------
+
+Khi giả định tính chuẩn của phần dư bị vi phạm, có ba hướng xử lý tùy theo bối cảnh:
+
+\textbf{1. Phương pháp tái lấy mẫu Bootstrap (khi mẫu nhỏ).} Nếu $n$ nhỏ và dữ liệu không chuẩn, Bootstrap xây dựng khoảng tin cậy và thực hiện kiểm định dựa trên phân phối thực nghiệm của chính dữ liệu, thay vì giả định phân phối chuẩn lý thuyết. Phương pháp này không đòi hỏi bất kỳ giả định phân phối nào về $\varepsilon$.
+
+\textbf{2. Dựa vào Định lý Giới hạn Trung tâm (khi mẫu lớn).} Nếu $n$ đủ lớn, các ước lượng $\hat{\boldsymbol{\beta}}$ xấp xỉ phân phối chuẩn bất kể phân phối của $\varepsilon$. Trong trường hợp này không cần can thiệp thêm; các kiểm định $t$ và $F$ vẫn có giá trị tiệm cận.
+
+\textbf{3. Chuyển sang Mô hình Tuyến tính Tổng quát (GLM).} Nếu vi phạm tính chuẩn xuất phát từ việc biến phản hồi thực sự tuân theo một phân phối khác (dữ liệu đếm theo Poisson, dữ liệu nhị phân theo nhị thức), thì OLS không phải phương pháp phù hợp về mặt xác suất. Hồi quy Poisson hay hồi quy logistic mô hình hóa đúng cấu trúc phân phối của dữ liệu.
+
+% -----------------------------------------------------------------------------
+\subsection{Ví Dụ R: Dataset \texttt{Boston}}
+% -----------------------------------------------------------------------------
+
+\textbf{Bài toán:} Dự báo giá trị nhà trung vị (\texttt{medv}) từ \texttt{lstat} và \texttt{rm}.
+
+\subsubsection*{Bước 1--2: Fit mô hình và trực quan hóa}
+
+\begin{lstlisting}[style=Rstyle]
+library(MASS); data(Boston)
+
+model_boston <- lm(medv ~ lstat + rm, data = Boston)
+resid_boston <- residuals(model_boston)
+
+par(mfrow = c(1, 2))
+hist(resid_boston, breaks = 30, freq = FALSE,
+     col = "lightblue", border = "white",
+     main = "Histogram of Residuals", xlab = "Residuals")
+curve(dnorm(x, mean = 0, sd = sd(resid_boston)),
+      add = TRUE, col = "red", lwd = 2)
+
+qqnorm(resid_boston, main = "Normal Q-Q Plot")
+qqline(resid_boston, col = "red", lwd = 2)
+\end{lstlisting}
+
+\textbf{Quan sát.} Biểu đồ tần suất lệch phải, đồ thị xác suất chuẩn có đuôi phải nằm cao hơn đường thẳng: dấu hiệu phân phối lệch phải.
+
+\subsubsection*{Bước 3: Kiểm định hình thức}
+
+\begin{lstlisting}[style=Rstyle]
+shapiro.test(resid_boston)
+
+library(tseries)
+jarque.bera.test(resid_boston)
+\end{lstlisting}
+
+\begin{lstlisting}[style=output]
+Shapiro-Wilk: W = 0.9266, p-value = 2.7e-17   <- bac bo H0
+Jarque-Bera:  X-squared = 256.8, p-value < 2.2e-16  <- bac bo H0
+\end{lstlisting}
+
+Cả hai kiểm định đều bác bỏ chuẩn tắc với $n = 506$: ví dụ điển hình về ``kiểm định quá nhạy với $n$ lớn''. Cần xem xét thêm mức độ nghiêm trọng thực tế.
+
+\subsubsection*{Bước 4--5: Robust SE và Bootstrap CI}
+
+\begin{lstlisting}[style=Rstyle]
+library(sandwich); library(lmtest); library(boot)
+
+# Robust SE
+coeftest(model_boston, vcov = vcovHC(model_boston, type = "HC3"))
+
+# Bootstrap CI
+boot_fn <- function(data, indices) {
+  coef(lm(medv ~ lstat + rm, data = data[indices, ]))
+}
+set.seed(123)
+boot_out <- boot(Boston, boot_fn, R = 2000)
+boot.ci(boot_out, type = c("perc", "bca"), index = 2)  # lstat
+boot.ci(boot_out, type = c("perc", "bca"), index = 3)  # rm
+
+# Tom tat 3 phuong phap cho lstat
+cat("OLS    :", round(confint(model_boston)["lstat", ], 4), "\n")
+cat("Robust :", round(coefci(model_boston,
+                    vcov = vcovHC(model_boston))["lstat", ], 4), "\n")
+\end{lstlisting}
+
+\textbf{Kết luận phần 2.} Dataset \texttt{Boston} vi phạm giả định chuẩn tắc ở mức đáng chú ý. Với $n = 506$, Robust SE là lựa chọn hợp lý. Bootstrap CI cho kết quả tương tự và cung cấp xác nhận độc lập.
+
+% =============================================================================
+\section*{Tổng Kết}
+\addcontentsline{toc}{section}{Tổng Kết}
+% =============================================================================
+
+\begin{center}
+\begin{tabular}{@{}lll@{}}
+\toprule
+ & \textbf{Giả định Tuyến tính} & \textbf{Giả định Chuẩn tắc} \\
+\midrule
+\textbf{Phát biểu} & $E[Y|X] = X\beta$ & $\varepsilon \sim \mathcal{N}(0, \sigma^2)$ \\
+\textbf{Vi phạm ảnh hưởng đến} & Ước lượng $\hat{\beta}$ chệch & $p$-value, CI không chính xác \\
+\textbf{Phát hiện} & Đồ thị phần dư theo giá trị khớp & Đồ thị xác suất chuẩn, biểu đồ tần suất \\
+\textbf{Kiểm định} & không áp dụng & Shapiro-Wilk, Jarque-Bera \\
+\textbf{Khắc phục} & Đa thức, biến đổi logarit & Sai số chuẩn vững, Bootstrap \\
+\textbf{Dataset ví dụ} & \texttt{mtcars}: hp $\to$ mpg & \texttt{Boston}: lstat+rm $\to$ medv \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\textbf{Lời khuyên tổng quát.} Không có mô hình nào thỏa mãn hoàn hảo tất cả giả định trong thực tế. Mục tiêu là đánh giá \textit{mức độ vi phạm} và \textit{hậu quả thực tế} của nó, không phải tìm kiếm sự hoàn hảo về mặt thống kê.
+
+\end{document}

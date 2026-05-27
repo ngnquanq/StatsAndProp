@@ -1,0 +1,92 @@
+\subsection{Ví Dụ R: Dataset \texttt{mtcars}}
+% -----------------------------------------------------------------------------
+
+\textbf{Bài toán:} Dự báo lượng nhiên liệu tiêu thụ (\texttt{mpg}) từ công suất động cơ (\texttt{hp}). Liệu quan hệ này có tuyến tính không?
+
+\subsubsection*{Bước 1: Khám phá dữ liệu và ước lượng mô hình tuyến tính}
+
+\begin{lstlisting}[style=Rstyle]
+data(mtcars)
+
+plot(mtcars$hp, mtcars$mpg,
+     xlab = "Horsepower (hp)", ylab = "Miles per gallon (mpg)",
+     main = "mpg vs hp", pch = 16, col = "steelblue")
+
+model_linear <- lm(mpg ~ hp, data = mtcars)
+abline(model_linear, col = "red", lwd = 2)
+
+# Residual plot
+par(mfrow = c(1, 2))
+plot(model_linear, which = 1, main = "Residuals vs Fitted (Linear)")
+plot(model_linear, which = 2)
+\end{lstlisting}
+
+\textbf{Quan sát.} Đường LOESS trong đồ thị phần dư theo giá trị khớp có dạng cong (chữ U): vi phạm tuyến tính rõ ràng.
+
+\subsubsection*{Bước 2: Fit model đa thức bậc 2 và bậc 3}
+
+\begin{lstlisting}[style=Rstyle]
+model_quad  <- lm(mpg ~ poly(hp, 2), data = mtcars)
+model_cubic <- lm(mpg ~ poly(hp, 3), data = mtcars)
+summary(model_quad)
+\end{lstlisting}
+
+\begin{lstlisting}[style=output]
+Coefficients:
+             Estimate Std. Error t value Pr(>|t|)
+(Intercept)   20.091      0.570  35.24   <2e-16 ***
+poly(hp, 2)1 -26.045      3.225  -8.08   8.3e-09 ***
+poly(hp, 2)2   8.720      3.225   2.70    0.011 *
+\end{lstlisting}
+
+Hệ số bậc 2 có ý nghĩa thống kê ($p = 0.011$) $\to$ quan hệ phi tuyến được xác nhận.
+
+\subsubsection*{Bước 3: So sánh model bằng ANOVA và AIC/BIC}
+
+\begin{lstlisting}[style=Rstyle]
+anova(model_linear, model_quad, model_cubic)
+AIC(model_linear, model_quad, model_cubic)
+BIC(model_linear, model_quad, model_cubic)
+\end{lstlisting}
+
+\begin{lstlisting}[style=output]
+Analysis of Variance Table
+  Res.Df    RSS Df Sum of Sq      F    Pr(>F)
+1     30 447.67
+2     29 360.37  1    87.303  7.309  0.01149 *
+3     28 334.55  1    25.816  2.161  0.15261
+
+             df      AIC          df      BIC
+model_linear  3  181.394    model_linear  3  185.887
+model_quad    4  175.665    model_quad    4  181.653  <- nho nhat
+model_cubic   5  175.880    model_cubic   5  183.364
+\end{lstlisting}
+
+\textbf{Diễn giải:} Mô hình bậc 2 cải thiện đáng kể so với bậc 1 ($p=0.011$). Mô hình bậc 3 không thêm giá trị ($p=0.153$). Cả AIC và BIC đều chỉ mô hình bậc 2 là tốt nhất.
+
+\subsubsection*{Bước 4: Trực quan hóa kết quả}
+
+\begin{lstlisting}[style=Rstyle]
+hp_seq   <- seq(min(mtcars$hp), max(mtcars$hp), length.out = 200)
+new_data <- data.frame(hp = hp_seq)
+
+pred_linear <- predict(model_linear, newdata = new_data)
+pred_quad   <- predict(model_quad,   newdata = new_data)
+pred_cubic  <- predict(model_cubic,  newdata = new_data)
+
+plot(mtcars$hp, mtcars$mpg,
+     xlab = "Horsepower (hp)", ylab = "mpg",
+     main = "So sanh Linear vs Polynomial", pch = 16, col = "gray50")
+
+lines(hp_seq, pred_linear, col = "red",    lwd = 2, lty = 2)
+lines(hp_seq, pred_quad,   col = "blue",   lwd = 2)
+lines(hp_seq, pred_cubic,  col = "green4", lwd = 2, lty = 3)
+
+legend("topright",
+       legend = c("Linear", "Quadratic (AIC tot nhat)", "Cubic"),
+       col = c("red", "blue", "green4"), lwd = 2, lty = c(2, 1, 3))
+\end{lstlisting}
+
+\textbf{Kết luận phần 1.} Quan hệ giữa \texttt{hp} và \texttt{mpg} là phi tuyến. Model đa thức bậc 2 cải thiện đáng kể so với model tuyến tính ($\Delta\text{AIC} \approx 5.7$, F-test $p < 0.05$) mà không làm tăng độ phức tạp quá mức.
+
+% -----------------------------------------------------------------------------

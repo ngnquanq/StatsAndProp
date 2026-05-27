@@ -1,0 +1,17 @@
+\subsection{Hậu Quả Khi Vi Phạm}
+% -----------------------------------------------------------------------------
+
+Hậu quả của việc vi phạm tính chuẩn phụ thuộc lớn vào kích thước mẫu và bản chất của dữ liệu. Điểm cốt lõi cần nhớ: ước lượng OLS $\hat{\boldsymbol{\beta}}$ vẫn không chệch khi vi phạm giả định chuẩn; vấn đề nằm ở \textbf{suy diễn thống kê} ($p$-value, khoảng tin cậy), không phải ở ước lượng điểm.
+
+\textbf{1. Vô hiệu hóa suy diễn thống kê trong mẫu nhỏ.} Đây là hậu quả nghiêm trọng nhất. Khi $n$ nhỏ và sai số không chuẩn:
+\begin{itemize}
+  \item Các ước lượng hệ số, giá trị khớp và dự báo không còn tuân theo phân phối chuẩn, khiến khoảng tin cậy dạng $\hat{\beta}_j \pm t^*_{\alpha/2} \cdot \mathrm{SE}$ mất cơ sở toán học và độ phủ thực tế không đạt mức danh nghĩa.
+  \item Thống kê $t$ và $F$ không còn theo phân phối lý thuyết tương ứng, dẫn đến $p$-value sai lệch và kết luận về ý nghĩa thống kê không đáng tin.
+  \item Trung bình bình phương phần dư không còn phân phối theo $\chi^2$ (xem Mục~\ref{sec:normality_theory}), làm hỏng mọi suy diễn liên quan đến phương sai $\sigma^2$.
+\end{itemize}
+
+\textbf{2. Ít tác động hơn với mẫu lớn.} Khi $n$ đủ lớn, Định lý Giới hạn Trung tâm đảm bảo các ước lượng $\hat{\boldsymbol{\beta}}$ (vốn là tổ hợp tuyến tính của $y_i$) xấp xỉ phân phối chuẩn bất kể phân phối thực sự của sai số.
+
+\textbf{3. Đặt ra nghi ngờ về tính phù hợp của OLS.} Nếu sai số không chuẩn vì dữ liệu thực sự tuân theo một phân phối khác (ví dụ: phân phối Poisson cho dữ liệu đếm, phân phối nhị thức cho tỷ lệ), thì OLS có thể không phải phương pháp phù hợp nhất. Trong các trường hợp này, mô hình tuyến tính tổng quát (GLM) như hồi quy Poisson hay hồi quy logistic sẽ hợp lý hơn về mặt xác suất.
+
+% -----------------------------------------------------------------------------

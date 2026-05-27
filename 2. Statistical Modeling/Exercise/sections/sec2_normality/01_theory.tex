@@ -1,0 +1,57 @@
+\subsection{Cơ Sở Lý Thuyết}
+
+Mô hình hồi quy bội giả định:
+\[
+  \varepsilon_i \overset{\text{i.i.d.}}{\sim} \mathcal{N}(0,\, \sigma^2), \quad i = 1, 2, \ldots, n
+\]
+
+Tức là \textbf{phần dư} (không phải $Y$) phải có phân phối chuẩn. Giả định này có một vị trí đặc biệt: \textbf{không bắt buộc để tính toán mô hình, nhưng là nền tảng cốt lõi cho mọi suy diễn thống kê sâu hơn}.
+
+\subsubsection{Không bắt buộc đối với Phương pháp Bình Phương Tối Thiểu}
+
+Các hệ số $\hat{\beta}$ và phương sai $s^2$ có thể được tính bằng OLS mà không cần bất kỳ giả định nào về phân phối. Theo \textbf{Định lý Gauss-Markov}, chỉ cần sai số thỏa mãn ba điều kiện:
+\begin{itemize}
+  \item kỳ vọng bằng 0: $E(\varepsilon_i) = 0$,
+  \item phương sai không đổi: $\mathrm{Var}(\varepsilon_i) = \sigma^2$,
+  \item không có tương quan: $\mathrm{Cov}(\varepsilon_i, \varepsilon_j) = 0$,
+\end{itemize}
+OLS đã cho các \textbf{ước lượng tuyến tính không chệch tốt nhất} (BLUE) mà không đòi hỏi thêm giả định về dạng phân phối.
+
+\subsubsection{Khi Thêm Giả Định Chuẩn: OLS Tương Đương MLE và Đạt Tối Ưu Toàn Cục}
+
+Khi bổ sung $\varepsilon \sim \mathcal{N}(0, \sigma^2 I)$, bài toán thay đổi đáng kể theo ba hướng:
+
+\begin{enumerate}
+  \item \textbf{Không tương quan $\Rightarrow$ Độc lập.} Với phân phối chuẩn, không tương quan và độc lập là tương đương. Điều này mạnh hơn so với giả định Gauss-Markov thuần túy.
+  \item \textbf{OLS = MLE.} Dưới giả định chuẩn, hàm hợp lý (likelihood) của mô hình đạt cực đại tại đúng nghiệm OLS. Hai phương pháp cho cùng một kết quả.
+  \item \textbf{Ước lượng tối ưu toàn cục (UMVUE).} Các ước lượng $\hat{\beta}$ và $\hat{\sigma}^2$ không chỉ là tốt nhất trong lớp ước lượng tuyến tính mà trở thành \textbf{thống kê đủ} (sufficient statistics) và đạt \textbf{phương sai nhỏ nhất trong toàn bộ các ước lượng không chệch}, kể cả phi tuyến.
+\end{enumerate}
+
+\subsubsection{Cơ Sở Bắt Buộc cho Suy Diễn Mẫu Nhỏ}
+\label{sec:normality_theory}
+
+Mục đích lớn nhất của giả định chuẩn là thiết lập nền tảng toán học cho kiểm định giả thuyết và khoảng tin cậy, đặc biệt khi $n$ nhỏ:
+
+\begin{itemize}
+  \item Các tổng bình phương (SS hồi quy, SS phần dư) tuân theo \textbf{phân phối $\chi^2$ độc lập} với nhau.
+  \item Tỷ số của chúng tuân theo \textbf{phân phối $F$}: cơ sở của kiểm định $F$-test tổng thể.
+  \item Từng hệ số $\hat{\beta}_j$ tuân theo \textbf{phân phối $t$-Student}: cơ sở của kiểm định $t$-test và khoảng tin cậy.
+\end{itemize}
+
+Nếu không có giả định chuẩn, cả $t$-test lẫn $F$-test đều mất cơ sở toán học khi $n$ nhỏ. Với mẫu lớn, Định lý Giới hạn Trung tâm đảm bảo $\hat{\beta}$ xấp xỉ chuẩn vì chúng là tổ hợp tuyến tính của $y_i$; giả định chuẩn lúc này ít quan trọng hơn.
+
+\subsubsection{Sự Siêu Chuẩn của Phần Dư}
+
+Về mặt chẩn đoán, phần dư tính được $\hat{e}_i$ có một đặc tính đáng chú ý: chúng là tổ hợp tuyến tính của \textit{tất cả} các sai số thực sự $\varepsilon_i$. Theo Định lý Giới hạn Trung tâm, tổ hợp tuyến tính của các biến ngẫu nhiên có xu hướng tiến gần phân phối chuẩn hơn là bản thân các biến gốc. Do đó, $\hat{e}_i$ thường có hành vi ``chuẩn'' hơn rất nhiều so với $\varepsilon_i$ thực sự --- hiện tượng này gọi là \textbf{sự siêu chuẩn của phần dư}.
+
+\textbf{Hệ quả thực tiễn của siêu chuẩn.} Khi dùng đồ thị xác suất chuẩn (Q-Q plot) hoặc biểu đồ tần suất để kiểm tra giả định, phần dư $\hat{e}_i$ có thể trông ``chuẩn'' ngay cả khi sai số thực sự $\varepsilon_i$ không chuẩn. Đặc biệt với mẫu nhỏ đến trung bình, đây là giới hạn cơ bản của chẩn đoán bằng đồ thị: chúng ta quan sát $\hat{e}$, không quan sát $\varepsilon$.
+
+\subsubsection{Điểm Dễ Nhầm: Tính Chuẩn của $Y \neq$ Tính Chuẩn của Phần Dư}
+
+\textbf{Sai lầm phổ biến.} Nhiều người kiểm tra phân phối của $Y$ thay vì phần dư.
+
+Ví dụ: $Y = 2X + \varepsilon$, với $X \sim \mathrm{Uniform}(0,10)$ và $\varepsilon \sim \mathcal{N}(0,1)$. Biến $Y$ sẽ không phân phối chuẩn, nhưng phần dư từ mô hình đúng vẫn có phân phối chuẩn.
+
+\textbf{Quy tắc:} Luôn kiểm tra phân phối của \textbf{phần dư sau khi ước lượng mô hình}.
+
+% -----------------------------------------------------------------------------

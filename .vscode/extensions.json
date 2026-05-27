@@ -1,5 +1,26 @@
 {
     "recommendations": [
         "mathematic.vscode-latex"
-    ]
+    ],
+    
+    "latex-workshop.latex.tools": [
+      {
+        "name": "xelatexmk",
+        "command": "latexmk",
+        "args": [
+          "-xelatex",
+          "-synctex=1",
+          "-interaction=nonstopmode",
+          "-file-line-error",
+          "%DOC%"
+        ]
+      }
+    ],
+    "latex-workshop.latex.recipes": [
+      {
+        "name": "XeLaTeX + biber",
+        "tools": ["xelatexmk"]
+      }
+    ],
+    "latex-workshop.latex.recipe.default": "first"
 }

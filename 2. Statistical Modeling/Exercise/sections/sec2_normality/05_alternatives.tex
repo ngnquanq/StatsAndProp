@@ -1,0 +1,12 @@
+\subsection{Giải Pháp Thay Thế}
+% -----------------------------------------------------------------------------
+
+Khi giả định tính chuẩn của phần dư bị vi phạm, có ba hướng xử lý tùy theo bối cảnh:
+
+\textbf{1. Phương pháp tái lấy mẫu Bootstrap (khi mẫu nhỏ).} Nếu $n$ nhỏ và dữ liệu không chuẩn, Bootstrap xây dựng khoảng tin cậy và thực hiện kiểm định dựa trên phân phối thực nghiệm của chính dữ liệu, thay vì giả định phân phối chuẩn lý thuyết. Phương pháp này không đòi hỏi bất kỳ giả định phân phối nào về $\varepsilon$.
+
+\textbf{2. Dựa vào Định lý Giới hạn Trung tâm (khi mẫu lớn).} Nếu $n$ đủ lớn, các ước lượng $\hat{\boldsymbol{\beta}}$ xấp xỉ phân phối chuẩn bất kể phân phối của $\varepsilon$. Trong trường hợp này không cần can thiệp thêm; các kiểm định $t$ và $F$ vẫn có giá trị tiệm cận.
+
+\textbf{3. Chuyển sang Mô hình Tuyến tính Tổng quát (GLM).} Nếu vi phạm tính chuẩn xuất phát từ việc biến phản hồi thực sự tuân theo một phân phối khác (dữ liệu đếm theo Poisson, dữ liệu nhị phân theo nhị thức), thì OLS không phải phương pháp phù hợp về mặt xác suất. Hồi quy Poisson hay hồi quy logistic mô hình hóa đúng cấu trúc phân phối của dữ liệu.
+
+% -----------------------------------------------------------------------------

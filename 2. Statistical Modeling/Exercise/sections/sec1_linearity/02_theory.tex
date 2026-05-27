@@ -1,0 +1,102 @@
+\subsection{Cơ Sở Lý Thuyết}
+% -----------------------------------------------------------------------------
+
+Mô hình hồi quy bội tổng quát:
+\[
+  Y = \beta_0 + \beta_1 X_1 + \beta_2 X_2 + \cdots + \beta_p X_p + \varepsilon
+\]
+
+Giả định tuyến tính phát biểu rằng:
+\[
+  E[Y \mid X_1, X_2, \ldots, X_p] = \beta_0 + \beta_1 X_1 + \cdots + \beta_p X_p
+\]
+
+Hay nói cách khác: \textbf{kỳ vọng có điều kiện của $Y$ là một hàm tuyến tính trong các tham số $\beta$}.
+
+\subsubsection{Ý nghĩa cốt lõi 1: Cấu trúc đại số của các tham số $\beta$}
+
+``Tuyến tính'' ở đây là thuộc tính về \textbf{cấu trúc đại số của $\beta$}, không phải hình dáng của dữ liệu. Cụ thể, các tham số $\beta_0, \beta_1, \ldots, \beta_k$ phải:
+\begin{itemize}
+  \item Xuất hiện ở \textbf{bậc một} (không có $\beta^2$, $\beta^3$, \ldots)
+  \item Đứng \textbf{độc lập}, không lồng trong hàm phi tuyến
+  \item Được \textbf{cộng lại} với nhau để tạo thành dự báo
+\end{itemize}
+
+Bạn sẽ không bao giờ thấy dạng $\beta^2$, $e^{\beta}$, hay $\sin(\beta)$ trong một \textit{mô hình tuyến tính}.
+
+\subsubsection{Ý nghĩa cốt lõi 2: Sự tự do của các biến $x$}
+
+Ngược lại, \textbf{mô hình không đặt bất kỳ ràng buộc nào lên các biến $x$}. Bạn hoàn toàn có thể biến đổi $x$ thành bất kỳ dạng phi tuyến nào (bình phương, nghịch đảo, logarit, hàm lượng giác, \ldots) và mô hình vẫn là \textit{mô hình tuyến tính}. Ví dụ, phương trình sau chứa đồng thời nghịch đảo ($x_2^{-1}$), bình phương ($x_2^2$) và hàm sin ($\sin x_2$):
+\[
+  y = \beta_0 + \beta_1 x_1 + \beta_2 x_2^{-1} + \beta_3 x_2^2 + \beta_4 \sin(x_2) + \varepsilon
+\]
+
+Mô hình này \textbf{vẫn là mô hình tuyến tính} vì $\beta_0, \ldots, \beta_4$ đều xuất hiện ở bậc một và được cộng lại.
+
+\vspace{6pt}
+\begin{center}
+\begin{tabular}{@{}lll@{}}
+\toprule
+\textbf{Dạng mô hình} & \textbf{Tuyến tính trong $\beta$?} & \textbf{Lý do} \\
+\midrule
+$Y = \beta_0 + \beta_1 X + \varepsilon$ & Có & $\beta$ bậc một, cộng tính \\
+$Y = \beta_0 + \beta_1 X + \beta_2 X^2 + \varepsilon$ & Có & $X^2$ là biến mới; $\beta$ vẫn bậc một \\
+$Y = \beta_0 + \beta_1 \log X + \beta_2 X^{-1} + \varepsilon$ & Có & $\log X,\; X^{-1}$ là biến mới \\
+$Y = \beta_0 \cdot e^{\beta_1 X} + \varepsilon$ & \textbf{Không} & $\beta_1$ nằm trong $\exp(\cdot)$ \\
+$Y = \beta_0 + X^{\beta_1} + \varepsilon$ & \textbf{Không} & $\beta_1$ là số mũ của $X$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\textbf{Hệ quả thực tiễn.} Nhờ đặc tính này, khuôn khổ hồi quy tuyến tính có thể xấp xỉ vô số quan hệ cong trong thực tế, chỉ bằng cách biến đổi các biến $x$, trong khi vẫn giữ nguyên phương pháp tính toán OLS.
+
+\textbf{Minh họa hình học: ba trường hợp đặc trưng.}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\textwidth]{./figures/fig1_linear_params.png}
+  \caption{Mô hình tuyến tính không nhất thiết tạo ra đường thẳng.
+  \textbf{(a)} Bậc 1 $\to$ đường thẳng.
+  \textbf{(b)} Bậc 2 $\to$ parabol, vẫn là mô hình tuyến tính vì $\beta_0, \beta_1, \beta_2$ bậc một.
+  \textbf{(c)} $y = e^{\beta_0+\beta_1 x}$: $\beta_1$ nằm trong $\exp(\cdot)$, không phải mô hình tuyến tính.}
+  \label{fig:linear_params}
+\end{figure}
+
+\subsubsection{Dạng Ma Trận: Biểu Diễn Gọn Cho $n$ Quan Sát}
+
+Với $n$ quan sát, dạng đại số tổng quát được gom lại thành phép nhân ma trận:
+\[
+  \mathbf{y} = \mathbf{X}\boldsymbol{\beta} + \boldsymbol{\varepsilon},
+  \qquad
+  E(\mathbf{Y} \mid \mathbf{X}) = \mathbf{X}\boldsymbol{\beta}
+\]
+
+trong đó:
+\begin{itemize}
+  \item $\mathbf{y}$: vector cột $n \times 1$ chứa các giá trị phản hồi.
+  \item $\mathbf{X}$: \textbf{ma trận thiết kế} kích thước $n \times (k+1)$, cột đầu là vector đơn vị $\mathbf{1}_n$ (cho $\beta_0$), các cột còn lại là giá trị của $k$ biến dự báo.
+  \item $\boldsymbol{\beta} = (\beta_0, \beta_1, \ldots, \beta_k)^\top$: vector cột $(k+1) \times 1$ chứa các tham số.
+  \item $\boldsymbol{\varepsilon}$: vector cột $n \times 1$ chứa các sai số ngẫu nhiên.
+\end{itemize}
+
+Nhờ cấu trúc tổ hợp tuyến tính này, OLS tối thiểu hóa $\|\mathbf{y} - \mathbf{X}\boldsymbol{\beta}\|^2$ và dẫn đến \textbf{hệ phương trình chuẩn}:
+\[
+  \mathbf{X}^\top\mathbf{X}\,\hat{\boldsymbol{\beta}} = \mathbf{X}^\top\mathbf{y}
+\]
+
+Khi $\mathbf{X}^\top\mathbf{X}$ khả nghịch (các cột của $\mathbf{X}$ độc lập tuyến tính), nghiệm duy nhất là $\hat{\boldsymbol{\beta}} = (\mathbf{X}^\top\mathbf{X})^{-1}\mathbf{X}^\top\mathbf{y}$. Đây là lý do tính tuyến tính trong $\boldsymbol{\beta}$ mang lại phương pháp ước lượng \textbf{đồng nhất và khả tính} cho mọi cấu hình biến dự báo.
+
+\subsubsection{Liên hệ với giả định $E(\varepsilon \mid X) = 0$}
+
+Giả định tuyến tính và giả định $E(\varepsilon \mid X) = 0$ là \textbf{hai mặt của cùng một yêu cầu}: khi dạng hàm $E[Y|X]$ được chỉ định đúng, phần dư chỉ là nhiễu ngẫu nhiên, kỳ vọng của chúng bằng 0 tại mọi giá trị $X$. Khi dạng hàm sai, phần dư mang theo thông tin có hệ thống và $E(\varepsilon \mid X) \neq 0$.
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.9\textwidth]{./figures/fig2_epsilon_zero.png}
+  \caption{$E(\varepsilon|X)=0$ khi mô hình đúng dạng (trái) vs.\ $E(\varepsilon|X)\neq 0$ khi sai dạng (phải).
+  Trái: phần dư dương (xanh) và âm (cam) phân bố đều hai phía, $\sum\varepsilon\approx 0$.
+  Phải: phần dư dương tập trung ở giữa, âm ở hai đầu, tạo thành mẫu hình có hệ thống.}
+  \label{fig:epsilon_zero}
+\end{figure}
+
+% -----------------------------------------------------------------------------

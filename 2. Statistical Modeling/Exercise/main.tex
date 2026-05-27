@@ -1,0 +1,141 @@
+% !TEX program = xelatex
+\documentclass[12pt, a4paper]{article}
+
+% ── Language & font ──────────────────────────────────────────────────────────
+\usepackage{fontspec}
+\usepackage{polyglossia}
+\setmainlanguage{vietnamese}
+\setotherlanguage{english}
+
+% ── Math ─────────────────────────────────────────────────────────────────────
+\usepackage{amsmath, amssymb}
+
+% ── Layout ───────────────────────────────────────────────────────────────────
+\usepackage[top=2.5cm, bottom=2.5cm, left=3cm, right=2.5cm]{geometry}
+\usepackage{setspace}
+\setstretch{1.3}
+\usepackage{parskip}
+
+% ── Graphics & tables ────────────────────────────────────────────────────────
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage{caption}
+\captionsetup{font=small, labelfont=bf}
+\usepackage{booktabs}
+\usepackage{tabularx}
+
+% ── Code listings ────────────────────────────────────────────────────────────
+\usepackage{listings}
+\usepackage{xcolor}
+
+\definecolor{codebg}{RGB}{248,248,248}
+\definecolor{codeframe}{RGB}{220,220,220}
+\definecolor{codecomment}{RGB}{100,100,100}
+\definecolor{codestring}{RGB}{163,21,21}
+\definecolor{codekeyword}{RGB}{0,0,200}
+\definecolor{outputbg}{RGB}{240,248,255}
+
+\lstdefinestyle{Rstyle}{
+  language        = R,
+  backgroundcolor = \color{codebg},
+  frame           = single,
+  framesep        = 4pt,
+  rulecolor       = \color{codeframe},
+  basicstyle      = \ttfamily\small,
+  keywordstyle    = \color{codekeyword}\bfseries,
+  stringstyle     = \color{codestring},
+  commentstyle    = \color{codecomment}\itshape,
+  showstringspaces= false,
+  breaklines      = true,
+  breakatwhitespace=true,
+  tabsize         = 2,
+  numbers         = left,
+  numberstyle     = \tiny\color{gray},
+  numbersep       = 6pt,
+  xleftmargin     = 15pt,
+}
+
+\lstdefinestyle{output}{
+  backgroundcolor = \color{outputbg},
+  frame           = single,
+  framesep        = 4pt,
+  rulecolor       = \color{codeframe},
+  basicstyle      = \ttfamily\small,
+  breaklines      = true,
+  numbers         = none,
+  xleftmargin     = 8pt,
+}
+
+% ── Callout boxes ─────────────────────────────────────────────────────────────
+\usepackage[most]{tcolorbox}
+
+\tcbset{
+  notebase/.style={
+    enhanced, breakable,
+    boxrule     = 0.8pt,
+    arc         = 3pt,
+    left        = 8pt, right = 8pt,
+    top         = 5pt, bottom = 5pt,
+    fontupper   = \small,
+  }
+}
+
+\newtcolorbox{notebox}{notebase,
+  colback = yellow!8, colframe = orange!60!black,
+}
+
+\newtcolorbox{warnbox}{notebase,
+  colback = red!5, colframe = red!60!black,
+}
+
+\newtcolorbox{tipbox}{notebase,
+  colback = green!5, colframe = green!50!black,
+}
+
+% ── Hyperlinks ────────────────────────────────────────────────────────────────
+\usepackage{hyperref}
+\hypersetup{
+  colorlinks = true,
+  linkcolor  = blue!60!black,
+  urlcolor   = blue!70!black,
+}
+
+% ─────────────────────────────────────────────────────────────────────────────
+
+\title{\textbf{Giả Định Trong Hồi Quy Bội}\\[4pt]
+       \large Tính Tuyến Tính và Tính Chuẩn}
+
+
+\begin{document}
+
+\maketitle
+\tableofcontents
+\newpage
+
+% =============================================================================
+\section{Giả Định Tính Tuyến Tính}
+% =============================================================================
+
+\input{sections/sec1_linearity/01_history}
+\input{sections/sec1_linearity/02_theory}
+\input{sections/sec1_linearity/03_advantages}
+\input{sections/sec1_linearity/04_violations}
+\input{sections/sec1_linearity/05_detection}
+\input{sections/sec1_linearity/06_remedies}
+\input{sections/sec1_linearity/07_example_mtcars}
+\input{sections/sec1_linearity/08_advanced}
+
+% =============================================================================
+\section{Giả Định Tính Chuẩn Của Phần Dư}
+% =============================================================================
+
+\input{sections/sec2_normality/01_theory}
+\input{sections/sec2_normality/02_visual}
+\input{sections/sec2_normality/03_tests}
+\input{sections/sec2_normality/04_violations}
+\input{sections/sec2_normality/05_alternatives}
+\input{sections/sec2_normality/06_example_boston}
+
+\input{sections/conclusion}
+
+\end{document}

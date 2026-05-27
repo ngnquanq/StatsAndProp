@@ -1,0 +1,59 @@
+\subsection{Kiểm Định Hình Thức}
+% -----------------------------------------------------------------------------
+
+\subsubsection{Shapiro-Wilk Test}
+
+Hoạt động cực kì tốt cho mẫu nhỏ.
+\[
+  H_0{:}\ \text{Residuals có phân phối chuẩn}
+  \qquad
+  H_1{:}\ \text{Residuals không có phân phối chuẩn}
+\]
+
+Thống kê $W \in [0,1]$; $W$ càng gần 1 $\to$ residuals càng gần chuẩn.
+
+
+Tuy nhiên, với mẫu lớn, Shapiro-Wilk trở nên ít cần thiết hơn về mặt thực tiễn. Lý do là nhờ 
+Định lý Giới hạn Trung tâm, khi n đủ lớn, các ước lượng hệ số hồi quy 
+(vốn là các tổ hợp tuyến tính của các quan sát $y_i$ và sai số $\varepsilon_i$) sẽ tự động xấp xỉ phân phối chuẩn, 
+bất chấp việc phân phối thực sự của sai số gốc có chuẩn hay không
+
+
+\subsubsection{Jarque-Bera Test}
+
+Phù hợp cho mẫu lớn, phổ biến trong kinh tế lượng. Kiểm tra đồng thời skewness và excess kurtosis:
+\[
+  JB = \frac{n}{6}\!\left[S^2 + \frac{K^2}{4}\right] \sim \chi^2(2) \text{ dưới } H_0
+\]
+
+với $S$ là độ lệch (skewness) và $K = \text{kurtosis} - 3$ là độ nhọn excess kurtosis.
+
+\subsubsection{Sự Khác Biệt Bản Chất Giữa Hai Kiểm Định}
+
+Hai kiểm định xuất phát từ hai triết lý xây dựng thống kê hoàn toàn khác nhau.
+
+\textbf{Shapiro-Wilk dựa trên tương quan thứ tự.} Thống kê $W$ đo mức độ tương quan giữa các phân vị thực nghiệm của mẫu và các phân vị lý thuyết kỳ vọng của phân phối chuẩn. Nếu mẫu đến từ phân phối chuẩn, hai tập phân vị này phải xếp thẳng hàng trên đồ thị Q-Q; $W$ càng gần 1 thì mức độ khớp càng cao. Đây là kiểm định \textbf{tổng thể}: nó phát hiện bất kỳ dạng lệch chuẩn nào, nhưng không chỉ ra vi phạm đến từ đâu.
+
+\textbf{Jarque-Bera dựa trên ước lượng moment.} Kiểm định so sánh trực tiếp moment bậc 3 (độ lệch $S$, phản ánh mức độ \textit{mất đối xứng} của phân phối) và moment bậc 4 (độ nhọn $K$, phản ánh \textit{hành vi đuôi}) với giá trị lý thuyết của phân phối chuẩn ($S = 0$, $K = 0$). Cấu trúc này cho phép chẩn đoán \textbf{nguồn gốc vi phạm}: nếu $p$-value thấp chủ yếu do $S^2$ lớn thì phân phối lệch; nếu chủ yếu do $K^2$ lớn thì phân phối có đuôi nặng.
+
+\textbf{Hệ quả thực tiễn.} Shapiro-Wilk nhạy hơn với mẫu nhỏ vì phân vị mẫu ổn định; Jarque-Bera cần $n$ lớn để ước lượng moment bậc cao đạt độ chính xác đủ dùng. Khi cả hai đều bác bỏ $H_0$, thành phần $S$ và $K$ trong thống kê JB cung cấp thêm thông tin chẩn đoán mà Shapiro-Wilk không có.
+
+\subsubsection{Bảng so sánh hai kiểm định}
+
+\begin{center}
+\begin{tabular}{@{}lll@{}}
+\toprule
+\textbf{Tiêu chí} & \textbf{Shapiro-Wilk} & \textbf{Jarque-Bera} \\
+\midrule
+Cỡ mẫu phù hợp & $n$ nhỏ đến vừa ($< 2000$) & $n$ lớn \\
+Loại sai lệch phát hiện & Tổng quát & Skewness + Kurtosis \\
+Độ nhạy với $n$ lớn & Quá nhạy & Ổn định hơn \\
+Package R & Base R & \texttt{tseries} \\
+Phổ biến trong & Thống kê tổng quát & Kinh tế lượng \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\textbf{Khuyến nghị.} Dùng cả hai kiểm định kết hợp với trực quan (histogram + Q-Q plot). Kết luận nên dựa trên sự nhất quán giữa các phương pháp, không chỉ một $p$-value.
+
+% -----------------------------------------------------------------------------
