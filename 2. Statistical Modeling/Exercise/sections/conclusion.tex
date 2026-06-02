@@ -2,20 +2,37 @@
 \addcontentsline{toc}{section}{Tổng Kết}
 % =============================================================================
 
+Sau hai nhóm giả định, điểm quan trọng nhất không phải là ghi nhớ thêm nhiều kiểm định, mà là biết \textbf{giả định nào đang bảo vệ phần nào của phân tích}. Giả định tuyến tính bảo vệ hàm trung bình và bản thân hệ số OLS. Giả định chuẩn tắc chủ yếu bảo vệ suy diễn mẫu nhỏ: $t$-test, $F$-test, p-value và khoảng tin cậy cổ điển.
+
 \begin{center}
-\begin{tabular}{@{}lll@{}}
+\small
+\begin{tabularx}{\textwidth}{@{}>{\bfseries}l>{\raggedright\arraybackslash}X>{\raggedright\arraybackslash}X@{}}
 \toprule
- & \textbf{Giả định Tuyến tính} & \textbf{Giả định Chuẩn tắc} \\
+ & Giả định tuyến tính & Giả định chuẩn tắc \\
 \midrule
-\textbf{Phát biểu} & $E[Y|X] = X\beta$ & $\varepsilon \sim \mathcal{N}(0, \sigma^2)$ \\
-\textbf{Vi phạm ảnh hưởng đến} & Ước lượng $\hat{\beta}$ chệch & $p$-value, CI không chính xác \\
-\textbf{Phát hiện} & Đồ thị phần dư theo giá trị khớp & Đồ thị xác suất chuẩn, biểu đồ tần suất \\
-\textbf{Kiểm định} & không áp dụng & Shapiro-Wilk, Jarque-Bera \\
-\textbf{Khắc phục} & Đa thức, biến đổi logarit & Sai số chuẩn vững, Bootstrap \\
-\textbf{Dataset ví dụ} & \texttt{mtcars}: hp $\to$ mpg & \texttt{Boston}: lstat+rm $\to$ medv \\
+Phát biểu & $E(Y\mid X)$ được mô tả đúng bởi dạng tuyến tính đã chọn. & Sai số thật $\varepsilon$ có phân phối chuẩn, thường viết $\varepsilon \sim N(0,\sigma^2 I)$. \\
+Nếu vi phạm & Hệ số có thể chệch vì mô hình sai hàm trung bình. & OLS không tự động hỏng, nhưng suy diễn cổ điển có thể kém tin cậy, nhất là mẫu nhỏ. \\
+Chẩn đoán chính & Residuals vs fitted, component-plus-residual plots, kiểm tra dạng hàm. & Q-Q plot, histogram, Shapiro-Wilk, Jarque-Bera, kiểm tra đuôi và ngoại lai. \\
+Cần xem thêm & Biến thiếu, tương tác, phi tuyến, leverage. & Cỡ mẫu, leverage, outlier, heteroskedasticity, mục tiêu suy diễn. \\
+Phản ứng hợp lý & Đổi mean function: thêm biến, biến đổi, đa thức, spline hoặc mô hình phù hợp hơn. & Dùng HC3, bootstrap, biến đổi, GLM, robust regression hoặc quantile regression tùy nguyên nhân. \\
 \bottomrule
-\end{tabular}
+\end{tabularx}
 \end{center}
 
-\textbf{Lời khuyên tổng quát.} Không có mô hình nào thỏa mãn hoàn hảo tất cả giả định trong thực tế. Mục tiêu là đánh giá \textit{mức độ vi phạm} và \textit{hậu quả thực tế} của nó, không phải tìm kiếm sự hoàn hảo về mặt thống kê.
+\subsection*{Quy Tắc Thực Hành}
 
+Một workflow kỷ luật nên đi theo thứ tự sau:
+
+\begin{enumerate}
+  \item Kiểm tra dạng hàm trung bình trước. Nếu residual plot còn pattern rõ ràng, đừng vội bàn sâu về normality.
+  \item Dùng Q-Q plot để đọc hình dạng vi phạm: lệch, đuôi nặng, outlier hay chỉ vài điểm ở đuôi.
+  \item Dùng kiểm định chuẩn tắc như bằng chứng bổ sung, không dùng p-value như nút bật/tắt chất lượng mô hình.
+  \item Nếu normality bị reject, hỏi tiếp: mẫu nhỏ hay lớn, hệ số có ổn định không, HC3/Bootstrap CI có đổi kết luận không.
+  \item Nếu kết luận phụ thuộc vào một vài quan sát, kiểm tra leverage, Cook's distance và cân nhắc robust regression hoặc mô hình khác.
+\end{enumerate}
+
+\begin{notebox}
+\textbf{Thông điệp cuối.} OLS không cần normality để tính hệ số. Normality là giả định thêm để suy diễn cổ điển hoạt động chính xác trong mẫu nhỏ. Khi giả định này yếu đi, ta không vứt mô hình ngay; ta kiểm tra nguyên nhân, đánh giá hậu quả và dùng công cụ suy diễn phù hợp hơn như HC3 hoặc bootstrap.
+\end{notebox}
+
+% =============================================================================

@@ -1,39 +1,59 @@
 % !TEX program = xelatex
 \documentclass[12pt, a4paper]{article}
 
-% ── Language & font ──────────────────────────────────────────────────────────
+% ============================================================
+% PACKAGES AND SHARED CONFIG
+% ============================================================
+% Compile with XeLaTeX or LuaLaTeX. Do not mix babel/inputenc/fontenc
+% with this fontspec + polyglossia setup.
+
+% -- Language and font ---------------------------------------
 \usepackage{fontspec}
 \usepackage{polyglossia}
 \setmainlanguage{vietnamese}
 \setotherlanguage{english}
+\IfFontExistsTF{Times New Roman}{\setmainfont{Times New Roman}}{}
 
-% ── Math ─────────────────────────────────────────────────────────────────────
-\usepackage{amsmath, amssymb}
+% -- Math -----------------------------------------------------
+\usepackage{amsmath, amssymb, amsthm}
+\usepackage{mathtools}
 
-% ── Layout ───────────────────────────────────────────────────────────────────
+% -- Page layout ---------------------------------------------
 \usepackage[top=2.5cm, bottom=2.5cm, left=3cm, right=2.5cm]{geometry}
 \usepackage{setspace}
 \setstretch{1.3}
 \usepackage{parskip}
+\usepackage{enumitem}
 
-% ── Graphics & tables ────────────────────────────────────────────────────────
+% -- Graphics -------------------------------------------------
 \usepackage{graphicx}
 \usepackage{float}
 \usepackage{caption}
+\usepackage{subcaption}
 \captionsetup{font=small, labelfont=bf}
+
+% -- Tables ---------------------------------------------------
 \usepackage{booktabs}
+\usepackage{array}
 \usepackage{tabularx}
+\usepackage{longtable}
+\usepackage{multirow}
 
-% ── Code listings ────────────────────────────────────────────────────────────
-\usepackage{listings}
+% -- Colors ---------------------------------------------------
 \usepackage{xcolor}
-
+\definecolor{mainblue}{RGB}{0,82,155}
+\definecolor{lightblue}{RGB}{235,245,255}
+\definecolor{darkgray}{RGB}{70,70,70}
+\definecolor{formulabg}{RGB}{248,250,252}
 \definecolor{codebg}{RGB}{248,248,248}
 \definecolor{codeframe}{RGB}{220,220,220}
 \definecolor{codecomment}{RGB}{100,100,100}
 \definecolor{codestring}{RGB}{163,21,21}
 \definecolor{codekeyword}{RGB}{0,0,200}
 \definecolor{outputbg}{RGB}{240,248,255}
+
+% -- Code listings -------------------------------------------
+\usepackage{listings}
 
 \lstdefinestyle{Rstyle}{
   language        = R,
@@ -66,8 +86,9 @@
   xleftmargin     = 8pt,
 }
 
-% ── Callout boxes ─────────────────────────────────────────────────────────────
+% -- Callout boxes -------------------------------------------
 \usepackage[most]{tcolorbox}
+\tcbuselibrary{skins, breakable}
 
 \tcbset{
   notebase/.style={
@@ -92,15 +113,45 @@
   colback = green!5, colframe = green!50!black,
 }
 
-% ── Hyperlinks ────────────────────────────────────────────────────────────────
-\usepackage{hyperref}
-\hypersetup{
-  colorlinks = true,
-  linkcolor  = blue!60!black,
-  urlcolor   = blue!70!black,
+\newtcolorbox{formulabox}[1][]{
+  colback=formulabg, colframe=mainblue!60,
+  title=#1, fonttitle=\bfseries\small,
+  left=6pt, right=6pt, top=4pt, bottom=4pt,
+  breakable
 }
 
-% ─────────────────────────────────────────────────────────────────────────────
+\newtcolorbox{keybox}[1][]{
+  colback=lightblue, colframe=mainblue,
+  title=#1, fonttitle=\bfseries\small,
+  left=6pt, right=6pt, top=4pt, bottom=4pt,
+  breakable
+}
+
+\newtcolorbox{resultbox}{
+  colback=green!5, colframe=green!50!black,
+  left=6pt, right=6pt, top=4pt, bottom=4pt,
+  breakable
+}
+
+% -- Header/footer and section styling -----------------------
+\usepackage{fancyhdr}
+\usepackage{titlesec}
+
+% -- Bibliography --------------------------------------------
+\usepackage[numbers,sort&compress]{natbib}
+
+% -- Hyperlinks: keep near the end ---------------------------
+\usepackage{hyperref}
+\hypersetup{
+  colorlinks=true,
+  linkcolor=mainblue,
+  citecolor=mainblue,
+  urlcolor=mainblue,
+  pdftitle={Các Giả Định Quan Trọng Của Mô Hình Hồi Quy Bội},
+  pdfauthor={Nhóm Sinh Viên}
+}
+
+% ============================================================
 
 \title{\textbf{Giả Định Trong Hồi Quy Bội}\\[4pt]
        \large Tính Tuyến Tính và Tính Chuẩn}

@@ -1,12 +1,174 @@
 \subsection{Giải Pháp Thay Thế}
 % -----------------------------------------------------------------------------
 
-Khi giả định tính chuẩn của phần dư bị vi phạm, có ba hướng xử lý tùy theo bối cảnh:
+Không có một cách sửa chung cho mọi vi phạm chuẩn tắc. Cách xử lý phụ thuộc vào nguyên nhân: mẫu nhỏ, phương sai không đồng nhất, đuôi nặng, ngoại lai, sai dạng hàm trung bình, hoặc biến phản hồi không phù hợp với mô hình Gaussian.
 
-\textbf{1. Phương pháp tái lấy mẫu Bootstrap (khi mẫu nhỏ).} Nếu $n$ nhỏ và dữ liệu không chuẩn, Bootstrap xây dựng khoảng tin cậy và thực hiện kiểm định dựa trên phân phối thực nghiệm của chính dữ liệu, thay vì giả định phân phối chuẩn lý thuyết. Phương pháp này không đòi hỏi bất kỳ giả định phân phối nào về $\varepsilon$.
+Nguyên tắc thực hành là: \textbf{nếu mean function hợp lý nhưng suy diễn không đáng tin, sửa cách đo độ bất định; nếu bản chất mô hình sai, đổi mô hình}.
 
-\textbf{2. Dựa vào Định lý Giới hạn Trung tâm (khi mẫu lớn).} Nếu $n$ đủ lớn, các ước lượng $\hat{\boldsymbol{\beta}}$ xấp xỉ phân phối chuẩn bất kể phân phối của $\varepsilon$. Trong trường hợp này không cần can thiệp thêm; các kiểm định $t$ và $F$ vẫn có giá trị tiệm cận.
+\subsubsection{Bản Đồ Chọn Phương Pháp}
 
-\textbf{3. Chuyển sang Mô hình Tuyến tính Tổng quát (GLM).} Nếu vi phạm tính chuẩn xuất phát từ việc biến phản hồi thực sự tuân theo một phân phối khác (dữ liệu đếm theo Poisson, dữ liệu nhị phân theo nhị thức), thì OLS không phải phương pháp phù hợp về mặt xác suất. Hồi quy Poisson hay hồi quy logistic mô hình hóa đúng cấu trúc phân phối của dữ liệu.
+\begin{center}
+\small
+\begin{tabularx}{\textwidth}{@{}>{\raggedright\arraybackslash}p{3.4cm}>{\raggedright\arraybackslash}X>{\raggedright\arraybackslash}X@{}}
+\toprule
+\textbf{Tình huống} & \textbf{Mục tiêu} & \textbf{Phương pháp ưu tiên} \\
+\midrule
+OLS ổn, SE nghi ngờ & Giữ hệ số, sửa suy diễn & HC3/sandwich robust SE \\
+Mẫu nhỏ, không chuẩn & CI/test không dựa vào normality & Bootstrap \\
+Phản hồi dương, lệch phải & Làm ổn định phương sai và giảm lệch & Log, căn bậc hai, Box-Cox \\
+Đuôi nặng, outlier chi phối & Giảm ảnh hưởng điểm cực đoan & Robust regression; phân tích độ nhạy \\
+Count/binary/rate & Mô hình hóa đúng phân phối phản hồi & GLM: Poisson, logistic, binomial \\
+Trung bình không đại diện tốt & Ước lượng median hoặc quantile & Quantile regression \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+\subsubsection{Sai Số Chuẩn Vững HC3 / Sandwich}
+
+Nếu dạng hàm trung bình có vẻ hợp lý nhưng phần dư cho thấy phương sai không đồng nhất hoặc suy diễn cổ điển không đáng tin, không nhất thiết phải bỏ OLS. Có thể giữ nguyên hệ số $\hat{\boldsymbol{\beta}}$ và thay cách ước lượng ma trận hiệp phương sai.
+
+Sai số chuẩn vững kiểu sandwich, đặc biệt HC3, điều chỉnh sai số chuẩn bằng cách dùng phần dư và leverage của từng quan sát. Ý tưởng thực hành là:
+\begin{itemize}
+  \item hệ số OLS giữ nguyên,
+  \item sai số chuẩn được tính lại,
+  \item $p$-value và khoảng tin cậy được cập nhật theo sai số chuẩn mới.
+\end{itemize}
+
+HC3 thường được khuyến nghị khi mẫu không quá lớn vì nó phạt mạnh các quan sát leverage cao hơn các phiên bản HC đơn giản.
+
+\begin{lstlisting}[style=Rstyle]
+library(sandwich)
+library(lmtest)
+
+fit <- lm(y ~ x1 + x2, data = dat)
+coeftest(fit, vcov = vcovHC(fit, type = "HC3"))
+\end{lstlisting}
+
+\textbf{Khi dùng.} HC3 phù hợp khi mục tiêu chính là suy diễn hệ số trong mô hình tuyến tính đã chọn, nhưng nghi ngờ SE cổ điển bị sai do heteroskedasticity hoặc leverage.
+
+\textbf{Giới hạn.} HC3 không sửa sai dạng hàm trung bình, không loại bỏ ảnh hưởng ngoại lai lên hệ số, và không biến OLS thành mô hình phù hợp cho dữ liệu đếm hoặc nhị phân.
+
+\subsubsection{Bootstrap}
+
+Bootstrap thay phân phối lý thuyết bằng phân phối thực nghiệm thu được từ lấy mẫu lại. Thay vì giả định $\hat{\beta}_j$ có phân phối $t$ chính xác, ta mô phỏng nhiều lần quá trình ước lượng để xem hệ số biến động như thế nào.
+
+Có hai cách thường dùng:
+\begin{itemize}
+  \item \textbf{Case bootstrap:} lấy mẫu có hoàn lại các cặp $(X_i, Y_i)$. Phù hợp khi muốn ít giả định hơn về cấu trúc sai số.
+  \item \textbf{Residual bootstrap:} lấy mẫu có hoàn lại từ phần dư, rồi cộng lại vào giá trị khớp. Phù hợp hơn khi tin rằng mean function đã đúng và sai số có cấu trúc tương đối đồng nhất.
+\end{itemize}
+
+\begin{lstlisting}[style=Rstyle]
+library(boot)
+
+boot_fn <- function(data, indices) {
+  coef(lm(y ~ x1 + x2, data = data[indices, ]))
+}
+
+set.seed(123)
+boot_out <- boot(dat, boot_fn, R = 2000)
+boot.ci(boot_out, type = c("perc", "bca"), index = 2)
+\end{lstlisting}
+
+\textbf{Khi dùng.} Bootstrap đặc biệt hữu ích với mẫu nhỏ hoặc vừa, khi Q-Q plot và kiểm định cho thấy normality đáng nghi, nhưng vẫn muốn báo cáo CI/test cho hệ số.
+
+\textbf{Giới hạn.} Bootstrap không cứu được dữ liệu xấu hoặc mô hình sai nặng. Nếu mẫu gốc không đại diện, có outlier chi phối, hoặc mean function sai, bootstrap sẽ mô phỏng lại chính các vấn đề đó.
+
+\subsubsection{Biến Đổi Biến Phản Hồi}
+
+Khi biến phản hồi dương và lệch phải mạnh, hoặc khi phương sai tăng theo trung bình, biến đổi $Y$ có thể làm phân phối phần dư gần chuẩn hơn và phương sai ổn định hơn.
+
+Các lựa chọn phổ biến:
+\begin{center}
+\small
+\begin{tabularx}{\textwidth}{@{}>{\raggedright\arraybackslash}X>{\raggedright\arraybackslash}p{2.4cm}>{\raggedright\arraybackslash}X@{}}
+\toprule
+\textbf{Tình huống} & \textbf{Biến đổi} & \textbf{Ghi chú} \\
+\midrule
+Dữ liệu dương, trải rộng nhiều bậc & $\log(Y)$ & Diễn giải theo phần trăm thay đổi \\
+Dữ liệu đếm vừa phải & $\sqrt{Y}$ & Làm dịu lệch phải và phương sai tăng \\
+Không rõ biến đổi & Box-Cox & Tìm $\lambda$ bằng likelihood \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+Box-Cox định nghĩa họ biến đổi:
+\[
+  y^{(\lambda)} =
+  \begin{cases}
+    (y^\lambda - 1)/\lambda, & \lambda \neq 0,\\
+    \log(y), & \lambda = 0.
+  \end{cases}
+\]
+
+\begin{lstlisting}[style=Rstyle]
+library(MASS)
+boxcox(fit)
+fit_log <- lm(log(y) ~ x1 + x2, data = dat)
+\end{lstlisting}
+
+\textbf{Khi dùng.} Biến đổi phù hợp khi vấn đề xuất phát từ thang đo của phản hồi: lệch phải, phương sai tăng theo mean, hoặc quan hệ nhân tính.
+
+\textbf{Giới hạn.} Sau biến đổi, mô hình đang giải thích $E[\log(Y)\mid X]$ hoặc $E[Y^{(\lambda)}\mid X]$, không còn trực tiếp là $E[Y\mid X]$. Khi diễn giải hoặc dự báo ngược về thang gốc, cần cẩn thận với bias do biến đổi ngược.
+
+\subsubsection{Mô Hình Tuyến Tính Tổng Quát (GLM)}
+
+Nếu biến phản hồi có bản chất không Gaussian, việc cố sửa normality bằng biến đổi hoặc robust SE thường chỉ là vá triệu chứng. Với dữ liệu nhị phân, đếm hoặc tỷ lệ, cần mô hình hóa đúng quan hệ giữa kỳ vọng và phương sai.
+
+GLM thay giả định $Y \sim \mathcal{N}$ bằng một họ phân phối phù hợp hơn và dùng hàm liên kết:
+\[
+  g(E[Y\mid X]) = X\beta
+\]
+
+\begin{center}
+\small
+\begin{tabularx}{\textwidth}{@{}>{\raggedright\arraybackslash}p{3.0cm}>{\raggedright\arraybackslash}p{3.2cm}>{\raggedright\arraybackslash}X@{}}
+\toprule
+\textbf{Kiểu phản hồi} & \textbf{Mô hình} & \textbf{R} \\
+\midrule
+Nhị phân $0/1$ & Logistic regression & \texttt{glm(..., family = binomial)} \\
+Số đếm & Poisson regression & \texttt{glm(..., family = poisson)} \\
+Tỷ lệ / số thành công & Binomial GLM & \texttt{glm(cbind(success, fail) ~ ..., binomial)} \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+\textbf{Khi dùng.} GLM là lựa chọn đúng khi OLS tạo dự báo ngoài miền hợp lệ, ví dụ xác suất nhỏ hơn 0 hoặc lớn hơn 1, hoặc khi phương sai phản hồi phụ thuộc rõ vào trung bình.
+
+\subsubsection{Robust Regression}
+
+Khi Q-Q plot cho thấy đuôi nặng hoặc một vài quan sát cực đoan chi phối kết quả, robust regression là một lựa chọn thực hành để giảm ảnh hưởng của outlier mà không xóa điểm một cách tùy tiện.
+
+Khác với OLS, vốn phạt phần dư theo bình phương, nhiều phương pháp robust dùng hàm mất mát tăng chậm hơn ở đuôi. Nhờ vậy, một quan sát rất xa không còn đủ sức kéo toàn bộ đường fit như trong OLS.
+
+\begin{lstlisting}[style=Rstyle]
+library(MASS)
+fit_robust <- rlm(y ~ x1 + x2, data = dat)
+summary(fit_robust)
+\end{lstlisting}
+
+\textbf{Khi dùng.} Robust regression phù hợp khi kết luận OLS thay đổi mạnh sau khi kiểm tra Cook's distance, leverage hoặc phần dư Student hóa.
+
+\textbf{Giới hạn.} Đây không phải lý do để bỏ qua việc hiểu outlier. Trước khi dùng robust regression, cần kiểm tra liệu điểm bất thường là lỗi dữ liệu, quan sát hợp lệ hiếm gặp, hay dấu hiệu mô hình thiếu biến.
+
+\subsubsection{Quantile Regression}
+
+Quantile regression là lựa chọn bổ sung khi trung bình không đại diện tốt cho phân phối có lệch mạnh hoặc đuôi nặng. Thay vì mô hình hóa kỳ vọng có điều kiện $E[Y\mid X]$, nó mô hình hóa median hoặc các phân vị khác của $Y\mid X$.
+
+Với median regression, mục tiêu gần với việc tối thiểu hóa tổng trị tuyệt đối phần dư thay vì tổng bình phương phần dư. Vì vậy, median ít bị kéo bởi các điểm cực đoan hơn mean.
+
+\begin{lstlisting}[style=Rstyle]
+library(quantreg)
+fit_med <- rq(y ~ x1 + x2, tau = 0.5, data = dat)
+summary(fit_med)
+\end{lstlisting}
+
+\textbf{Khi dùng.} Dùng khi câu hỏi nghiên cứu quan tâm median hoặc phân vị, ví dụ tác động của $X$ lên nhóm giá trị thấp/cao, hoặc khi mean bị chi phối bởi đuôi phân phối.
+
+\textbf{Giới hạn.} Quantile regression trả lời một câu hỏi khác OLS. Không nên dùng nó chỉ để ``sửa'' OLS nếu mục tiêu thật sự vẫn là kỳ vọng trung bình.
+
+\begin{notebox}
+\textbf{Quy tắc chọn nhanh.} Nếu mean function ổn nhưng SE đáng nghi, dùng HC3 hoặc bootstrap. Nếu phản hồi dương và lệch mạnh, cân nhắc biến đổi. Nếu dữ liệu là count/binary/rate, chuyển sang GLM. Nếu một vài điểm cực đoan chi phối kết luận, kiểm tra ảnh hưởng và làm phân tích robust/sensitivity. Nếu trung bình không còn là đại lượng đại diện tốt, cân nhắc quantile regression.
+\end{notebox}
 
 % -----------------------------------------------------------------------------

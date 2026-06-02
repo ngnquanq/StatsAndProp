@@ -185,7 +185,8 @@ Chỉ áp dụng cho mô hình lồng nhau. $p < 0.05$: mô hình phức tạp h
 Áp dụng được cho mô hình không lồng nhau. $\Delta\text{AIC} > 2$ đã có ý nghĩa; BIC phạt nặng hơn cho số tham số, ưu tiên mô hình đơn giản hơn.
 
 \begin{center}
-\begin{tabular}{@{}lll@{}}
+\small
+\begin{tabularx}{\textwidth}{@{}l>{\raggedright\arraybackslash}X>{\raggedright\arraybackslash}X@{}}
 \toprule
 \textbf{Tiêu chí} & \textbf{Ưu điểm} & \textbf{Hạn chế} \\
 \midrule
@@ -193,7 +194,7 @@ ANOVA & Kiểm định chính xác, $p$-value rõ ràng & Chỉ cho mô hình l�
 AIC   & Linh hoạt, tốt cho dự báo              & Có thể chọn mô hình quá phức tạp \\
 BIC   & Phạt nặng hơn, ưu tiên mô hình gọn     & Đôi khi quá thận trọng \\
 \bottomrule
-\end{tabular}
+\end{tabularx}
 \end{center}
 
 \textbf{Cảnh báo quá khớp.} Bậc đa thức hoặc số nút spline quá cao thường dẫn đến quá khớp. Ưu tiên mô hình đơn giản nhất mà vẫn giải thích được xu hướng chính; kiểm tra đồ thị phần dư sau khi chọn mô hình.

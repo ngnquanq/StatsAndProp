@@ -1,17 +1,96 @@
 \subsection{Hậu Quả Khi Vi Phạm}
 % -----------------------------------------------------------------------------
 
-Hậu quả của việc vi phạm tính chuẩn phụ thuộc lớn vào kích thước mẫu và bản chất của dữ liệu. Điểm cốt lõi cần nhớ: ước lượng OLS $\hat{\boldsymbol{\beta}}$ vẫn không chệch khi vi phạm giả định chuẩn; vấn đề nằm ở \textbf{suy diễn thống kê} ($p$-value, khoảng tin cậy), không phải ở ước lượng điểm.
+Vi phạm giả định chuẩn không đồng nghĩa với việc mô hình hồi quy trở nên vô dụng. Nếu các điều kiện Gauss-Markov chính vẫn hợp lý, đặc biệt là $E(\boldsymbol{\varepsilon}\mid\mathbf{X})=\mathbf{0}$ và phương sai sai số được mô hình hóa đúng, OLS vẫn là ước lượng tuyến tính không chệch tốt nhất (BLUE). Normality không phải điều kiện để tính $\hat{\boldsymbol{\beta}}$.
 
-\textbf{1. Vô hiệu hóa suy diễn thống kê trong mẫu nhỏ.} Đây là hậu quả nghiêm trọng nhất. Khi $n$ nhỏ và sai số không chuẩn:
+Vấn đề chính của nonnormality nằm ở \textbf{suy diễn thống kê}: $p$-value, khoảng tin cậy, khoảng dự báo và mức độ ổn định của kết luận, nhất là khi cỡ mẫu nhỏ hoặc khi phân phối có đuôi nặng.
+
+\subsubsection{Suy Diễn Mẫu Nhỏ Mất Phân Phối Chính Xác}
+
+Khi sai số thật chuẩn, các ước lượng hệ số có phân phối chuẩn kết hợp, các tổng bình phương liên quan đến sai số có phân phối $\chi^2$, và từ đó các thống kê $t$ và $F$ có phân phối chính xác như lý thuyết cổ điển. Đây là cơ sở của kiểm định hệ số, kiểm định tổng thể và khoảng tin cậy trong mẫu nhỏ.
+
+Khi $n$ nhỏ và sai số không chuẩn, chuỗi lập luận này bị đứt:
 \begin{itemize}
-  \item Các ước lượng hệ số, giá trị khớp và dự báo không còn tuân theo phân phối chuẩn, khiến khoảng tin cậy dạng $\hat{\beta}_j \pm t^*_{\alpha/2} \cdot \mathrm{SE}$ mất cơ sở toán học và độ phủ thực tế không đạt mức danh nghĩa.
-  \item Thống kê $t$ và $F$ không còn theo phân phối lý thuyết tương ứng, dẫn đến $p$-value sai lệch và kết luận về ý nghĩa thống kê không đáng tin.
-  \item Trung bình bình phương phần dư không còn phân phối theo $\chi^2$ (xem Mục~\ref{sec:normality_theory}), làm hỏng mọi suy diễn liên quan đến phương sai $\sigma^2$.
+  \item thống kê $t$ có thể không còn theo phân phối $t$-Student chính xác,
+  \item thống kê $F$ có thể không còn theo phân phối $F$ chính xác,
+  \item khoảng tin cậy dạng $\hat{\beta}_j \pm t^*\mathrm{SE}(\hat{\beta}_j)$ có thể có độ phủ thực tế khác mức danh nghĩa,
+  \item các suy diễn liên quan đến phương sai $\sigma^2$ mất cơ sở $\chi^2$ chính xác (xem Mục~\ref{sec:normality_theory}).
 \end{itemize}
 
-\textbf{2. Ít tác động hơn với mẫu lớn.} Khi $n$ đủ lớn, Định lý Giới hạn Trung tâm đảm bảo các ước lượng $\hat{\boldsymbol{\beta}}$ (vốn là tổ hợp tuyến tính của $y_i$) xấp xỉ phân phối chuẩn bất kể phân phối thực sự của sai số.
+\textbf{Hệ quả thực hành.} Với mẫu nhỏ, một Q-Q plot lệch mạnh hoặc kiểm định chuẩn tắc bác bỏ rõ ràng là tín hiệu cần thận trọng: kết luận dựa trên $p$-value cổ điển có thể quá lạc quan hoặc quá bảo thủ.
 
-\textbf{3. Đặt ra nghi ngờ về tính phù hợp của OLS.} Nếu sai số không chuẩn vì dữ liệu thực sự tuân theo một phân phối khác (ví dụ: phân phối Poisson cho dữ liệu đếm, phân phối nhị thức cho tỷ lệ), thì OLS có thể không phải phương pháp phù hợp nhất. Trong các trường hợp này, mô hình tuyến tính tổng quát (GLM) như hồi quy Poisson hay hồi quy logistic sẽ hợp lý hơn về mặt xác suất.
+\subsubsection{Đuôi Nặng và Ngoại Lai Làm Suy Diễn Kém Ổn Định}
+
+OLS tối thiểu hóa tổng bình phương phần dư:
+\[
+  \sum_{i=1}^{n} \hat e_i^2
+\]
+Do phần dư bị bình phương, các quan sát nằm xa trung tâm được gán trọng số rất lớn trong hàm mục tiêu. Vì vậy, phân phối đuôi nặng hoặc một vài ngoại lai có thể ảnh hưởng mạnh đến đường hồi quy, sai số chuẩn và kết luận suy diễn.
+
+Một quan sát cực đoan có thể:
+\begin{itemize}
+  \item kéo lệch hệ số $\hat{\boldsymbol{\beta}}$,
+  \item làm phình to sai số chuẩn,
+  \item thay đổi đáng kể $p$-value và khoảng tin cậy,
+  \item làm mô hình trông kém chính xác hơn hoặc chính xác hơn một cách giả tạo.
+\end{itemize}
+
+Ví dụ kinh điển với dữ liệu Forbes cho thấy chỉ một quan sát ngoại lai có thể làm sai số chuẩn của hệ số thay đổi nhiều lần; khi loại bỏ case ngoại lai, sai số chuẩn giảm mạnh và phương sai ước lượng cũng giảm đáng kể. Thông điệp không phải là tùy tiện xóa điểm dữ liệu, mà là: \textbf{không nên tin một phân tích nếu kết luận phụ thuộc quá nặng vào một quan sát đơn lẻ}.
+
+Trong thực hành, Q-Q plot có đuôi tách xa hoặc vài điểm cực đoan nên được xem cùng các chẩn đoán ảnh hưởng như leverage, phần dư Student hóa và Cook's distance:
+\begin{lstlisting}[style=Rstyle]
+rstudent(fit)      # phan du Student hoa ngoai
+hatvalues(fit)     # leverage h_ii
+cooks.distance(fit)
+\end{lstlisting}
+
+\subsubsection{Không Chuẩn Có Thể Là Triệu Chứng Của Sai Mô Hình}
+
+Nonnormality không phải lúc nào cũng là vấn đề phân phối thuần túy. Nhiều khi nó là dấu hiệu cho thấy mô hình trung bình hoặc cấu trúc dữ liệu đang bị chỉ định sai.
+
+Các nguyên nhân thường gặp gồm:
+\begin{itemize}
+  \item \textbf{Sai dạng hàm trung bình:} thiếu số hạng bậc hai, tương tác, spline hoặc biến đổi log làm phần dư giữ lại mẫu hình có hệ thống.
+  \item \textbf{Thiếu biến quan trọng:} phần dư trộn nhiều nhóm chưa được mô hình hóa, tạo lệch hoặc đa đỉnh.
+  \item \textbf{Phương sai không đồng nhất:} độ phân tán tăng/giảm theo $\hat y$ hoặc theo một biến dự báo, làm phần dư có đuôi dày giả tạo.
+  \item \textbf{Sai bản chất biến phản hồi:} dữ liệu đếm, nhị phân, tỷ lệ hoặc dữ liệu dương lệch mạnh thường không phù hợp với OLS trên thang gốc.
+\end{itemize}
+
+Với dữ liệu đếm hoặc nhị phân, vấn đề không chỉ là sai normality. Phương sai thường phụ thuộc vào kỳ vọng, nên giả định phương sai hằng số cũng bị vi phạm. Khi đó, mô hình tuyến tính tổng quát (GLM) như hồi quy Poisson hoặc logistic hợp lý hơn vì mô hình hóa đúng phân phối và hàm liên kết của phản hồi.
+
+\subsubsection{Mẫu Lớn Giảm Rủi Ro Nhưng Không Xóa Mọi Vấn Đề}
+
+Khi $n$ đủ lớn, Định lý Giới hạn Trung tâm thường giúp $\hat{\boldsymbol{\beta}}$ xấp xỉ chuẩn ngay cả khi sai số thật không chuẩn. Vì vậy, một kiểm định chuẩn tắc bị bác bỏ trong mẫu lớn không tự động làm suy diễn OLS thất bại.
+
+Tuy nhiên, mẫu lớn không giải quyết mọi vấn đề:
+\begin{itemize}
+  \item Nếu phương sai sai số không đồng nhất, ma trận hiệp phương sai cổ điển của $\hat{\boldsymbol{\beta}}$ có thể bị tính sai; cần sai số chuẩn vững kiểu sandwich/HC.
+  \item Nếu có điểm leverage cao hoặc quan sát ảnh hưởng mạnh, hệ số có thể bị kéo lệch dù $n$ lớn.
+  \item Nếu dạng hàm trung bình sai, tăng cỡ mẫu chỉ giúp ta ước lượng chính xác hơn một mô hình sai.
+\end{itemize}
+
+\textbf{Hệ quả thực hành.} Với mẫu lớn, hãy phân biệt giữa \textit{ý nghĩa thống kê} và \textit{ý nghĩa thực tế}. Một lệch nhẹ khỏi chuẩn có thể tạo $p$-value rất nhỏ trong kiểm định normality, nhưng điều quan trọng hơn là liệu kết luận hệ số, dự báo và khoảng tin cậy có nhạy với lệch đó hay không.
+
+\subsubsection{Bảng Tổng Hợp Cách Phản Ứng}
+
+\begin{center}
+\small
+\begin{tabularx}{\textwidth}{@{}>{\raggedright\arraybackslash}p{3.0cm}>{\raggedright\arraybackslash}X>{\raggedright\arraybackslash}X@{}}
+\toprule
+\textbf{Tình huống} & \textbf{Hậu quả chính} & \textbf{Phản ứng hợp lý} \\
+\midrule
+Mẫu nhỏ, Q-Q plot lệch mạnh & $t$-test, $F$-test và CI cổ điển mất cơ sở chính xác & Dùng bootstrap; báo cáo thận trọng \\
+Mẫu lớn, lệch nhẹ ở đuôi & Kiểm định normality dễ reject dù tác động thực tế nhỏ & Giữ OLS nếu chẩn đoán khác ổn; kiểm tra độ nhạy \\
+Đuôi nặng hoặc ngoại lai & Hệ số, SE và $p$-value có thể phụ thuộc vào vài điểm & Kiểm tra rstudent, leverage, Cook's distance; cân nhắc robust regression \\
+Lệch kèm mẫu hình phần dư & Có thể sai dạng hàm hoặc thiếu biến & Sửa mean function: biến đổi, đa thức, spline, tương tác \\
+Đếm, nhị phân, tỷ lệ & OLS sai cả phân phối lẫn phương sai & Chuyển sang GLM như Poisson hoặc logistic \\
+Phương sai không đồng nhất & SE cổ điển sai dù hệ số có thể vẫn hữu ích & Dùng HC3/sandwich SE hoặc mô hình hóa phương sai \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+\begin{notebox}
+\textbf{Kết luận cốt lõi.} Không chuẩn không tự động làm hỏng OLS. Nó chủ yếu làm ta nghi ngờ suy diễn cổ điển và buộc ta tìm nguyên nhân của sai lệch. Nếu chỉ cởi bỏ giả định chuẩn, OLS vẫn có thể là BLUE dưới Gauss-Markov; điều cần thay đổi là cách đo độ bất định, chẳng hạn dùng bootstrap, sai số chuẩn vững hoặc một mô hình phân phối phù hợp hơn.
+\end{notebox}
 
 % -----------------------------------------------------------------------------

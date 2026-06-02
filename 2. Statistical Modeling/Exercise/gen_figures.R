@@ -6,7 +6,7 @@
 
 set.seed(42)
 
-# ── fig6_blue_clt.png ─────────────────────────────────────────────────────────
+# -- fig6_blue_clt.png ---------------------------------------------------------
 # Minh họa: (1) Gauss-Markov BLUE — OLS đạt phương sai nhỏ nhất
 #           (2) CLT — β̂ tiến về chuẩn dù sai số lệch phải
 
@@ -87,7 +87,7 @@ legend("topright", legend = paste0("n = ", ns),
 dev.off()
 cat("fig6_blue_clt.png done\n")
 
-# ── fig7_anscombe.png ─────────────────────────────────────────────────────────
+# -- fig7_anscombe.png ---------------------------------------------------------
 # Tứ giác Anscombe: 4 bộ dữ liệu, cùng β̂ / R² / p-value, hình dạng khác nhau
 # Hàng trên: scatterplot + đường hồi quy
 # Hàng dưới: đồ thị phần dư theo giá trị khớp
@@ -149,7 +149,7 @@ mtext("Tứ giác Anscombe: cùng β̂, R², p-value — chỉ đồ thị phầ
 dev.off()
 cat("fig7_anscombe.png done\n")
 
-# ── fig8_avplot.png ───────────────────────────────────────────────────────────
+# -- fig8_avplot.png -----------------------------------------------------------
 # Đồ thị hồi quy riêng phần (added-variable / partial regression plots)
 # Mô hình: mpg ~ hp + wt + disp  (mtcars)
 # Mỗi panel: e(Y | others) vs e(Xj | others)
@@ -195,7 +195,7 @@ for (i in seq_along(vars)) {
 dev.off()
 cat("fig8_avplot.png done\n")
 
-# ── fig9_splines.png ──────────────────────────────────────────────────────────
+# -- fig9_splines.png ----------------------------------------------------------
 # So sánh đa thức bậc 7 vs cubic B-spline (4 nút) trên dữ liệu dạng sóng
 # Mục đích: thể hiện đa thức dao động mạnh ở biên, splines ổn định toàn vùng
 
@@ -254,14 +254,14 @@ legend("topright",
 dev.off()
 cat("fig9_splines.png done\n")
 
-# ── fig10_projection.png ──────────────────────────────────────────────────────
+# -- fig10_projection.png ------------------------------------------------------
 # Trái: Sơ đồ hình học — OLS là chiếu trực giao Y lên Col(X)
 # Phải: Xác minh số — X'e ≈ 0 trên 500 dataset ngẫu nhiên
 
 png("./figures/fig10_projection.png", width = 900, height = 420, res = 110)
 par(mfrow = c(1, 2), mar = c(3, 3, 3.2, 1.2), mgp = c(2, 0.6, 0))
 
-# ── Panel 1: sơ đồ hình học ───────────────────────────────────────────────────
+# -- Panel 1: sơ đồ hình học ---------------------------------------------------
 plot(0, 0, type = "n", xlim = c(-0.15, 2.2), ylim = c(-0.15, 2.4),
      xlab = "", ylab = "", asp = 1,
      main = "OLS = chiếu trực giao lên Col(X)",
@@ -309,7 +309,7 @@ sq_pts <- rbind(Yhat + sq * dir_x,
                 Yhat + sq * perp_dir)
 lines(sq_pts[, 1], sq_pts[, 2], col = "gray40", lwd = 1.2)
 
-# ── Panel 2: Xác minh X'e = 0 ─────────────────────────────────────────────────
+# -- Panel 2: Xác minh X'e = 0 -------------------------------------------------
 max_xte <- replicate(500, {
   n <- 40; p <- 3
   X    <- cbind(1, matrix(rnorm(n * p), n, p))
@@ -333,7 +333,7 @@ mtext("Ngưỡng sai số máy", side = 3, at = log10(.Machine$double.eps * 1e3)
 dev.off()
 cat("fig10_projection.png done\n")
 
-# ── fig11_liduan.png ──────────────────────────────────────────────────────────
+# -- fig11_liduan.png ----------------------------------------------------------
 # Mô phỏng định lý Li-Duan: OLS ước lượng đúng hướng β dù g phi tuyến
 # Thiết kế: Y = g(β'X) + ε, β = (3,1), X ~ N(0,I), g thay đổi
 # Hiển thị: scatter β̂_1 vs β̂_2 chuẩn hóa — luôn xếp thẳng theo (3,1)
@@ -386,7 +386,7 @@ for (gi in seq_along(g_list)) {
 dev.off()
 cat("fig11_liduan.png done\n")
 
-# ── fig12_violations.png ──────────────────────────────────────────────────────
+# -- fig12_violations.png ------------------------------------------------------
 # Bốn ví dụ thực tế vi phạm tính tuyến tính
 # Cột trái : scatter + đường OLS bậc 1
 # Cột phải : đồ thị phần dư (LOESS đỏ) — mẫu hình có hệ thống
@@ -394,29 +394,29 @@ cat("fig11_liduan.png done\n")
 
 library(MASS)
 
-# ── Dataset 1: Turkey growth (Weisberg) ──────────────────────────────────────
+# -- Dataset 1: Turkey growth (Weisberg) --------------------------------------
 # E(Y|Dose) = β₀ + β₁[1 − exp(−β₂ × Dose)]; mô phỏng 5 lần/mức nồng độ
 set.seed(101)
 dose_lvl  <- c(0, 0.04, 0.08, 0.12, 0.16, 0.20)
 dose_t    <- rep(dose_lvl, each = 5)
 y_turkey  <- 639 + 168 * (1 - exp(-37 * dose_t)) + rnorm(30, 0, 18)
 
-# ── Dataset 2: Mammals brain vs body (MASS) ───────────────────────────────────
+# -- Dataset 2: Mammals brain vs body (MASS) -----------------------------------
 body_kg  <- mammals$body
 brain_g  <- mammals$brain
 
-# ── Dataset 3: Physics cross sections (Weisberg-inspired) ────────────────────
+# -- Dataset 3: Physics cross sections (Weisberg-inspired) --------------------
 # Y ~ cross section (mb), X ~ momentum (GeV/c); dạng lũy thừa giảm
 set.seed(102)
 x_phys <- sort(runif(38, 0.3, 3.5))
 y_phys <- 45 * x_phys^(-1.7) * exp(rnorm(38, 0, 0.15))
 
-# ── Dataset 4: Tree height vs diameter (Idaho cedar, Weisberg) ───────────────
+# -- Dataset 4: Tree height vs diameter (Idaho cedar, Weisberg) ---------------
 set.seed(103)
 dbh    <- sort(runif(65, 5, 78))
 height <- 30 * (1 - exp(-0.055 * dbh)) + rnorm(65, 0, 2.2)
 
-# ── Vẽ figure ─────────────────────────────────────────────────────────────────
+# -- Vẽ figure -----------------------------------------------------------------
 png("./figures/fig12_violations.png",
     width = 900, height = 1180, res = 110)
 
@@ -476,7 +476,7 @@ mtext("Vi phạm tuyến tính: dữ liệu thực tế",
 dev.off()
 cat("fig12_violations.png done\n")
 
-# ── fig13_violations_fixed.png ────────────────────────────────────────────────
+# -- fig13_violations_fixed.png ------------------------------------------------
 # Cùng 4 bộ dữ liệu, sau khi áp dụng biến đổi / mô hình phù hợp
 # Cột trái : scatter + đường khớp đúng
 # Cột phải : đồ thị phần dư sau khi khắc phục (không còn mẫu hình)
@@ -491,7 +491,7 @@ par(mfrow = c(4, 2),
     mgp   = c(2.4, 0.7, 0),
     oma   = c(0, 0, 1.5, 0))
 
-# ── (1) Turkey: NLS fit ───────────────────────────────────────────────────────
+# -- (1) Turkey: NLS fit -------------------------------------------------------
 fit_nls_t <- nls(y_turkey ~ b0 + b1 * (1 - exp(-b2 * dose_t)),
                  start = list(b0 = 630, b1 = 160, b2 = 30))
 dose_seq  <- seq(0, 0.21, length.out = 200)
@@ -515,7 +515,7 @@ plot(fv_nls_t, rv_nls_t,
 abline(h = 0, lty = 2, col = "gray50")
 lines(lowess(fv_nls_t, rv_nls_t), col = "#27AE60", lwd = 2.2)
 
-# ── (2) Mammals: log-log transform ────────────────────────────────────────────
+# -- (2) Mammals: log-log transform --------------------------------------------
 log_body  <- log(body_kg)
 log_brain <- log(brain_g)
 fit_log   <- lm(log_brain ~ log_body)
@@ -537,7 +537,7 @@ plot(fv_log, rv_log,
 abline(h = 0, lty = 2, col = "gray50")
 lines(lowess(fv_log, rv_log), col = "#27AE60", lwd = 2.2)
 
-# ── (3) Physics: log-log transform ────────────────────────────────────────────
+# -- (3) Physics: log-log transform --------------------------------------------
 log_xp   <- log(x_phys)
 log_yp   <- log(y_phys)
 fit_logp <- lm(log_yp ~ log_xp)
@@ -562,7 +562,7 @@ plot(fv_logp, rv_logp,
 abline(h = 0, lty = 2, col = "gray50")
 lines(lowess(fv_logp, rv_logp), col = "#27AE60", lwd = 2.2)
 
-# ── (4) Trees: cubic spline ───────────────────────────────────────────────────
+# -- (4) Trees: cubic spline ---------------------------------------------------
 fit_spl_t <- lm(height ~ bs(dbh,
                              knots  = quantile(dbh, c(0.25, 0.5, 0.75)),
                              degree = 3))
@@ -593,7 +593,7 @@ mtext("Khắc phục: mô hình phù hợp với từng cấu trúc dữ liệu"
 dev.off()
 cat("fig13_violations_fixed.png done\n")
 
-# ── fig14_scatterplot_matrix.png ──────────────────────────────────────────────
+# -- fig14_scatterplot_matrix.png ----------------------------------------------
 # Ma trận đồ thị phân tán: mtcars, 4 biến (mpg, hp, wt, disp)
 # Đường chéo dưới: scatter + LOESS để phát hiện độ cong biên
 # Đường chéo trên: hệ số tương quan Pearson (cỡ chữ theo độ lớn)
@@ -645,7 +645,7 @@ pairs(dat,
 dev.off()
 cat("fig14_scatterplot_matrix.png done\n")
 
-# ── fig15_model_eval.png ──────────────────────────────────────────────────────
+# -- fig15_model_eval.png ------------------------------------------------------
 # So sánh trước / sau khi khắc phục phi tuyến (mtcars: mpg ~ hp)
 # Hàng 1: mô hình tuyến tính (trước);  Hàng 2: đa thức bậc 2 (sau)
 # Panels: scatter + fit  |  residuals vs fitted  |  Q-Q plot
@@ -709,3 +709,111 @@ mtext("So sánh mô hình trước và sau khi khắc phục phi tuyến (mtcars
       outer = TRUE, cex = 1.05, font = 2)
 dev.off()
 cat("fig15_model_eval.png done\n")
+
+# -- fig16_normality_patterns.png ----------------------------------------------
+# Bốn mẫu hình chẩn đoán tính chuẩn của phần dư
+# Mỗi hàng: histogram + normal Q-Q plot cho cùng một tập phần dư mô phỏng
+
+set.seed(1601)
+
+n_norm <- 120
+normal_resid <- rnorm(n_norm)
+skew_resid   <- scale(rexp(n_norm, rate = 1) - 1)[, 1]
+heavy_resid  <- rt(n_norm, df = 3) / sqrt(3)
+out_resid    <- rnorm(n_norm)
+out_resid[c(12, 84)] <- c(4.2, -3.8)
+
+normality_sets <- list(
+  list(name = "Chuẩn", data = normal_resid,
+       note = "Điểm Q-Q gần đường thẳng"),
+  list(name = "Lệch phải", data = skew_resid,
+       note = "Đuôi phải cao hơn chuẩn"),
+  list(name = "Đuôi nặng", data = heavy_resid,
+       note = "Hai đầu tách xa đường chuẩn"),
+  list(name = "Có ngoại lai", data = out_resid,
+       note = "Một vài điểm rời khỏi mẫu chung")
+)
+
+png("./figures/fig16_normality_patterns.png", width = 980, height = 1180, res = 120)
+
+par(mfrow = c(4, 2), mar = c(3.8, 4.0, 3.0, 1.0),
+    mgp = c(2.4, 0.7, 0), oma = c(0, 0, 1.2, 0))
+
+for (d in normality_sets) {
+  z <- as.numeric(scale(d$data))
+
+  hist(z, breaks = 18, freq = FALSE,
+       col = "#D8EAF7", border = "white",
+       xlab = "Phần dư chuẩn hóa", ylab = "Mật độ",
+       main = paste0(d$name, " — histogram"),
+       cex.main = 0.9, bty = "l")
+  curve(dnorm(x), add = TRUE, col = "#C0392B", lwd = 2)
+  rug(z, col = adjustcolor("#2C3E50", 0.45))
+  legend("topright", legend = d$note, bty = "n", cex = 0.74)
+
+  qq <- qqnorm(z, plot.it = FALSE)
+  plot(qq$x, qq$y,
+       pch = 16, cex = 0.68, col = "steelblue",
+       xlab = "Phân vị chuẩn lý thuyết",
+       ylab = "Phân vị phần dư",
+       main = paste0(d$name, " — Q-Q plot"),
+       cex.main = 0.9, bty = "l")
+  qqline(z, col = "#C0392B", lwd = 2)
+  abline(h = 0, lty = 3, col = "gray70")
+  abline(v = 0, lty = 3, col = "gray70")
+}
+
+mtext("Các mẫu hình trực quan khi kiểm tra tính chuẩn của phần dư",
+      outer = TRUE, cex = 0.95, font = 2)
+
+dev.off()
+cat("fig16_normality_patterns.png done\n")
+
+# -- fig17_boston_normality.png ------------------------------------------------
+# Boston housing: raw residuals vs externally studentized residuals
+# Model: medv ~ lstat + rm
+
+library(MASS)
+data(Boston)
+fit_boston <- lm(medv ~ lstat + rm, data = Boston)
+raw_resid <- residuals(fit_boston)
+stud_resid <- rstudent(fit_boston)
+
+png("./figures/fig17_boston_normality.png", width = 980, height = 820, res = 120)
+
+par(mfrow = c(2, 2), mar = c(4.0, 4.2, 3.2, 1.0),
+    mgp = c(2.5, 0.7, 0), oma = c(0, 0, 1.0, 0))
+
+hist(raw_resid, breaks = 28, freq = FALSE,
+     col = "#D8EAF7", border = "white",
+     xlab = "Raw residuals", ylab = "Mật độ",
+     main = "Raw residuals — histogram", cex.main = 0.9, bty = "l")
+curve(dnorm(x, mean = mean(raw_resid), sd = sd(raw_resid)),
+      add = TRUE, col = "#C0392B", lwd = 2)
+rug(raw_resid, col = adjustcolor("#2C3E50", 0.35))
+
+qqnorm(raw_resid, pch = 16, cex = 0.65, col = "steelblue",
+       main = "Raw residuals — Q-Q plot",
+       xlab = "Phân vị chuẩn lý thuyết", ylab = "Raw residuals",
+       cex.main = 0.9, bty = "l")
+qqline(raw_resid, col = "#C0392B", lwd = 2)
+
+hist(stud_resid, breaks = 28, freq = FALSE,
+     col = "#E3F3E8", border = "white",
+     xlab = "Studentized residuals", ylab = "Mật độ",
+     main = "Studentized residuals — histogram", cex.main = 0.9, bty = "l")
+curve(dnorm(x), add = TRUE, col = "#C0392B", lwd = 2)
+rug(stud_resid, col = adjustcolor("#2C3E50", 0.35))
+
+qqnorm(stud_resid, pch = 16, cex = 0.65, col = "steelblue",
+       main = "Studentized residuals — Q-Q plot",
+       xlab = "Phân vị chuẩn lý thuyết", ylab = "Studentized residuals",
+       cex.main = 0.9, bty = "l")
+qqline(stud_resid, col = "#C0392B", lwd = 2)
+
+mtext("Boston housing: chẩn đoán chuẩn tắc của phần dư", outer = TRUE,
+      cex = 0.95, font = 2)
+
+dev.off()
+cat("fig17_boston_normality.png done\n")
+

@@ -1,57 +1,126 @@
 \subsection{Cơ Sở Lý Thuyết}
+% -----------------------------------------------------------------------------
 
-Mô hình hồi quy bội giả định:
+Mô hình hồi quy bội ở dạng ma trận được viết là:
 \[
-  \varepsilon_i \overset{\text{i.i.d.}}{\sim} \mathcal{N}(0,\, \sigma^2), \quad i = 1, 2, \ldots, n
+  \mathbf{y} = \mathbf{X}\boldsymbol{\beta} + \boldsymbol{\varepsilon},
+  \qquad
+  E(\mathbf{Y} \mid \mathbf{X}) = \mathbf{X}\boldsymbol{\beta}
 \]
 
-Tức là \textbf{phần dư} (không phải $Y$) phải có phân phối chuẩn. Giả định này có một vị trí đặc biệt: \textbf{không bắt buộc để tính toán mô hình, nhưng là nền tảng cốt lõi cho mọi suy diễn thống kê sâu hơn}.
+Giả định chuẩn phát biểu rằng \textbf{sai số thật} tuân theo phân phối chuẩn đa biến:
+\[
+  \boldsymbol{\varepsilon} \sim \mathcal{N}_n(\mathbf{0},\, \sigma^2 I)
+\]
 
-\subsubsection{Không bắt buộc đối với Phương pháp Bình Phương Tối Thiểu}
+Điểm quan trọng là giả định này thuộc về \textbf{sai số thật} $\boldsymbol{\varepsilon}$, không phải trực tiếp thuộc về biến phản hồi $Y$ và cũng không phải trực tiếp thuộc về phần dư quan sát được sau khi khớp mô hình. Trong thực hành, ta không quan sát được $\boldsymbol{\varepsilon}$, nên phải dùng phần dư để chẩn đoán gián tiếp.
 
-Các hệ số $\hat{\beta}$ và phương sai $s^2$ có thể được tính bằng OLS mà không cần bất kỳ giả định nào về phân phối. Theo \textbf{Định lý Gauss-Markov}, chỉ cần sai số thỏa mãn ba điều kiện:
+\subsubsection{Sai Số Thật và Phần Dư Không Phải Là Một}
+
+\textbf{Sai số thật} $\varepsilon_i$ là đại lượng lý thuyết, không quan sát được:
+\[
+  \varepsilon_i = y_i - E(Y_i \mid X_i)
+\]
+Nó đo phần lệch giữa quan sát thực tế và giá trị kỳ vọng đúng của mô hình sinh dữ liệu.
+
+\textbf{Phần dư} $\hat e_i$ là đại lượng tính được sau khi ước lượng mô hình:
+\[
+  \hat e_i = y_i - \hat y_i
+\]
+Nó đo phần lệch giữa quan sát thực tế và giá trị dự đoán từ mô hình đã fit. Vì $\hat y_i$ phụ thuộc vào dữ liệu dùng để ước lượng $\hat{\boldsymbol{\beta}}$, phần dư không còn giữ nguyên các tính chất xác suất của sai số thật.
+
+\textbf{Hệ quả thực tiễn.} Khi ta vẽ histogram hoặc Q-Q plot của phần dư, ta không kiểm tra trực tiếp $\boldsymbol{\varepsilon}$. Ta chỉ đang nhìn một phiên bản đã bị biến đổi bởi quá trình ước lượng OLS.
+
+\subsubsection{Không Bắt Buộc Đối Với Phương Pháp Bình Phương Tối Thiểu}
+
+Các hệ số $\hat{\boldsymbol{\beta}}$ và phương sai $s^2$ có thể được tính bằng OLS mà không cần bất kỳ giả định nào về phân phối. Theo \textbf{Định lý Gauss-Markov}, chỉ cần sai số thỏa mãn các điều kiện chính:
 \begin{itemize}
-  \item kỳ vọng bằng 0: $E(\varepsilon_i) = 0$,
-  \item phương sai không đổi: $\mathrm{Var}(\varepsilon_i) = \sigma^2$,
-  \item không có tương quan: $\mathrm{Cov}(\varepsilon_i, \varepsilon_j) = 0$,
+  \item kỳ vọng bằng 0: $E(\boldsymbol{\varepsilon} \mid \mathbf{X}) = \mathbf{0}$,
+  \item phương sai không đổi: $\mathrm{Var}(\boldsymbol{\varepsilon} \mid \mathbf{X}) = \sigma^2 I$,
+  \item không có tương quan giữa các sai số,
 \end{itemize}
-OLS đã cho các \textbf{ước lượng tuyến tính không chệch tốt nhất} (BLUE) mà không đòi hỏi thêm giả định về dạng phân phối.
+OLS đã cho các \textbf{ước lượng tuyến tính không chệch tốt nhất} (BLUE). Vì vậy, tính chuẩn không phải điều kiện để tính toán mô hình hay để OLS đạt tính chất BLUE.
 
-\subsubsection{Khi Thêm Giả Định Chuẩn: OLS Tương Đương MLE và Đạt Tối Ưu Toàn Cục}
+\subsubsection{Khi Thêm Giả Định Chuẩn: OLS Tương Đương MLE và Suy Diễn Chính Xác Hơn}
 
-Khi bổ sung $\varepsilon \sim \mathcal{N}(0, \sigma^2 I)$, bài toán thay đổi đáng kể theo ba hướng:
+Khi bổ sung $\boldsymbol{\varepsilon} \sim \mathcal{N}_n(\mathbf{0}, \sigma^2 I)$, bài toán thay đổi theo ba hướng:
 
 \begin{enumerate}
-  \item \textbf{Không tương quan $\Rightarrow$ Độc lập.} Với phân phối chuẩn, không tương quan và độc lập là tương đương. Điều này mạnh hơn so với giả định Gauss-Markov thuần túy.
-  \item \textbf{OLS = MLE.} Dưới giả định chuẩn, hàm hợp lý (likelihood) của mô hình đạt cực đại tại đúng nghiệm OLS. Hai phương pháp cho cùng một kết quả.
-  \item \textbf{Ước lượng tối ưu toàn cục (UMVUE).} Các ước lượng $\hat{\beta}$ và $\hat{\sigma}^2$ không chỉ là tốt nhất trong lớp ước lượng tuyến tính mà trở thành \textbf{thống kê đủ} (sufficient statistics) và đạt \textbf{phương sai nhỏ nhất trong toàn bộ các ước lượng không chệch}, kể cả phi tuyến.
+  \item \textbf{Không tương quan $\Rightarrow$ độc lập.} Với phân phối chuẩn đa biến, không tương quan và độc lập là tương đương. Điều này mạnh hơn so với giả định Gauss-Markov thuần túy.
+  \item \textbf{OLS = MLE.} Dưới giả định chuẩn, hàm hợp lý (likelihood) của mô hình đạt cực đại tại đúng nghiệm OLS. Hai phương pháp cho cùng một ước lượng hệ số.
+  \item \textbf{Suy diễn mẫu nhỏ có phân phối chính xác.} Các kiểm định $t$, kiểm định $F$ và khoảng tin cậy cổ điển có cơ sở phân phối rõ ràng thay vì chỉ dựa vào xấp xỉ tiệm cận.
 \end{enumerate}
 
-\subsubsection{Cơ Sở Bắt Buộc cho Suy Diễn Mẫu Nhỏ}
+\subsubsection{Cơ Sở Bắt Buộc Cho Suy Diễn Mẫu Nhỏ}
 \label{sec:normality_theory}
 
 Mục đích lớn nhất của giả định chuẩn là thiết lập nền tảng toán học cho kiểm định giả thuyết và khoảng tin cậy, đặc biệt khi $n$ nhỏ:
 
 \begin{itemize}
-  \item Các tổng bình phương (SS hồi quy, SS phần dư) tuân theo \textbf{phân phối $\chi^2$ độc lập} với nhau.
-  \item Tỷ số của chúng tuân theo \textbf{phân phối $F$}: cơ sở của kiểm định $F$-test tổng thể.
-  \item Từng hệ số $\hat{\beta}_j$ tuân theo \textbf{phân phối $t$-Student}: cơ sở của kiểm định $t$-test và khoảng tin cậy.
+  \item Các tổng bình phương liên quan đến phần sai số tuân theo \textbf{phân phối $\chi^2$}.
+  \item Tỷ số giữa các tổng bình phương thích hợp tuân theo \textbf{phân phối $F$}: cơ sở của kiểm định $F$-test tổng thể.
+  \item Từng hệ số $\hat{\beta}_j$ sau khi chuẩn hóa bằng sai số chuẩn tuân theo \textbf{phân phối $t$-Student}: cơ sở của kiểm định $t$-test và khoảng tin cậy.
 \end{itemize}
 
-Nếu không có giả định chuẩn, cả $t$-test lẫn $F$-test đều mất cơ sở toán học khi $n$ nhỏ. Với mẫu lớn, Định lý Giới hạn Trung tâm đảm bảo $\hat{\beta}$ xấp xỉ chuẩn vì chúng là tổ hợp tuyến tính của $y_i$; giả định chuẩn lúc này ít quan trọng hơn.
+Nếu không có giả định chuẩn, cả $t$-test lẫn $F$-test đều mất cơ sở phân phối chính xác khi $n$ nhỏ. Với mẫu lớn, Định lý Giới hạn Trung tâm thường giúp $\hat{\boldsymbol{\beta}}$ xấp xỉ chuẩn vì chúng là tổ hợp tuyến tính của các quan sát; giả định chuẩn lúc này ít quan trọng hơn cho suy diễn hệ số.
 
-\subsubsection{Sự Siêu Chuẩn của Phần Dư}
+\subsubsection{Ma Trận Mũ: Vì Sao Phần Dư Bị Biến Dạng}
 
-Về mặt chẩn đoán, phần dư tính được $\hat{e}_i$ có một đặc tính đáng chú ý: chúng là tổ hợp tuyến tính của \textit{tất cả} các sai số thực sự $\varepsilon_i$. Theo Định lý Giới hạn Trung tâm, tổ hợp tuyến tính của các biến ngẫu nhiên có xu hướng tiến gần phân phối chuẩn hơn là bản thân các biến gốc. Do đó, $\hat{e}_i$ thường có hành vi ``chuẩn'' hơn rất nhiều so với $\varepsilon_i$ thực sự --- hiện tượng này gọi là \textbf{sự siêu chuẩn của phần dư}.
+Giá trị khớp của OLS có thể viết dưới dạng:
+\[
+  \hat{\mathbf{y}} = H\mathbf{y},
+  \qquad
+  H = \mathbf{X}(\mathbf{X}^\top\mathbf{X})^{-1}\mathbf{X}^\top
+\]
+trong đó $H$ được gọi là \textbf{ma trận mũ} (hat matrix) vì nó biến $\mathbf{y}$ thành $\hat{\mathbf{y}}$.
 
-\textbf{Hệ quả thực tiễn của siêu chuẩn.} Khi dùng đồ thị xác suất chuẩn (Q-Q plot) hoặc biểu đồ tần suất để kiểm tra giả định, phần dư $\hat{e}_i$ có thể trông ``chuẩn'' ngay cả khi sai số thực sự $\varepsilon_i$ không chuẩn. Đặc biệt với mẫu nhỏ đến trung bình, đây là giới hạn cơ bản của chẩn đoán bằng đồ thị: chúng ta quan sát $\hat{e}$, không quan sát $\varepsilon$.
+Vector phần dư là:
+\[
+  \hat{\mathbf{e}}
+  = \mathbf{y} - \hat{\mathbf{y}}
+  = (I-H)\mathbf{y}
+  = (I-H)\boldsymbol{\varepsilon}
+\]
+phương trình cuối đúng vì $(I-H)\mathbf{X}\boldsymbol{\beta} = \mathbf{0}$.
 
-\subsubsection{Điểm Dễ Nhầm: Tính Chuẩn của $Y \neq$ Tính Chuẩn của Phần Dư}
+Do đó, ngay cả khi sai số thật có ma trận hiệp phương sai $\mathrm{Cov}(\boldsymbol{\varepsilon}) = \sigma^2 I$, phần dư lại có:
+\[
+  \mathrm{Cov}(\hat{\mathbf{e}}) = \sigma^2(I-H)
+\]
 
-\textbf{Sai lầm phổ biến.} Nhiều người kiểm tra phân phối của $Y$ thay vì phần dư.
+Điều này dẫn đến hai hệ quả trực tiếp:
+\begin{itemize}
+  \item Phương sai của phần dư thứ $i$ là
+  \[
+    \mathrm{Var}(\hat e_i) = \sigma^2(1-h_{ii}),
+  \]
+  trong đó $h_{ii}$ là leverage của quan sát thứ $i$. Điểm có leverage cao sẽ có phương sai phần dư nhỏ hơn.
+  \item Các phần dư thường có tương quan với nhau vì các phần tử ngoài đường chéo của $I-H$ không nhất thiết bằng 0.
+\end{itemize}
 
-Ví dụ: $Y = 2X + \varepsilon$, với $X \sim \mathrm{Uniform}(0,10)$ và $\varepsilon \sim \mathcal{N}(0,1)$. Biến $Y$ sẽ không phân phối chuẩn, nhưng phần dư từ mô hình đúng vẫn có phân phối chuẩn.
+\textbf{Hệ quả thực tiễn.} Phần dư không phải một mẫu i.i.d. đơn giản từ phân phối của sai số thật. Những điểm leverage cao có thể có phần dư nhỏ dù chúng ảnh hưởng mạnh đến đường hồi quy, làm cho một số bất thường bị che khuất nếu chỉ nhìn phần dư thô.
 
-\textbf{Quy tắc:} Luôn kiểm tra phân phối của \textbf{phần dư sau khi ước lượng mô hình}.
+\subsubsection{Sự Siêu Chuẩn Của Phần Dư}
+
+Từ quan hệ $\hat{\mathbf{e}} = (I-H)\boldsymbol{\varepsilon}$, phần dư thứ $i$ có thể viết là:
+\[
+  \hat e_i = \varepsilon_i - \sum_{j=1}^{n} h_{ij}\varepsilon_j
+\]
+
+Nghĩa là mỗi phần dư không chỉ chứa sai số thật tại quan sát đó, mà còn trừ đi một tổ hợp tuyến tính của nhiều sai số khác thông qua hàng thứ $i$ của ma trận $H$. Vì tổ hợp tuyến tính của nhiều biến ngẫu nhiên có thể trông gần chuẩn hơn từng biến gốc riêng lẻ, phần dư đôi khi có vẻ ``chuẩn'' hơn sai số thật. Hiện tượng này thường được gọi là \textbf{sự siêu chuẩn của phần dư} (Gnanadesikan, 1997).
+
+\textbf{Cần hiểu thận trọng.} Đây không phải định lý nói rằng phần dư luôn chuẩn. Ý nghĩa thực tế là Q-Q plot hoặc histogram của phần dư có thể làm nhẹ bớt dấu hiệu không chuẩn của sai số thật, đặc biệt trong mẫu nhỏ đến trung bình. Vì vậy, chẩn đoán tính không chuẩn của sai số thật thông qua phần dư là một bài toán khó hơn vẻ bề ngoài.
+
+\subsubsection{Điểm Dễ Nhầm: Tính Chuẩn Của Y Không Phải Tính Chuẩn Của Sai Số}
+
+\textbf{Sai lầm phổ biến.} Nhiều người kiểm tra phân phối của $Y$ thay vì kiểm tra phần sai lệch còn lại sau khi đã mô hình hóa $E(Y \mid X)$.
+
+Ví dụ: $Y = 2X + \varepsilon$, với $X \sim \mathrm{Uniform}(0,10)$ và $\varepsilon \sim \mathcal{N}(0,1)$. Biến $Y$ sẽ không phân phối chuẩn, nhưng sai số thật vẫn chuẩn và phần dư từ mô hình đúng sẽ phản ánh điều đó ở mức xấp xỉ.
+
+\textbf{Quy tắc:} Không yêu cầu $Y$ chuẩn. Điều cần quan tâm là liệu phần nhiễu quanh hàm trung bình $E(Y \mid X)$ có phù hợp với giả định chuẩn hay không, và trong thực hành ta đánh giá điều này gián tiếp qua phần dư sau khi ước lượng mô hình.
+
+\begin{notebox}
+\textbf{Kết luận thực hành.} Giả định chuẩn là giả định về sai số thật $\boldsymbol{\varepsilon}$, nhưng ta chỉ quan sát được phần dư $\hat{\mathbf{e}}$. Vì phần dư bị biến đổi bởi ma trận mũ, các đồ thị như histogram và Q-Q plot nên được xem là công cụ chẩn đoán tham khảo. Khi nghi ngờ vi phạm chuẩn tắc ảnh hưởng đến suy diễn, các phương pháp như sai số chuẩn vững và bootstrap thường đáng tin cậy hơn việc chỉ dựa vào một kiểm định chuẩn tắc.
+\end{notebox}
 
 % -----------------------------------------------------------------------------

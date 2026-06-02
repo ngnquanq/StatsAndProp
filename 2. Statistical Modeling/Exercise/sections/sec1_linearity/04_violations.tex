@@ -71,7 +71,7 @@ Bốn bộ dữ liệu từ các lĩnh vực khác nhau minh họa cùng một m
 \end{figure}
 
 \begin{lstlisting}[style=Rstyle]
-# ── (1) Turkey growth: E(Y|Dose) = b0 + b1*(1 - exp(-b2*Dose)) ──────────────
+# -- (1) Turkey growth: E(Y|Dose) = b0 + b1*(1 - exp(-b2*Dose)) --------------
 set.seed(101)
 dose_lvl <- c(0, 0.04, 0.08, 0.12, 0.16, 0.20)
 dose_t   <- rep(dose_lvl, each = 5)
@@ -83,12 +83,12 @@ plot(dose_t, y_turkey, pch = 16, col = "steelblue",
 abline(fit_lin_t, col = "red", lwd = 2)
 plot(fit_lin_t, which = 1)   # phan du cong ro
 
-# ── (2) Mammals: brain ~ body (MASS) ─────────────────────────────────────────
+# -- (2) Mammals: brain ~ body (MASS) -----------------------------------------
 library(MASS); data(mammals)
 fit_raw <- lm(brain ~ body, data = mammals)
 plot(fit_raw, which = 1)     # phan du bien dang nang
 
-# ── (3) Physics cross sections ────────────────────────────────────────────────
+# -- (3) Physics cross sections ------------------------------------------------
 set.seed(102)
 x_phys <- sort(runif(38, 0.3, 3.5))
 y_phys <- 45 * x_phys^(-1.7) * exp(rnorm(38, 0, 0.15))
@@ -96,7 +96,7 @@ y_phys <- 45 * x_phys^(-1.7) * exp(rnorm(38, 0, 0.15))
 fit_lin_p <- lm(y_phys ~ x_phys)
 plot(fit_lin_p, which = 1)   # LOESS cong chu U
 
-# ── (4) Cedar trees: height ~ dbh ────────────────────────────────────────────
+# -- (4) Cedar trees: height ~ dbh --------------------------------------------
 set.seed(103)
 dbh    <- sort(runif(65, 5, 78))
 height <- 30*(1 - exp(-0.055*dbh)) + rnorm(65, 0, 2.2)
@@ -119,18 +119,18 @@ Trong cả bốn trường hợp, đường LOESS trên đồ thị phần dư l
 \end{figure}
 
 \begin{lstlisting}[style=Rstyle]
-# ── (1) Turkey: NLS ──────────────────────────────────────────────────────────
+# -- (1) Turkey: NLS ----------------------------------------------------------
 fit_nls_t <- nls(y_turkey ~ b0 + b1*(1 - exp(-b2*dose_t)),
                  start = list(b0 = 630, b1 = 160, b2 = 30))
 
-# ── (2) Mammals: log-log ─────────────────────────────────────────────────────
+# -- (2) Mammals: log-log -----------------------------------------------------
 fit_log <- lm(log(brain) ~ log(body), data = mammals)
 # He so: slope ~ 0.75 (dinh luat Kleiber)
 
-# ── (3) Physics: log-log ─────────────────────────────────────────────────────
+# -- (3) Physics: log-log -----------------------------------------------------
 fit_logp <- lm(log(y_phys) ~ log(x_phys))
 
-# ── (4) Trees: cubic spline ──────────────────────────────────────────────────
+# -- (4) Trees: cubic spline --------------------------------------------------
 library(splines)
 fit_spl_t <- lm(height ~ bs(dbh, knots = quantile(dbh, c(.25,.5,.75))))
 \end{lstlisting}

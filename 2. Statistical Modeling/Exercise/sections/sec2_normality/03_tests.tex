@@ -1,59 +1,90 @@
 \subsection{Kiểm Định Hình Thức}
 % -----------------------------------------------------------------------------
 
+Kiểm định chuẩn tắc cung cấp một con số định lượng cho câu hỏi: phần dư có lệch khỏi phân phối chuẩn nhiều đến mức đáng chú ý hay không? Tuy nhiên, kiểm định không thay thế histogram và Q-Q plot. Một kiểm định có thể cho $p$-value rất nhỏ vì cỡ mẫu quá lớn, hoặc không phát hiện được vi phạm rõ ràng vì cỡ mẫu quá nhỏ.
+
+Do đó, các kiểm định dưới đây nên được đọc như \textbf{bằng chứng bổ sung} cho chẩn đoán trực quan, không phải như một nút quyết định tự động.
+
 \subsubsection{Shapiro-Wilk Test}
 
-Hoạt động cực kì tốt cho mẫu nhỏ.
+Shapiro-Wilk là kiểm định chuẩn tắc phổ biến cho mẫu nhỏ đến vừa. Giả thuyết kiểm định là:
 \[
-  H_0{:}\ \text{Residuals có phân phối chuẩn}
-  \qquad
-  H_1{:}\ \text{Residuals không có phân phối chuẩn}
+\begin{aligned}
+  H_0&{:}\ \text{phần dư phù hợp với phân phối chuẩn},\\
+  H_1&{:}\ \text{phần dư không phù hợp với phân phối chuẩn}.
+\end{aligned}
 \]
 
-Thống kê $W \in [0,1]$; $W$ càng gần 1 $\to$ residuals càng gần chuẩn.
+Thống kê $W \in [0,1]$; $W$ càng gần 1 thì phần dư càng gần mẫu hình chuẩn. Trực giác của kiểm định này rất gần với Q-Q plot: nó đo mức độ khớp tuyến tính giữa các giá trị phần dư đã sắp thứ tự và các phân vị kỳ vọng dưới phân phối chuẩn. Vì vậy, nếu Q-Q plot gần đường thẳng, $W$ thường gần 1 và $p$-value thường lớn.
 
+\textbf{Khi dùng.} Shapiro-Wilk hữu ích khi $n$ nhỏ hoặc vừa, vì nó có khả năng phát hiện nhiều dạng lệch chuẩn tổng quát: lệch, đuôi nặng, đuôi mỏng, hoặc ngoại lai.
 
-Tuy nhiên, với mẫu lớn, Shapiro-Wilk trở nên ít cần thiết hơn về mặt thực tiễn. Lý do là nhờ 
-Định lý Giới hạn Trung tâm, khi n đủ lớn, các ước lượng hệ số hồi quy 
-(vốn là các tổ hợp tuyến tính của các quan sát $y_i$ và sai số $\varepsilon_i$) sẽ tự động xấp xỉ phân phối chuẩn, 
-bất chấp việc phân phối thực sự của sai số gốc có chuẩn hay không
+\textbf{Giới hạn.} Với mẫu lớn, kiểm định có thể bác bỏ $H_0$ vì những sai lệch rất nhỏ không quan trọng về mặt thực hành. Ngược lại, với mẫu quá nhỏ, kiểm định có thể thiếu power và không bác bỏ $H_0$ dù sai số thật không chuẩn. Vì vậy, $p$-value lớn không chứng minh rằng sai số thật chuẩn; nó chỉ nói rằng dữ liệu hiện tại chưa cung cấp đủ bằng chứng chống lại chuẩn tắc.
 
+\begin{lstlisting}[style=Rstyle]
+fit <- lm(y ~ x1 + x2, data = dat)
+shapiro.test(residuals(fit))
+\end{lstlisting}
 
 \subsubsection{Jarque-Bera Test}
 
-Phù hợp cho mẫu lớn, phổ biến trong kinh tế lượng. Kiểm tra đồng thời skewness và excess kurtosis:
-\[
-  JB = \frac{n}{6}\!\left[S^2 + \frac{K^2}{4}\right] \sim \chi^2(2) \text{ dưới } H_0
-\]
+Jarque-Bera là kiểm định phổ biến trong kinh tế lượng, đặc biệt khi cỡ mẫu lớn. Kiểm định này không so sánh toàn bộ hình dạng phân phối như Shapiro-Wilk, mà tập trung vào hai moment đặc trưng của phân phối chuẩn:
+\begin{itemize}
+  \item skewness bằng 0: phân phối đối xứng,
+  \item excess kurtosis bằng 0: độ dày đuôi giống phân phối chuẩn.
+\end{itemize}
 
-với $S$ là độ lệch (skewness) và $K = \text{kurtosis} - 3$ là độ nhọn excess kurtosis.
+Thống kê kiểm định là:
+\[
+  JB = \frac{n}{6}\!\left(S^2 + \frac{K^2}{4}\right)
+  \sim \chi^2(2) \quad \text{dưới } H_0,
+\]
+trong đó $S$ là skewness mẫu và $K = \text{kurtosis} - 3$ là excess kurtosis.
+
+\textbf{Khi dùng.} Jarque-Bera phù hợp hơn khi $n$ đủ lớn để ước lượng skewness và kurtosis ổn định. Ưu điểm của nó là giúp chỉ ra nguồn vi phạm: nếu $S^2$ lớn, vấn đề chính là lệch phân phối; nếu $K^2$ lớn, vấn đề chính là đuôi nặng hoặc đuôi mỏng.
+
+\textbf{Giới hạn.} Vì chỉ dựa trên moment bậc 3 và bậc 4, Jarque-Bera có thể bỏ sót những dạng lệch chuẩn không thể hiện rõ qua skewness hoặc kurtosis. Với mẫu nhỏ, ước lượng moment bậc cao thường không ổn định, nên kết quả dễ dao động.
+
+\begin{lstlisting}[style=Rstyle]
+library(tseries)
+jarque.bera.test(residuals(fit))
+\end{lstlisting}
 
 \subsubsection{Sự Khác Biệt Bản Chất Giữa Hai Kiểm Định}
 
-Hai kiểm định xuất phát từ hai triết lý xây dựng thống kê hoàn toàn khác nhau.
+Hai kiểm định xuất phát từ hai triết lý khác nhau.
 
-\textbf{Shapiro-Wilk dựa trên tương quan thứ tự.} Thống kê $W$ đo mức độ tương quan giữa các phân vị thực nghiệm của mẫu và các phân vị lý thuyết kỳ vọng của phân phối chuẩn. Nếu mẫu đến từ phân phối chuẩn, hai tập phân vị này phải xếp thẳng hàng trên đồ thị Q-Q; $W$ càng gần 1 thì mức độ khớp càng cao. Đây là kiểm định \textbf{tổng thể}: nó phát hiện bất kỳ dạng lệch chuẩn nào, nhưng không chỉ ra vi phạm đến từ đâu.
+\textbf{Shapiro-Wilk dựa trên tương quan thứ tự.} Kiểm định này hỏi: các phân vị thực nghiệm của phần dư có xếp gần thành một đường thẳng khi so với phân vị chuẩn lý thuyết hay không? Vì vậy, nó là phiên bản định lượng của Q-Q plot và có tính tổng quát cao, nhưng không nói rõ nguồn vi phạm đến từ lệch hay đuôi.
 
-\textbf{Jarque-Bera dựa trên ước lượng moment.} Kiểm định so sánh trực tiếp moment bậc 3 (độ lệch $S$, phản ánh mức độ \textit{mất đối xứng} của phân phối) và moment bậc 4 (độ nhọn $K$, phản ánh \textit{hành vi đuôi}) với giá trị lý thuyết của phân phối chuẩn ($S = 0$, $K = 0$). Cấu trúc này cho phép chẩn đoán \textbf{nguồn gốc vi phạm}: nếu $p$-value thấp chủ yếu do $S^2$ lớn thì phân phối lệch; nếu chủ yếu do $K^2$ lớn thì phân phối có đuôi nặng.
-
-\textbf{Hệ quả thực tiễn.} Shapiro-Wilk nhạy hơn với mẫu nhỏ vì phân vị mẫu ổn định; Jarque-Bera cần $n$ lớn để ước lượng moment bậc cao đạt độ chính xác đủ dùng. Khi cả hai đều bác bỏ $H_0$, thành phần $S$ và $K$ trong thống kê JB cung cấp thêm thông tin chẩn đoán mà Shapiro-Wilk không có.
-
-\subsubsection{Bảng so sánh hai kiểm định}
+\textbf{Jarque-Bera dựa trên moment.} Kiểm định này hỏi: phân phối phần dư có skewness và excess kurtosis giống phân phối chuẩn hay không? Vì vậy, nó ít tổng quát hơn nhưng diễn giải nguồn vi phạm rõ hơn.
 
 \begin{center}
 \begin{tabular}{@{}lll@{}}
 \toprule
 \textbf{Tiêu chí} & \textbf{Shapiro-Wilk} & \textbf{Jarque-Bera} \\
 \midrule
-Cỡ mẫu phù hợp & $n$ nhỏ đến vừa ($< 2000$) & $n$ lớn \\
-Loại sai lệch phát hiện & Tổng quát & Skewness + Kurtosis \\
-Độ nhạy với $n$ lớn & Quá nhạy & Ổn định hơn \\
-Package R & Base R & \texttt{tseries} \\
-Phổ biến trong & Thống kê tổng quát & Kinh tế lượng \\
+Trực giác & Độ thẳng của Q-Q plot & Skewness và kurtosis \\
+Cỡ mẫu phù hợp & Nhỏ đến vừa & Lớn \\
+Loại sai lệch phát hiện & Tổng quát & Lệch và đuôi bất thường \\
+Diễn giải nguồn vi phạm & Khó hơn & Rõ hơn qua $S$ và $K$ \\
+R package & Base R & \texttt{tseries} \\
+Vai trò chính & Chẩn đoán tổng thể & Chẩn đoán moment \\
 \bottomrule
 \end{tabular}
 \end{center}
 
-\textbf{Khuyến nghị.} Dùng cả hai kiểm định kết hợp với trực quan (histogram + Q-Q plot). Kết luận nên dựa trên sự nhất quán giữa các phương pháp, không chỉ một $p$-value.
+\subsubsection{Đọc p-value Theo Cỡ Mẫu và Mục Tiêu Suy Diễn}
+
+Sai lầm phổ biến là xem $p < 0.05$ như bằng chứng rằng mô hình hồi quy ``hỏng''. Cách đọc đúng thận trọng hơn:
+\begin{itemize}
+  \item \textbf{$p$-value nhỏ không làm OLS vô dụng.} OLS không cần giả định chuẩn để tính $\hat{\boldsymbol{\beta}}$ hoặc để đạt tính chất BLUE dưới các điều kiện Gauss-Markov. Vấn đề chính nằm ở suy diễn mẫu nhỏ: kiểm định $t$, kiểm định $F$ và khoảng tin cậy cổ điển.
+  \item \textbf{$p$-value lớn không chứng minh chuẩn tắc.} Nó chỉ nói rằng kiểm định chưa tìm thấy bằng chứng đủ mạnh để bác bỏ $H_0$. Với mẫu nhỏ, kiểm định có thể thiếu power.
+  \item \textbf{Mẫu lớn dễ bác bỏ những sai lệch nhỏ.} Khi $n$ lớn, kiểm định có thể phát hiện những khác biệt rất nhỏ so với chuẩn lý thuyết, dù khác biệt đó không làm thay đổi kết luận thực hành.
+  \item \textbf{Mục tiêu phân tích quyết định mức nghiêm trọng.} Nếu chỉ cần ước lượng xu hướng trung bình hoặc dự báo, lệch nhẹ khỏi chuẩn có thể không đáng lo. Nếu cần suy diễn mẫu nhỏ chính xác, tính chuẩn quan trọng hơn nhiều.
+\end{itemize}
+
+\begin{notebox}
+\textbf{Khuyến nghị.} Luôn đọc kiểm định chuẩn tắc cùng Q-Q plot, histogram, cỡ mẫu và mục tiêu suy diễn. Nếu Q-Q plot chỉ lệch nhẹ ở mẫu lớn, không nên vội kết luận mô hình thất bại. Nếu mẫu nhỏ và kết luận phụ thuộc mạnh vào $p$-value hoặc khoảng tin cậy, nên cân nhắc sai số chuẩn vững, bootstrap hoặc mô hình phân phối phù hợp hơn.
+\end{notebox}
 
 % -----------------------------------------------------------------------------

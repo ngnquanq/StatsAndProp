@@ -1,27 +1,75 @@
 \subsection{Công Cụ Trực Quan}
 % -----------------------------------------------------------------------------
 
-\subsubsection{Biểu Đồ Tần Suất của Phần Dư}
+Sau khi khớp mô hình, công cụ trực quan phổ biến nhất để đánh giá giả định chuẩn là các đồ thị của phần dư. Tuy nhiên, cần nhớ lại kết quả ở phần lý thuyết:
+\[
+  \hat{\mathbf{e}} = (I-H)\boldsymbol{\varepsilon}
+\]
 
-Dấu hiệu vi phạm: \textbf{lệch phải/trái} (đuôi một bên dài), \textbf{đuôi nặng} (đỉnh nhọn, đuôi dày), \textbf{đa đỉnh} (gợi ý dữ liệu từ 2 quần thể).
+Ta muốn hiểu phân phối của sai số thật $\boldsymbol{\varepsilon}$, nhưng chỉ quan sát được phần dư $\hat{\mathbf{e}}$. Vì vậy, histogram và Q-Q plot là \textbf{công cụ chẩn đoán gián tiếp}: chúng rất hữu ích để phát hiện dấu hiệu bất thường, nhưng không phải bằng chứng tuyệt đối rằng sai số thật chuẩn hay không chuẩn.
 
-\subsubsection{Q-Q Plot (Quantile-Quantile Plot)}
+\subsubsection{Biểu Đồ Tần Suất Của Phần Dư}
+
+Histogram cho cái nhìn nhanh về hình dạng phân phối của phần dư. Các dấu hiệu thường gặp gồm:
+\begin{itemize}
+  \item \textbf{Lệch phải hoặc lệch trái:} một đuôi dài hơn rõ rệt so với đuôi còn lại.
+  \item \textbf{Đuôi nặng:} nhiều quan sát nằm xa trung tâm hơn so với phân phối chuẩn.
+  \item \textbf{Đa đỉnh:} gợi ý dữ liệu có thể đến từ nhiều nhóm hoặc mô hình đang bỏ sót biến phân nhóm.
+  \item \textbf{Ngoại lai:} một vài phần dư nằm rất xa phần còn lại của dữ liệu.
+\end{itemize}
+
+Điểm yếu của histogram là nó phụ thuộc mạnh vào số cột (bins), cỡ mẫu và thang đo. Với mẫu nhỏ, chỉ cần đổi số bins là hình dạng biểu đồ có thể thay đổi đáng kể. Vì vậy, histogram phù hợp như bước khảo sát ban đầu, nhưng không nên là bằng chứng chính khi kết luận về tính chuẩn.
+
+\subsubsection{Q-Q Plot: Công Cụ Chính Để Đọc Tính Chuẩn}
+
+Q-Q plot so sánh các phân vị thực nghiệm của phần dư với các phân vị lý thuyết của phân phối chuẩn. Nếu phần dư gần chuẩn, các điểm sẽ nằm gần một đường thẳng. Nếu phân phối lệch, đuôi nặng hoặc có ngoại lai, các điểm sẽ tạo thành mẫu hình có hệ thống.
+
+Lý do Q-Q plot thường hữu ích hơn histogram là nó tập trung trực tiếp vào quan hệ giữa \textbf{thứ tự phần dư quan sát được} và \textbf{phân vị chuẩn kỳ vọng}. Đây cũng là trực giác phía sau kiểm định Shapiro-Wilk: thống kê kiểm định đo mức độ khớp tuyến tính giữa các giá trị thứ tự quan sát được và giá trị kỳ vọng dưới chuẩn tắc. Q-Q plot chính là phiên bản trực quan của ý tưởng đó.
 
 \vspace{4pt}
 \begin{center}
-\begin{tabular}{@{}ll@{}}
+\begin{tabular}{@{}lp{8.2cm}@{}}
 \toprule
-\textbf{Mẫu hình quan sát} & \textbf{Diễn giải} \\
+\textbf{Mẫu hình trên Q-Q plot} & \textbf{Diễn giải thực hành} \\
 \midrule
-Các điểm trên đường thẳng & Phân phối chuẩn \\
-Hai đầu lệch lên trên (dạng chữ S) & Đuôi nặng hai phía \\
-Hai đầu lệch xuống dưới & Đuôi mỏng \\
-Đuôi phải lệch lên & Lệch phải \\
-Đuôi trái lệch xuống & Lệch trái \\
+Các điểm gần đường thẳng & Phần dư phù hợp tương đối tốt với phân phối chuẩn \\
+Đuôi phải lệch lên mạnh & Lệch phải; có phần dư dương lớn hơn chuẩn dự đoán \\
+Đuôi trái lệch xuống mạnh & Lệch trái; có phần dư âm lớn hơn chuẩn dự đoán \\
+Hai đầu lệch xa khỏi đường thẳng & Đuôi nặng; nhiều giá trị cực đoan hơn phân phối chuẩn \\
+Hai đầu bị ép vào trong & Đuôi mỏng; ít giá trị cực đoan hơn phân phối chuẩn \\
+Một vài điểm tách xa rõ rệt & Ngoại lai hoặc quan sát ảnh hưởng mạnh cần kiểm tra riêng \\
 \bottomrule
 \end{tabular}
 \end{center}
 
-\textbf{Lưu ý.} Đồ thị xác suất chuẩn nhạy hơn biểu đồ tần suất trong việc phát hiện lệch ở đuôi phân phối; ưu tiên dùng khi mẫu nhỏ.
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\textwidth]{./figures/fig16_normality_patterns.png}
+  \caption{Bốn mẫu hình thường gặp khi đánh giá tính chuẩn của phần dư. Mỗi hàng gồm histogram và Q-Q plot cho cùng một tập phần dư mô phỏng. Q-Q plot làm nổi bật sai lệch ở đuôi rõ hơn histogram: lệch phải tạo đuôi dương cao hơn đường chuẩn, đuôi nặng làm hai đầu tách xa, và ngoại lai xuất hiện như một vài điểm rời khỏi mẫu hình chung.}
+  \label{fig:normality_patterns}
+\end{figure}
+
+\subsubsection{Đọc Đồ Thị Cùng Leverage và Ngoại Lai}
+
+Một giới hạn quan trọng của đồ thị phần dư thô là phương sai của phần dư không hằng số:
+\[
+  \mathrm{Var}(\hat e_i) = \sigma^2(1-h_{ii})
+\]
+trong đó $h_{ii}$ là leverage của quan sát thứ $i$. Khi $h_{ii}$ lớn, phương sai của phần dư nhỏ lại; điểm leverage cao có thể bị kéo về gần 0 trên đồ thị phần dư dù nó ảnh hưởng mạnh đến đường hồi quy.
+
+Đây là \textbf{hiệu ứng che lấp}: histogram hoặc Q-Q plot của raw residuals có thể trông tương đối bình thường trong khi một vài quan sát leverage cao đang chi phối mô hình. Vì vậy, khi mục tiêu là chẩn đoán, nên xem thêm phần dư Student hóa ngoài:
+\begin{lstlisting}[style=Rstyle]
+fit <- lm(y ~ x1 + x2, data = dat)
+res_student <- rstudent(fit)
+qqnorm(res_student); qqline(res_student, col = "red", lwd = 2)
+\end{lstlisting}
+
+Phần dư Student hóa điều chỉnh theo leverage và sai số chuẩn ước lượng, nên phù hợp hơn raw residuals khi tìm ngoại lai hoặc quan sát bất thường.
+
+\subsubsection{Kết Luận Thực Hành}
+
+\begin{notebox}
+\textbf{Cách đọc hợp lý.} Dùng histogram để khảo sát nhanh hình dạng tổng quát, dùng Q-Q plot làm công cụ chính để đọc lệch chuẩn và đuôi phân phối. Nhưng mọi đồ thị phần dư đều là chẩn đoán gián tiếp vì ta không quan sát được sai số thật. Với mẫu nhỏ, dấu hiệu không chuẩn có thể khó phát hiện chắc chắn; với mẫu lớn, một chút lệch nhẹ ở hai đuôi không nhất thiết làm hỏng suy diễn hệ số. Nếu kết luận thống kê nhạy với giả định chuẩn, nên kiểm tra thêm sai số chuẩn vững hoặc bootstrap.
+\end{notebox}
 
 % -----------------------------------------------------------------------------
