@@ -1,0 +1,28 @@
+\subsection{Khái Niệm và Hệ Quả}
+
+Giả định đồng nhất phương sai yêu cầu phương sai điều kiện của sai số là hằng số:
+\[
+  \mathrm{Var}(\varepsilon_i \mid \mathbf{x}_i) = \sigma^2
+  \qquad \text{với mọi } i.
+\]
+Nói cách khác, độ phân tán của sai số quanh hàm trung bình không được tăng, giảm hoặc thay đổi có hệ thống theo giá trị dự báo hay theo các biến giải thích \cite{dobson2018}.
+
+Khi giả định này đúng và các điều kiện Gauss-Markov khác được thỏa mãn, OLS là ước lượng tuyến tính không chệch tốt nhất (BLUE). Khi phương sai thay đổi, hệ số OLS vẫn có thể không chệch nếu hàm trung bình được chỉ định đúng, nhưng công thức sai số chuẩn cổ điển không còn đáng tin:
+\[
+  \widehat{\mathrm{Var}}(\hat{\boldsymbol{\beta}})
+  = \hat{\sigma}^2(\mathbf{X}^\top\mathbf{X})^{-1}.
+\]
+Hậu quả thực tế là p-value, kiểm định $t$, kiểm định $F$ và khoảng tin cậy có thể quá lạc quan hoặc quá bảo thủ.
+
+\subsubsection{Phương Sai Thay Đổi Trông Như Thế Nào?}
+
+Trong đồ thị phần dư theo giá trị khớp, phương sai thay đổi thường xuất hiện dưới các dạng:
+\begin{itemize}
+  \item \textbf{Hình phễu:} phần dư phân tán rộng dần khi $\hat y$ tăng.
+  \item \textbf{Nhóm có độ phân tán khác nhau:} một vài nhóm quan sát có phần dư rộng hơn hẳn nhóm khác.
+  \item \textbf{Quan hệ với biến dự báo:} độ biến động của phần dư thay đổi theo một biến $X_j$ cụ thể.
+\end{itemize}
+
+\textbf{Hệ quả thực hành.} Đồng nhất phương sai không yêu cầu phần dư nhỏ ở mọi điểm. Điều cần kiểm tra là độ rộng của phần dư có ổn định tương đối trên toàn miền dự báo hay không.
+
+% -----------------------------------------------------------------------------

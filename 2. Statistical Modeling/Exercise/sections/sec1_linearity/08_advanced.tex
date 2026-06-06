@@ -1,7 +1,7 @@
 \subsection{Tính Chất Nâng Cao}
 % -----------------------------------------------------------------------------
 
-Bốn kết quả lý thuyết sau giải thích tại sao tuyến tính trong tham số tạo ra sự đảm bảo mạnh mẽ hơn nhiều so với những gì các công cụ chẩn đoán thực hành gợi ý.
+Năm kết quả lý thuyết sau giải thích tại sao tuyến tính trong tham số tạo ra sự đảm bảo mạnh mẽ hơn nhiều so với những gì các công cụ chẩn đoán thực hành gợi ý.
 
 % - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 \subsubsection{Chiếu Trực Giao Lên Không Gian Dự Báo}
@@ -24,15 +24,54 @@ Vector sai số $e = Y - \hat{Y}$ trực giao với mọi cột của $X$---đâ
   \label{fig:projection}
 \end{figure}
 
+
+% - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+\subsubsection{Tuyến Tính Không Luôn Được Bảo Toàn Khi Bỏ Biến}
+
+Một điểm dễ bị bỏ qua là tính tuyến tính là phát biểu về \textit{hàm trung bình có điều kiện theo tập biến đang xét}. Vì vậy, một mô hình có thể tuyến tính hoàn hảo theo $(X_1, X_2)$ nhưng không còn tuyến tính nếu chỉ nhìn theo $X_1$.
+
+Giả sử hàm trung bình đúng là
+\[
+  E(Y \mid X_1, X_2) = \beta_0 + \beta_1 X_1 + \beta_2 X_2.
+\]
+Nếu bỏ $X_2$ và chỉ mô hình hóa theo $X_1$, quy tắc kỳ vọng lặp cho đúng dạng phương trình omitted-variable trong Weisberg \cite[Eq.~4.8, Sec.~4.2.1]{weisberg2014applied}:
+\[
+  E(Y \mid X_1)
+  = \beta_0 + \beta_1 X_1 + \beta_2 E(X_2 \mid X_1).
+\]
+Do đó mô hình rút gọn chỉ còn tuyến tính trong $X_1$ khi $E(X_2 \mid X_1)$ cũng tuyến tính. Nếu biến bị loại có quan hệ cong với biến giữ lại, ví dụ $E(X_2 \mid X_1)$ là hàm bậc hai, thì $E(Y \mid X_1)$ cũng chứa thành phần bậc hai.
+
+
+Một phản ví dụ cụ thể: nếu $X_2 = X_1^2 + u$ và $E(u \mid X_1)=0$, thì $E(X_2 \mid X_1)=X_1^2$. Khi bỏ $X_2$, mô hình rút gọn trở thành
+\[
+  E(Y \mid X_1) = \beta_0 + \beta_1 X_1 + \beta_2 X_1^2,
+\]
+tức là phi tuyến theo biến $X_1$ dù mô hình đầy đủ ban đầu hoàn toàn tuyến tính theo $(X_1, X_2)$.
+
+\textbf{Hệ quả.} Thiếu biến không chỉ gây omitted variable bias hay làm giảm $R^2$; nó còn có thể biến một quan hệ vốn tuyến tính trong không gian đầy đủ thành một quan hệ phi tuyến trong không gian biến rút gọn. Vì vậy, kiểm tra tuyến tính luôn phải gắn với tập biến cụ thể đang có trong mô hình.
+
 % - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 \subsubsection{Phân Phối Chuẩn Đa Biến Đảm Bảo Tuyến Tính}
 
-Tuyến tính thường là giả định làm việc về thế giới. Một trường hợp nó được đảm bảo bởi toán học: nếu biến phản hồi $Y$ và các biến dự báo $X_1, \ldots, X_p$ cùng tuân theo \textbf{phân phối chuẩn đa biến}, thì từ tính chất của phân phối chuẩn đa biến, phân phối có điều kiện là:
+Tuyến tính thường là giả định làm việc về thế giới. Một trường hợp nó được đảm bảo trực tiếp bởi toán học là khi biến phản hồi $Y$ và vector biến dự báo $X$ cùng tuân theo \textbf{phân phối chuẩn đa biến} \cite[Sec.~4.5.1, p.~91]{weisberg2014applied}. Viết
 \[
-  Y \mid X \sim \mathcal{N}(X\beta,\ \sigma^2)
+  \begin{pmatrix} Y \\ X \end{pmatrix}
+  \sim \mathcal{N}\left(
+  \begin{pmatrix} \mu_y \\ \mu_x \end{pmatrix},
+  \begin{pmatrix}
+    \Sigma_{yy} & \Sigma_{yx} \\
+    \Sigma_{xy} & \Sigma_{xx}
+  \end{pmatrix}
+  \right).
 \]
+Khi đó kỳ vọng có điều kiện có dạng chính xác:
+\[
+  E(Y \mid X = x)
+  = \mu_y + \Sigma_{yx}\Sigma_{xx}^{-1}(x - \mu_x).
+\]
+Vì $\mu_y$, $\mu_x$, $\Sigma_{yx}$ và $\Sigma_{xx}$ đều là hằng số của phân phối, biểu thức trên là một hàm tuyến tính của $x$. Đây là một trong những lý do phân phối chuẩn đa biến có vị trí đặc biệt trong lý thuyết hồi quy: nó không chỉ hỗ trợ suy diễn mẫu nhỏ, mà còn tự sinh ra hàm trung bình có điều kiện tuyến tính.
 
-Kỳ vọng có điều kiện $E[Y \mid X] = X\beta$ là tuyến tính trong $X$, và phương sai có điều kiện $\sigma^2$ là hằng số---cả hai đều bắt nguồn từ cấu trúc ma trận hiệp phương sai của phân phối chuẩn đa biến, không từ bất kỳ giả định ngoại sinh nào. Nếu dữ liệu có thể xuất từ phân phối chuẩn đa biến (kiểm tra bằng Q-Q plot đa biến hoặc kiểm định Mardia), không cần giả định tuyến tính riêng biệt.
+Điểm này cũng cho thấy cần phân biệt hai tầng giả định. Normality của sai số trong mô hình hồi quy giúp kiểm định $t$ và $F$ hoạt động chính xác trong mẫu nhỏ; còn normality đa biến của $(Y, X)$ là điều kiện mạnh hơn, đảm bảo luôn cả dạng tuyến tính của $E(Y \mid X)$.
 
 % - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 \subsubsection{Định Lý Li-Duan: Bền Vững Trước Phi Tuyến Ẩn}
@@ -41,12 +80,21 @@ Giả sử quan hệ thực là phi tuyến nhưng có dạng chỉ số đơn:
 \[
   E[Y \mid X] = g(\beta^\top x)
 \]
-trong đó $g$ là hàm \textit{hoàn toàn ẩn}. Bình thường điều này dường như làm mất hiệu lực OLS hoàn toàn. \textbf{Định lý Li-Duan (1989)} cho thấy điều ngược lại: nếu các biến dự báo $X$ tuân theo phân phối đối xứng elip (bao gồm phân phối chuẩn đa biến), thì OLS vẫn ước lượng $\beta$ \textbf{nhất quán đến một hằng số tỷ lệ}:
+trong đó $g$ là hàm \textit{hoàn toàn ẩn}. Bình thường điều này dường như làm mất hiệu lực OLS hoàn toàn. \textbf{Định lý Li-Duan (1989)} \cite[Sec.~8.2.1, pp.~194--195]{weisberg2014applied} cho thấy điều ngược lại: nếu các biến dự báo $X$ tuân theo phân phối đối xứng elip (bao gồm phân phối chuẩn đa biến), thì OLS vẫn ước lượng $\beta$ \textbf{nhất quán đến một hằng số tỷ lệ}:
 \[
   \hat{\beta}_{\text{OLS}} \xrightarrow{p} c \cdot \beta, \quad c \neq 0
 \]
 
 Nói cách khác: ngay cả khi dạng hàm thực sự bị ẩn và phi tuyến, mô hình tuyến tính khớp một cách mù quáng vẫn phục hồi đúng \textit{hướng} và \textit{tầm quan trọng tương đối} của các biến dự báo. Độ lớn bị chia tỷ lệ, nhưng thứ hạng và dấu của tác động được bảo toàn.
+
+
+Một mở rộng sâu hơn liên quan đến điều kiện tuyến tính của các biến dự báo. Trong lý thuyết sufficient dimension reduction, điều kiện này thường được viết dưới dạng
+\[
+  E(X \mid \beta^\top X) \text{ là hàm tuyến tính của } \beta^\top X.
+\]
+Định lý Hall--Li (1993) \cite[Sec.~8.2.1, pp.~194--195]{weisberg2014applied} cho thấy trong nhiều cấu hình chiều cao, khi số biến dự báo $p$ tăng lớn, điều kiện tuyến tính này có xu hướng trở thành xấp xỉ tốt với hầu hết các hướng chiếu. Nói trực giác, không gian chiều cao làm nhiều hình học có điều kiện trở nên phẳng hơn khi nhìn qua các phép chiếu tuyến tính.
+
+\textbf{Cách hiểu đúng.} Kết quả này không có nghĩa là cứ nhiều biến thì có thể bỏ qua kiểm tra sai dạng hàm. Nó nói rằng trong các bài toán rất nhiều biến và dưới các điều kiện phân phối phù hợp, OLS có thêm một cơ chế bền vững: dù hàm $g$ chưa được biết rõ, hướng tác động chính vẫn có thể được phục hồi tương đối tốt. Trong dữ liệu nhỏ hoặc vừa, hoặc khi biến dự báo có cấu trúc lệch mạnh, rời rạc, phân cụm hay phụ thuộc phi tuyến rõ rệt, chẩn đoán tuyến tính vẫn cần thiết.
 
 \begin{figure}[H]
   \centering

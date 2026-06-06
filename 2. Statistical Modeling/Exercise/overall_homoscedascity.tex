@@ -1,0 +1,380 @@
+% !TeX program = pdflatex
+\documentclass[12pt, a4paper]{article}
+
+% ============================================================
+% CẤU HÌNH TIẾNG VIỆT CHUẨN VÀ AN TOÀN CHO PDFLATEX
+% ============================================================
+\usepackage[utf8]{inputenc}
+\usepackage[vietnam]{babel}
+\usepackage[T5]{fontenc} 
+
+% -- Toán học cơ bản & Nâng cao --
+\usepackage{amsmath, amssymb, amsthm}
+\usepackage{mathtools}
+
+% -- Định dạng trang --
+\usepackage[top=2.5cm, bottom=2.5cm, left=3cm, right=2.5cm]{geometry}
+\usepackage{setspace}
+\setstretch{1.3}
+\usepackage{parskip}
+\usepackage{enumitem}
+
+% -- Đồ họa & Hình ảnh --
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage{caption}
+\captionsetup{font=small, labelfont=bf}
+
+% -- Bảng biểu dữ liệu --
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{tabularx}
+\usepackage{longtable}
+
+% -- Tiêu đề trang & Định dạng Section --
+\usepackage{fancyhdr}
+\usepackage{titlesec}
+
+\pagestyle{fancy}
+\fancyhf{}
+\rhead{\small Mô hình hóa thống kê}
+\lhead{\small Các giả định quan trọng của mô hình hồi quy bội}
+\cfoot{\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+
+\titleformat{\section}[block]
+{\large\bfseries}
+{\thesection.}{0.5em}{}[{\titlerule[0.4pt]}] 
+
+\titleformat{\subsection}[block]
+{\normalsize\bfseries}
+{\thesubsection.}{0.5em}{}
+
+% -- Cấu hình liên kết Hyperlinks --
+\usepackage{hyperref}
+\hypersetup{
+	colorlinks=true,
+	linkcolor=black,
+	citecolor=black,
+	urlcolor=black
+}
+
+% ============================================================
+% BEGIN DOCUMENT
+% ============================================================
+\begin{document}
+	
+	% ============================================================
+	% TITLE PAGE
+	% ============================================================
+	\begin{titlepage}
+		\centering
+		\vspace*{1.5cm}
+		
+		{\Large\bfseries Mô Hình Hóa Thống Kê}\\[0.5cm]
+		{\rule{\linewidth}{1.5pt}}\\[0.3cm]
+		
+		{\Huge\bfseries
+			Chủ đề 3: Các Giả Định Quan Trọng \\[0.3cm]
+			Của Mô Hình Hồi Quy Bội}\\[0.3cm]
+		{\rule{\linewidth}{1.5pt}}
+		
+		\vspace{2.5cm}
+		
+		\centering \large
+		\renewcommand{\arraystretch}{1.5}
+		\begin{tabular}{ll}
+			\textbf{Môn học:} & Mô hình hóa thống kê \\
+			\textbf{Giảng viên:} & TS. Nguyễn Thị Mộng Ngọc \\
+			\textbf{Nhóm thực hiện:} & NHÓM 1
+		\end{tabular}
+		
+		\vfill
+		\textbf{Thành viên thực hiện:} \\[0.4cm]
+		\renewcommand{\arraystretch}{1.3}
+		\begin{tabular}{l c}
+			\toprule
+			\textbf{Họ và tên} & \textbf{Mã học viên} \\ 
+			\midrule
+			NGUYỄN NHẬT QUANG & 25C23002 \\
+			PHẠM ĐOÀN VỊNH NGHI & 25C23012 \\
+			LÊ HOÀNG NHƯ & 25C23014 \\
+			\bottomrule
+		\end{tabular}
+		
+		\vfill
+		{\small Trường Đại học Khoa học Tự Nhiên - ĐHQGHCM}
+	\end{titlepage}
+	
+	% ============================================================
+	% PHÂN CÔNG CÔNG VIỆC
+	% ============================================================
+	\newpage
+	\begin{center}
+		{\Large\bfseries BẢNG PHÂN CÔNG NHIỆM VỤ VÀ ĐÁNH GIÁ}\\[0.3cm]
+		{\rule{\linewidth}{1pt}}
+	\end{center}
+	
+	\vspace{0.5cm}
+	
+	\begin{table}[h]
+		\centering
+		\small
+		\renewcommand{\arraystretch}{1.4}
+		\begin{tabularx}{\textwidth}{|l|c|X|c|}
+			\hline
+			\textbf{Họ và tên} & \textbf{Mã học viên} & \multicolumn{1}{c|}{\textbf{Nhiệm vụ thực hiện}} & \textbf{Đánh giá} \\
+			\hline
+			NGUYỄN NHẬT QUANG & 25C23002 & Tính tuyến tính; Tính chuẩn \& Tổng hợp file báo cáo; Thuyết trình & 100\% \\ \hline
+			PHẠM ĐOÀN VỊNH NGHI & 25C23012 & Tính độc lập \& Phân công nhiệm vụ; Soạn câu hỏi thảo luận; Thuyết trình & 100\% \\ \hline
+			LÊ HOÀNG NHƯ & 25C23014 & Tính đồng nhất phương sai \& Lập dàn ý công việc; Tổng hợp, kết luận; Thuyết trình & 100\% \\
+			\hline
+		\end{tabularx}
+	\end{table}
+	
+	% ============================================================
+	% TABLE OF CONTENTS
+	% ============================================================
+	\newpage
+	\tableofcontents
+	\newpage
+	
+	% ============================================================
+	% SECTION 1: TỔNG QUAN
+	% ============================================================
+	\section{Tổng quan}
+	
+	\subsection{Hồi quy}
+	Dựa vào nghiên cứu của Weisberg trong tài liệu \textit{Applied Linear Regression} \cite{weisberg2014}, hồi quy là một phương pháp thống kê nền tảng được dùng để mô hình hóa và định lượng mối quan hệ giữa biến phản ứng ($Y$) và một hoặc nhiều biến tiên đoán ($\mathbf{X}$). Nền tảng toán học của hồi quy dựa trên Hàm kỳ vọng có điều kiện (Conditional Expectation Function - CEF), ký hiệu là $E(Y|\mathbf{X})$, biểu thị giá trị trung bình của $Y$ tại các mức giá trị cố định của $\mathbf{X}$. Khái niệm hồi quy bắt nguồn từ công trình của Sir Francis Galton vào cuối thế kỷ 19, khi ông quan sát hiện tượng chiều cao của các thế hệ "hồi quy về mức trung bình" \cite{galton1886}. Ngày nay, mục đích chính của hồi quy bao gồm:
+	\begin{itemize}
+		\item Mô tả và định lượng mối quan hệ thống kê giữa các biến số.
+		\item Dự báo giá trị của biến phản ứng dựa trên tập hợp biến giải thích.
+		\item Kiểm soát các biến gây nhiễu theo nguyên lý \textit{ceteris paribus} (giữ các yếu tố khác không đổi).
+	\end{itemize}
+	
+	\subsection{Mô hình hồi quy và Tính chất cốt lõi}
+	Dựa vào nghiên cứu của James và cộng sự \cite{james2013}, mô hình hồi quy là biểu diễn toán học chính thức cho hàm $f(X)$. Dạng cơ bản nhất là Hồi quy tuyến tính đơn (SLR):
+	\begin{equation}
+		Y_i = \beta_0 + \beta_1 X_i + \varepsilon_i
+	\end{equation}
+	Trong đó: $\beta_0$ và $\beta_1$ là các tham số dân số cần ước lượng, và $\varepsilon_i$ là sai số ngẫu nhiên biểu diễn những biến thiên không giải thích được. Các tính chất cốt lõi bao gồm:
+	\begin{itemize}
+		\item \textbf{Phần dư ($\hat{e}_i$)}: Sự chênh lệch giữa giá trị quan sát thực tế và giá trị dự báo mẫu ($\hat{e}_i = y_i - \hat{y}_i$).
+		\item \textbf{Hệ số xác định ($R^2$)}: Đo lường tỷ lệ phương sai của biến phản ứng $Y$ được giải thích bởi các biến độc lập trong mô hình.
+	\end{itemize}
+	
+	\subsection{Hồi quy bội}
+	Dựa vào tài liệu \textit{Linear Models with R} \cite{faraway2016}, hồi quy bội mở rộng cấu trúc tuyến tính đơn cho trường hợp có nhiều hơn hai biến tiên đoán ($p \geq 2$) nhằm kiểm soát tác động đồng thời của nhiều yếu tố và hạn chế thiên lệch do bỏ sót biến. Khi làm việc với mô hình hồi quy bội, cần đặc biệt lưu ý:
+	\begin{itemize}
+		\item \textbf{Kiểm định F toàn cục}: Dùng để đánh giá xem có ít nhất một biến giải thích tác động có ý nghĩa lên $Y$ hay không.
+		\item \textbf{Kiểm định t từng phần}: Đánh giá đóng góp biên của từng hệ số.
+		\item \textbf{Đa cộng tuyến (Multicollinearity)}: Hiện tượng các biến độc lập có tương quan mạnh với nhau, làm hệ số ước lượng kém ổn định.
+	\end{itemize}
+	
+	\subsection{Mô hình hồi quy bội dạng ma trận}
+	Dựa vào nghiên cứu của Rencher và Schaalje \cite{rencher2008}, mô hình hồi quy tuyến tính đa biến được biểu diễn thanh lịch dưới dạng đại số tuyến tính:
+	\begin{equation}
+		\mathbf{y} = \mathbf{X}\boldsymbol{\beta} + \mathbf{e}, \quad E(\mathbf{e}) = \mathbf{0}, \quad \text{Cov}(\mathbf{e}) = \sigma^2 \mathbf{I}_n
+	\end{equation}
+	Trong đó: $\mathbf{X}$ là ma trận thiết kế có kích thước $n \times (k+1)$ với cột đầu tiên là vectơ cột 1, $\mathbf{y}$ là vectơ cột của biến phản ứng, và $\boldsymbol{\beta}$ là vectơ các tham số hệ số. Để hệ phương trình chuẩn có nghiệm duy nhất, ma trận $\mathbf{X}$ phải có hạng cột đầy đủ.
+	
+	\subsection{Ước lượng OLS và Định lý Gauss - Markov}
+	\subsubsection{Mục đích và sự cần thiết của Ước lượng OLS}
+	Mục đích chính của phương pháp Bình phương Tối thiểu Thông thường (OLS) là tìm ra đường thẳng (hoặc siêu phẳng) phù hợp nhất với tập dữ liệu mẫu. Việc ước lượng OLS là vô cùng cần thiết vì trong thực tế, chúng ta không thể thu thập dữ liệu của toàn bộ tổng thể để tính toán các tham số thực $\boldsymbol{\beta}$. OLS cung cấp một cơ chế toán học tối ưu để xấp xỉ các tham số này bằng cách cực tiểu hóa tổng bình phương các sai số dự báo (Residual Sum of Squares - RSS).
+	
+	\subsubsection{Chứng minh toán học nghiệm OLS dạng đóng}
+	Phương pháp OLS tìm nghiệm $\hat{\boldsymbol{\beta}}$ nhằm tối thiểu hóa hàm mục tiêu $S(\boldsymbol{\beta})$:
+	\begin{equation}
+		S(\boldsymbol{\beta}) = \mathbf{e}^{\top}\mathbf{e} = (\mathbf{y} - \mathbf{X}\boldsymbol{\beta})^{\top}(\mathbf{y} - \mathbf{X}\boldsymbol{\beta})
+	\end{equation}
+	Khai triển và lấy đạo hàm bậc nhất của $S(\boldsymbol{\beta})$ theo vectơ $\boldsymbol{\beta}$, sau đó cho bằng $\mathbf{0}$ để thiết lập hệ phương trình chuẩn:
+	\begin{equation}
+		\frac{\partial S}{\partial \boldsymbol{\beta}} = -2\mathbf{X}^{\top}\mathbf{y} + 2\mathbf{X}^{\top}\mathbf{X}\boldsymbol{\beta} = \mathbf{0} \implies \mathbf{X}^{\top}\mathbf{X}\boldsymbol{\beta} = \mathbf{X}^{\top}\mathbf{y}
+	\end{equation}
+	Nhân hai vế với ma trận nghịch đảo $(\mathbf{X}^{\top}\mathbf{X})^{-1}$, ta thu được nghiệm OLS dạng đóng duy nhất:
+	\begin{equation}\label{eq:ols_solution}
+		\hat{\boldsymbol{\beta}}^{OLS} = (\mathbf{X}^{\top}\mathbf{X})^{-1} \mathbf{X}^{\top}\mathbf{y}
+	\end{equation}
+	
+	\subsubsection{Định lý Gauss - Markov và Mối quan hệ với OLS}
+	\textbf{Định lý Gauss-Markov} \cite{maddala2001} là nền tảng lý thuyết quan trọng nhất biện minh cho sự vĩ đại của phương pháp OLS. Định lý phát biểu rằng: \textit{Dưới các giả định cốt lõi của mô hình tuyến tính cổ điển, ước lượng OLS là ước lượng Tuyến tính Không chệch Tốt nhất (Best Linear Unbiased Estimator - BLUE).}
+	\textbf{Mối quan hệ:} OLS là "công cụ" tính toán, còn Định lý Gauss-Markov là "giấy chứng nhận" khẳng định rằng: Trong toàn bộ vũ trụ các phương pháp ước lượng tuyến tính và không chệch, không tồn tại phương pháp nào có phương sai nhỏ hơn OLS.
+	
+	\subsubsection{Chứng minh Định lý Gauss - Markov (Tính BLUE của OLS)}
+	Giả sử có một ước lượng tuyến tính bất kỳ khác $\tilde{\boldsymbol{\beta}} = \mathbf{C}\mathbf{y}$, với $\mathbf{C} = (\mathbf{X}^{\top}\mathbf{X})^{-1}\mathbf{X}^{\top} + \mathbf{D}$. 
+	Để $\tilde{\boldsymbol{\beta}}$ không chệch:
+	\begin{align}
+		E(\tilde{\boldsymbol{\beta}}) = E(\mathbf{C}\mathbf{y}) = \mathbf{C}\mathbf{X}\boldsymbol{\beta} = \boldsymbol{\beta} \implies \mathbf{C}\mathbf{X} = \mathbf{I} \implies \mathbf{D}\mathbf{X} = \mathbf{0}
+	\end{align}
+	Xét ma trận hiệp phương sai của $\tilde{\boldsymbol{\beta}}$:
+	\begin{align}
+		\text{Var}(\tilde{\boldsymbol{\beta}}) &= \sigma^2 \mathbf{C}\mathbf{C}^{\top} = \sigma^2 \left[(\mathbf{X}^{\top}\mathbf{X})^{-1}\mathbf{X}^{\top} + \mathbf{D}\right] \left[(\mathbf{X}^{\top}\mathbf{X})^{-1}\mathbf{X}^{\top} + \mathbf{D}\right]^{\top} \nonumber\\
+		&= \sigma^2(\mathbf{X}^{\top}\mathbf{X})^{-1} + \sigma^2\mathbf{D}\mathbf{D}^{\top} = \text{Var}(\hat{\boldsymbol{\beta}}^{OLS}) + \sigma^2\mathbf{D}\mathbf{D}^{\top}
+	\end{align}
+	Vì $\sigma^2\mathbf{D}\mathbf{D}^{\top}$ là ma trận nửa xác định dương, nên $\text{Var}(\tilde{\boldsymbol{\beta}}) \geq \text{Var}(\hat{\boldsymbol{\beta}}^{OLS})$. Vậy OLS là "Tốt nhất" (Best).
+	
+	\subsection{Các giả định cốt lõi và Đánh giá mức độ quan trọng}
+	Dựa vào nghiên cứu của Sheather \cite{sheather2009}. Theo Định lý Giới hạn Trung tâm (CLT), giả định về tính chuẩn của sai số sẽ trở nên bớt khắt khe khi cỡ mẫu lớn \cite{wooldridge2015}.
+	\begin{table}[H]
+		\centering
+		\caption{Bốn giả định của mô hình hồi quy bội và hệ quả}
+		\renewcommand{\arraystretch}{1.4}
+		\begin{tabular}{clp{5.5cm}p{4.5cm}}
+			\toprule
+			\textbf{Giả định} & \textbf{Chi tiết} & \textbf{Phát biểu toán học} & \textbf{Hệ quả khi vi phạm} \\
+			\midrule
+			A1 & Tính tuyến tính & $E[\varepsilon_i | \mathbf{X}] = 0$ & Ước lượng OLS bị chệch nghiêm trọng \\
+			A2 & Tính chuẩn & $\varepsilon_i \sim \mathcal{N}(0, \sigma^2)$ & Kiểm định $t, F$ sai ở mẫu nhỏ \\
+			A3 & Đồng nhất phương sai & $\text{Var}(\varepsilon_i | \mathbf{X}) = \sigma^2$ & OLS mất hiệu quả (không còn BLUE) \\
+			A4 & Tính độc lập & $\text{Cov}(\varepsilon_i, \varepsilon_j) = 0$, $i \neq j$ & SE ước lượng bị chệch, kiểm định sai \\
+			\bottomrule
+		\end{tabular}
+	\end{table}
+	
+	% ============================================================
+	% SECTION 2: TÍNH ĐỒNG NHẤT PHƯƠNG SAI
+	% ============================================================
+	\section{Tính đồng nhất phương sai (Homoscedasticity)}
+	
+	\subsection{Khái niệm và Hệ quả}
+	Giả định đồng nhất phương sai \cite{dobson2018} yêu cầu phương sai điều kiện của sai số ngẫu nhiên phải là một hằng số không đổi: $\text{Var}(\varepsilon_i | \mathbf{x}_i) = \sigma^2$. Khi vi phạm, công thức sai số chuẩn $SE = \hat{\sigma}^2(\mathbf{X}^\top\mathbf{X})^{-1}$ sai lệch so với thực tế, dẫn đến suy diễn thống kê (p-value, khoảng tin cậy) hoàn toàn vô giá trị.
+	
+	\subsection{Kiểm định Breusch--Pagan (1979)}
+	\textbf{Khi nào cần dùng:} Khi ta có cơ sở nghi ngờ rằng phương sai của sai số thay đổi (lớn dần hoặc nhỏ dần) theo \textit{hàm tuyến tính} của một hoặc nhiều biến độc lập.
+	
+	\textbf{Cơ sở lý thuyết \& Chứng minh:} Breusch và Pagan \cite{breusch1979} xây dựng kiểm định này dựa trên nguyên lý \textit{Nhân tử Lagrange (Lagrange Multiplier - LM)} trong phương pháp Ước lượng Hợp lý Cực đại (MLE). Giả sử phương sai tuân theo hàm $\sigma_i^2 = h(\gamma_0 + \mathbf{z}_i^{\top}\boldsymbol{\gamma})$. Đạo hàm của hàm log-likelihood (hàm Score) được đánh giá tại $\boldsymbol{\gamma} = \mathbf{0}$. Nếu đạo hàm này khác không một cách có ý nghĩa thống kê, ta có cơ sở bác bỏ tính đồng nhất.
+	
+	\textbf{Thiết lập giả thuyết:}
+	\begin{itemize}
+		\item $H_0: \gamma_1 = \gamma_2 = \dots = \gamma_k = 0$ (Phương sai là hằng số / Đồng nhất phương sai).
+		\item $H_1:$ Có ít nhất một $\gamma_j \neq 0$ (Phương sai thay đổi).
+	\end{itemize}
+	
+	\textbf{Quy trình và Công thức:}
+	\begin{enumerate}
+		\item Chạy mô hình OLS gốc, lưu bình phương phần dư: $\hat{\varepsilon}_i^2$.
+		\item Chạy hồi quy phụ: $\hat{\varepsilon}_i^2 = \gamma_0 + \gamma_1 X_{i1} + \dots + \gamma_k X_{ik} + v_i$.
+		\item Tính thống kê kiểm định: $LM = \frac{1}{2}\text{ESS} \sim \chi^2(k)$. 
+	\end{enumerate}
+	\textbf{Làm sao để thỏa \& Tối ưu hóa:} Để thỏa mãn giả định OLS, ta cần chấp nhận $H_0$ (tức là $p\text{-value} > \alpha$, thường $\alpha = 0.05$). Tuy nhiên, phiên bản gốc của B-P rất nhạy cảm với giả định sai số phân phối chuẩn. Để tối ưu, Koenker (1981) \cite{koenker1981} đã đề xuất \textbf{Kiểm định B-P dạng Studentized}, tính toán qua $LM = n \times R^2_{\text{aux}}$. Dạng tối ưu này vững (robust) hơn khi sai số có đuôi phân phối dày và được các phần mềm như R (hàm \texttt{bptest}) sử dụng làm mặc định.
+	
+	\subsection{Kiểm định White (1980)}
+	\textbf{Khi nào cần dùng:} Khi người nghiên cứu \textit{không biết trước dạng cấu trúc} của phương sai thay đổi (có thể là phi tuyến, bậc 2, hoặc do sự tương tác chéo giữa các biến) và tập mẫu dữ liệu đủ lớn.
+	
+	\textbf{Cơ sở lý thuyết \& Chứng minh:} Halbert White \cite{white1980} phát triển kiểm định này dựa trên thuộc tính của \textit{Đẳng thức Ma trận Thông tin (Information Matrix Equality)}. Theo lý thuyết tiệm cận, nếu $H_0$ đúng, trung bình mẫu của ma trận $\hat{\varepsilon}_i^2 \mathbf{x}_i \mathbf{x}_i^\top$ sẽ hội tụ chính xác về $\hat{\sigma}^2 \frac{1}{n}\sum \mathbf{x}_i \mathbf{x}_i^\top$. Để kiểm tra sự hội tụ này một cách thực tiễn mà không cần thao tác ma trận phức tạp, White chứng minh rằng chỉ cần hồi quy $\hat{\varepsilon}_i^2$ lên mọi phần tử duy nhất cấu thành nên $\mathbf{x}_i \mathbf{x}_i^\top$.
+	
+	\textbf{Thiết lập giả thuyết:} Tương tự B-P, $H_0:$ Phương sai đồng nhất ($\sigma_i^2 = \sigma^2$ với mọi $i$).
+	
+	\textbf{Quy trình và Công thức:}
+	Hồi quy phụ của kiểm định White cực kỳ bao quát:
+	\begin{equation}
+		\hat{\varepsilon}_i^2 = \gamma_0 + \sum \gamma_j X_j + \sum \delta_j X_j^2 + \sum_{j<l} \theta_{jl} X_j X_l + v_i
+	\end{equation}
+	Thống kê kiểm định: $W = n \times R^2_{\text{aux}} \sim \chi^2(p)$, với $p$ là tổng số biến giải thích trong mô hình phụ.
+	
+	\textbf{Làm sao để thỏa \& Tối ưu hóa:} Cần $p\text{-value} > \alpha$ để kết luận mô hình thỏa mãn đồng nhất phương sai. \textit{Tối ưu:} Nhược điểm chí mạng của White test là làm cạn kiệt bậc tự do cực nhanh (ví dụ mô hình gốc 5 biến, mô hình phụ White sẽ có tới 20 biến). Để tối ưu trong mẫu nhỏ, người ta thường dùng \textbf{Kiểm định White rút gọn (Modified White Test)}: chỉ hồi quy $\hat{\varepsilon}_i^2$ theo giá trị dự báo $\hat{y}_i$ và bình phương của nó $\hat{y}_i^2$, giúp tiết kiệm bậc tự do tối đa mà vẫn giữ được sức mạnh kiểm định.
+	
+	\subsection{Cơ sở toán học của Sai số chuẩn vững (Robust Standard Errors)}
+	\textbf{Khi nào cần dùng:} Khi các kiểm định trên đều cho ra $p\text{-value} < 0.05$ (Bác bỏ $H_0$, xác nhận có phương sai thay đổi). Lúc này, ta không vứt bỏ mô hình, mà dùng Robust SE để "cứu" các giá trị p-value của biến độc lập.
+	
+	\textbf{Cơ sở lý thuyết \& Chứng minh:} Xuất phát từ công thức hiệp phương sai thực tế của OLS:
+	\begin{equation}
+		\text{Var}(\hat{\boldsymbol{\beta}}) = (\mathbf{X}^{\top}\mathbf{X})^{-1} (\mathbf{X}^{\top} \boldsymbol{\Omega} \mathbf{X}) (\mathbf{X}^{\top}\mathbf{X})^{-1}
+	\end{equation}
+	Với $\boldsymbol{\Omega}$ là ma trận đường chéo chứa các $\sigma_i^2$ chưa biết. Huber \cite{huber1967} và White \cite{white1980} đã có một phát hiện toán học vĩ đại: Chúng ta không cần phải cố gắng ước lượng chính xác từng $\sigma_i^2$ riêng lẻ. Theo Luật số lớn (LLN), ma trận trung tâm $\frac{1}{n} \mathbf{X}^{\top} \boldsymbol{\Omega} \mathbf{X}$ có thể được ước lượng tiệm cận vững (asymptotically consistent) bằng cách thay thế trực tiếp phần dư mẫu vào: $\frac{1}{n} \sum \hat{\varepsilon}_i^2 \mathbf{x}_i \mathbf{x}_i^{\top}$.
+	
+	\textbf{Tối ưu hóa (HC0 đến HC3):}
+	Cấu trúc kẹp Sandwich trên gọi là HC0. Tuy nhiên HC0 bị chệch trong mẫu nhỏ. MacKinnon và White (1985) \cite{mackinnon1985} đã tối ưu hóa nó thành phiên bản \textbf{HC3} bằng cách sử dụng các giá trị đòn bẩy $h_{ii}$ (thuộc ma trận hình chiếu Hat Matrix) để trừng phạt mạnh mẽ các quan sát ngoại lai (outliers):
+	\begin{equation}
+		\widehat{\text{Var}}_{HC3}(\hat{\boldsymbol{\beta}}) = (\mathbf{X}^{\top}\mathbf{X})^{-1} \left[\sum_{i=1}^{n} \frac{\hat{\varepsilon}_i^2}{(1-h_{ii})^2} \mathbf{x}_i\mathbf{x}_i^{\top}\right] (\mathbf{X}^{\top}\mathbf{X})^{-1}
+	\end{equation}
+	HC3 được giới học thuật kinh tế lượng đánh giá là giải pháp \textbf{tối ưu nhất} và là tiêu chuẩn vàng khi xử lý phương sai thay đổi đối với dữ liệu cắt ngang (cross-sectional data).
+	
+	\subsection{So sánh, Đánh giá và Thực hành R}
+	\begin{itemize}
+		\item \textbf{B-P Test:} Nhanh, mạnh khi phương sai thay đổi tuyến tính, nhưng dễ sai lệch nếu phân phối sai số bất thường (Khắc phục bằng Koenker studentized).
+		\item \textbf{White Test:} Toàn diện, không cần định hình trước cấu trúc, nhưng hao tốn quá nhiều bậc tự do, yếu ở mẫu nhỏ.
+		\item \textbf{Robust SE (HC3):} Không phải là phép kiểm định mà là "liều thuốc chữa bệnh". Giữ vững tính không chệch của OLS, hiệu chỉnh lại $SE$ để đưa ra quyết định thống kê khoa học nhất.
+	\end{itemize}
+	
+
+
+	% ============================================================
+	% DANH MỤC TÀI LIỆU THAM KHẢO (BIBLIOGRAPHY)
+	% ============================================================
+	\newpage
+	\begin{thebibliography}{99}
+		
+		\bibitem{breusch1979} 
+		Breusch, T. S., \& Pagan, A. R. (1979). 
+		A simple test for heteroscedasticity and random coefficient variation. 
+		\textit{Econometrica}, 47(5), 1287--1294.
+		
+		\bibitem{dobson2018} 
+		Dobson, A. J., \& Barnett, A. G. (2018). 
+		\textit{An Introduction to Generalized Linear Models} (4th ed.). 
+		Chapman and Hall/CRC.
+		
+		\bibitem{faraway2016} 
+		Faraway, J. J. (2016). 
+		\textit{Linear Models with R} (2nd ed.). 
+		Chapman and Hall/CRC.
+		
+		\bibitem{galton1886} 
+		Galton, F. (1886). 
+		Regression towards mediocrity in hereditary stature. 
+		\textit{The Journal of the Anthropological Institute}, 15, 246--263.
+		
+		\bibitem{huber1967} 
+		Huber, P. J. (1967). 
+		The behavior of maximum likelihood estimates under nonstandard conditions. 
+		\textit{Proceedings of the Fifth Berkeley Symposium}, 1, 221--233.
+		
+		\bibitem{james2013} 
+		James, G., Witten, D., Hastie, T., \& Tibshirani, R. (2013). 
+		\textit{An Introduction to Statistical Learning}. 
+		Springer Science \& Business Media.
+		
+		\bibitem{koenker1981} 
+		Koenker, R. (1981). 
+		A note on studentizing a test for heteroscedasticity. 
+		\textit{Journal of Econometrics}, 17(1), 107--112.
+		
+		\bibitem{mackinnon1985} 
+		MacKinnon, J. G., \& White, H. (1985). 
+		Some heteroskedasticity-consistent covariance matrix estimators with improved finite sample properties. 
+		\textit{Journal of Econometrics}, 29(3), 305--325.
+		
+		\bibitem{maddala2001} 
+		Maddala, G. S. (2001). 
+		\textit{Introduction to Econometrics} (3rd ed.). 
+		John Wiley \& Sons.
+		
+		\bibitem{rencher2008} 
+		Rencher, A. C., \& Schaalje, G. B. (2008). 
+		\textit{Linear Models in Statistics} (2nd ed.). 
+		John Wiley \& Sons.
+		
+		\bibitem{sheather2009} 
+		Sheather, S. (2009). 
+		\textit{A Modern Approach to Regression with R}. 
+		Springer Science \& Business Media.
+		
+		\bibitem{weisberg2014} 
+		Weisberg, S. (2014). 
+		\textit{Applied Linear Regression} (4th ed.). 
+		John Wiley \& Sons.
+		
+		\bibitem{white1980} 
+		White, H. (1980). 
+		A heteroskedasticity-consistent covariance matrix estimator and a direct test for heteroskedasticity. 
+		\textit{Econometrica}, 48(4), 817--838.
+		
+		\bibitem{wooldridge2015} 
+		Wooldridge, J. M. (2015). 
+		\textit{Introductory Econometrics: A Modern Approach} (6th ed.). 
+		Cengage Learning.
+		
+	\end{thebibliography}
+	
+\end{document}

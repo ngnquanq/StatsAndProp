@@ -1,0 +1,116 @@
+\subsection{Sai Số Chuẩn Vững}
+
+Khi có bằng chứng phương sai thay đổi, không nhất thiết phải loại bỏ mô hình OLS ngay. Nếu hàm trung bình vẫn hợp lý, có thể giữ nguyên hệ số OLS và thay cách ước lượng ma trận hiệp phương sai bằng sai số chuẩn vững kiểu sandwich.
+
+\subsubsection{Cơ Sở Toán Học}
+
+Xuất phát từ mô hình hồi quy bội dạng ma trận:
+\[
+  \mathbf{y} = \mathbf{X}\boldsymbol{\beta} + \boldsymbol{\varepsilon}.
+\]
+Ước lượng OLS thỏa:
+\[
+  \hat{\boldsymbol{\beta}}
+  =
+  (\mathbf{X}^{\top}\mathbf{X})^{-1}\mathbf{X}^{\top}\mathbf{y}.
+\]
+Do đó sai lệch ước lượng có thể viết thành:
+\[
+  \hat{\boldsymbol{\beta}}-\boldsymbol{\beta}
+  =
+  (\mathbf{X}^{\top}\mathbf{X})^{-1}\mathbf{X}^{\top}\boldsymbol{\varepsilon}.
+\]
+Nếu $E(\boldsymbol{\varepsilon}\mid\mathbf{X})=\mathbf{0}$, hệ số OLS vẫn không chệch ngay cả khi phương sai sai số thay đổi. Vấn đề nằm ở ma trận hiệp phương sai dùng cho suy diễn.
+
+Trong trường hợp tổng quát, đặt
+\[
+  \boldsymbol{\Omega}
+  =
+  \mathrm{Var}(\boldsymbol{\varepsilon}\mid\mathbf{X})
+  =
+  \mathrm{diag}(\sigma_1^2,\sigma_2^2,\dots,\sigma_n^2),
+\]
+ta có hiệp phương sai thật của $\hat{\boldsymbol{\beta}}$:
+\[
+  \mathrm{Var}(\hat{\boldsymbol{\beta}})
+  =
+  (\mathbf{X}^{\top}\mathbf{X})^{-1}
+  (\mathbf{X}^{\top}\boldsymbol{\Omega}\mathbf{X})
+  (\mathbf{X}^{\top}\mathbf{X})^{-1},
+\]
+trong đó hai nhân tử ngoài đóng vai trò \textit{bread}, còn phần giữa $\mathbf{X}^{\top}\boldsymbol{\Omega}\mathbf{X}$ là \textit{meat}. Đây là lý do công thức robust SE thường được gọi là ma trận hiệp phương sai kiểu sandwich.
+
+Nếu đồng nhất phương sai đúng, $\boldsymbol{\Omega}=\sigma^2\mathbf{I}$, công thức trên rút gọn về dạng cổ điển:
+\[
+  \mathrm{Var}(\hat{\boldsymbol{\beta}}\mid\mathbf{X})
+  =
+  \sigma^2(\mathbf{X}^{\top}\mathbf{X})^{-1}.
+\]
+Khi phương sai thay đổi, việc dùng cùng một $\sigma^2$ cho mọi quan sát là sai. Khi đó công thức sai số chuẩn cổ điển có thể làm p-value và khoảng tin cậy bị lệch.
+
+\subsubsection{Ước Lượng Phần Meat Bằng Phần Dư}
+
+Khó khăn chính là các $\sigma_i^2$ trong $\boldsymbol{\Omega}$ đều không quan sát được. Ý tưởng của Huber \cite{huber1967} và White \cite{white1980} là không cần ước lượng riêng từng $\sigma_i^2$ một cách chính xác. Điều cần ước lượng là toàn bộ ma trận trung tâm:
+\[
+  \mathbf{X}^{\top}\boldsymbol{\Omega}\mathbf{X}
+  =
+  \sum_{i=1}^{n}\sigma_i^2\mathbf{x}_i\mathbf{x}_i^\top.
+\]
+Theo lập luận tiệm cận dựa trên luật số lớn, ma trận này có thể được ước lượng vững bằng cách thay $\sigma_i^2$ chưa biết bằng bình phương phần dư mẫu $\hat e_i^2$:
+\[
+  \widehat{\mathbf{X}^{\top}\boldsymbol{\Omega}\mathbf{X}}
+  =
+  \sum_{i=1}^{n}\hat e_i^2\mathbf{x}_i\mathbf{x}_i^\top.
+\]
+Dạng HC0 cơ bản là:
+\[
+  \widehat{\mathrm{Var}}_{HC0}(\hat{\boldsymbol{\beta}})
+  =
+  (\mathbf{X}^{\top}\mathbf{X})^{-1}
+  \left[
+    \sum_{i=1}^{n}\hat e_i^2\mathbf{x}_i\mathbf{x}_i^\top
+  \right]
+  (\mathbf{X}^{\top}\mathbf{X})^{-1}.
+\]
+Sai số chuẩn vững của hệ số thứ $j$ sau đó được lấy từ căn bậc hai của phần tử đường chéo tương ứng:
+\[
+  SE_{HC0}(\hat\beta_j)
+  =
+  \sqrt{
+    \left[
+      \widehat{\mathrm{Var}}_{HC0}(\hat{\boldsymbol{\beta}})
+    \right]_{jj}
+  }.
+\]
+Điểm quan trọng là robust SE không thay đổi $\hat{\boldsymbol{\beta}}$; nó chỉ thay đổi cách đo độ bất định của các hệ số.
+
+\subsubsection{Vì Sao Thường Dùng HC3?}
+
+HC0 có thể bị chệch trong mẫu nhỏ, đặc biệt khi có điểm leverage cao. Gọi
+\[
+  \mathbf{H}
+  =
+  \mathbf{X}(\mathbf{X}^{\top}\mathbf{X})^{-1}\mathbf{X}^{\top}
+\]
+là ma trận hat và $h_{ii}$ là leverage của quan sát $i$. Quan sát có $h_{ii}$ lớn ảnh hưởng mạnh đến giá trị khớp, làm phần dư $\hat e_i$ có xu hướng nhỏ hơn mức nhiễu thật. Nếu dùng trực tiếp $\hat e_i^2$, phần meat có thể bị đánh giá thấp.
+
+MacKinnon và White \cite{mackinnon1985} đề xuất HC3 bằng cách điều chỉnh phần dư theo leverage:
+\[
+  \widehat{\mathrm{Var}}_{HC3}(\hat{\boldsymbol{\beta}})
+  =
+  (\mathbf{X}^{\top}\mathbf{X})^{-1}
+  \left[
+    \sum_{i=1}^{n}
+    \frac{\hat e_i^2}{(1-h_{ii})^2}
+    \mathbf{x}_i\mathbf{x}_i^\top
+  \right]
+  (\mathbf{X}^{\top}\mathbf{X})^{-1}.
+\]
+
+Hệ số điều chỉnh $(1-h_{ii})^{-2}$ làm các quan sát leverage cao đóng góp nhiều hơn vào meat của sandwich. Vì vậy HC3 thường bảo thủ hơn HC0 và phản ứng tốt hơn trong mẫu nhỏ hoặc dữ liệu cắt ngang có điểm ảnh hưởng mạnh.
+
+\begin{notebox}
+\textbf{Kết luận thực hành.} Kiểm định Breusch--Pagan và White giúp phát hiện phương sai thay đổi; sai số chuẩn vững giúp điều chỉnh suy diễn khi vẫn muốn giữ mô hình OLS. Robust SE giữ nguyên hệ số ước lượng, nhưng thay ma trận hiệp phương sai cổ điển bằng ma trận sandwich để p-value và khoảng tin cậy phản ánh tốt hơn độ bất định khi phương sai không đồng nhất.
+\end{notebox}
+
+% -----------------------------------------------------------------------------

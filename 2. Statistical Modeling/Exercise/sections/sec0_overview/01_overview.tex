@@ -1,0 +1,63 @@
+\subsection{Hồi Quy và Hồi Quy Bội}
+
+Hồi quy là phương pháp thống kê dùng để mô hình hóa và định lượng mối quan hệ giữa biến phản ứng $Y$ và một hoặc nhiều biến dự báo $\mathbf{X}$. Trọng tâm của hồi quy là hàm kỳ vọng có điều kiện:
+\[
+  E(Y \mid \mathbf{X}),
+\]
+tức giá trị trung bình của $Y$ tại các mức giá trị đã cho của $\mathbf{X}$ \cite{weisberg2014applied}.
+
+Trong hồi quy tuyến tính đơn, mô hình cơ bản có dạng:
+\[
+  Y_i = \beta_0 + \beta_1 X_i + \varepsilon_i.
+\]
+Hồi quy bội mở rộng ý tưởng này cho nhiều biến dự báo cùng lúc:
+\[
+  Y_i = \beta_0 + \beta_1 X_{i1} + \cdots + \beta_k X_{ik} + \varepsilon_i.
+\]
+Cách viết này cho phép đánh giá tác động riêng phần của từng biến trong khi giữ các biến còn lại không đổi, đồng thời giảm rủi ro bỏ sót những yếu tố gây nhiễu quan trọng \cite{faraway2016}.
+
+\subsection{Dạng Ma Trận và Ước Lượng OLS}
+
+Với $n$ quan sát và $k$ biến dự báo, mô hình hồi quy bội thường được viết gọn dưới dạng ma trận:
+\[
+  \mathbf{y} = \mathbf{X}\boldsymbol{\beta} + \boldsymbol{\varepsilon},
+  \qquad
+  E(\boldsymbol{\varepsilon}\mid \mathbf{X}) = \mathbf{0}.
+\]
+Trong đó $\mathbf{X}$ là ma trận thiết kế, $\boldsymbol{\beta}$ là vector hệ số cần ước lượng, và $\boldsymbol{\varepsilon}$ là vector sai số ngẫu nhiên \cite{rencher2008linear}.
+
+Phương pháp bình phương tối thiểu thông thường (OLS) chọn $\hat{\boldsymbol{\beta}}$ để cực tiểu hóa tổng bình phương phần dư:
+\[
+  S(\boldsymbol{\beta})
+  = (\mathbf{y} - \mathbf{X}\boldsymbol{\beta})^\top
+    (\mathbf{y} - \mathbf{X}\boldsymbol{\beta}).
+\]
+Khi $\mathbf{X}^\top\mathbf{X}$ khả nghịch, nghiệm OLS có dạng đóng:
+\[
+  \hat{\boldsymbol{\beta}}
+  = (\mathbf{X}^\top\mathbf{X})^{-1}\mathbf{X}^\top\mathbf{y}.
+\]
+
+\subsection{Vai Trò Của Các Giả Định}
+
+Các giả định của mô hình hồi quy bội không có cùng vai trò. Một số giả định bảo vệ tính đúng đắn của hệ số, một số bảo vệ sai số chuẩn và suy diễn thống kê, còn giả định chuẩn chủ yếu quan trọng trong suy diễn mẫu nhỏ. Báo cáo này tập trung vào bốn giả định chính: tuyến tính, chuẩn của sai số, đồng nhất phương sai và tính độc lập của sai số.
+
+\begin{center}
+\small
+\begin{tabularx}{\textwidth}{@{}>{\bfseries}l>{\raggedright\arraybackslash}X>{\raggedright\arraybackslash}X@{}}
+\toprule
+Giả định & Phát biểu chính & Hệ quả khi vi phạm \\
+\midrule
+Tính tuyến tính & Hàm trung bình $E(Y\mid X)$ được mô tả đúng bởi dạng tuyến tính theo tham số. & Hệ số có thể bị chệch vì mô hình sai dạng hàm trung bình. \\
+Tính chuẩn & Sai số thật thường được giả định $\boldsymbol{\varepsilon}\sim\mathcal{N}(\mathbf{0},\sigma^2 I)$. & Kiểm định $t$, kiểm định $F$ và khoảng tin cậy cổ điển có thể kém tin cậy trong mẫu nhỏ. \\
+Đồng nhất phương sai & $\mathrm{Var}(\varepsilon_i\mid \mathbf{X})=\sigma^2$ với mọi quan sát. & Sai số chuẩn cổ điển bị tính sai; p-value và khoảng tin cậy có thể gây hiểu nhầm. \\
+Tính độc lập của sai số & $\varepsilon_i \perp\!\!\!\perp \varepsilon_j\mid\mathbf{X}$, thường kéo theo $\mathrm{Cov}(\varepsilon_i,\varepsilon_j\mid\mathbf{X})=0$ với $i\neq j$. & SE cổ điển, kiểm định và khoảng tin cậy có thể sai, đặc biệt khi sai số phụ thuộc theo thời gian, không gian hoặc cụm quan sát. \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+\begin{notebox}
+\textbf{Điểm định hướng.} Khi đánh giá mô hình hồi quy, nên hỏi giả định nào đang bị nghi ngờ và giả định đó ảnh hưởng đến phần nào của phân tích: hệ số, sai số chuẩn, kiểm định giả thuyết, khoảng tin cậy hay dự báo.
+\end{notebox}
+
+% -----------------------------------------------------------------------------

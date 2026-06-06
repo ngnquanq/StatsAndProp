@@ -4,15 +4,32 @@
 Tính tuyến tính trong tham số không phải là giả định tùy tiện. Nó cung cấp ba lợi thế cụ thể, tất cả đều bắt nguồn từ cùng một tính chất cấu trúc: $\hat{\boldsymbol{\beta}}$ là \textbf{tổ hợp tuyến tính của $\mathbf{y}$}.
 
 \textbf{1. Nghiệm dạng đóng.}
-Tối thiểu hóa tổng bình phương $\|\mathbf{y} - \mathbf{X}\boldsymbol{\beta}\|^2$ trên mô hình tuyến tính-tham số cho ra hệ phương trình chuẩn có nghiệm đóng:
+\textit{Nghiệm dạng đóng} (closed-form solution) nghĩa là bài toán có một công thức đại số hữu hạn để tính trực tiếp kết quả, thay vì phải dò nghiệm bằng thuật toán lặp \cite[Sec.~2.4]{weisberg2014applied}. Với OLS, mục tiêu là chọn $\boldsymbol{\beta}$ để tối thiểu hóa tổng bình phương phần dư:
 \[
-  \hat{\boldsymbol{\beta}} = (\mathbf{X}^\top\mathbf{X})^{-1}\mathbf{X}^\top\mathbf{y}
+  RSS(\boldsymbol{\beta})
+  = (\mathbf{y} - \mathbf{X}\boldsymbol{\beta})^\top
+    (\mathbf{y} - \mathbf{X}\boldsymbol{\beta}).
 \]
 
-Công thức tính được \textit{một lần} từ các thống kê tóm tắt của dữ liệu, không cần lặp số. Mô hình phi tuyến đòi hỏi thuật toán lặp như Gauss-Newton, có thể không hội tụ hoặc hội tụ về cực tiểu cục bộ.
+Vì mô hình tuyến tính trong $\boldsymbol{\beta}$, hàm $RSS(\boldsymbol{\beta})$ là một hàm bậc hai theo các tham số. Lấy đạo hàm theo $\boldsymbol{\beta}$ và cho bằng 0 tạo ra \textbf{hệ phương trình chuẩn}:
+\[
+  \mathbf{X}^\top\mathbf{X}\,\hat{\boldsymbol{\beta}}
+  = \mathbf{X}^\top\mathbf{y}.
+\]
+Góc nhìn hình học tương đương là phần dư $\mathbf{e}=\mathbf{y}-\mathbf{X}\hat{\boldsymbol{\beta}}$ phải trực giao với mọi cột của $\mathbf{X}$, tức $\mathbf{X}^\top\mathbf{e}=0$.
+
+Nếu $\mathbf{X}$ đầy đủ hạng cột, $\mathbf{X}^\top\mathbf{X}$ khả nghịch và ta cô lập được nghiệm:
+\[
+  \hat{\boldsymbol{\beta}}
+  = (\mathbf{X}^\top\mathbf{X})^{-1}\mathbf{X}^\top\mathbf{y}.
+\]
+Đây là nghiệm dạng đóng của OLS: về mặt toán học, nó cho nghiệm duy nhất và là cực tiểu toàn cục của RSS. Trong tính toán thực tế, phần mềm thường dùng các phân rã số như QR hoặc Cholesky thay vì nghịch đảo ma trận trực tiếp, nhưng bản chất vẫn là giải hệ tuyến tính một lần, không phải dò lặp như hồi quy phi tuyến.
+
+
+Nếu $\mathbf{X}$ không đầy đủ hạng cột, thường do đa cộng tuyến hoàn hảo, thì $\mathbf{X}^\top\mathbf{X}$ không khả nghịch và công thức nghịch đảo ở trên không áp dụng. Khi đó hệ phương trình chuẩn có thể có vô số nghiệm; các cách xử lý chuẩn gồm dùng generalized inverse, đặt side conditions, hoặc tái tham số hóa mô hình \cite[Ch.~12, p.~302]{rencher2008linear}. Nếu mục tiêu chính là ổn định dự báo trong bối cảnh đa cộng tuyến mạnh, các phương pháp regularization như ridge hoặc lasso cũng là lựa chọn thực hành \cite[Sec.~10.2.3, p.~244]{weisberg2014applied}.
 
 \textbf{2. Ước lượng tối ưu---Định lý Gauss-Markov.}
-Vì $\hat{\boldsymbol{\beta}}$ là tổ hợp tuyến tính của $\mathbf{y}$, trong lớp tất cả các ước lượng tuyến tính không chệch, OLS đạt phương sai nhỏ nhất---tính chất \textbf{BLUE} (Best Linear Unbiased Estimator). Định lý này không đòi hỏi phân phối chuẩn: chỉ cần $E(\varepsilon|X)=0$, $\mathrm{Var}(\varepsilon)=\sigma^2 I$, và $\mathrm{Cov}(\varepsilon_i,\varepsilon_j)=0$.
+Vì $\hat{\boldsymbol{\beta}}$ là tổ hợp tuyến tính của $\mathbf{y}$, trong lớp tất cả các ước lượng tuyến tính không chệch, OLS đạt phương sai nhỏ nhất---tính chất \textbf{BLUE} (Best Linear Unbiased Estimator) \cite[Thm.~7.3d, p.~145]{rencher2008linear}. Định lý này không đòi hỏi phân phối chuẩn: chỉ cần $E(\varepsilon|X)=0$, $\mathrm{Var}(\varepsilon)=\sigma^2 I$, và $\mathrm{Cov}(\varepsilon_i,\varepsilon_j)=0$.
 
 \textbf{3. Suy diễn đáng tin---Định lý Giới Hạn Trung Tâm cho $\hat{\boldsymbol{\beta}}$.}
 Vì $\hat{\boldsymbol{\beta}}$ là tổ hợp tuyến tính của $\mathbf{y}$, CLT đảm bảo $\hat{\boldsymbol{\beta}}$ xấp xỉ chuẩn trong mẫu lớn dù sai số có phân phối bất kỳ. Khi sai số \textit{thực sự} chuẩn, $\hat{\boldsymbol{\beta}}$ chuẩn chính xác và thống kê $t$, $F$ theo đúng phân phối lý thuyết---nền tảng của mọi kiểm định giả thuyết và khoảng tin cậy.

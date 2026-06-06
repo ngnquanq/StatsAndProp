@@ -477,7 +477,7 @@ dev.off()
 cat("fig12_violations.png done\n")
 
 # -- fig13_violations_fixed.png ------------------------------------------------
-# Cùng 4 bộ dữ liệu, sau khi áp dụng biến đổi / mô hình phù hợp
+# Cùng 4 bộ dữ liệu, sau khi áp dụng biến đổi / mô hình phù hợp; Turkey dùng NLS phi tuyến theo tham số
 # Cột trái : scatter + đường khớp đúng
 # Cột phải : đồ thị phần dư sau khi khắc phục (không còn mẫu hình)
 
@@ -503,7 +503,7 @@ fv_nls_t  <- fitted(fit_nls_t)
 plot(dose_t, y_turkey,
      pch = 16, cex = 0.72, col = "steelblue",
      xlab = "Dose methionine (mg/g)", ylab = "Weight gain (g)",
-     main = "(1) Turkey — NLS: E(Y) = β₀ + β₁[1−exp(−β₂·dose)]",
+     main = "(1) Turkey — NLS phi tuyến theo tham số",
      cex.main = 0.82, bty = "l")
 lines(dose_seq, pred_nls, col = "#27AE60", lwd = 2.2)
 
@@ -595,52 +595,75 @@ cat("fig13_violations_fixed.png done\n")
 
 # -- fig14_scatterplot_matrix.png ----------------------------------------------
 # Ma trận đồ thị phân tán: mtcars, 4 biến (mpg, hp, wt, disp)
-# Đường chéo dưới: scatter + LOESS để phát hiện độ cong biên
-# Đường chéo trên: hệ số tương quan Pearson (cỡ chữ theo độ lớn)
-# Đường chéo giữa: tên biến + histogram mật độ
+# Tam giác dưới: scatter + LOESS; đường chéo: histogram + tên biến;
+# tam giác trên: hệ số tương quan Pearson.
 
 png("./figures/fig14_scatterplot_matrix.png",
-    width = 860, height = 860, res = 110)
+    width = 980, height = 980, res = 130)
 
-vars   <- c("mpg", "hp", "wt", "disp")
-labels <- c("mpg\n(miles/gallon)", "hp\n(horsepower)",
-            "wt\n(weight, 1000 lb)", "disp\n(displacement)")
-dat    <- mtcars[, vars]
-k      <- length(vars)
+data(mtcars)
+vars <- c("mpg", "hp", "wt", "disp")
+var_desc <- c(
+  mpg  = "Miles/gallon",
+  hp   = "Horsepower",
+  wt   = "Weight (1000 lb)",
+  disp = "Displacement"
+)
+dat <- mtcars[, vars]
+k <- length(vars)
 
-# Hàm vẽ từng ô
-panel_scatter <- function(x, y, ...) {
-  points(x, y, pch = 16, cex = 0.65, col = "steelblue")
-  lines(lowess(x, y), col = "#C0392B", lwd = 2)
+par(mfrow = c(k, k),
+    mar = c(1.9, 1.9, 1.2, 0.7),
+    oma = c(3.4, 3.6, 2.4, 0.5),
+    mgp = c(1.6, 0.45, 0),
+    tcl = -0.22)
+
+for (i in seq_len(k)) {
+  for (j in seq_len(k)) {
+    x <- dat[[j]]
+    y <- dat[[i]]
+    x_name <- vars[j]
+    y_name <- vars[i]
+
+    if (i == j) {
+      h <- hist(x, plot = FALSE, breaks = "FD")
+      plot(h, freq = FALSE,
+           col = "#D8EAF7", border = "white",
+           axes = FALSE, xlab = "", ylab = "", main = "")
+      lines(density(x), col = "#C0392B", lwd = 1.4)
+      box(col = "gray70")
+      text(mean(range(x)), max(h$density) * 0.82,
+           labels = x_name, font = 2, cex = 1.35, col = "#1F4E79")
+      text(mean(range(x)), max(h$density) * 0.60,
+           labels = var_desc[[x_name]], cex = 0.72, col = "gray25")
+      if (i == k) axis(1, cex.axis = 0.65)
+      if (j == 1) axis(2, cex.axis = 0.65, las = 1)
+    } else if (i > j) {
+      plot(x, y,
+           pch = 16, cex = 0.55, col = "steelblue",
+           axes = FALSE, xlab = "", ylab = "", main = "")
+      lines(lowess(x, y), col = "#C0392B", lwd = 1.8)
+      box(col = "gray70")
+      if (i == k) axis(1, cex.axis = 0.65)
+      if (j == 1) axis(2, cex.axis = 0.65, las = 1)
+    } else {
+      plot.new()
+      box(col = "gray70")
+      r <- cor(x, y, use = "complete.obs")
+      col_r <- if (r > 0) "#2980B9" else "#C0392B"
+      text(0.5, 0.60, sprintf("r = %.2f", r),
+           cex = 0.75 + 1.35 * abs(r), font = 2, col = col_r)
+      text(0.5, 0.32, paste(y_name, "vs", x_name),
+           cex = 0.62, col = "gray35")
+    }
+
+    if (i == k) mtext(x_name, side = 1, line = 2.1, cex = 0.78, font = 2)
+    if (j == 1) mtext(y_name, side = 2, line = 2.3, cex = 0.78, font = 2)
+  }
 }
 
-panel_cor <- function(x, y, digits = 2, ...) {
-  usr <- par("usr"); on.exit(par(usr))
-  par(usr = c(0, 1, 0, 1))
-  r   <- cor(x, y, use = "complete.obs")
-  txt <- format(round(r, digits), nsmall = digits)
-  cex_val <- 0.8 + 1.8 * abs(r)
-  text(0.5, 0.5, txt, cex = cex_val,
-       col = if (r > 0) "#2980B9" else "#C0392B", font = 2)
-}
-
-panel_hist <- function(x, ...) {
-  usr <- par("usr"); on.exit(par(usr))
-  h   <- hist(x, plot = FALSE, breaks = "FD")
-  par(usr = c(usr[1:2], 0, max(h$density) * 1.3))
-  rect(h$breaks[-length(h$breaks)], 0,
-       h$breaks[-1], h$density,
-       col = "steelblue", border = "white")
-  lines(density(x), col = "#C0392B", lwd = 1.5)
-}
-
-pairs(dat,
-      labels      = labels,
-      lower.panel = panel_scatter,
-      upper.panel = panel_cor,
-      diag.panel  = panel_hist,
-      gap         = 0.4,
-      cex.labels  = 0.85, font.labels = 2)
+mtext("Ma trận đồ thị phân tán: mtcars", outer = TRUE,
+      side = 3, line = 0.8, cex = 1.0, font = 2)
 
 dev.off()
 cat("fig14_scatterplot_matrix.png done\n")

@@ -11,7 +11,8 @@ Giả định tuyến tính phát biểu rằng:
   E[Y \mid X_1, X_2, \ldots, X_p] = \beta_0 + \beta_1 X_1 + \cdots + \beta_p X_p
 \]
 
-Hay nói cách khác: \textbf{kỳ vọng có điều kiện của $Y$ là một hàm tuyến tính trong các tham số $\beta$}.
+Hay nói cách khác: \textbf{kỳ vọng có điều kiện của $Y$ là một hàm tuyến tính trong các tham số $\beta$}
+\cite[Sec.~7.3.1, p.~141]{rencher2008linear}.
 
 \subsubsection{Ý nghĩa cốt lõi 1: Cấu trúc đại số của các tham số \texorpdfstring{$\beta$}{beta}}
 
@@ -24,6 +25,24 @@ Hay nói cách khác: \textbf{kỳ vọng có điều kiện của $Y$ là một
 
 Bạn sẽ không bao giờ thấy dạng $\beta^2$, $e^{\beta}$, hay $\sin(\beta)$ trong một \textit{mô hình tuyến tính}.
 
+
+\subsubsection{Ba nghĩa khác nhau của tuyến tính}
+
+Trong hồi quy, cùng một từ tuyến tính có thể chỉ ba khái niệm khác nhau. Bảng sau tách riêng ba tầng này để tránh nhầm lẫn giữa định nghĩa mô hình, giả định về hàm trung bình, và hình dạng đồ thị quan sát được.
+
+\begin{center}
+\small
+\begin{tabularx}{\textwidth}{@{}>{\raggedright\arraybackslash}p{3.5cm}>{\raggedright\arraybackslash}X>{\raggedright\arraybackslash}X@{}}
+\toprule
+\textbf{Khái niệm} & \textbf{Ý nghĩa} & \textbf{Vai trò trong hồi quy} \\
+\midrule
+Tuyến tính theo tham số & Các $\beta$ xuất hiện bậc một và cộng tính & Điều kiện để thuộc lớp mô hình tuyến tính \cite[Sec.~7.3.1, p.~141]{rencher2008linear} \\
+Tuyến tính của $E(Y\mid X)$ & Hàm trung bình có điều kiện được chỉ định đúng theo các biến đang xét & Giả định về dạng sinh dữ liệu và mean function \cite[Sec.~1.2; Sec.~3.4.1]{weisberg2014applied} \\
+Hình dạng đồ thị theo $X$ & Đường dự báo có thể thẳng hoặc cong trên trục biến ban đầu & Đa thức và splines có thể tạo đường cong nhưng vẫn tuyến tính theo $\beta$ \cite[Ch.~5, pp.~109--115]{weisberg2014applied} \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
 \subsubsection{Ý nghĩa cốt lõi 2: Sự tự do của các biến \texorpdfstring{$x$}{x}}
 
 Ngược lại, \textbf{mô hình không đặt bất kỳ ràng buộc nào lên các biến $x$}. Bạn hoàn toàn có thể biến đổi $x$ thành bất kỳ dạng phi tuyến nào (bình phương, nghịch đảo, logarit, hàm lượng giác, \ldots) và mô hình vẫn là \textit{mô hình tuyến tính}. Ví dụ, phương trình sau chứa đồng thời nghịch đảo ($x_2^{-1}$), bình phương ($x_2^2$) và hàm sin ($\sin x_2$):
@@ -32,6 +51,18 @@ Ngược lại, \textbf{mô hình không đặt bất kỳ ràng buộc nào lê
 \]
 
 Mô hình này \textbf{vẫn là mô hình tuyến tính} vì $\beta_0, \ldots, \beta_4$ đều xuất hiện ở bậc một và được cộng lại.
+
+\subsubsection{Vì sao phi tuyến theo \texorpdfstring{$X$}{X} được phép, nhưng phi tuyến theo \texorpdfstring{$\beta$}{beta} thì không?}
+
+Điểm mấu chốt nằm ở vai trò khác nhau của hai đại lượng. Các biến $X$ là dữ liệu đã quan sát được; sau khi thu thập dữ liệu, $x$, $x^2$, $\log x$ hay $\sin x$ đều chỉ là những cột số liệu đã biết trong ma trận thiết kế. Ngược lại, $\beta$ là tham số chưa biết cần ước lượng. Vì vậy, một mô hình được gọi là tuyến tính không phải vì đồ thị $Y$ theo $X$ nhất thiết là đường thẳng, mà vì kỳ vọng có điều kiện được viết dưới dạng \textbf{tổ hợp tuyến tính của các tham số chưa biết}.
+
+Về mặt hình học, thêm $x^2$ không phá vỡ tính tuyến tính của mô hình. Nó chỉ mở rộng không gian dự báo bằng một trục mới. Chẳng hạn, $Y = \beta_0 + \beta_1 x + \beta_2 x^2 + \varepsilon$ tạo ra một đường parabol nếu vẽ theo trục $x$ ban đầu, nhưng trong không gian có các trục $1$, $x$ và $x^2$, phần dự báo vẫn nằm trên một siêu phẳng tuyến tính do các cột của ma trận thiết kế sinh ra.
+
+Lý do quan trọng nhất là khả năng ước lượng. Khi mô hình tuyến tính trong $\beta$, bài toán OLS
+\[
+  \min_{\boldsymbol{\beta}} \|\mathbf{y} - \mathbf{X}\boldsymbol{\beta}\|^2
+\]
+dẫn đến hệ phương trình chuẩn tuyến tính và nghiệm dạng đóng. Nếu tham số xuất hiện phi tuyến, ví dụ $Y = \beta_0 + \beta_1 e^{\beta_2 x} + \varepsilon$ hoặc $Y = \theta_1 + \theta_2(1 - e^{-\theta_3 x}) + \varepsilon$, đạo hàm của tổng bình phương phần dư không còn tạo ra một hệ tuyến tính đơn giản. Khi đó ta phải dùng các thuật toán lặp như Gauss--Newton, cần giá trị khởi đầu và có rủi ro không hội tụ hoặc hội tụ về cực tiểu cục bộ.
 
 \vspace{6pt}
 \begin{center}

@@ -1,7 +1,7 @@
 \subsection{Khắc Phục Vi Phạm}
 % -----------------------------------------------------------------------------
 
-Năm phương pháp chính, từ đơn giản đến phức tạp. Lựa chọn dựa trên bản chất của dữ liệu và mục tiêu mô hình hóa.
+Năm phương pháp chính, từ đơn giản đến phức tạp, tương ứng với các chương về biến đổi, đa thức và splines trong Weisberg \cite[Ch.~5; Ch.~8]{weisberg2014applied}. Lựa chọn dựa trên bản chất của dữ liệu và mục tiêu mô hình hóa.
 
 \begin{center}
 \begin{tabular}{@{}lp{5.2cm}l@{}}
@@ -128,7 +128,7 @@ Khi quan hệ được chi phối bởi một cơ chế lý thuyết đã biết
   y = \beta_0 + \beta_1 \exp(\beta_2 x) + \varepsilon
 \]
 
-Nghiệm dạng đóng OLS không áp dụng. Tham số được ước lượng lặp bằng \textbf{thuật toán Gauss-Newton}: tuyến tính hóa mô hình quanh ước lượng hiện tại, cập nhật tham số, lặp lại cho đến hội tụ. Cần cung cấp giá trị khởi đầu hợp lý; nếu không, thuật toán có thể không hội tụ hoặc hội tụ về cực tiểu cục bộ.
+Nghiệm dạng đóng OLS không áp dụng, và các kết quả Gauss--Markov cho OLS tuyến tính không được dùng trực tiếp cho mô hình này. Tham số được ước lượng lặp bằng \textbf{thuật toán Gauss-Newton}: tuyến tính hóa mô hình quanh ước lượng hiện tại, cập nhật tham số, lặp lại cho đến hội tụ. Cần cung cấp giá trị khởi đầu hợp lý; nếu không, thuật toán có thể không hội tụ hoặc hội tụ về cực tiểu cục bộ.
 
 \textbf{Khi nào nên dùng:} chỉ khi có dạng hàm có cơ sở lý thuyết. Nếu chỉ cần khớp đường cong mà không có cơ chế cụ thể, splines thường ưu tiên hơn.
 
@@ -166,7 +166,7 @@ Tỷ lệ $(0, 1)$              & Beta      & logit & \texttt{betareg()} \\
 % - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 \subsubsection{So Sánh Mô Hình}
 
-Sau khi đề xuất các mô hình khác nhau, cần tiêu chí khách quan để chọn độ phức tạp phù hợp.
+Sau khi đề xuất các mô hình khác nhau, cần tiêu chí khách quan để chọn độ phức tạp phù hợp \cite[Sec.~10.2, pp.~238--239, 247]{weisberg2014applied}.
 
 \textbf{ANOVA (kiểm định F cho mô hình lồng nhau):}
 \[

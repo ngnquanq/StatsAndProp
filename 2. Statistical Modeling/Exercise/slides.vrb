@@ -1,0 +1,15 @@
+\frametitle{Ví Dụ R: Kiểm Tra Tự Tương Quan}
+\begin{columns}[T,onlytextwidth]
+    \column{0.48\textwidth}
+      \begin{lstlisting}[style=Rslide]
+model <- lm(sales ~ time + price + ads, data = data)
+dwtest(model)
+bgtest(model, order = 2)
+      \end{lstlisting}
+      \begin{itemize}
+        \item DW kiểm tra pattern AR(1).
+        \item BG linh hoạt hơn khi nghi ngờ bậc cao.
+      \end{itemize}
+    \column{0.48\textwidth}
+      \includegraphics[width=\textwidth]{summary.png}
+  \end{columns}

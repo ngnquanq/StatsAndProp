@@ -1,0 +1,69 @@
+\subsection{Khái Niệm và Cơ Sở Lý Thuyết}
+
+Trong mô hình hồi quy bội, mỗi quan sát được mô tả bởi:
+\[
+  y_i = \beta_0 + \beta_1x_{1i} + \beta_2x_{2i} + \cdots + \beta_jx_{ji} + \varepsilon_i,
+  \qquad i = 1,2,\ldots,n.
+\]
+Trong đó $y_i$ là biến phản hồi, $x_{ji}$ là biến dự báo thứ $j$ tại quan sát $i$, $\beta_j$ là hệ số hồi quy và $\varepsilon_i$ là sai số ngẫu nhiên chưa được mô hình giải thích.
+
+Giả định tính độc lập của sai số phát biểu rằng sai số giữa các quan sát khác nhau độc lập với nhau, có điều kiện trên ma trận thiết kế:
+\[
+  \varepsilon_i \perp\!\!\!\perp \varepsilon_j \mid \mathbf{X},
+  \qquad i\neq j.
+\]
+Trong khung Gauss--Markov, phần cần trực tiếp cho công thức phương sai OLS là hệ quả bậc hai của giả định này: không có tương quan giữa hai sai số khác nhau,
+\[
+  \mathrm{Cov}(\varepsilon_i,\varepsilon_j\mid \mathbf{X})=0,
+  \qquad i\neq j.
+\]
+Khi kết hợp với giả định phương sai không đổi, cấu trúc hiệp phương sai của vector sai số có dạng:
+\[
+  \mathrm{Var}(\boldsymbol{\varepsilon})=\sigma^2 I.
+\]
+Điều này có nghĩa là các phần tử ngoài đường chéo của ma trận hiệp phương sai bằng $0$. Khi sai số có phân phối chuẩn đa biến, điều kiện không tương quan này tương đương với độc lập; trong các tình huống tổng quát hơn, đây là phiên bản tuyến tính của giả định độc lập dùng để bảo vệ công thức sai số chuẩn cổ điển.
+
+\subsubsection{Tự Tương Quan Là Một Vi Phạm Của Tính Độc Lập}
+
+Một dạng vi phạm phổ biến của tính độc lập là tự tương quan, xuất hiện khi sai số ở một quan sát có quan hệ với sai số ở quan sát khác:
+\[
+  \mathrm{Cov}(\varepsilon_i,\varepsilon_j)\neq 0,
+  \qquad i\neq j.
+\]
+Hiện tượng này thường gặp khi dữ liệu có thứ tự tự nhiên hoặc có cấu trúc phụ thuộc. Hai dạng phổ biến là:
+\begin{itemize}
+  \item \textbf{Tự tương quan theo thời gian:} sai số tại một thời điểm liên hệ với sai số ở các thời điểm gần đó.
+  \item \textbf{Tự tương quan theo không gian:} sai số của các quan sát gần nhau về vị trí hoặc thuộc cùng khu vực có xu hướng giống nhau.
+\end{itemize}
+
+\textbf{Ví dụ giá thuê nhà.} Nếu hồi quy giá thuê theo diện tích và số phòng ngủ nhưng bỏ qua khu vực, phần tác động của vị trí có thể nằm lại trong sai số. Các căn nhà cùng quận hoặc gần nhau cùng chịu ảnh hưởng từ hạ tầng, nhu cầu thuê và tiện ích xung quanh, nên phần dư của chúng có thể cùng dương hoặc cùng âm.
+
+\textbf{Ví dụ doanh thu bán hàng.} Nếu hồi quy doanh thu tháng theo chi phí quảng cáo và mức giảm giá nhưng bỏ qua mùa vụ cuối năm, nhiều tháng cuối năm liên tiếp có thể có doanh thu thực tế cao hơn dự báo. Khi đó, sai số theo thời gian không còn độc lập.
+
+\subsubsection{Sai Số Thật và Phần Dư Quan Sát Được}
+
+Tự tương quan được định nghĩa trên sai số thật $\varepsilon_i$, nhưng trong thực hành ta không quan sát được $\varepsilon_i$. Sau khi ước lượng mô hình, ta có giá trị dự báo:
+\[
+  \hat{y}_i
+  =
+  \hat{\beta}_0
+  + \hat{\beta}_1x_{1i}
+  + \hat{\beta}_2x_{2i}
+  + \cdots
+  + \hat{\beta}_jx_{ji},
+\]
+và phần dư:
+\[
+  e_i = y_i - \hat{y}_i.
+\]
+Vector phần dư được viết gọn là:
+\[
+  \mathbf{e}=\mathbf{y}-\hat{\mathbf{y}}.
+\]
+Vì vậy, kiểm tra tự tương quan trong thực hành thường dựa trên chuỗi phần dư $e_i$ hoặc $e_t$ từ mô hình đã fit.
+
+\begin{notebox}
+\textbf{Điểm cần nhớ.} Tự tương quan không nói rằng từng sai số riêng lẻ lớn hay nhỏ. Nó nói rằng các sai số có cấu trúc phụ thuộc với nhau, thường theo thời gian, không gian hoặc nhóm quan sát.
+\end{notebox}
+
+% -----------------------------------------------------------------------------

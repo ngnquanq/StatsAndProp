@@ -2,19 +2,18 @@
 \addcontentsline{toc}{section}{Tổng Kết}
 % =============================================================================
 
-Sau hai nhóm giả định, điểm quan trọng nhất không phải là ghi nhớ thêm nhiều kiểm định, mà là biết \textbf{giả định nào đang bảo vệ phần nào của phân tích}. Giả định tuyến tính bảo vệ hàm trung bình và bản thân hệ số OLS. Giả định chuẩn tắc chủ yếu bảo vệ suy diễn mẫu nhỏ: $t$-test, $F$-test, p-value và khoảng tin cậy cổ điển.
+Sau bốn nhóm giả định, điểm quan trọng nhất không phải là ghi nhớ thêm nhiều kiểm định, mà là biết \textbf{giả định nào đang bảo vệ phần nào của phân tích}. Giả định tuyến tính bảo vệ hàm trung bình và bản thân hệ số OLS. Giả định chuẩn tắc chủ yếu bảo vệ suy diễn mẫu nhỏ. Giả định đồng nhất phương sai và tính độc lập của sai số bảo vệ công thức sai số chuẩn cổ điển, từ đó bảo vệ p-value, kiểm định và khoảng tin cậy.
 
 \begin{center}
 \small
-\begin{tabularx}{\textwidth}{@{}>{\bfseries}l>{\raggedright\arraybackslash}X>{\raggedright\arraybackslash}X@{}}
+\begin{tabularx}{\textwidth}{@{}>{\bfseries\raggedright\arraybackslash}p{3.8cm}>{\raggedright\arraybackslash}X>{\raggedright\arraybackslash}X>{\raggedright\arraybackslash}X@{}}
 \toprule
- & Giả định tuyến tính & Giả định chuẩn tắc \\
+Giả định & Phát biểu & Nếu vi phạm & Phản ứng hợp lý \\
 \midrule
-Phát biểu & $E(Y\mid X)$ được mô tả đúng bởi dạng tuyến tính đã chọn. & Sai số thật $\varepsilon$ có phân phối chuẩn, thường viết $\varepsilon \sim N(0,\sigma^2 I)$. \\
-Nếu vi phạm & Hệ số có thể chệch vì mô hình sai hàm trung bình. & OLS không tự động hỏng, nhưng suy diễn cổ điển có thể kém tin cậy, nhất là mẫu nhỏ. \\
-Chẩn đoán chính & Residuals vs fitted, component-plus-residual plots, kiểm tra dạng hàm. & Q-Q plot, histogram, Shapiro-Wilk, Jarque-Bera, kiểm tra đuôi và ngoại lai. \\
-Cần xem thêm & Biến thiếu, tương tác, phi tuyến, leverage. & Cỡ mẫu, leverage, outlier, heteroskedasticity, mục tiêu suy diễn. \\
-Phản ứng hợp lý & Đổi mean function: thêm biến, biến đổi, đa thức, spline hoặc mô hình phù hợp hơn. & Dùng HC3, bootstrap, biến đổi, GLM, robust regression hoặc quantile regression tùy nguyên nhân. \\
+Tuyến tính & $E(Y\mid X)$ được mô tả đúng bởi dạng tuyến tính đã chọn. & Hệ số có thể chệch vì mô hình sai hàm trung bình. & Đổi mean function: thêm biến, tương tác, biến đổi, đa thức, spline hoặc mô hình phù hợp hơn. \\
+Chuẩn của sai số & Sai số thật $\varepsilon$ có phân phối chuẩn, thường viết $\varepsilon\sim N(0,\sigma^2I)$. & Suy diễn cổ điển có thể kém tin cậy, nhất là mẫu nhỏ hoặc có đuôi dày/ngoại lai. & Dùng Q-Q plot, kiểm định chuẩn tắc, HC3, bootstrap, robust regression hoặc mô hình khác tùy nguyên nhân. \\
+Đồng nhất phương sai & $\mathrm{Var}(\varepsilon_i\mid X)=\sigma^2$ với mọi quan sát. & SE cổ điển có thể sai, làm p-value và khoảng tin cậy không đáng tin. & Dùng residuals vs fitted, Breusch--Pagan, White test, HC3/robust SE hoặc mô hình hóa lại phương sai. \\
+Tính độc lập của sai số & $\varepsilon_i \perp\!\!\!\perp \varepsilon_j\mid X$, thường kiểm tra qua $\mathrm{Cov}(\varepsilon_i,\varepsilon_j\mid X)=0$ với $i\neq j$. & SE, kiểm định $t/F$, khoảng tin cậy và khoảng dự báo có thể sai khi sai số phụ thuộc theo thời gian/không gian. & Vẽ phần dư theo thứ tự tự nhiên, dùng Durbin--Watson/Breusch--Godfrey, thêm biến xu hướng/mùa vụ/độ trễ hoặc dùng HAC/GLS khi phù hợp. \\
 \bottomrule
 \end{tabularx}
 \end{center}
@@ -26,13 +25,14 @@ Một workflow kỷ luật nên đi theo thứ tự sau:
 \begin{enumerate}
   \item Kiểm tra dạng hàm trung bình trước. Nếu residual plot còn pattern rõ ràng, đừng vội bàn sâu về normality.
   \item Dùng Q-Q plot để đọc hình dạng vi phạm: lệch, đuôi nặng, outlier hay chỉ vài điểm ở đuôi.
-  \item Dùng kiểm định chuẩn tắc như bằng chứng bổ sung, không dùng p-value như nút bật/tắt chất lượng mô hình.
   \item Nếu normality bị reject, hỏi tiếp: mẫu nhỏ hay lớn, hệ số có ổn định không, HC3/Bootstrap CI có đổi kết luận không.
+  \item Nếu phần dư có hình phễu hoặc kiểm định phương sai thay đổi có p-value nhỏ, so sánh kết luận giữa SE cổ điển và HC3.
+  \item Nếu dữ liệu có thứ tự thời gian, không gian hoặc nhóm, vẽ phần dư theo thứ tự đó và dùng Durbin--Watson/Breusch--Godfrey khi phù hợp.
   \item Nếu kết luận phụ thuộc vào một vài quan sát, kiểm tra leverage, Cook's distance và cân nhắc robust regression hoặc mô hình khác.
 \end{enumerate}
 
 \begin{notebox}
-\textbf{Thông điệp cuối.} OLS không cần normality để tính hệ số. Normality là giả định thêm để suy diễn cổ điển hoạt động chính xác trong mẫu nhỏ. Khi giả định này yếu đi, ta không vứt mô hình ngay; ta kiểm tra nguyên nhân, đánh giá hậu quả và dùng công cụ suy diễn phù hợp hơn như HC3 hoặc bootstrap.
+\textbf{Thông điệp cuối.} OLS không cần normality để tính hệ số, và heteroscedasticity hay autocorrelation không tự động làm hệ số OLS bị chệch nếu hàm trung bình đúng. Tuy nhiên, các vi phạm này có thể làm suy diễn cổ điển kém tin cậy. Khi giả định yếu đi, ta không vứt mô hình ngay; ta kiểm tra nguyên nhân, đánh giá hậu quả và dùng công cụ suy diễn phù hợp hơn như HC3, bootstrap, HAC hoặc mô hình có cấu trúc phụ thuộc rõ ràng.
 \end{notebox}
 
 % =============================================================================

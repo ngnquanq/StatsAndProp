@@ -1,75 +1,123 @@
 \xpginauxfiletrue 
 \selectlanguage *{vietnamese}
-\contentsline {section}{\numberline {1}Giả Định Tính Tuyến Tính}{4}{section.1}%
-\contentsline {subsection}{\numberline {1.1}Nguồn Gốc Lịch Sử}{4}{subsection.1.1}%
-\contentsline {subsection}{\numberline {1.2}Cơ Sở Lý Thuyết}{5}{subsection.1.2}%
-\contentsline {subsubsection}{\numberline {1.2.1}Ý nghĩa cốt lõi 1: Cấu trúc đại số của các tham số $\beta $}{5}{subsubsection.1.2.1}%
-\contentsline {subsubsection}{\numberline {1.2.2}Ý nghĩa cốt lõi 2: Sự tự do của các biến $x$}{5}{subsubsection.1.2.2}%
-\contentsline {subsubsection}{\numberline {1.2.3}Dạng Ma Trận: Biểu Diễn Gọn Cho $n$ Quan Sát}{6}{subsubsection.1.2.3}%
-\contentsline {subsubsection}{\numberline {1.2.4}Liên hệ với giả định $E(\varepsilon \mid X) = 0$}{7}{subsubsection.1.2.4}%
-\contentsline {subsection}{\numberline {1.3}Tại Sao Tuyến Tính Mang Lại Lợi Thế}{7}{subsection.1.3}%
-\contentsline {subsection}{\numberline {1.4}Hậu Quả Khi Vi Phạm Tuyến Tính}{8}{subsection.1.4}%
-\contentsline {subsubsection}{\numberline {1.4.1}Tứ Giác Anscombe}{9}{subsubsection.1.4.1}%
-\contentsline {subsubsection}{\numberline {1.4.2}Ví Dụ Thực Tế}{11}{subsubsection.1.4.2}%
-\contentsline {subsection}{\numberline {1.5}Phát Hiện Vi Phạm}{15}{subsection.1.5}%
-\contentsline {subsubsection}{\numberline {1.5.1}Ma Trận Đồ Thị Phân Tán}{15}{subsubsection.1.5.1}%
-\contentsline {subsubsection}{\numberline {1.5.2}Phần Dư Theo Giá Trị Khớp (Công Cụ Chính)}{17}{subsubsection.1.5.2}%
-\contentsline {subsubsection}{\numberline {1.5.3}Phần Dư Theo Từng Biến Dự Báo}{18}{subsubsection.1.5.3}%
-\contentsline {subsubsection}{\numberline {1.5.4}Đồ Thị Hồi Quy Riêng Phần}{19}{subsubsection.1.5.4}%
-\contentsline {subsubsection}{\numberline {1.5.5}Kiểm Định Tukey Cho Tính Không Cộng Tính}{20}{subsubsection.1.5.5}%
-\contentsline {subsubsection}{\numberline {1.5.6}Đồ Thị Nền và Giao Thức Xếp Hàng}{21}{subsubsection.1.5.6}%
-\contentsline {subsubsection}{\numberline {1.5.7}Phần Dư Chuẩn Hóa}{22}{subsubsection.1.5.7}%
-\contentsline {subsection}{\numberline {1.6}Khắc Phục Vi Phạm}{23}{subsection.1.6}%
-\contentsline {subsubsection}{\numberline {1.6.1}Biến Đổi Biến Số}{23}{subsubsection.1.6.1}%
-\contentsline {subsubsection}{\numberline {1.6.2}Hồi Quy Đa Thức}{24}{subsubsection.1.6.2}%
-\contentsline {paragraph}{Một biến dự báo.}{24}{paragraph*.12}%
-\contentsline {paragraph}{Nhiều biến dự báo.}{24}{paragraph*.13}%
-\contentsline {paragraph}{Ứng dụng nổi bật: xác định cực trị.}{24}{paragraph*.14}%
-\contentsline {paragraph}{Rủi ro chính.}{25}{paragraph*.15}%
-\contentsline {subsubsection}{\numberline {1.6.3}Splines}{25}{subsubsection.1.6.3}%
-\contentsline {subsubsection}{\numberline {1.6.4}Hồi Quy Phi Tuyến}{26}{subsubsection.1.6.4}%
-\contentsline {subsubsection}{\numberline {1.6.5}Mô Hình Tuyến Tính Tổng Quát (GLMs)}{26}{subsubsection.1.6.5}%
-\contentsline {subsubsection}{\numberline {1.6.6}So Sánh Mô Hình}{27}{subsubsection.1.6.6}%
-\contentsline {subsubsection}{\numberline {1.6.7}Đánh Giá Mô Hình Sau Khi Khắc Phục}{27}{subsubsection.1.6.7}%
-\contentsline {subsection}{\numberline {1.7}Ví Dụ R: Dataset \texttt {mtcars}}{30}{subsection.1.7}%
-\contentsline {subsection}{\numberline {1.8}Tính Chất Nâng Cao}{32}{subsection.1.8}%
-\contentsline {subsubsection}{\numberline {1.8.1}Chiếu Trực Giao Lên Không Gian Dự Báo}{32}{subsubsection.1.8.1}%
-\contentsline {subsubsection}{\numberline {1.8.2}Phân Phối Chuẩn Đa Biến Đảm Bảo Tuyến Tính}{33}{subsubsection.1.8.2}%
-\contentsline {subsubsection}{\numberline {1.8.3}Định Lý Li-Duan: Bền Vững Trước Phi Tuyến Ẩn}{33}{subsubsection.1.8.3}%
-\contentsline {subsubsection}{\numberline {1.8.4}Bất Biến Trước Biến Đổi Tuyến Tính Toàn Hạng}{34}{subsubsection.1.8.4}%
-\contentsline {section}{\numberline {2}Giả Định Tính Chuẩn Của Phần Dư}{35}{section.2}%
-\contentsline {subsection}{\numberline {2.1}Cơ Sở Lý Thuyết}{35}{subsection.2.1}%
-\contentsline {subsubsection}{\numberline {2.1.1}Sai Số Thật và Phần Dư Không Phải Là Một}{35}{subsubsection.2.1.1}%
-\contentsline {subsubsection}{\numberline {2.1.2}Không Bắt Buộc Đối Với Phương Pháp Bình Phương Tối Thiểu}{36}{subsubsection.2.1.2}%
-\contentsline {subsubsection}{\numberline {2.1.3}Khi Thêm Giả Định Chuẩn: OLS Tương Đương MLE và Suy Diễn Chính Xác Hơn}{36}{subsubsection.2.1.3}%
-\contentsline {subsubsection}{\numberline {2.1.4}Cơ Sở Bắt Buộc Cho Suy Diễn Mẫu Nhỏ}{37}{subsubsection.2.1.4}%
-\contentsline {subsubsection}{\numberline {2.1.5}Ma Trận Mũ: Vì Sao Phần Dư Bị Biến Dạng}{37}{subsubsection.2.1.5}%
-\contentsline {subsubsection}{\numberline {2.1.6}Sự Siêu Chuẩn Của Phần Dư}{38}{subsubsection.2.1.6}%
-\contentsline {subsubsection}{\numberline {2.1.7}Điểm Dễ Nhầm: Tính Chuẩn Của Y Không Phải Tính Chuẩn Của Sai Số}{38}{subsubsection.2.1.7}%
-\contentsline {subsection}{\numberline {2.2}Công Cụ Trực Quan}{39}{subsection.2.2}%
-\contentsline {subsubsection}{\numberline {2.2.1}Biểu Đồ Tần Suất Của Phần Dư}{39}{subsubsection.2.2.1}%
-\contentsline {subsubsection}{\numberline {2.2.2}Q-Q Plot: Công Cụ Chính Để Đọc Tính Chuẩn}{39}{subsubsection.2.2.2}%
-\contentsline {subsubsection}{\numberline {2.2.3}Đọc Đồ Thị Cùng Leverage và Ngoại Lai}{41}{subsubsection.2.2.3}%
-\contentsline {subsubsection}{\numberline {2.2.4}Kết Luận Thực Hành}{42}{subsubsection.2.2.4}%
-\contentsline {subsection}{\numberline {2.3}Kiểm Định Hình Thức}{42}{subsection.2.3}%
-\contentsline {subsubsection}{\numberline {2.3.1}Shapiro-Wilk Test}{42}{subsubsection.2.3.1}%
-\contentsline {subsubsection}{\numberline {2.3.2}Jarque-Bera Test}{43}{subsubsection.2.3.2}%
-\contentsline {subsubsection}{\numberline {2.3.3}Sự Khác Biệt Bản Chất Giữa Hai Kiểm Định}{44}{subsubsection.2.3.3}%
-\contentsline {subsubsection}{\numberline {2.3.4}Đọc p-value Theo Cỡ Mẫu và Mục Tiêu Suy Diễn}{44}{subsubsection.2.3.4}%
-\contentsline {subsection}{\numberline {2.4}Hậu Quả Khi Vi Phạm}{45}{subsection.2.4}%
-\contentsline {subsubsection}{\numberline {2.4.1}Suy Diễn Mẫu Nhỏ Mất Phân Phối Chính Xác}{45}{subsubsection.2.4.1}%
-\contentsline {subsubsection}{\numberline {2.4.2}Đuôi Nặng và Ngoại Lai Làm Suy Diễn Kém Ổn Định}{46}{subsubsection.2.4.2}%
-\contentsline {subsubsection}{\numberline {2.4.3}Không Chuẩn Có Thể Là Triệu Chứng Của Sai Mô Hình}{46}{subsubsection.2.4.3}%
-\contentsline {subsubsection}{\numberline {2.4.4}Mẫu Lớn Giảm Rủi Ro Nhưng Không Xóa Mọi Vấn Đề}{47}{subsubsection.2.4.4}%
-\contentsline {subsubsection}{\numberline {2.4.5}Bảng Tổng Hợp Cách Phản Ứng}{48}{subsubsection.2.4.5}%
-\contentsline {subsection}{\numberline {2.5}Giải Pháp Thay Thế}{48}{subsection.2.5}%
-\contentsline {subsubsection}{\numberline {2.5.1}Bản Đồ Chọn Phương Pháp}{49}{subsubsection.2.5.1}%
-\contentsline {subsubsection}{\numberline {2.5.2}Sai Số Chuẩn Vững HC3 / Sandwich}{49}{subsubsection.2.5.2}%
-\contentsline {subsubsection}{\numberline {2.5.3}Bootstrap}{50}{subsubsection.2.5.3}%
-\contentsline {subsubsection}{\numberline {2.5.4}Biến Đổi Biến Phản Hồi}{50}{subsubsection.2.5.4}%
-\contentsline {subsubsection}{\numberline {2.5.5}Mô Hình Tuyến Tính Tổng Quát (GLM)}{51}{subsubsection.2.5.5}%
-\contentsline {subsubsection}{\numberline {2.5.6}Robust Regression}{52}{subsubsection.2.5.6}%
-\contentsline {subsubsection}{\numberline {2.5.7}Quantile Regression}{52}{subsubsection.2.5.7}%
-\contentsline {subsection}{\numberline {2.6}Ví Dụ R: Dataset \texttt {Boston}}{53}{subsection.2.6}%
-\contentsline {section}{Tổng Kết}{56}{lstnumber.-37.3}%
+\contentsline {section}{\numberline {1}Tổng Quan}{6}{section.1}%
+\contentsline {subsection}{\numberline {1.1}Hồi Quy và Hồi Quy Bội}{6}{subsection.1.1}%
+\contentsline {subsection}{\numberline {1.2}Dạng Ma Trận và Ước Lượng OLS}{6}{subsection.1.2}%
+\contentsline {subsection}{\numberline {1.3}Vai Trò Của Các Giả Định}{7}{subsection.1.3}%
+\contentsline {section}{\numberline {2}Giả Định Tính Tuyến Tính}{7}{section.2}%
+\contentsline {subsection}{\numberline {2.1}Nguồn Gốc Lịch Sử}{7}{subsection.2.1}%
+\contentsline {subsection}{\numberline {2.2}Cơ Sở Lý Thuyết}{8}{subsection.2.2}%
+\contentsline {subsubsection}{\numberline {2.2.1}Ý nghĩa cốt lõi 1: Cấu trúc đại số của các tham số $\beta $}{9}{subsubsection.2.2.1}%
+\contentsline {subsubsection}{\numberline {2.2.2}Ba nghĩa khác nhau của tuyến tính}{9}{subsubsection.2.2.2}%
+\contentsline {subsubsection}{\numberline {2.2.3}Ý nghĩa cốt lõi 2: Sự tự do của các biến $x$}{9}{subsubsection.2.2.3}%
+\contentsline {subsubsection}{\numberline {2.2.4}Vì sao phi tuyến theo $X$ được phép, nhưng phi tuyến theo $\beta $ thì không?}{10}{subsubsection.2.2.4}%
+\contentsline {subsubsection}{\numberline {2.2.5}Dạng Ma Trận: Biểu Diễn Gọn Cho $n$ Quan Sát}{11}{subsubsection.2.2.5}%
+\contentsline {subsubsection}{\numberline {2.2.6}Liên hệ với giả định $E(\varepsilon \mid X) = 0$}{12}{subsubsection.2.2.6}%
+\contentsline {subsection}{\numberline {2.3}Tại Sao Tuyến Tính Mang Lại Lợi Thế}{12}{subsection.2.3}%
+\contentsline {subsection}{\numberline {2.4}Hậu Quả Khi Vi Phạm Tuyến Tính}{14}{subsection.2.4}%
+\contentsline {subsubsection}{\numberline {2.4.1}Tứ Giác Anscombe}{15}{subsubsection.2.4.1}%
+\contentsline {subsubsection}{\numberline {2.4.2}Ví Dụ Thực Tế}{16}{subsubsection.2.4.2}%
+\contentsline {subsection}{\numberline {2.5}Phát Hiện Vi Phạm}{21}{subsection.2.5}%
+\contentsline {subsubsection}{\numberline {2.5.1}Ma Trận Đồ Thị Phân Tán}{22}{subsubsection.2.5.1}%
+\contentsline {subsubsection}{\numberline {2.5.2}Phần Dư Theo Giá Trị Khớp (Công Cụ Chính)}{24}{subsubsection.2.5.2}%
+\contentsline {subsubsection}{\numberline {2.5.3}Phần Dư Theo Từng Biến Dự Báo}{25}{subsubsection.2.5.3}%
+\contentsline {subsubsection}{\numberline {2.5.4}Đồ Thị Hồi Quy Riêng Phần}{26}{subsubsection.2.5.4}%
+\contentsline {subsubsection}{\numberline {2.5.5}Kiểm Định Tukey Cho Tính Không Cộng Tính}{27}{subsubsection.2.5.5}%
+\contentsline {subsubsection}{\numberline {2.5.6}Đồ Thị Nền và Giao Thức Xếp Hàng}{28}{subsubsection.2.5.6}%
+\contentsline {subsubsection}{\numberline {2.5.7}Phần Dư Chuẩn Hóa}{29}{subsubsection.2.5.7}%
+\contentsline {subsection}{\numberline {2.6}Khắc Phục Vi Phạm}{30}{subsection.2.6}%
+\contentsline {subsubsection}{\numberline {2.6.1}Biến Đổi Biến Số}{30}{subsubsection.2.6.1}%
+\contentsline {subsubsection}{\numberline {2.6.2}Hồi Quy Đa Thức}{31}{subsubsection.2.6.2}%
+\contentsline {paragraph}{Một biến dự báo.}{31}{paragraph*.13}%
+\contentsline {paragraph}{Nhiều biến dự báo.}{31}{paragraph*.14}%
+\contentsline {paragraph}{Ứng dụng nổi bật: xác định cực trị.}{31}{paragraph*.15}%
+\contentsline {paragraph}{Rủi ro chính.}{32}{paragraph*.16}%
+\contentsline {subsubsection}{\numberline {2.6.3}Splines}{32}{subsubsection.2.6.3}%
+\contentsline {subsubsection}{\numberline {2.6.4}Hồi Quy Phi Tuyến}{33}{subsubsection.2.6.4}%
+\contentsline {subsubsection}{\numberline {2.6.5}Mô Hình Tuyến Tính Tổng Quát (GLMs)}{33}{subsubsection.2.6.5}%
+\contentsline {subsubsection}{\numberline {2.6.6}So Sánh Mô Hình}{34}{subsubsection.2.6.6}%
+\contentsline {subsubsection}{\numberline {2.6.7}Đánh Giá Mô Hình Sau Khi Khắc Phục}{34}{subsubsection.2.6.7}%
+\contentsline {subsection}{\numberline {2.7}Ví Dụ R: Dataset \texttt {mtcars}}{37}{subsection.2.7}%
+\contentsline {subsection}{\numberline {2.8}Tính Chất Nâng Cao}{39}{subsection.2.8}%
+\contentsline {subsubsection}{\numberline {2.8.1}Chiếu Trực Giao Lên Không Gian Dự Báo}{39}{subsubsection.2.8.1}%
+\contentsline {subsubsection}{\numberline {2.8.2}Tuyến Tính Không Luôn Được Bảo Toàn Khi Bỏ Biến}{40}{subsubsection.2.8.2}%
+\contentsline {subsubsection}{\numberline {2.8.3}Phân Phối Chuẩn Đa Biến Đảm Bảo Tuyến Tính}{41}{subsubsection.2.8.3}%
+\contentsline {subsubsection}{\numberline {2.8.4}Định Lý Li-Duan: Bền Vững Trước Phi Tuyến Ẩn}{41}{subsubsection.2.8.4}%
+\contentsline {subsubsection}{\numberline {2.8.5}Bất Biến Trước Biến Đổi Tuyến Tính Toàn Hạng}{43}{subsubsection.2.8.5}%
+\contentsline {section}{\numberline {3}Giả Định Tính Chuẩn Của Phần Dư}{44}{section.3}%
+\contentsline {subsection}{\numberline {3.1}Cơ Sở Lý Thuyết}{44}{subsection.3.1}%
+\contentsline {subsubsection}{\numberline {3.1.1}Sai Số Thật và Phần Dư Không Phải Là Một}{44}{subsubsection.3.1.1}%
+\contentsline {subsubsection}{\numberline {3.1.2}Không Bắt Buộc Đối Với Phương Pháp Bình Phương Tối Thiểu}{45}{subsubsection.3.1.2}%
+\contentsline {subsubsection}{\numberline {3.1.3}Khi Thêm Giả Định Chuẩn: OLS Tương Đương MLE và Suy Diễn Chính Xác Hơn}{45}{subsubsection.3.1.3}%
+\contentsline {subsubsection}{\numberline {3.1.4}Cơ Sở Bắt Buộc Cho Suy Diễn Mẫu Nhỏ}{45}{subsubsection.3.1.4}%
+\contentsline {subsubsection}{\numberline {3.1.5}Ma Trận Mũ: Vì Sao Phần Dư Bị Biến Dạng}{46}{subsubsection.3.1.5}%
+\contentsline {subsubsection}{\numberline {3.1.6}Sự Siêu Chuẩn Của Phần Dư}{47}{subsubsection.3.1.6}%
+\contentsline {subsubsection}{\numberline {3.1.7}Điểm Dễ Nhầm: Tính Chuẩn Của Y Không Phải Tính Chuẩn Của Sai Số}{47}{subsubsection.3.1.7}%
+\contentsline {subsection}{\numberline {3.2}Công Cụ Trực Quan}{48}{subsection.3.2}%
+\contentsline {subsubsection}{\numberline {3.2.1}Biểu Đồ Tần Suất Của Phần Dư}{48}{subsubsection.3.2.1}%
+\contentsline {subsubsection}{\numberline {3.2.2}Q-Q Plot: Công Cụ Chính Để Đọc Tính Chuẩn}{48}{subsubsection.3.2.2}%
+\contentsline {subsubsection}{\numberline {3.2.3}Đọc Đồ Thị Cùng Leverage và Ngoại Lai}{50}{subsubsection.3.2.3}%
+\contentsline {subsubsection}{\numberline {3.2.4}Kết Luận Thực Hành}{51}{subsubsection.3.2.4}%
+\contentsline {subsection}{\numberline {3.3}Kiểm Định Hình Thức}{51}{subsection.3.3}%
+\contentsline {subsubsection}{\numberline {3.3.1}Shapiro-Wilk Test}{51}{subsubsection.3.3.1}%
+\contentsline {subsubsection}{\numberline {3.3.2}Jarque-Bera Test}{52}{subsubsection.3.3.2}%
+\contentsline {subsubsection}{\numberline {3.3.3}Sự Khác Biệt Bản Chất Giữa Hai Kiểm Định}{53}{subsubsection.3.3.3}%
+\contentsline {subsubsection}{\numberline {3.3.4}Đọc p-value Theo Cỡ Mẫu và Mục Tiêu Suy Diễn}{53}{subsubsection.3.3.4}%
+\contentsline {subsection}{\numberline {3.4}Hậu Quả Khi Vi Phạm}{54}{subsection.3.4}%
+\contentsline {subsubsection}{\numberline {3.4.1}Suy Diễn Mẫu Nhỏ Mất Phân Phối Chính Xác}{54}{subsubsection.3.4.1}%
+\contentsline {subsubsection}{\numberline {3.4.2}Đuôi Nặng và Ngoại Lai Làm Suy Diễn Kém Ổn Định}{55}{subsubsection.3.4.2}%
+\contentsline {subsubsection}{\numberline {3.4.3}Không Chuẩn Có Thể Là Triệu Chứng Của Sai Mô Hình}{55}{subsubsection.3.4.3}%
+\contentsline {subsubsection}{\numberline {3.4.4}Mẫu Lớn Giảm Rủi Ro Nhưng Không Xóa Mọi Vấn Đề}{56}{subsubsection.3.4.4}%
+\contentsline {subsubsection}{\numberline {3.4.5}Bảng Tổng Hợp Cách Phản Ứng}{57}{subsubsection.3.4.5}%
+\contentsline {subsection}{\numberline {3.5}Giải Pháp Thay Thế}{57}{subsection.3.5}%
+\contentsline {subsubsection}{\numberline {3.5.1}Bản Đồ Chọn Phương Pháp}{58}{subsubsection.3.5.1}%
+\contentsline {subsubsection}{\numberline {3.5.2}Sai Số Chuẩn Vững HC3 / Sandwich}{58}{subsubsection.3.5.2}%
+\contentsline {subsubsection}{\numberline {3.5.3}Bootstrap}{59}{subsubsection.3.5.3}%
+\contentsline {subsubsection}{\numberline {3.5.4}Biến Đổi Biến Phản Hồi}{59}{subsubsection.3.5.4}%
+\contentsline {subsubsection}{\numberline {3.5.5}Mô Hình Tuyến Tính Tổng Quát (GLM)}{60}{subsubsection.3.5.5}%
+\contentsline {subsubsection}{\numberline {3.5.6}Robust Regression}{61}{subsubsection.3.5.6}%
+\contentsline {subsubsection}{\numberline {3.5.7}Quantile Regression}{61}{subsubsection.3.5.7}%
+\contentsline {subsection}{\numberline {3.6}Ví Dụ R: Dataset \texttt {Boston}}{62}{subsection.3.6}%
+\contentsline {section}{\numberline {4}Giả Định Đồng Nhất Phương Sai}{65}{section.4}%
+\contentsline {subsection}{\numberline {4.1}Khái Niệm và Hệ Quả}{65}{subsection.4.1}%
+\contentsline {subsubsection}{\numberline {4.1.1}Phương Sai Thay Đổi Trông Như Thế Nào?}{66}{subsubsection.4.1.1}%
+\contentsline {subsection}{\numberline {4.2}Kiểm Định Hình Thức}{66}{subsection.4.2}%
+\contentsline {subsubsection}{\numberline {4.2.1}Kiểm Định Breusch--Pagan}{66}{subsubsection.4.2.1}%
+\contentsline {subsubsection}{\numberline {4.2.2}Kiểm Định White}{67}{subsubsection.4.2.2}%
+\contentsline {subsection}{\numberline {4.3}Sai Số Chuẩn Vững}{67}{subsection.4.3}%
+\contentsline {subsubsection}{\numberline {4.3.1}Cơ Sở Toán Học}{67}{subsubsection.4.3.1}%
+\contentsline {subsubsection}{\numberline {4.3.2}Ước Lượng Phần Meat Bằng Phần Dư}{68}{subsubsection.4.3.2}%
+\contentsline {subsubsection}{\numberline {4.3.3}Vì Sao Thường Dùng HC3?}{69}{subsubsection.4.3.3}%
+\contentsline {subsection}{\numberline {4.4}Ví Dụ R: Dataset \texttt {Prestige}}{70}{subsection.4.4}%
+\contentsline {subsubsection}{\numberline {4.4.1}Fit Mô Hình OLS Gốc}{70}{subsubsection.4.4.1}%
+\contentsline {subsubsection}{\numberline {4.4.2}Breusch--Pagan và White Test}{70}{subsubsection.4.4.2}%
+\contentsline {subsubsection}{\numberline {4.4.3}Hiệu Chỉnh Bằng HC3}{72}{subsubsection.4.4.3}%
+\contentsline {subsection}{\numberline {4.5}So Sánh và Quy Tắc Thực Hành}{74}{subsection.4.5}%
+\contentsline {subsubsection}{\numberline {4.5.1}Workflow Đề Xuất}{74}{subsubsection.4.5.1}%
+\contentsline {section}{\numberline {5}Giả Định Tính Độc Lập Của Sai Số}{74}{section.5}%
+\contentsline {subsection}{\numberline {5.1}Khái Niệm và Cơ Sở Lý Thuyết}{74}{subsection.5.1}%
+\contentsline {subsubsection}{\numberline {5.1.1}Tự Tương Quan Là Một Vi Phạm Của Tính Độc Lập}{75}{subsubsection.5.1.1}%
+\contentsline {subsubsection}{\numberline {5.1.2}Sai Số Thật và Phần Dư Quan Sát Được}{76}{subsubsection.5.1.2}%
+\contentsline {subsection}{\numberline {5.2}Nguyên Nhân Dẫn Đến Tự Tương Quan}{76}{subsection.5.2}%
+\contentsline {subsubsection}{\numberline {5.2.1}Cấu Trúc Phụ Thuộc Của Dữ Liệu}{76}{subsubsection.5.2.1}%
+\contentsline {subsubsection}{\numberline {5.2.2}Mô Hình Chưa Được Đặc Tả Phù Hợp}{77}{subsubsection.5.2.2}%
+\contentsline {subsection}{\numberline {5.3}Hậu Quả Thống Kê}{77}{subsection.5.3}%
+\contentsline {subsubsection}{\numberline {5.3.1}Ma Trận Hiệp Phương Sai Bị Xác Định Sai}{77}{subsubsection.5.3.1}%
+\contentsline {subsubsection}{\numberline {5.3.2}Kiểm Định và Khoảng Tin Cậy Không Đáng Tin}{78}{subsubsection.5.3.2}%
+\contentsline {subsubsection}{\numberline {5.3.3}Không Nên Dựa Riêng Vào $R^2$}{78}{subsubsection.5.3.3}%
+\contentsline {subsection}{\numberline {5.4}Phát Hiện Bằng Đồ Thị}{79}{subsection.5.4}%
+\contentsline {subsubsection}{\numberline {5.4.1}Phần Dư Theo Thời Gian}{79}{subsubsection.5.4.1}%
+\contentsline {subsubsection}{\numberline {5.4.2}Phần Dư Theo Vị Trí hoặc Khu Vực}{80}{subsubsection.5.4.2}%
+\contentsline {subsection}{\numberline {5.5}Kiểm Định Hình Thức}{81}{subsection.5.5}%
+\contentsline {subsubsection}{\numberline {5.5.1}Kiểm Định Durbin--Watson}{81}{subsubsection.5.5.1}%
+\contentsline {subsubsection}{\numberline {5.5.2}Cách Đọc Bảng Durbin--Watson}{82}{subsubsection.5.5.2}%
+\contentsline {subsubsection}{\numberline {5.5.3}Hạn Chế Của Durbin--Watson}{82}{subsubsection.5.5.3}%
+\contentsline {subsubsection}{\numberline {5.5.4}Kiểm Định Breusch--Godfrey}{82}{subsubsection.5.5.4}%
+\contentsline {subsection}{\numberline {5.6}Ví Dụ R: Doanh Thu Bán Hàng}{83}{subsection.5.6}%
+\contentsline {subsubsection}{\numberline {5.6.1}Kiểm Định Durbin--Watson Trong R}{84}{subsubsection.5.6.1}%
+\contentsline {subsubsection}{\numberline {5.6.2}Kiểm Định Breusch--Godfrey Trong R}{85}{subsubsection.5.6.2}%
+\contentsline {subsubsection}{\numberline {5.6.3}Kết Luận Ví Dụ}{85}{subsubsection.5.6.3}%
+\contentsline {subsection}{\numberline {5.7}So Sánh và Quy Tắc Thực Hành}{86}{subsection.5.7}%
+\contentsline {subsubsection}{\numberline {5.7.1}Workflow Đề Xuất}{86}{subsubsection.5.7.1}%
+\contentsline {section}{Tổng Kết}{86}{Item.26}%
 \xpginauxfilefalse 

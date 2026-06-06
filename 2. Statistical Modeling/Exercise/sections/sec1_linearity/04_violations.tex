@@ -17,7 +17,7 @@ Khi dạng hàm thực là phi tuyến nhưng ta khớp bằng đường thẳng
 
 \subsubsection{Tứ Giác Anscombe}
 
-Anscombe (1973) đã xây dựng bốn bộ dữ liệu có cùng $\hat{\beta}_0 \approx 3$, $\hat{\beta}_1 \approx 0.5$, $R^2 \approx 0.67$ và $p$-value---nhưng nhìn hoàn toàn khác nhau. Bộ~II rõ ràng là quan hệ bậc hai. Bộ~III bị một điểm ngoại lai kéo hệ số. Bộ~IV có đòn bẩy cực cao tại một điểm. Kết quả hồi quy không cảnh báo gì cả; chỉ đồ thị phần dư mới tiết lộ vi phạm.
+Anscombe (1973), được Weisberg dùng để nhấn mạnh vai trò của chẩn đoán phần dư \cite[Sec.~2.4, p.~27]{weisberg2014applied}, đã xây dựng bốn bộ dữ liệu có cùng $\hat{\beta}_0 \approx 3$, $\hat{\beta}_1 \approx 0.5$, $R^2 \approx 0.67$ và $p$-value---nhưng nhìn hoàn toàn khác nhau. Bộ~II rõ ràng là quan hệ bậc hai. Bộ~III bị một điểm ngoại lai kéo hệ số. Bộ~IV có đòn bẩy cực cao tại một điểm. Kết quả hồi quy không cảnh báo gì cả; chỉ đồ thị phần dư mới tiết lộ vi phạm.
 
 \begin{figure}[H]
   \centering
@@ -105,16 +105,16 @@ fit_lin_d <- lm(height ~ dbh)
 plot(fit_lin_d, which = 1)   # LOESS cong chu S
 \end{lstlisting}
 
-Trong cả bốn trường hợp, đường LOESS trên đồ thị phần dư lệch khỏi $y = 0$ theo mẫu hình có hệ thống---dấu hiệu chẩn đoán chính của vi phạm tuyến tính. Các mô hình phù hợp cho từng trường hợp (NLS, biến đổi log-log, cubic spline) được trình bày trong Hình~\ref{fig:violations_fixed}.
+Trong cả bốn trường hợp, đường LOESS trên đồ thị phần dư lệch khỏi $y = 0$ theo mẫu hình có hệ thống---dấu hiệu chẩn đoán chính của sai dạng hàm trung bình. Hình~\ref{fig:violations_fixed} minh họa các cách sửa khác nhau: log-log và spline vẫn có thể viết như mô hình tuyến tính theo tham số sau biến đổi hoặc sau khi dựng hàm cơ sở; riêng Turkey phải dùng NLS vì tham số $\beta_2$ nằm trong hàm mũ, nên đây là hồi quy phi tuyến theo tham số chứ không còn là OLS tuyến tính cổ điển.
 
 \begin{figure}[H]
   \centering
   \includegraphics[width=\textwidth]{./figures/fig13_violations_fixed.png}
-  \caption{Cùng bốn bộ dữ liệu sau khi áp dụng mô hình phù hợp (xanh lá).
-  \textbf{(1) Turkey:} NLS với dạng bão hòa $\beta_0 + \beta_1[1 - e^{-\beta_2 \cdot \text{dose}}]$---phần dư trở nên ngẫu nhiên.
-  \textbf{(2) Mammals:} OLS trên thang $\log$-$\log$---quan hệ tuyến tính, phần dư phân tán đều.
-  \textbf{(3) Physics:} khớp lũy thừa qua $\log$-$\log$---phần dư không còn mẫu hình.
-  \textbf{(4) Cedar trees:} cubic spline với 3 nút---đường cong bám sát toàn vùng, phần dư ngẫu nhiên.}
+  \caption{Cùng bốn bộ dữ liệu sau khi sửa đặc tả hàm trung bình (xanh lá). Hình này không nói rằng mọi cách sửa vẫn thuộc OLS tuyến tính cổ điển.
+  \textbf{(1) Turkey:} NLS với dạng bão hòa $\beta_0 + \beta_1[1 - e^{-\beta_2 \cdot \text{dose}}]$---phù hợp về mặt cơ chế nhưng phi tuyến theo tham số.
+  \textbf{(2) Mammals:} OLS trên thang $\log$-$\log$---tuyến tính theo tham số sau biến đổi.
+  \textbf{(3) Physics:} khớp lũy thừa qua $\log$-$\log$---tuyến tính theo tham số trên thang log.
+  \textbf{(4) Cedar trees:} cubic spline với 3 nút---đường cong theo biến gốc nhưng vẫn tuyến tính theo hệ số spline.}
   \label{fig:violations_fixed}
 \end{figure}
 

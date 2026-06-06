@@ -1,0 +1,60 @@
+\subsection{Hậu Quả Thống Kê}
+
+Tự tương quan không nhất thiết làm OLS không tính được hệ số. Nếu hàm trung bình được chỉ định đúng và điều kiện $E(\varepsilon\mid X)=0$ vẫn thỏa, hệ số OLS có thể vẫn không chệch. Vấn đề chính là công thức phương sai, sai số chuẩn và suy diễn cổ điển có thể không còn đúng.
+
+\subsubsection{Ma Trận Hiệp Phương Sai Bị Xác Định Sai}
+
+Với mô hình ma trận:
+\[
+  \mathbf{y}=X\boldsymbol{\beta}+\boldsymbol{\varepsilon},
+\]
+giả định cổ điển thường dùng:
+\[
+  \mathrm{Var}(\boldsymbol{\varepsilon})=\sigma^2 I.
+\]
+Khi đó phương sai của hệ số OLS là:
+\[
+  \mathrm{Var}(\hat{\boldsymbol{\beta}})=\sigma^2(X^\top X)^{-1}.
+\]
+
+Khi có tự tương quan, cấu trúc đúng tổng quát hơn là:
+\[
+  \mathrm{Var}(\boldsymbol{\varepsilon})=\Omega,
+\]
+trong đó $\Omega$ có các phần tử ngoài đường chéo khác $0$. Phương sai đúng của OLS trở thành:
+\[
+  \mathrm{Var}(\hat{\boldsymbol{\beta}})
+  =
+  (X^\top X)^{-1}X^\top\Omega X(X^\top X)^{-1}.
+\]
+Nếu vẫn dùng công thức cổ điển $\sigma^2(X^\top X)^{-1}$, sai số chuẩn có thể bị đánh giá sai.
+
+\subsubsection{Kiểm Định và Khoảng Tin Cậy Không Đáng Tin}
+
+Kiểm định $t$ cho hệ số $\beta_j$ có dạng:
+\[
+  t = \frac{\hat{\beta}_j-b_j}{\mathrm{SE}(\hat{\beta}_j)}.
+\]
+Vì sai số chuẩn nằm ở mẫu số, SE sai sẽ làm thống kê $t$ và p-value sai. Hệ quả là ta có thể kết luận một biến có ý nghĩa thống kê khi bằng chứng thực tế chưa đủ mạnh, hoặc bỏ qua một biến thật sự quan trọng.
+
+Kiểm định $F$ tổng thể cũng phụ thuộc vào cấu trúc phương sai của sai số. Khi $\mathrm{Var}(\boldsymbol{\varepsilon})\neq\sigma^2 I$, thống kê $F$ cổ điển có thể không còn tuân theo phân phối $F$ như giả định.
+
+Khoảng tin cậy:
+\[
+  \hat{\beta}_j \pm t_{1-\alpha/2}\mathrm{SE}(\hat{\beta}_j)
+\]
+và khoảng dự báo cũng bị ảnh hưởng vì độ rộng của chúng phụ thuộc trực tiếp vào sai số chuẩn và phương sai sai số.
+
+\subsubsection{Không Nên Dựa Riêng Vào \texorpdfstring{$R^2$}{R2}}
+
+Hệ số xác định:
+\[
+  R^2 = 1 - \frac{SSE}{TSS}
+\]
+chỉ phản ánh tỷ lệ biến động của $Y$ được giải thích trong mẫu. $R^2$ không cho biết phần dư có độc lập hay không. Vì vậy, một mô hình có thể có $R^2$ cao nhưng vẫn có tự tương quan mạnh trong phần dư.
+
+\begin{warnbox}
+\textbf{Cảnh báo.} Tự tương quan thường làm suy diễn cổ điển kém tin cậy trước khi làm hỏng vẻ ngoài của mô hình. Output có $R^2$ cao và p-value rất nhỏ vẫn cần được kiểm tra bằng phần dư theo thứ tự tự nhiên của dữ liệu.
+\end{warnbox}
+
+% -----------------------------------------------------------------------------

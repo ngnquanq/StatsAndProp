@@ -1,0 +1,29 @@
+\subsection{Nguyên Nhân Dẫn Đến Tự Tương Quan}
+
+Theo Gujarati và Porter \cite{gujarati2009}, tự tương quan thường xuất phát từ hai nhóm nguyên nhân: cấu trúc phụ thuộc vốn có của dữ liệu và mô hình chưa được đặc tả phù hợp. Hai nhóm này có thể cùng xuất hiện trong một bài toán thực tế.
+
+\subsubsection{Cấu Trúc Phụ Thuộc Của Dữ Liệu}
+
+Với dữ liệu chuỗi thời gian, các quan sát được ghi nhận liên tiếp nên trạng thái hiện tại thường chịu ảnh hưởng từ quá khứ. Một cú sốc tại thời điểm $t$ có thể tiếp tục ảnh hưởng sang $t+1$, $t+2$ hoặc xa hơn.
+
+Các dạng phụ thuộc thường gặp gồm:
+\begin{itemize}
+  \item \textbf{Quán tính:} biến kinh tế hoặc hành vi tiêu dùng thường thay đổi từ từ, nên sai số có thể kéo dài qua nhiều kỳ.
+  \item \textbf{Tác động có độ trễ:} quảng cáo, chính sách giá hoặc cú sốc thị trường có thể không kết thúc ngay trong một kỳ.
+  \item \textbf{Mùa vụ và chu kỳ:} dữ liệu tháng, quý hoặc năm có thể lặp lại mẫu hình theo mùa.
+\end{itemize}
+
+Với dữ liệu không gian, các quan sát gần nhau hoặc cùng khu vực có thể chịu chung điều kiện hạ tầng, vị trí, môi trường hoặc hành vi địa phương. Khi mô hình không nắm bắt đầy đủ các yếu tố này, sai số có thể tương quan theo không gian.
+
+\subsubsection{Mô Hình Chưa Được Đặc Tả Phù Hợp}
+
+Tự tương quan cũng có thể là triệu chứng của mô hình sai, không chỉ là đặc điểm của dữ liệu. Một số nguyên nhân phổ biến gồm:
+\begin{itemize}
+  \item \textbf{Bỏ sót biến quan trọng:} biến bị bỏ sót có cấu trúc theo thời gian hoặc không gian, làm phần còn lại trong sai số cũng có cấu trúc.
+  \item \textbf{Sai dạng hàm:} quan hệ thực tế phi tuyến nhưng mô hình dùng dạng tuyến tính quá đơn giản.
+  \item \textbf{Biến đổi dữ liệu:} làm trơn, nội suy hoặc gom nhóm dữ liệu có thể tạo phụ thuộc nhân tạo giữa các quan sát.
+\end{itemize}
+
+\textbf{Hệ quả thực hành.} Khi phát hiện tự tương quan, không nên chỉ hỏi dùng kiểm định nào. Cần hỏi vì sao phần dư có cấu trúc: do dữ liệu thật sự phụ thuộc, do mô hình thiếu biến, hay do dạng hàm chưa đúng.
+
+% -----------------------------------------------------------------------------

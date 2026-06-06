@@ -1,0 +1,8 @@
+\xpginauxfiletrue 
+\selectlanguage *{vietnamese}
+\beamer@sectionintoc {1}{Tổng Quan: Hồi Quy Bội}{5}{0}{1}
+\beamer@sectionintoc {2}{Tuyến Tính}{16}{0}{2}
+\beamer@sectionintoc {3}{Tính Chuẩn}{28}{0}{3}
+\beamer@sectionintoc {4}{Đồng Nhất Phương Sai}{41}{0}{4}
+\beamer@sectionintoc {5}{Tính Độc Lập Của Sai Số}{53}{0}{5}
+\beamer@sectionintoc {6}{Workflow}{62}{0}{6}

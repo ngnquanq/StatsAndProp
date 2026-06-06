@@ -1,0 +1,31 @@
+\subsection{So Sánh và Quy Tắc Thực Hành}
+
+\begin{center}
+\small
+\begin{tabularx}{\textwidth}{@{}>{\bfseries}l>{\raggedright\arraybackslash}X>{\raggedright\arraybackslash}X@{}}
+\toprule
+Công cụ & Khi nên dùng & Lưu ý chính \\
+\midrule
+Phần dư theo thời gian & Dữ liệu chuỗi thời gian hoặc dữ liệu có thứ tự. & Tìm cụm phần dư cùng dấu, xu hướng hoặc mẫu hình lặp lại. \\
+Phần dư theo khu vực & Dữ liệu không gian hoặc dữ liệu theo nhóm địa lý. & Tìm cụm phần dư tương tự nhau giữa các quan sát gần nhau. \\
+Durbin--Watson & Kiểm tra tự tương quan bậc 1. & Kém phù hợp khi có biến phụ thuộc trễ hoặc tự tương quan bậc cao. \\
+Breusch--Godfrey & Kiểm tra tự tương quan đến bậc $p$. & Chọn $p$ theo tần suất dữ liệu và bản chất bài toán. \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+\subsubsection{Workflow Đề Xuất}
+
+\begin{enumerate}
+  \item Xác định thứ tự phụ thuộc tự nhiên của dữ liệu: thời gian, không gian hoặc nhóm.
+  \item Vẽ phần dư theo thứ tự đó trước khi diễn giải p-value từ output hồi quy.
+  \item Với chuỗi thời gian, dùng Durbin--Watson cho bậc 1 và Breusch--Godfrey nếu cần kiểm tra nhiều bậc.
+  \item Nếu có tự tương quan, kiểm tra lại đặc tả mô hình: biến mùa vụ, biến trễ, xu hướng, nhóm hoặc dạng hàm.
+  \item Khi mục tiêu chính là suy diễn hệ số, cân nhắc sai số chuẩn vững với phụ thuộc chuỗi thời gian như HAC/Newey--West; khi mục tiêu là mô hình hóa cấu trúc phụ thuộc, cân nhắc GLS hoặc mô hình chuỗi thời gian phù hợp.
+\end{enumerate}
+
+\begin{tipbox}
+\textbf{Quy tắc ngắn.} Tự tương quan là vấn đề của cấu trúc phụ thuộc trong sai số. Nó thường làm sai số chuẩn cổ điển không đáng tin, và đôi khi báo hiệu mô hình đang bỏ sót xu hướng, mùa vụ, độ trễ hoặc cấu trúc không gian.
+\end{tipbox}
+
+% -----------------------------------------------------------------------------

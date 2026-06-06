@@ -148,20 +148,91 @@
   citecolor=mainblue,
   urlcolor=mainblue,
   pdftitle={Các Giả Định Quan Trọng Của Mô Hình Hồi Quy Bội},
-  pdfauthor={Nhóm Sinh Viên}
+  pdfauthor={Nguyễn Nhật Quang, Phạm Đoàn Vịnh Nghi, Lê Hoàng Như}
 }
 
 % ============================================================
 
-\title{\textbf{Giả Định Trong Hồi Quy Bội}\\[4pt]
-       \large Tính Tuyến Tính và Tính Chuẩn}
-
-
 \begin{document}
 
-\maketitle
+% ============================================================
+% TITLE PAGE
+% ============================================================
+\begin{titlepage}
+  \centering
+  \vspace*{1.5cm}
+
+  {\Large\bfseries Mô Hình Hóa Thống Kê}\\[0.5cm]
+  {\rule{\linewidth}{1.5pt}}\\[0.3cm]
+
+  {\Huge\bfseries
+    Chủ đề 3: Các Giả Định Quan Trọng \\[0.3cm]
+    Của Mô Hình Hồi Quy Bội}\\[0.3cm]
+  {\rule{\linewidth}{1.5pt}}
+
+  \vspace{2.5cm}
+
+  {\large
+  \renewcommand{\arraystretch}{1.5}
+  \begin{tabular}{ll}
+    \textbf{Môn học:} & Mô hình hóa thống kê \\
+    \textbf{Giảng viên:} & TS. Nguyễn Thị Mộng Ngọc \\
+    \textbf{Nhóm thực hiện:} & NHÓM 1
+  \end{tabular}
+  }
+
+  \vfill
+  \textbf{Thành viên thực hiện:} \\[0.4cm]
+  \renewcommand{\arraystretch}{1.3}
+  \begin{tabular}{l c}
+    \toprule
+    \textbf{Họ và tên} & \textbf{Mã học viên} \\
+    \midrule
+    NGUYỄN NHẬT QUANG & 25C23002 \\
+    PHẠM ĐOÀN VỊNH NGHI & 25C23012 \\
+    LÊ HOÀNG NHƯ & 25C23014 \\
+    \bottomrule
+  \end{tabular}
+
+  \vfill
+  {\small Trường Đại học Khoa học Tự Nhiên - ĐHQGHCM}
+\end{titlepage}
+
+% ============================================================
+% PHÂN CÔNG CÔNG VIỆC
+% ============================================================
+\newpage
+\begin{center}
+  {\Large\bfseries BẢNG PHÂN CÔNG NHIỆM VỤ VÀ ĐÁNH GIÁ}\\[0.3cm]
+  {\rule{\linewidth}{1pt}}
+\end{center}
+
+\vspace{0.5cm}
+
+\begin{table}[h]
+  \centering
+  \small
+  \renewcommand{\arraystretch}{1.4}
+  \begin{tabularx}{\textwidth}{|l|c|X|c|}
+    \hline
+    \textbf{Họ và tên} & \textbf{Mã học viên} & \multicolumn{1}{c|}{\textbf{Nhiệm vụ thực hiện}} & \textbf{Đánh giá} \\
+    \hline
+    NGUYỄN NHẬT QUANG & 25C23002 & Tính tuyến tính; Tính chuẩn \& Tổng hợp file báo cáo; Thuyết trình & 100\% \\ \hline
+    PHẠM ĐOÀN VỊNH NGHI & 25C23012 & Tính độc lập \& Phân công nhiệm vụ; Soạn câu hỏi thảo luận; Thuyết trình & 100\% \\ \hline
+    LÊ HOÀNG NHƯ & 25C23014 & Tính đồng nhất phương sai \& Lập dàn ý công việc; Tổng hợp, kết luận; Thuyết trình & 100\% \\
+    \hline
+  \end{tabularx}
+\end{table}
+
+\newpage
 \tableofcontents
 \newpage
+
+% =============================================================================
+\section{Tổng Quan}
+% =============================================================================
+
+\input{sections/sec0_overview/01_overview}
 
 % =============================================================================
 \section{Giả Định Tính Tuyến Tính}
@@ -187,6 +258,33 @@
 \input{sections/sec2_normality/05_alternatives}
 \input{sections/sec2_normality/06_example_boston}
 
+% =============================================================================
+\section{Giả Định Đồng Nhất Phương Sai}
+% =============================================================================
+
+\input{sections/sec3_homoscedasticity/01_theory}
+\input{sections/sec3_homoscedasticity/02_tests}
+\input{sections/sec3_homoscedasticity/03_robust_se}
+\input{sections/sec3_homoscedasticity/04_example_prestige}
+\input{sections/sec3_homoscedasticity/04_summary}
+
+% =============================================================================
+\section{Giả Định Tính Độc Lập Của Sai Số}
+% =============================================================================
+
+\input{sections/sec4_autocorrelation/01_theory}
+\input{sections/sec4_autocorrelation/02_causes}
+\input{sections/sec4_autocorrelation/03_consequences}
+\input{sections/sec4_autocorrelation/04_visual_diagnostics}
+\input{sections/sec4_autocorrelation/05_formal_tests}
+\input{sections/sec4_autocorrelation/06_r_example}
+\input{sections/sec4_autocorrelation/07_summary}
+
 \input{sections/conclusion}
+
+\newpage
+\renewcommand{\refname}{Tài liệu tham khảo}
+\bibliographystyle{plainnat}
+\bibliography{references}
 
 \end{document}

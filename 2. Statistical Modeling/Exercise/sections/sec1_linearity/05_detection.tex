@@ -17,6 +17,9 @@ Kiểm định Tukey            & Sau khi đồ thị gợi ý & Xác nhận hì
 \end{tabular}
 \end{center}
 
+
+\textbf{Checklist thực hành.} Một quy trình kiểm tra tuyến tính có thể đi theo sáu bước: (1) vẽ scatter plot hoặc ma trận scatter trước khi khớp mô hình; (2) kiểm tra residuals vs fitted sau khi khớp; (3) dùng residual plots theo từng biến và added-variable/partial-residual plots để khoanh vùng biến gây cong; (4) thử biến đổi biến, đa thức hoặc splines khi đồ thị gợi ý sai dạng hàm; (5) so sánh mô hình bằng AIC, BIC, cross-validation hoặc PRESS; và (6) vẽ lại residual plot sau khi sửa để xác nhận mẫu hình cong đã biến mất. Quy trình này tương ứng với các công cụ chẩn đoán, biến đổi và chọn mô hình trong Weisberg \cite[Ch.~1; Sec.~3.1.2; Sec.~3.4.8; Ch.~5; Ch.~8; Sec.~9.1; Sec.~10.2]{weisberg2014applied}.
+
 % - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 \subsubsection{Ma Trận Đồ Thị Phân Tán}
 
@@ -26,10 +29,10 @@ Vẽ mọi cặp quan hệ giữa $Y$ và các biến dự báo $X_1, \ldots, X_
 
 \begin{figure}[H]
   \centering
-  \includegraphics[width=0.88\textwidth]{./figures/fig14_scatterplot_matrix.png}
+  \includegraphics[width=\textwidth]{./figures/fig14_scatterplot_matrix.png}
   \caption{Ma trận đồ thị phân tán cho bốn biến của \texttt{mtcars}.
   \textbf{Tam giác dưới:} scatter plot với đường LOESS (đỏ)---cho thấy độ cong biên trước khi khớp mô hình.
-  \textbf{Đường chéo:} histogram mật độ của từng biến riêng lẻ.
+  \textbf{Đường chéo:} tên biến, mô tả ngắn và histogram mật độ của từng biến riêng lẻ.
   \textbf{Tam giác trên:} hệ số tương quan Pearson (cỡ chữ theo độ lớn, xanh dương = dương, đỏ = âm).
   Quan hệ \texttt{mpg}--\texttt{hp} và \texttt{mpg}--\texttt{disp} có đường LOESS cong rõ---gợi ý phi tuyến biên cần kiểm tra kỹ hơn sau khi khớp.}
   \label{fig:scattermat}
