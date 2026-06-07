@@ -24,6 +24,25 @@ For **DRAG** — answer these:
 - What does the attack require from the model? (gradient access = white-box)
 - What makes CERT data a different threat model? → No image structure to exploit; behavioral sequences are the "pixels"
 
+## Open questions in each paper (your research angles)
+
+These are limitations the authors acknowledge or that careful reading reveals. Use one as the basis for your cold email and your thesis proposal.
+
+**Trap-MID open questions:**
+1. **Adaptive attacker** — the defense assumes the attacker doesn't know trap samples exist. An attacker who probes for output discontinuities (trying random inputs near the decision boundary) might detect and avoid the trap. The paper doesn't evaluate adaptive adversaries.
+2. **Tabular/behavioral data** — all experiments are on CelebA and FFHQ (face images). No one has tested whether trapdoor-based defense works on non-image structured data (logs, transaction sequences). This is your exact domain.
+3. **Trap sample poisoning** — what if an attacker poisons the training pipeline to remove traps before they take effect? Trap-MID assumes a trusted training environment.
+
+**DRAG open questions:**
+1. **White-box requirement** — DRAG needs gradient access. The paper doesn't address the black-box case (score-only or output-only access), which is more realistic in enterprise deployment.
+2. **DP-SGD robustness** — does DRAG still reconstruct accurately when the target model was trained with DP-SGD (Gaussian noise on gradients)? The paper doesn't test this. If DP breaks DRAG, that's evidence for DP as a practical defense.
+3. **Behavioral/sequential data** — all experiments on image models. Reconstruction via diffusion assumes spatial structure. What's the analog for time-series behavioral logs?
+
+**Your thesis angle (the intersection):**
+> Apply MIA (LiRA) + model inversion (DRAG-style or KEDMI) to a tabular behavioral anomaly detector trained on CERT data. Test Trap-MID style defense on non-image data. This is a gap that exists in all three of Chen's recent papers simultaneously.
+
+---
+
 ## Cold email hook (use one of these)
 
 Option A (Trap-MID angle):
