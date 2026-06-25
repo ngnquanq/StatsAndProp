@@ -1,0 +1,287 @@
+---
+title: "Marketing A/B Analysis"
+date: "`r Sys.Date()`"
+output:
+  html_document:
+    self_contained: true
+    toc: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE,
+                      fig.width = 8, fig.height = 5)
+library(readr)
+```
+
+# Create a 10% sample dataset
+
+The following code shows how `marketing_AB_mini.csv` was created from the
+original dataset. It is shown for documentation and is not rerun as part of
+this report.
+
+```{r create-mini-dataset, eval=FALSE}
+marketing_AB <- read.csv("marketing_AB.csv")
+
+set.seed(42)
+
+n_sample <- floor(0.10 * nrow(marketing_AB))
+
+marketing_AB_mini <- marketing_AB[
+  sample(1:nrow(marketing_AB), size = n_sample, replace = FALSE),
+]
+
+write.csv(
+  marketing_AB_mini,
+  "marketing_AB_mini.csv",
+  row.names = FALSE
+)
+```
+
+# 1. Load the data
+
+```{r load-data}
+marketing <- read_csv("marketing_AB_mini.csv")
+
+dim(marketing)
+head(marketing)
+summary(marketing)
+
+range(marketing$`most ads hour`, na.rm = TRUE)
+sort(unique(marketing$`most ads hour`))
+```
+
+The dataset has `r nrow(marketing)` rows and `r ncol(marketing)` columns.
+
+# 2. IQR outlier check
+
+The IQR rule marks values below Q1 - 1.5 x IQR or above Q3 + 1.5 x IQR as
+outliers.
+
+```{r outlier-table}
+numeric_names <- c("total ads", "most ads hour")
+
+outlier_results <- data.frame()
+
+for (name in numeric_names) {
+  x <- marketing[[name]]
+  q1 <- quantile(x, 0.25, na.rm = TRUE)
+  q3 <- quantile(x, 0.75, na.rm = TRUE)
+  iqr <- q3 - q1
+  lower <- q1 - 1.5 * iqr
+  upper <- q3 + 1.5 * iqr
+  count <- sum(x < lower | x > upper, na.rm = TRUE)
+
+  outlier_results <- rbind(
+    outlier_results,
+    data.frame(
+      Variable = name,
+      Q1 = q1,
+      Q3 = q3,
+      IQR = iqr,
+      Lower_Bound = lower,
+      Upper_Bound = upper,
+      Outlier_Count = count,
+      Contains_Outliers = ifelse(count > 0, "Yes", "No")
+    )
+  )
+}
+
+rownames(outlier_results) <- NULL
+print(outlier_results)
+```
+
+`user id` is excluded because it is an identifier rather than a meaningful
+variable for outlier analysis.
+
+# 3. Visualizations
+
+## Numerical distributions
+
+```{r histograms, fig.height=4}
+par(mfrow = c(1, 2))
+
+hist(marketing$`total ads`, breaks = 50, col = "steelblue",
+     main = "Distribution of Total Ads", xlab = "Total ads")
+
+hist(marketing$`most ads hour`, breaks = seq(-0.5, 23.5, 1),
+     col = "darkseagreen", main = "Distribution of Peak Ad Hour",
+     xlab = "Hour")
+
+par(mfrow = c(1, 1))
+```
+
+## Boxplot for outliers
+
+```{r boxplot}
+boxplot(marketing$`total ads`, horizontal = TRUE, col = "lightblue",
+        main = "Boxplot of Total Ads", xlab = "Total ads")
+```
+
+## Categorical variables
+
+```{r bar-charts, fig.height=7}
+par(mfrow = c(2, 2), mar = c(5, 4, 3, 1))
+
+barplot(table(marketing$`test group`), col = "tan",
+        main = "Test Group", ylab = "Number of users")
+
+barplot(table(marketing$converted), col = "skyblue",
+        main = "Conversion", ylab = "Number of users")
+
+barplot(table(marketing$`most ads day`), col = "plum",
+        main = "Peak Ad Day", ylab = "Number of users", las = 2)
+
+par(mfrow = c(1, 1))
+```
+
+## Advertising exposure and conversion
+
+```{r exposure-conversion}
+boxplot(`total ads` ~ converted, data = marketing,
+        names = c("Not converted", "Converted"),
+        col = c("lightgray", "lightgreen"),
+        main = "Ad Exposure by Conversion",
+        xlab = "Conversion", ylab = "Total ads",
+        outline = FALSE)
+```
+
+```{r exposure-groups}
+marketing$exposure_group <- cut(
+  marketing$`total ads`,
+  breaks = c(0, 5, 10, 20, 40, 80, Inf),
+  labels = c("1-5", "6-10", "11-20", "21-40", "41-80", "81+")
+)
+
+conversion_by_exposure <- aggregate(
+  converted ~ exposure_group,
+  data = marketing,
+  FUN = mean
+)
+
+plot(seq_len(nrow(conversion_by_exposure)),
+     conversion_by_exposure$converted,
+     type = "b", pch = 19, col = "darkblue",
+     xaxt = "n",
+     main = "Conversion Rate by Ad Exposure",
+     xlab = "Total ad exposure group", ylab = "Conversion rate")
+axis(1, at = seq_len(nrow(conversion_by_exposure)),
+     labels = conversion_by_exposure$exposure_group)
+```
+
+## Test group and conversion
+
+```{r group-conversion}
+group_summary <- aggregate(
+  converted ~ `test group`,
+  data = marketing,
+  FUN = mean
+)
+names(group_summary)[2] <- "conversion_rate"
+
+print(group_summary)
+
+barplot(group_summary$conversion_rate,
+        names.arg = group_summary$`test group`,
+        col = c("steelblue", "orange"),
+        main = "Conversion Rate by Test Group",
+        xlab = "Test group", ylab = "Conversion rate")
+```
+
+## Conversion patterns by day and hour
+
+```{r timing-summary}
+day_summary <- aggregate(
+  converted ~ `most ads day`, data = marketing, FUN = mean
+)
+names(day_summary)[2] <- "conversion_rate"
+day_summary <- day_summary[order(day_summary$conversion_rate,
+                                 decreasing = TRUE), ]
+print(day_summary)
+
+hour_summary <- aggregate(
+  converted ~ `most ads hour`, data = marketing, FUN = mean
+)
+names(hour_summary)[2] <- "conversion_rate"
+print(hour_summary)
+
+barplot(day_summary$conversion_rate,
+        names.arg = day_summary$`most ads day`,
+        main = "Conversion Rate by Most Ads Day",
+        xlab = "Most Ads Day", ylab = "Conversion Rate", las = 2)
+
+plot(hour_summary$`most ads hour`,
+     hour_summary$conversion_rate,
+     type = "b", pch = 19,
+     main = "Conversion Rate by Most Ads Hour",
+     xlab = "Most Ads Hour", ylab = "Conversion Rate")
+```
+
+# 4. Comments and observations
+
+* **Distribution of numerical variables:** Total ad exposure is strongly
+  right-skewed. The median user saw `r median(marketing[["total ads"]])` ads,
+  while the mean was `r round(mean(marketing[["total ads"]]), 1)` ads. The mean
+  is higher because a small number of users received very large numbers of ads;
+  the maximum was `r max(marketing[["total ads"]])`. This suggests that the
+  typical user had modest exposure, but a smaller group remained exposed to the campaign long enough to receive ads repeatedly. The range check shows that the observed `most ads hour` values run from 0 to 23. Peak exposure was most
+  common at hour
+  `r as.numeric(names(which.max(table(marketing[["most ads hour"]]))))`, showing
+  that exposure volume was concentrated around midday.
+
+* **Outliers:** For `total ads`, Q1 is
+  `r outlier_results$Q1[outlier_results$Variable == "total ads"]`, Q3 is
+  `r outlier_results$Q3[outlier_results$Variable == "total ads"]`, and the upper
+  IQR boundary is
+  `r outlier_results$Upper_Bound[outlier_results$Variable == "total ads"]`.
+  Users with more than 61.5 ads are therefore flagged, producing
+  `r outlier_results$Outlier_Count[outlier_results$Variable == "total ads"]`
+  outliers. They may represent highly engaged users, users with longer campaign exposure,
+  or repeated targeting; they should not automatically be treated as data errors. The method also flags
+  `r outlier_results$Outlier_Count[outlier_results$Variable == "most ads hour"]`
+  records for `most ads hour` because its IQR lower bound is 0.5. In this data,
+  the flagged values are hour 0. The range and unique-value checks confirm that hour 0 is an observed timing
+  value, so it should not automatically be treated as invalid or as a data error. It may simply be less common than
+  hours near the center of the distribution. Because `most ads hour` is a
+  time-related, descriptive variable rather than a continuous quantity, its IQR
+  result requires careful interpretation. The main meaningful outlier finding
+  is the high-value tail of `total ads`, which directly measures how many ads
+  users saw.
+
+* **Advertising exposure and conversion:** Converted users saw an average of
+  `r round(mean(marketing[["total ads"]][marketing$converted]), 1)` ads and a
+  median of `r median(marketing[["total ads"]][marketing$converted])`, compared
+  with an average of
+  `r round(mean(marketing[["total ads"]][!marketing$converted]), 1)` and a median
+  of `r median(marketing[["total ads"]][!marketing$converted])` for users who did
+  not convert. Conversion increased from about
+  `r round(100 * conversion_by_exposure$converted[1], 2)`% among users seeing
+  1-5 ads to `r round(100 * tail(conversion_by_exposure$converted, 1), 2)`% among
+  those seeing 81 or more. Higher exposure is strongly associated with higher
+  conversion. It does not prove that more ads alone cause conversion because
+  users who stay active longer have more chances both to see ads and to convert.
+
+* **Conversion behavior and test groups:** Only
+  `r sum(marketing$converted)` of `r nrow(marketing)` users converted, an overall
+  rate of `r round(100 * mean(marketing$converted), 2)`%. The `ad` group conversion rate was
+  `r round(100 * group_summary[group_summary[["test group"]] == "ad", "conversion_rate"], 2)`%,
+  compared with
+  `r round(100 * group_summary[group_summary[["test group"]] == "psa", "conversion_rate"], 2)`%
+  in the PSA/control group. The ad-group rate is about
+  `r round(group_summary[group_summary[["test group"]] == "ad", "conversion_rate"] / group_summary[group_summary[["test group"]] == "psa", "conversion_rate"], 2)`
+  times the control rate. This observed difference suggests that the ad treatment performed better than
+  the PSA/control treatment in this sample. Group sizes are very unequal, so rates are more useful than raw
+  conversion counts for this comparison.
+
+* **Timing patterns:** Friday had the most users whose peak exposure occurred
+  on that day, but it did not have the highest conversion rate. Monday had the
+  highest day-level rate at
+  `r round(100 * day_summary$conversion_rate[day_summary[["most ads day"]] == "Monday"], 2)`%,
+  while Friday was lowest at
+  `r round(100 * day_summary$conversion_rate[day_summary[["most ads day"]] == "Friday"], 2)`%.
+  Exposure volume was concentrated around hours 11-15. Hour 16 had a relatively
+  high conversion rate of
+  `r round(100 * hour_summary$conversion_rate[hour_summary[["most ads hour"]] == 16], 2)`%
+  and also had many users. Hour 6 had the highest raw hourly rate, but only
+  `r sum(marketing[["most ads hour"]] == 6)` users were in that segment, so its
+  rate is less stable. These descriptive differences may reflect audience behavior or campaign
+  scheduling, rather than an effect of timing alone.

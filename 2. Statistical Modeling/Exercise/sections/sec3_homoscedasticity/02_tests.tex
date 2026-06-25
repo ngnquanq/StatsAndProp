@@ -1,44 +1,34 @@
-\subsection{Kiểm Định Hình Thức}
-
-Các kiểm định phương sai thay đổi nên được dùng như bằng chứng bổ sung cho chẩn đoán đồ thị. Một p-value nhỏ cho thấy có dấu hiệu phương sai thay đổi, nhưng vẫn cần xem mức độ vi phạm có đủ lớn để ảnh hưởng đến kết luận hay không.
-
-\subsubsection{Kiểm Định Breusch--Pagan}
-
-Kiểm định Breusch--Pagan phù hợp khi nghi ngờ phương sai sai số thay đổi theo một hàm tuyến tính của các biến giải thích \cite{breusch1979}. Ý tưởng chính là kiểm tra xem bình phương phần dư từ mô hình gốc có được giải thích bởi các biến dự báo hay không.
-
-Giả thuyết kiểm định:
-\[
-  H_0: \mathrm{Var}(\varepsilon_i\mid\mathbf{x}_i)=\sigma^2,
-  \qquad
-  H_1: \mathrm{Var}(\varepsilon_i\mid\mathbf{x}_i)\text{ thay đổi theo }\mathbf{x}_i.
-\]
-
-Quy trình thực hiện:
-\begin{enumerate}
-  \item Khớp mô hình OLS gốc và lấy phần dư $\hat e_i$.
-  \item Hồi quy phụ $\hat e_i^2$ theo các biến giải thích.
-  \item Dùng thống kê dựa trên $R^2$ của hồi quy phụ, thường viết $LM=nR^2_{\mathrm{aux}}$.
-\end{enumerate}
-
-Dưới $H_0$, thống kê này xấp xỉ phân phối $\chi^2$ với bậc tự do bằng số biến trong hồi quy phụ. Phiên bản studentized của Koenker \cite{koenker1981} thường được dùng trong phần mềm vì bền hơn khi sai số không chuẩn.
-
-\subsubsection{Kiểm Định White}
-
-Kiểm định White tổng quát hơn Breusch--Pagan vì không cần chỉ định trước dạng tuyến tính của phương sai thay đổi \cite{white1980}. Hồi quy phụ có thể bao gồm biến gốc, bình phương biến và các tích chéo:
-\[
-  \hat e_i^2
-  = \gamma_0
-    + \sum_j \gamma_j X_{ij}
-    + \sum_j \delta_j X_{ij}^2
-    + \sum_{j<\ell}\theta_{j\ell}X_{ij}X_{i\ell}
-    + v_i.
-\]
-Thống kê kiểm định thường là:
-\[
-  W = nR^2_{\mathrm{aux}} \sim \chi^2(p),
-\]
-trong đó $p$ là số biến giải thích trong hồi quy phụ.
-
-\textbf{Điểm mạnh} của White test là khả năng phát hiện nhiều dạng phương sai thay đổi. \textbf{Điểm yếu} là số biến trong hồi quy phụ tăng nhanh, làm hao bậc tự do và giảm độ ổn định trong mẫu nhỏ. Vì vậy, trong thực hành có thể dùng phiên bản rút gọn: hồi quy $\hat e_i^2$ theo $\hat y_i$ và $\hat y_i^2$.
-
-% -----------------------------------------------------------------------------
+	\subsection{Kiểm định Breusch--Pagan (1979)}
+	\textbf{Khi nào cần dùng:} Khi ta có cơ sở nghi ngờ rằng phương sai của sai số thay đổi (lớn dần hoặc nhỏ dần) theo \textit{hàm tuyến tính} của một hoặc nhiều biến độc lập.
+	
+	\textbf{Cơ sở lý thuyết \& Chứng minh:} Breusch và Pagan \cite{breusch1979} xây dựng kiểm định này dựa trên nguyên lý \textit{Nhân tử Lagrange (Lagrange Multiplier - LM)} trong phương pháp Ước lượng Hợp lý Cực đại (MLE). Giả sử phương sai tuân theo hàm $\sigma_i^2 = h(\gamma_0 + \mathbf{z}_i^{\top}\boldsymbol{\gamma})$. Đạo hàm của hàm log-likelihood (hàm Score) được đánh giá tại $\boldsymbol{\gamma} = \mathbf{0}$. Nếu đạo hàm này khác không một cách có ý nghĩa thống kê, ta có cơ sở bác bỏ tính đồng nhất.
+	
+	\textbf{Thiết lập giả thuyết:}
+	\begin{itemize}
+		\item $H_0: \gamma_1 = \gamma_2 = \dots = \gamma_k = 0$ (Phương sai là hằng số / Đồng nhất phương sai).
+		\item $H_1:$ Có ít nhất một $\gamma_j \neq 0$ (Phương sai thay đổi).
+	\end{itemize}
+	
+	\textbf{Quy trình và Công thức:}
+	\begin{enumerate}
+		\item Chạy mô hình OLS gốc, lưu bình phương phần dư: $\hat{\varepsilon}_i^2$.
+		\item Chạy hồi quy phụ: $\hat{\varepsilon}_i^2 = \gamma_0 + \gamma_1 X_{i1} + \dots + \gamma_k X_{ik} + v_i$.
+		\item Tính thống kê kiểm định: $LM = \frac{1}{2}\text{ESS} \sim \chi^2(k)$. 
+	\end{enumerate}
+	\textbf{Làm sao để thỏa \& Tối ưu hóa:} Để thỏa mãn giả định OLS, ta cần chấp nhận $H_0$ (tức là $p\text{-value} > \alpha$, thường $\alpha = 0.05$). Tuy nhiên, phiên bản gốc của B-P rất nhạy cảm với giả định sai số phân phối chuẩn. Để tối ưu, Koenker (1981) \cite{koenker1981} đã đề xuất \textbf{Kiểm định B-P dạng Studentized}, tính toán qua $LM = n \times R^2_{\text{aux}}$. Dạng tối ưu này vững (robust) hơn khi sai số có đuôi phân phối dày và được các phần mềm như R (hàm \texttt{bptest}) sử dụng làm mặc định.
+	
+	\subsection{Kiểm định White (1980)}
+	\textbf{Khi nào cần dùng:} Khi người nghiên cứu \textit{không biết trước dạng cấu trúc} của phương sai thay đổi (có thể là phi tuyến, bậc 2, hoặc do sự tương tác chéo giữa các biến) và tập mẫu dữ liệu đủ lớn.
+	
+	\textbf{Cơ sở lý thuyết \& Chứng minh:} Halbert White \cite{white1980} phát triển kiểm định này dựa trên thuộc tính của \textit{Đẳng thức Ma trận Thông tin (Information Matrix Equality)}. Theo lý thuyết tiệm cận, nếu $H_0$ đúng, trung bình mẫu của ma trận $\hat{\varepsilon}_i^2 \mathbf{x}_i \mathbf{x}_i^\top$ sẽ hội tụ chính xác về $\hat{\sigma}^2 \frac{1}{n}\sum \mathbf{x}_i \mathbf{x}_i^\top$. Để kiểm tra sự hội tụ này một cách thực tiễn mà không cần thao tác ma trận phức tạp, White chứng minh rằng chỉ cần hồi quy $\hat{\varepsilon}_i^2$ lên mọi phần tử duy nhất cấu thành nên $\mathbf{x}_i \mathbf{x}_i^\top$.
+	
+	\textbf{Thiết lập giả thuyết:} Tương tự B-P, $H_0:$ Phương sai đồng nhất ($\sigma_i^2 = \sigma^2$ với mọi $i$).
+	
+	\textbf{Quy trình và Công thức:}
+	Hồi quy phụ của kiểm định White cực kỳ bao quát:
+	\begin{equation}
+		\hat{\varepsilon}_i^2 = \gamma_0 + \sum \gamma_j X_j + \sum \delta_j X_j^2 + \sum_{j<l} \theta_{jl} X_j X_l + v_i
+	\end{equation}
+	Thống kê kiểm định: $W = n \times R^2_{\text{aux}} \sim \chi^2(p)$, với $p$ là tổng số biến giải thích trong mô hình phụ.
+	
+	\textbf{Làm sao để thỏa \& Tối ưu hóa:} Cần $p\text{-value} > \alpha$ để kết luận mô hình thỏa mãn đồng nhất phương sai. \textit{Tối ưu:} Nhược điểm chí mạng của White test là làm cạn kiệt bậc tự do cực nhanh (ví dụ mô hình gốc 5 biến, mô hình phụ White sẽ có tới 20 biến). Để tối ưu trong mẫu nhỏ, người ta thường dùng \textbf{Kiểm định White rút gọn (Modified White Test)}: chỉ hồi quy $\hat{\varepsilon}_i^2$ theo giá trị dự báo $\hat{y}_i$ và bình phương của nó $\hat{y}_i^2$, giúp tiết kiệm bậc tự do tối đa mà vẫn giữ được sức mạnh kiểm định.

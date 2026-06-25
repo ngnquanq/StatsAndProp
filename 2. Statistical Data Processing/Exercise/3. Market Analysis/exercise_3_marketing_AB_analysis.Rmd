@@ -1,0 +1,236 @@
+---
+title: "Exercise 3: Marketing A/B Testing"
+date: "`r Sys.Date()`"
+output:
+  html_document:
+    self_contained: true
+    toc: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE,
+                      fig.width = 8, fig.height = 5)
+library(readr)
+```
+
+# 1. Load the data
+
+```{r load-data}
+marketing <- read_csv("marketing_AB_mini.csv")
+
+dim(marketing)
+head(marketing)
+summary(marketing)
+
+table(marketing$`test group`)
+table(marketing$converted)
+```
+
+The dataset has `r nrow(marketing)` rows and `r ncol(marketing)` columns. The
+A/B variable is `test group`, where `ad` is the advertising treatment and `psa`
+is the control condition. The main outcome variable is `converted`.
+
+# 2. Research question and parameter choice
+
+The research question is:
+
+**Does the advertising treatment increase the conversion rate compared with the
+PSA/control group?**
+
+Because `converted` is a binary variable, the most suitable parameter is the
+conversion proportion in each group. The A/B effect is measured as:
+
+```{r define-effect}
+conversion_summary <- aggregate(
+  converted ~ `test group`,
+  data = marketing,
+  FUN = mean
+)
+names(conversion_summary)[2] <- "conversion_rate"
+
+group_counts <- aggregate(
+  converted ~ `test group`,
+  data = marketing,
+  FUN = length
+)
+names(group_counts)[2] <- "n"
+
+conversion_counts <- aggregate(
+  converted ~ `test group`,
+  data = marketing,
+  FUN = sum
+)
+names(conversion_counts)[2] <- "conversions"
+
+ab_summary <- merge(group_counts, conversion_counts, by = "test group")
+ab_summary <- merge(ab_summary, conversion_summary, by = "test group")
+ab_summary$conversion_percent <- 100 * ab_summary$conversion_rate
+
+print(ab_summary)
+
+fmt_percent <- function(x) sprintf("%.2f", 100 * x)
+fmt_pvalue <- function(x) sprintf("%.4f", x)
+
+ad_rate <- ab_summary$conversion_rate[ab_summary$`test group` == "ad"]
+psa_rate <- ab_summary$conversion_rate[ab_summary$`test group` == "psa"]
+observed_diff <- ad_rate - psa_rate
+
+observed_diff
+```
+
+The observed conversion rate is `r fmt_percent(ad_rate)`% in the `ad` group
+and `r fmt_percent(psa_rate)`% in the `psa` group. The observed difference is
+`r fmt_percent(observed_diff)` percentage points.
+
+# 3. Visual comparison
+
+```{r visual-comparison}
+barplot(
+  ab_summary$conversion_rate,
+  names.arg = ab_summary$`test group`,
+  col = c("steelblue", "orange"),
+  main = "Conversion Rate by Test Group",
+  xlab = "Test group",
+  ylab = "Conversion rate"
+)
+```
+
+```{r exposure-check}
+boxplot(
+  `total ads` ~ `test group`,
+  data = marketing,
+  col = c("lightblue", "tan"),
+  main = "Total Ads by Test Group",
+  xlab = "Test group",
+  ylab = "Total ads",
+  outline = FALSE
+)
+```
+
+The first plot compares the main A/B metric. The second plot is a supporting
+diagnostic because the distribution of `total ads` is right-skewed and contains
+large values. This makes the conversion proportion more appropriate than the
+mean or variance of ad exposure for the main A/B conclusion.
+
+# 4. Permutation test
+
+The null hypothesis is that the treatment label has no relationship with
+conversion. Under this null hypothesis, the `converted` values can be randomly
+reassigned across the two groups while keeping the original group sizes fixed.
+
+```{r permutation-test}
+set.seed(42)
+
+n_perm <- 10000
+group_labels <- marketing$`test group`
+converted_values <- marketing$converted
+
+permutation_diffs <- numeric(n_perm)
+
+for (i in seq_len(n_perm)) {
+  shuffled_conversion <- sample(converted_values, replace = FALSE)
+
+  perm_ad_rate <- mean(shuffled_conversion[group_labels == "ad"])
+  perm_psa_rate <- mean(shuffled_conversion[group_labels == "psa"])
+
+  permutation_diffs[i] <- perm_ad_rate - perm_psa_rate
+}
+
+p_value_two_sided <- mean(abs(permutation_diffs) >= abs(observed_diff))
+p_value_one_sided <- mean(permutation_diffs >= observed_diff)
+
+p_value_two_sided
+p_value_one_sided
+```
+
+```{r permutation-plot}
+hist(
+  permutation_diffs,
+  breaks = 50,
+  col = "gray80",
+  border = "white",
+  main = "Permutation Distribution of Conversion Rate Difference",
+  xlab = "Ad conversion rate - PSA conversion rate"
+)
+abline(v = observed_diff, col = "red", lwd = 2)
+abline(v = -observed_diff, col = "red", lwd = 2, lty = 2)
+```
+
+The two-sided permutation p-value is `r fmt_pvalue(p_value_two_sided)`. The
+one-sided p-value for the alternative that the ad group has a higher conversion
+rate is `r fmt_pvalue(p_value_one_sided)`.
+
+# 5. Bootstrap confidence interval
+
+Bootstrap resampling estimates the uncertainty of the observed difference in
+conversion rates. Users are resampled within each group so that the group
+structure remains the same.
+
+```{r bootstrap-test}
+set.seed(42)
+
+n_boot <- 10000
+ad_converted <- marketing$converted[marketing$`test group` == "ad"]
+psa_converted <- marketing$converted[marketing$`test group` == "psa"]
+
+bootstrap_diffs <- numeric(n_boot)
+
+for (i in seq_len(n_boot)) {
+  boot_ad <- sample(ad_converted, size = length(ad_converted), replace = TRUE)
+  boot_psa <- sample(psa_converted, size = length(psa_converted), replace = TRUE)
+
+  bootstrap_diffs[i] <- mean(boot_ad) - mean(boot_psa)
+}
+
+bootstrap_ci <- quantile(bootstrap_diffs, c(0.025, 0.975))
+bootstrap_ci
+```
+
+```{r bootstrap-plot}
+hist(
+  bootstrap_diffs,
+  breaks = 50,
+  col = "lightblue",
+  border = "white",
+  main = "Bootstrap Distribution of Conversion Rate Difference",
+  xlab = "Ad conversion rate - PSA conversion rate"
+)
+abline(v = observed_diff, col = "red", lwd = 2)
+abline(v = bootstrap_ci, col = "darkblue", lwd = 2, lty = 2)
+```
+
+The 95% bootstrap confidence interval for the difference in conversion rates is
+from `r round(100 * bootstrap_ci[1], 2)` to
+`r round(100 * bootstrap_ci[2], 2)` percentage points.
+
+# 6. Comments and conclusion
+
+* **Parameter selection:** The conversion proportion is the correct primary
+  parameter because the outcome `converted` is binary. Mean, median, and
+  variance are less suitable for the main A/B question because they describe
+  numeric variables such as `total ads`, not the final conversion outcome.
+
+* **Observed A/B result:** The `ad` group has a conversion rate of
+  `r fmt_percent(ad_rate)`%, while the `psa` group has a conversion rate of
+  `r fmt_percent(psa_rate)`%. The observed lift is
+  `r fmt_percent(observed_diff)` percentage points in favor of the ad group.
+
+* **Permutation test:** The two-sided permutation p-value is
+  `r fmt_pvalue(p_value_two_sided)`. This tests whether a difference at least as
+  large as the observed difference would be likely if the group labels had no
+  relationship with conversion. The one-sided p-value is
+  `r fmt_pvalue(p_value_one_sided)`, which directly matches the question of
+  whether the ad group performs better than the PSA/control group.
+
+* **Bootstrap interval:** The 95% bootstrap confidence interval is
+  [`r round(100 * bootstrap_ci[1], 2)`,
+  `r round(100 * bootstrap_ci[2], 2)`] percentage points. Because the interval is
+  above zero, the mini dataset supports a positive advertising effect on
+  conversion.
+
+* **Final conclusion:** Based on the mini dataset, the advertising treatment has
+  a higher conversion rate than the PSA/control condition. The permutation test
+  and bootstrap confidence interval both support the conclusion that this
+  observed difference is unlikely to be explained by random assignment alone.
+  However, the result should still be interpreted in the context of this 10%
+  sample rather than the full original dataset.

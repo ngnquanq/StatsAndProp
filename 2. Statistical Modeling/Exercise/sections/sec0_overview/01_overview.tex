@@ -1,63 +1,86 @@
-\subsection{Hồi Quy và Hồi Quy Bội}
-
-Hồi quy là phương pháp thống kê dùng để mô hình hóa và định lượng mối quan hệ giữa biến phản ứng $Y$ và một hoặc nhiều biến dự báo $\mathbf{X}$. Trọng tâm của hồi quy là hàm kỳ vọng có điều kiện:
-\[
-  E(Y \mid \mathbf{X}),
-\]
-tức giá trị trung bình của $Y$ tại các mức giá trị đã cho của $\mathbf{X}$ \cite{weisberg2014applied}.
-
-Trong hồi quy tuyến tính đơn, mô hình cơ bản có dạng:
-\[
-  Y_i = \beta_0 + \beta_1 X_i + \varepsilon_i.
-\]
-Hồi quy bội mở rộng ý tưởng này cho nhiều biến dự báo cùng lúc:
-\[
-  Y_i = \beta_0 + \beta_1 X_{i1} + \cdots + \beta_k X_{ik} + \varepsilon_i.
-\]
-Cách viết này cho phép đánh giá tác động riêng phần của từng biến trong khi giữ các biến còn lại không đổi, đồng thời giảm rủi ro bỏ sót những yếu tố gây nhiễu quan trọng \cite{faraway2016}.
-
-\subsection{Dạng Ma Trận và Ước Lượng OLS}
-
-Với $n$ quan sát và $k$ biến dự báo, mô hình hồi quy bội thường được viết gọn dưới dạng ma trận:
-\[
-  \mathbf{y} = \mathbf{X}\boldsymbol{\beta} + \boldsymbol{\varepsilon},
-  \qquad
-  E(\boldsymbol{\varepsilon}\mid \mathbf{X}) = \mathbf{0}.
-\]
-Trong đó $\mathbf{X}$ là ma trận thiết kế, $\boldsymbol{\beta}$ là vector hệ số cần ước lượng, và $\boldsymbol{\varepsilon}$ là vector sai số ngẫu nhiên \cite{rencher2008linear}.
-
-Phương pháp bình phương tối thiểu thông thường (OLS) chọn $\hat{\boldsymbol{\beta}}$ để cực tiểu hóa tổng bình phương phần dư:
-\[
-  S(\boldsymbol{\beta})
-  = (\mathbf{y} - \mathbf{X}\boldsymbol{\beta})^\top
-    (\mathbf{y} - \mathbf{X}\boldsymbol{\beta}).
-\]
-Khi $\mathbf{X}^\top\mathbf{X}$ khả nghịch, nghiệm OLS có dạng đóng:
-\[
-  \hat{\boldsymbol{\beta}}
-  = (\mathbf{X}^\top\mathbf{X})^{-1}\mathbf{X}^\top\mathbf{y}.
-\]
-
-\subsection{Vai Trò Của Các Giả Định}
-
-Các giả định của mô hình hồi quy bội không có cùng vai trò. Một số giả định bảo vệ tính đúng đắn của hệ số, một số bảo vệ sai số chuẩn và suy diễn thống kê, còn giả định chuẩn chủ yếu quan trọng trong suy diễn mẫu nhỏ. Báo cáo này tập trung vào bốn giả định chính: tuyến tính, chuẩn của sai số, đồng nhất phương sai và tính độc lập của sai số.
-
-\begin{center}
-\small
-\begin{tabularx}{\textwidth}{@{}>{\bfseries}l>{\raggedright\arraybackslash}X>{\raggedright\arraybackslash}X@{}}
-\toprule
-Giả định & Phát biểu chính & Hệ quả khi vi phạm \\
-\midrule
-Tính tuyến tính & Hàm trung bình $E(Y\mid X)$ được mô tả đúng bởi dạng tuyến tính theo tham số. & Hệ số có thể bị chệch vì mô hình sai dạng hàm trung bình. \\
-Tính chuẩn & Sai số thật thường được giả định $\boldsymbol{\varepsilon}\sim\mathcal{N}(\mathbf{0},\sigma^2 I)$. & Kiểm định $t$, kiểm định $F$ và khoảng tin cậy cổ điển có thể kém tin cậy trong mẫu nhỏ. \\
-Đồng nhất phương sai & $\mathrm{Var}(\varepsilon_i\mid \mathbf{X})=\sigma^2$ với mọi quan sát. & Sai số chuẩn cổ điển bị tính sai; p-value và khoảng tin cậy có thể gây hiểu nhầm. \\
-Tính độc lập của sai số & $\varepsilon_i \perp\!\!\!\perp \varepsilon_j\mid\mathbf{X}$, thường kéo theo $\mathrm{Cov}(\varepsilon_i,\varepsilon_j\mid\mathbf{X})=0$ với $i\neq j$. & SE cổ điển, kiểm định và khoảng tin cậy có thể sai, đặc biệt khi sai số phụ thuộc theo thời gian, không gian hoặc cụm quan sát. \\
-\bottomrule
-\end{tabularx}
-\end{center}
-
-\begin{notebox}
-\textbf{Điểm định hướng.} Khi đánh giá mô hình hồi quy, nên hỏi giả định nào đang bị nghi ngờ và giả định đó ảnh hưởng đến phần nào của phân tích: hệ số, sai số chuẩn, kiểm định giả thuyết, khoảng tin cậy hay dự báo.
-\end{notebox}
-
-% -----------------------------------------------------------------------------
+	\subsection{Hồi quy}
+	Dựa vào nghiên cứu của Weisberg trong tài liệu \textit{Applied Linear Regression} \cite{weisberg2014applied}, hồi quy là một phương pháp thống kê nền tảng được dùng để mô hình hóa và định lượng mối quan hệ giữa biến phản ứng ($Y$) và một hoặc nhiều biến tiên đoán ($\mathbf{X}$). Nền tảng toán học của hồi quy dựa trên Hàm kỳ vọng có điều kiện (Conditional Expectation Function - CEF), ký hiệu là $E(Y|\mathbf{X})$, biểu thị giá trị trung bình của $Y$ tại các mức giá trị cố định của $\mathbf{X}$. Khái niệm hồi quy bắt nguồn từ công trình của Sir Francis Galton vào cuối thế kỷ 19, khi ông quan sát hiện tượng chiều cao của các thế hệ "hồi quy về mức trung bình" \cite{galton1886}. Ngày nay, mục đích chính của hồi quy bao gồm:
+	\begin{itemize}
+		\item Mô tả và định lượng mối quan hệ thống kê giữa các biến số.
+		\item Dự báo giá trị của biến phản ứng dựa trên tập hợp biến giải thích.
+		\item Kiểm soát các biến gây nhiễu theo nguyên lý \textit{ceteris paribus} (giữ các yếu tố khác không đổi).
+	\end{itemize}
+	
+	\subsection{Mô hình hồi quy và Tính chất cốt lõi}
+	Dựa vào nghiên cứu của James và cộng sự \cite{james2013}, mô hình hồi quy là biểu diễn toán học chính thức cho hàm $f(X)$. Dạng cơ bản nhất là Hồi quy tuyến tính đơn (SLR):
+	\begin{equation}
+		Y_i = \beta_0 + \beta_1 X_i + \varepsilon_i
+	\end{equation}
+	Trong đó: $\beta_0$ và $\beta_1$ là các tham số dân số cần ước lượng, và $\varepsilon_i$ là sai số ngẫu nhiên biểu diễn những biến thiên không giải thích được. Các tính chất cốt lõi bao gồm:
+	\begin{itemize}
+		\item \textbf{Phần dư ($\hat{e}_i$)}: Sự chênh lệch giữa giá trị quan sát thực tế và giá trị dự báo mẫu ($\hat{e}_i = y_i - \hat{y}_i$).
+		\item \textbf{Hệ số xác định ($R^2$)}: Đo lường tỷ lệ phương sai của biến phản ứng $Y$ được giải thích bởi các biến độc lập trong mô hình.
+	\end{itemize}
+	
+	\subsection{Hồi quy bội}
+	Dựa vào tài liệu \textit{Linear Models with R} \cite{faraway2016}, hồi quy bội mở rộng cấu trúc tuyến tính đơn cho trường hợp có nhiều hơn hai biến tiên đoán ($p \geq 2$) nhằm kiểm soát tác động đồng thời của nhiều yếu tố và hạn chế thiên lệch do bỏ sót biến. Khi làm việc với mô hình hồi quy bội, cần đặc biệt lưu ý:
+	\begin{itemize}
+		\item \textbf{Kiểm định F toàn cục}: Dùng để đánh giá xem có ít nhất một biến giải thích tác động có ý nghĩa lên $Y$ hay không.
+		\item \textbf{Kiểm định t từng phần}: Đánh giá đóng góp biên của từng hệ số.
+		\item \textbf{Đa cộng tuyến (Multicollinearity)}: Hiện tượng các biến độc lập có tương quan mạnh với nhau, làm hệ số ước lượng kém ổn định.
+	\end{itemize}
+	
+	\subsection{Mô hình hồi quy bội dạng ma trận}
+	Dựa vào nghiên cứu của Rencher và Schaalje \cite{rencher2008linear}, mô hình hồi quy tuyến tính đa biến được biểu diễn thanh lịch dưới dạng đại số tuyến tính:
+	\begin{equation}
+		\mathbf{y} = \mathbf{X}\boldsymbol{\beta} + \mathbf{e}, \quad E(\mathbf{e}) = \mathbf{0}, \quad \text{Cov}(\mathbf{e}) = \sigma^2 \mathbf{I}_n
+	\end{equation}
+	Trong đó: $\mathbf{X}$ là ma trận thiết kế có kích thước $n \times (k+1)$ với cột đầu tiên là vectơ cột 1, $\mathbf{y}$ là vectơ cột của biến phản ứng, và $\boldsymbol{\beta}$ là vectơ các tham số hệ số. Để hệ phương trình chuẩn có nghiệm duy nhất, ma trận $\mathbf{X}$ phải có hạng cột đầy đủ.
+	
+	\subsection{Ước lượng OLS và Định lý Gauss - Markov}
+	\subsubsection{Mục đích và sự cần thiết của Ước lượng OLS}
+	Mục đích chính của phương pháp Bình phương Tối thiểu Thông thường (OLS) là tìm ra đường thẳng (hoặc siêu phẳng) phù hợp nhất với tập dữ liệu mẫu. Việc ước lượng OLS là vô cùng cần thiết vì trong thực tế, chúng ta không thể thu thập dữ liệu của toàn bộ tổng thể để tính toán các tham số thực $\boldsymbol{\beta}$. OLS cung cấp một cơ chế toán học tối ưu để xấp xỉ các tham số này bằng cách cực tiểu hóa tổng bình phương các sai số dự báo (Residual Sum of Squares - RSS).
+	
+	\subsubsection{Chứng minh toán học nghiệm OLS dạng đóng}
+	Phương pháp OLS tìm nghiệm $\hat{\boldsymbol{\beta}}$ nhằm tối thiểu hóa hàm mục tiêu $S(\boldsymbol{\beta})$:
+	\begin{equation}
+		S(\boldsymbol{\beta}) = \mathbf{e}^{\top}\mathbf{e} = (\mathbf{y} - \mathbf{X}\boldsymbol{\beta})^{\top}(\mathbf{y} - \mathbf{X}\boldsymbol{\beta})
+	\end{equation}
+	Khai triển và lấy đạo hàm bậc nhất của $S(\boldsymbol{\beta})$ theo vectơ $\boldsymbol{\beta}$, sau đó cho bằng $\mathbf{0}$ để thiết lập hệ phương trình chuẩn:
+	\begin{equation}
+		\frac{\partial S}{\partial \boldsymbol{\beta}} = -2\mathbf{X}^{\top}\mathbf{y} + 2\mathbf{X}^{\top}\mathbf{X}\boldsymbol{\beta} = \mathbf{0} \implies \mathbf{X}^{\top}\mathbf{X}\boldsymbol{\beta} = \mathbf{X}^{\top}\mathbf{y}
+	\end{equation}
+	Nhân hai vế với ma trận nghịch đảo $(\mathbf{X}^{\top}\mathbf{X})^{-1}$, ta thu được nghiệm OLS dạng đóng duy nhất:
+	\begin{equation}\label{eq:ols_solution}
+		\hat{\boldsymbol{\beta}}^{OLS} = (\mathbf{X}^{\top}\mathbf{X})^{-1} \mathbf{X}^{\top}\mathbf{y}
+	\end{equation}
+	
+	\subsubsection{Định lý Gauss - Markov và Mối quan hệ với OLS}
+	\textbf{Định lý Gauss-Markov} \cite{maddala2001} là nền tảng lý thuyết quan trọng nhất biện minh cho sự vĩ đại của phương pháp OLS. Định lý phát biểu rằng: \textit{Dưới các giả định cốt lõi của mô hình tuyến tính cổ điển, ước lượng OLS là ước lượng Tuyến tính Không chệch Tốt nhất (Best Linear Unbiased Estimator - BLUE).}
+	\textbf{Mối quan hệ:} OLS là "công cụ" tính toán, còn Định lý Gauss-Markov là "giấy chứng nhận" khẳng định rằng: Trong toàn bộ vũ trụ các phương pháp ước lượng tuyến tính và không chệch, không tồn tại phương pháp nào có phương sai nhỏ hơn OLS.
+	
+	\subsubsection{Chứng minh Định lý Gauss - Markov (Tính BLUE của OLS)}
+	Giả sử có một ước lượng tuyến tính bất kỳ khác $\tilde{\boldsymbol{\beta}} = \mathbf{C}\mathbf{y}$, với $\mathbf{C} = (\mathbf{X}^{\top}\mathbf{X})^{-1}\mathbf{X}^{\top} + \mathbf{D}$. 
+	Để $\tilde{\boldsymbol{\beta}}$ không chệch:
+	\begin{align}
+		E(\tilde{\boldsymbol{\beta}}) = E(\mathbf{C}\mathbf{y}) = \mathbf{C}\mathbf{X}\boldsymbol{\beta} = \boldsymbol{\beta} \implies \mathbf{C}\mathbf{X} = \mathbf{I} \implies \mathbf{D}\mathbf{X} = \mathbf{0}
+	\end{align}
+	Xét ma trận hiệp phương sai của $\tilde{\boldsymbol{\beta}}$:
+	\begin{align}
+		\text{Var}(\tilde{\boldsymbol{\beta}}) &= \sigma^2 \mathbf{C}\mathbf{C}^{\top} = \sigma^2 \left[(\mathbf{X}^{\top}\mathbf{X})^{-1}\mathbf{X}^{\top} + \mathbf{D}\right] \left[(\mathbf{X}^{\top}\mathbf{X})^{-1}\mathbf{X}^{\top} + \mathbf{D}\right]^{\top} \nonumber\\
+		&= \sigma^2(\mathbf{X}^{\top}\mathbf{X})^{-1} + \sigma^2\mathbf{D}\mathbf{D}^{\top} = \text{Var}(\hat{\boldsymbol{\beta}}^{OLS}) + \sigma^2\mathbf{D}\mathbf{D}^{\top}
+	\end{align}
+	Vì $\sigma^2\mathbf{D}\mathbf{D}^{\top}$ là ma trận nửa xác định dương, nên $\text{Var}(\tilde{\boldsymbol{\beta}}) \geq \text{Var}(\hat{\boldsymbol{\beta}}^{OLS})$. Vậy OLS là "Tốt nhất" (Best).
+	
+	\subsection{Các giả định cốt lõi và Đánh giá mức độ quan trọng}
+	Dựa vào nghiên cứu của Sheather \cite{sheather2009}. Theo Định lý Giới hạn Trung tâm (CLT), giả định về tính chuẩn của sai số sẽ trở nên bớt khắt khe khi cỡ mẫu lớn \cite{wooldridge2015}.
+	\begin{table}[H]
+		\centering
+		\caption{Bốn giả định của mô hình hồi quy bội và hệ quả}
+		\renewcommand{\arraystretch}{1.4}
+		\begin{tabular}{clp{5.5cm}p{4.5cm}}
+			\toprule
+			\textbf{Giả định} & \textbf{Chi tiết} & \textbf{Phát biểu toán học} & \textbf{Hệ quả khi vi phạm} \\
+			\midrule
+			A1 & Tính tuyến tính & $E[\varepsilon_i | \mathbf{X}] = 0$ & Ước lượng OLS bị chệch nghiêm trọng \\
+			A2 & Tính chuẩn & $\varepsilon_i \sim \mathcal{N}(0, \sigma^2)$ & Kiểm định $t, F$ sai ở mẫu nhỏ \\
+			A3 & Đồng nhất phương sai & $\text{Var}(\varepsilon_i | \mathbf{X}) = \sigma^2$ & OLS mất hiệu quả (không còn BLUE) \\
+			A4 & Tính độc lập & $\text{Cov}(\varepsilon_i, \varepsilon_j) = 0$, $i \neq j$ & SE ước lượng bị chệch, kiểm định sai \\
+			\bottomrule
+		\end{tabular}
+	\end{table}

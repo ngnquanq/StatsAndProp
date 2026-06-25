@@ -1,0 +1,30 @@
+\subsection{So Sánh và Quy Tắc Thực Hành}
+
+\begin{center}
+\small
+\begin{tabularx}{\textwidth}{@{}>{\bfseries}l>{\raggedright\arraybackslash}X>{\raggedright\arraybackslash}X@{}}
+\toprule
+Công cụ & Khi nên dùng & Lưu ý chính \\
+\midrule
+Residuals vs fitted & Bước chẩn đoán đầu tiên. & Tìm hình phễu, nhóm phân tán khác nhau hoặc pattern theo $\hat y$. \\
+Breusch--Pagan & Nghi ngờ phương sai thay đổi tuyến tính theo biến giải thích. & Nên ưu tiên phiên bản studentized khi không chắc sai số chuẩn. \\
+White test & Chưa biết dạng phương sai thay đổi. & Có thể tốn nhiều bậc tự do nếu mô hình có nhiều biến. \\
+HC3 robust SE & Mô hình trung bình hợp lý nhưng suy diễn cổ điển đáng nghi. & Giữ hệ số OLS, điều chỉnh sai số chuẩn và p-value. \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+\subsubsection{Workflow Đề Xuất}
+
+\begin{enumerate}
+  \item Vẽ phần dư theo giá trị khớp và theo các biến dự báo quan trọng.
+  \item Nếu có pattern về độ phân tán, dùng Breusch--Pagan hoặc White test để bổ sung bằng chứng.
+  \item Nếu phương sai thay đổi nhưng dạng hàm trung bình vẫn hợp lý, báo cáo kết quả với sai số chuẩn vững HC3; ví dụ \texttt{Prestige} minh họa cách SE và khoảng tin cậy thay đổi sau hiệu chỉnh.
+  \item Nếu phương sai thay đổi phản ánh sai dạng mô hình, biến bị thiếu hoặc thang đo phản hồi không phù hợp, cần sửa mô hình thay vì chỉ đổi sai số chuẩn.
+\end{enumerate}
+
+\begin{tipbox}
+\textbf{Quy tắc ngắn.} Heteroscedasticity chủ yếu làm hỏng sai số chuẩn cổ điển, không tự động làm hỏng hệ số OLS. Nhưng nếu nó đi kèm pattern trong phần dư, đó có thể là dấu hiệu mô hình trung bình chưa đúng.
+\end{tipbox}
+
+% -----------------------------------------------------------------------------

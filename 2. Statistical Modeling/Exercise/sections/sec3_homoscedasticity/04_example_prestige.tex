@@ -1,115 +1,252 @@
-\subsection{Ví Dụ R: Dataset \texttt{Prestige}}
+	\subsection{So sánh, Đánh giá và Thực hành R}
+	Để làm rõ các lý thuyết kiểm định và phương pháp khắc phục đã nêu, phân mục này trình bày kết quả thực nghiệm kiểm tra tính đồng nhất phương sai trên tập dữ liệu thực tế \texttt{Prestige} (dự báo điểm số uy tín nghề nghiệp từ thu nhập và trình độ học vấn).
+	
+	\subsubsection{Kết quả ước lượng OLS mẫu (Chưa hiệu chỉnh)}
+    Xây dựng đoạn code chạy trên RStudio như sau:\\
+\noindent\fbox{%
+		\begin{minipage}{\dimexpr\textwidth-2\fboxsep-2\fboxrule}
+			\small\ttfamily
+			\# =========================================================================\\
+			\# THỰC HÀNH R: KIỂM ĐỊNH, KHẮC PHỤC VÀ VẼ BIỂU ĐỒ PHƯƠNG SAI THAY ĐỔI\\
+			\# =========================================================================\\
+			\\
+			\# 1. CÀI ĐẶT CÁC GÓI LỆNH\\ 
+			\# (Xóa dấu \# ở 4 dòng dưới đây và chạy 1 lần duy nhất nếu máy bạn chưa cài đặt)\\
+			\# install.packages("car")\\
+			\# install.packages("lmtest")\\
+			\# install.packages("sandwich")\\
+			\# install.packages("ggplot2")\\
+			\\
+			\# 2. GỌI THƯ VIỆN (Bắt buộc phải chạy để không bị lỗi "could not find function")\\
+			library(car)\\
+			library(lmtest)\\
+			library(sandwich)\\
+			library(ggplot2)\\
+			\\
+			\# 3. NẠP DỮ LIỆU VÀ CHẠY MÔ HÌNH OLS GỐC\\
+			data(Prestige)\\
+			model <- lm(prestige $\sim$ income + education, data = Prestige)\\
+			\\
+			cat("\textbackslash{}n===============================================================\textbackslash{}n")\\
+			cat("1. BẢNG KẾT QUẢ OLS GỐC (CHƯA HIỆU CHỈNH)\textbackslash{}n")\\
+			cat("===============================================================\textbackslash{}n")\\
+			print(summary(model))
+		\end{minipage}%
+	}
+	Mô hình ước lượng ban đầu bằng phương pháp bình phương bé nhất (OLS) cho kết quả như sau:
+\begin{verbatim}
+Call:
+lm(formula = prestige ~ income + education, data = Prestige)
 
-Để nối phần lý thuyết với thực hành, xét mô hình dự báo điểm uy tín nghề nghiệp từ thu nhập và trình độ học vấn trong bộ dữ liệu \texttt{Prestige}:
-\[
-  \texttt{prestige}_i
-  =
-  \beta_0
-  + \beta_1\texttt{income}_i
-  + \beta_2\texttt{education}_i
-  + \varepsilon_i.
-\]
-Mục tiêu của ví dụ là kiểm tra liệu sai số chuẩn OLS cổ điển có đáng tin hay cần hiệu chỉnh bằng sai số chuẩn vững HC3.
+Residuals:
+     Min       1Q   Median       3Q      Max 
+-19.4040  -5.3308   0.0154   4.9803  17.6889 
 
-\subsubsection{Fit Mô Hình OLS Gốc}
-
-\begin{lstlisting}[style=Rstyle]
-library(car)
-library(lmtest)
-library(sandwich)
-library(ggplot2)
-
-data(Prestige)
-model <- lm(prestige ~ income + education, data = Prestige)
-summary(model)
-\end{lstlisting}
-
-Kết quả OLS gốc:
-\begin{lstlisting}[style=output]
 Coefficients:
               Estimate Std. Error t value Pr(>|t|)    
-(Intercept) -6.8477787  3.2189771  -2.127   0.0359 *  
-income       0.0013612  0.0002242   6.071 2.36e-08 ***
+(Intercept) -6.8477787  3.2189771  -2.127   0.0359 * income       0.0013612  0.0002242   6.071 2.36e-08 ***
 education    4.1374444  0.3489120  11.858  < 2e-16 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
 
 Residual standard error: 7.81 on 99 degrees of freedom
-Multiple R-squared: 0.798, Adjusted R-squared: 0.7939
-F-statistic: 195.6 on 2 and 99 DF, p-value: < 2.2e-16
-\end{lstlisting}
+Multiple R-squared:  0.798,    Adjusted R-squared:  0.7939 
+F-statistic: 195.6 on 2 and 99 DF,  p-value: < 2.2e-16
+\end{verbatim}
 
-\textbf{Diễn giải ban đầu.} Cả \texttt{income} và \texttt{education} đều có hệ số dương và có ý nghĩa thống kê rất mạnh trong output OLS gốc. Tuy nhiên, kết luận này vẫn dựa trên sai số chuẩn cổ điển; cần kiểm tra giả định đồng nhất phương sai trước khi tin vào p-value.
+	\paragraph{Ý nghĩa các hệ số hồi quy:}
+	\begin{itemize}
+		\item \textbf{Hệ số chặn (Intercept = -6.8478):} Khi thu nhập (\texttt{income}) và học vấn (\texttt{education}) bằng 0, điểm uy tín nghề nghiệp lý thuyết là $-6.8478$. Hệ số này có ý nghĩa thống kê ở mức biên 5\% ($p = 0.0359 < 0.05$).
+		\item \textbf{Hệ số biến \texttt{income} (0.00136):} Khi thu nhập tăng thêm 1 đơn vị (và trình độ học vấn không đổi), điểm uy tín tăng trung bình $0.00136$ điểm. Mối quan hệ này có ý nghĩa thống kê cực kỳ cao ($p = 2.36 \times 10^{-8} < 0.001$).
+		\item \textbf{Hệ số biến \texttt{education} (4.1374):} Khi số năm đi học tăng thêm 1 năm (và thu nhập không đổi), điểm uy tín nghề nghiệp tăng trung bình $4.1374$ điểm. Biến này có ý nghĩa thống kê tối cao ($p < 2 \times 10^{-16}$).
+	\end{itemize}
 
-\subsubsection{Breusch--Pagan và White Test}
+	\paragraph{Độ phù hợp tổng thể:} Hệ số xác định hiệu chỉnh $R^2_{\text{adj}} = 0.7939$ chỉ ra rằng hai biến độc lập giải thích được khoảng \textbf{79.39\%} sự biến động của điểm uy tín nghề nghiệp. Kiểm định $F$ với giá trị $p < 2.2 \times 10^{-16}$ cho thấy mô hình hoàn toàn phù hợp về mặt tổng thể.
 
-\begin{lstlisting}[style=Rstyle]
-bptest(model)
+	\paragraph{Tường giải tất cả thông số kỹ thuật trong kết quả OLS:}
+	Để làm sâu sắc hơn phần phân tích thực nghiệm, ý nghĩa kinh tế lượng chi tiết của từng thông số nền tảng xuất hiện trong bảng kết quả R được trình bày tại Bảng \ref{tab:ols_full_parameters}.
 
-bptest(
-  model,
-  ~ income * education + I(income^2) + I(education^2),
-  data = Prestige
-)
-\end{lstlisting}
+	\begin{table}[H]
+		\centering
+		\caption{Giải thích chi tiết các thông số trong kết quả OLS gốc}
+		\label{tab:ols_full_parameters}
+		\small
+		\renewcommand{\arraystretch}{1.3}
+		\begin{tabularx}{\textwidth}{l p{3.2cm} X}
+			\toprule
+			\textbf{Thành phần} & \textbf{Thông số kỹ thuật} & \textbf{Ý nghĩa kinh tế lượng và diễn giải thực nghiệm} \\
+			\midrule
+			\textbf{Residuals} & Min, 1Q, Median, 3Q, Max & Thống kê mô tả phân phối phần dư ($\hat{e}_i = y_i - \hat{y}_i$). Giá trị trung vị (\textit{Median} = 0.0154) tiệm cận sát mức 0 và khoảng cách đối xứng tương đối giữa phân vị thứ nhất và phân vị thứ ba ($-5.33$ và $4.98$) cung cấp chỉ dấu thực nghiệm ban đầu rằng sai số tuân theo giả định phân phối chuẩn. \\
+			\addlinespace
+			\textbf{Coefficients} & \textbf{Estimate} ($\hat{\beta}_j$) & Giá trị ước lượng điểm của các hệ số hồi quy mẫu, phản ánh độ lớn và chiều tác động biên của các biến độc lập lên biến phụ thuộc. \\
+			\addlinespace
+			& \textbf{Std. Error} ($SE$) & Sai số chuẩn của các hệ số góc. Đo lường độ biến động phân phối mẫu của $\hat{\beta}_j$. Sai số chuẩn càng nhỏ chứng tỏ ước lượng điểm càng chính xác và có độ tin cậy cao. \\
+			\addlinespace
+			& \textbf{t value} & Thống kê kiểm định $t$, xác định bằng tỉ số giữa hệ số ước lượng và sai số chuẩn tương ứng ($\hat{\beta}_j / SE(\hat{\beta}_j)$). Giá trị $|t| > 1.96$ cho thấy biến độc lập có đóng góp biên ý nghĩa đối với mô hình. \\
+			\addlinespace
+			& \textbf{Pr($>|t|$)} & Giá trị $p\text{-value}$ của kiểm định $t$ từng phần. Đại diện cho xác suất bác bỏ sai lầm giả thuyết $H_0: \beta_j = 0$. Mức $p < 0.05$ khẳng định tác động có ý nghĩa thống kê rõ rệt. \\
+			\addlinespace
+			\textbf{Model Fit} & \textbf{Residual standard error} & Sai số chuẩn của mô hình hồi quy ($\hat{\sigma} = 7.81$). Phản ánh độ lệch trung bình của các điểm dữ liệu thực tế xung quanh siêu phẳng hồi quy ước lượng. \\
+			\addlinespace
+			& \textbf{Degrees of freedom} & Số bậc tự do của phần dư ($df = 99$), tính bằng $n - k - 1 = 102 - 2 - 1 = 99$. Đây là mẫu số hiệu chỉnh để tính toán phương sai không chệch của sai số. \\
+			\addlinespace
+			& \textbf{Multiple $R^2$} & Hệ số xác định ($R^2 = 0.798$), đo lường tỷ lệ phần trăm sự biến động của điểm uy tín nghề nghiệp được giải thích bởi tập hợp hai biến độc lập. \\
+			\addlinespace
+			& \textbf{Adjusted $R^2$} & Hệ số xác định hiệu chỉnh ($\bar{R}^2 = 0.7939$), thước đo độ phù hợp khách quan đã loại bỏ hiện tượng tăng ảo dòng $R^2$ khi đưa thêm biến vào mô hình. \\
+			\addlinespace
+			& \textbf{F-statistic} \& \textbf{p-value} & Giá trị thống kê $F = 195.6$ dùng cho kiểm định ràng buộc toàn cục $H_0: \beta_1 = \beta_2 = 0$. Mức $p\text{-value} < 2.2 \times 10^{-16}$ chứng minh mô hình có ý nghĩa tổng thể tối cao. \\
+			\bottomrule
+		\end{tabularx}
+	\end{table}
+	\subsubsection{Kết quả thực nghiệm các kiểm định phương sai thay đổi}
+	Để thực nghiệm các kiểm định phương sai thay đổi, ta tiếp tục thêm vào các dòng code như sau:\\
+    \noindent\fbox{%
+		\begin{minipage}{\dimexpr\textwidth-2\fboxsep-2\fboxrule}
+			\small\ttfamily
+			\# 4. CÁC KIỂM ĐỊNH PHÁT HIỆN PHƯƠNG SAI THAY ĐỔI\\
+cat("\n=================================================\n")\\
+cat("2. KIỂM ĐỊNH BREUSCH-PAGAN (1979)\n")\\
+cat("===================================================\n")\\
+print(bptest(model))\\
 
-\begin{lstlisting}[style=output]
-Breusch-Pagan:
+cat("\n=================================================\n")\\
+cat("3. KIỂM ĐỊNH WHITE (1980)\n")\\
+cat("===================================================\n")\\
+print(bptest(model, ~ income * education + I(income^2) + I(education^2), data = Prestige))\\
+		\end{minipage}%
+	}
+	\paragraph{Kết quả kiểm định Breusch-Pagan (1979):}
+	\begin{verbatim}
+	studentized Breusch-Pagan test
+
+data:  model
 BP = 4.1838, df = 2, p-value = 0.1235
+	\end{verbatim}
+	Vì $p\text{-value} = 0.1235 > 0.05$, ta chưa có đủ bằng chứng để bác bỏ giả thuyết $H_0$. Kiểm định B-P cho thấy mô hình không vi phạm hiện tượng phương sai thay đổi ở dạng cấu trúc tuyến tính đơn giản.
+	
+	\paragraph{Kết quả kiểm định White (1980):}
+	\begin{verbatim}
+	studentized Breusch-Pagan test
 
-White-style auxiliary test:
+data:  model
 BP = 12.965, df = 5, p-value = 0.02371
-\end{lstlisting}
+	\end{verbatim}
+	Khác với kiểm định B-P, kiểm định White mở rộng xét cả các dạng bậc hai và tương tác chéo. Kết quả cho thấy $p\text{-value} = 0.02371 < 0.05$, dẫn đến việc \textbf{bác bỏ giả thuyết $H_0$}. Kết luận: Sai số của mô hình tồn tại hiện tượng phương sai thay đổi do các tác động phi tuyến tính gây ra. Do đó, các sai số chuẩn ước lượng bằng OLS gốc không còn đáng tin cậy.
 
-Breusch--Pagan chưa bác bỏ $H_0$ ở mức $5\%$, nghĩa là chưa thấy bằng chứng mạnh cho phương sai thay đổi tuyến tính theo \texttt{income} và \texttt{education}. Ngược lại, kiểm định kiểu White mở rộng thêm bình phương và tương tác, cho p-value nhỏ hơn $0.05$, gợi ý phương sai thay đổi theo cấu trúc phi tuyến hoặc tương tác.
+	\subsubsection{Hiệu chỉnh bằng Sai số chuẩn vững HC3}
+    Viết thêm các dòng code sau để hiệu chỉnh:\\
+    \noindent\fbox{%
+		\begin{minipage}{\dimexpr\textwidth-2\fboxsep-2\fboxrule}
+			\small\ttfamily
+			\# 5. KHẮC PHỤC BẰNG ROBUST STANDARD ERRORS (CHUẨN HC3)\\
+cat("\n=================================================\n")\\
+cat("4. BẢNG KẾT QUẢ VỚI ROBUST STANDARD ERRORS (CHUẨN HC3)\n")\\
+cat("===================================================\n")\\
+robust\_model <- coeftest(model, vcov = vcovHC(model, type = "HC3"))\\
+print(robust\_model)\\
+		\end{minipage}
+        %
+    }
+	Để khắc phục vi phạm phát hiện bởi kiểm định White, ma trận hiệp phương sai vững chuẩn HC3 được áp dụng. Kết quả kiểm định lại các hệ số như sau:
+	
+\begin{verbatim}
+t test of coefficients:
 
-\begin{figure}[H]
-  \centering
-  \includegraphics[width=0.82\textwidth]{./media/homoscedasticity_diagnostics.png}
-  \caption{Chẩn đoán đồ thị cho mô hình \texttt{Prestige}. Residuals vs Fitted giúp kiểm tra mẫu hình phần dư; Scale-Location trực tiếp gợi ý độ phân tán phần dư có thay đổi theo giá trị khớp hay không.}
-  \label{fig:homoscedasticity_prestige_diagnostics}
-\end{figure}
-
-Hình~\ref{fig:homoscedasticity_prestige_diagnostics} bổ sung bằng chứng trực quan: đường làm mịn trong Scale-Location không nằm ngang hoàn toàn và độ phân tán thay đổi theo vùng giá trị khớp. Điều này phù hợp với kết quả White test và biện minh cho bước kiểm tra suy diễn bằng sai số chuẩn vững.
-
-\subsubsection{Hiệu Chỉnh Bằng HC3}
-
-\begin{lstlisting}[style=Rstyle]
-robust_model <- coeftest(model, vcov = vcovHC(model, type = "HC3"))
-robust_model
-\end{lstlisting}
-
-\begin{lstlisting}[style=output]
                Estimate  Std. Error t value  Pr(>|t|)    
-(Intercept) -6.84777872  3.25355462 -2.1047   0.03785 *  
-income       0.00136117  0.00029942  4.5460 1.549e-05 ***
+(Intercept) -6.84777872  3.25355462 -2.1047   0.03785 * income       0.00136117  0.00029942  4.5460 1.549e-05 ***
 education    4.13744438  0.39588932 10.4510 < 2.2e-16 ***
-\end{lstlisting}
+\end{verbatim}
 
-\begin{center}
-\small
-\begin{tabular}{@{}lrrrr@{}}
-\toprule
-\textbf{Biến} & \textbf{Estimate} & \textbf{OLS SE} & \textbf{HC3 SE} & \textbf{HC3 p-value} \\
-\midrule
-Intercept & $-6.84778$ & $3.21898$ & $3.25355$ & $0.03785$ \\
-\texttt{income} & $0.00136$ & $0.00022$ & $0.00030$ & $1.549\times 10^{-5}$ \\
-\texttt{education} & $4.13744$ & $0.34891$ & $0.39589$ & $<2.2\times 10^{-16}$ \\
-\bottomrule
-\end{tabular}
-\end{center}
+	\paragraph{Đánh giá sau hiệu chỉnh:} 
+	Để có cái nhìn trực quan về hiệu quả của việc điều chỉnh, Bảng \ref{tab:robust_comparison} tổng hợp lại sự thay đổi của sai số chuẩn trước và sau khi sử dụng cấu trúc HC3.
+	
+	\begin{table}[H]
+		\centering
+		\caption{So sánh sai số chuẩn OLS gốc và sai số chuẩn vững HC3}
+		\label{tab:robust_comparison}
+		\small
+		\renewcommand{\arraystretch}{1.2}
+		\begin{tabular}{lccccc}
+			\toprule
+			\textbf{Biến độc lập} & \textbf{Hệ số ($\hat{\beta}$)} & \textbf{SE Gốc} & \textbf{SE Vững (HC3)} & \textbf{$p$-value Gốc} & \textbf{$p$-value (HC3)} \\
+			\midrule
+			Hệ số chặn (\textit{Intercept}) & -6.84778 & 3.21898 & 3.25355 $\uparrow$ & 0.03590 & 0.03785 \\
+			Thu nhập (\textit{income})      &  0.00136 & 0.00022 & 0.00030 $\uparrow$ & 2.36e-08 & 1.55e-05 \\
+			Học vấn (\textit{education})    &  4.13744 & 0.34891 & 0.39589 $\uparrow$ & < 2e-16  & < 2.2e-16 \\
+			\bottomrule
+		\end{tabular}
+	\end{table}
+	\paragraph{Kết luận:}
+	Dưới tác động của hiện tượng phương sai thay đổi, sai số chuẩn tính toán từ thuật toán OLS thông thường có xu hướng bị hạ thấp quá mức so với thực tế (lạc quan sai lệch). Sau khi hiệu chỉnh bằng chuẩn vững HC3, các sai số chuẩn (\textit{Std. Error}) đều tăng lên. Tuy nhiên, mức độ ý nghĩa thống kê của hai biến độc lập cốt lõi là \texttt{income} và \texttt{education} \textbf{vẫn giữ nguyên vẹn ký hiệu ý nghĩa tối cao ($***$)}. Điều này chứng minh mối quan hệ tác động tích cực của thu nhập và trình độ học vấn đến uy tín nghề nghiệp là hoàn toàn bền vững và có độ tin cậy khoa học rất cao.
+	\begin{itemize}
+		\item \textbf{B-P Test:} Nhanh, mạnh khi phương sai thay đổi tuyến tính, nhưng dễ sai lệch nếu phân phối sai số bất thường (Khắc phục bằng Koenker studentized).
+		\item \textbf{White Test:} Toàn diện, không cần định hình trước cấu trúc, nhưng hao tốn quá nhiều bậc tự do, yếu ở mẫu nhỏ.
+		\item \textbf{Robust SE (HC3):} Không phải là phép kiểm định mà là "liều thuốc chữa bệnh". Giữ vững tính không chệch của OLS, hiệu chỉnh lại $SE$ để đưa ra quyết định thống kê khoa học nhất.
+	\end{itemize}
+	\subsubsection{Trực quan hóa kết quả}
+    Để trực quan hóa kết quả, ta xây dựng đoạn code như sau:\\
+    \noindent\fbox{%
+		\begin{minipage}{\dimexpr\textwidth-2\fboxsep-2\fboxrule}
+			\small\ttfamily
+			\# 6. VẼ BIỂU ĐỒ MINH HỌA TRỰC QUAN\\
+\# ------------------------------------------------------\\
+\# 6.1 Biểu đồ chẩn đoán cơ bản (Xuất hiện trong tab Plots mặc định)\\
+par(mfrow = c(1, 2))\\ 
+plot(model, which = 1, main = "Residuals vs Fitted\n(Phân tán phần dư)", pch = 16, col = "steelblue")\\
+plot(model, which = 3, main = "Scale-Location\n(Kiểm tra phương sai)", pch = 16, col = "darkorange")\\
+par(mfrow = c(1, 1))\\ 
 
-Sau khi dùng HC3, sai số chuẩn của \texttt{income} và \texttt{education} đều tăng. Đây là dấu hiệu thường gặp khi SE cổ điển quá lạc quan dưới phương sai thay đổi. Tuy vậy, dấu hệ số và kết luận định tính không đổi: thu nhập và học vấn vẫn có quan hệ dương với điểm uy tín nghề nghiệp.
+\# ------------------------------------------------------\\
+\# 6.2 Biểu đồ so sánh Khoảng tin cậy bằng ggplot2\\
+\# Lấy khoảng tin cậy của OLS\\
+ci\_ols <- confint(model)[2:3, ]\\ 
 
-\begin{figure}[H]
-  \centering
-  \includegraphics[width=0.82\textwidth]{./media/homoscedasticity_hc3_ci.png}
-  \caption{So sánh khoảng tin cậy 95\% giữa OLS SE và HC3 robust SE. Điểm ước lượng giữ nguyên, nhưng khoảng tin cậy HC3 rộng hơn do độ bất định được hiệu chỉnh.}
-  \label{fig:homoscedasticity_prestige_hc3_ci}
+\# Lấy khoảng tin cậy của HC3\\
+ci\_hc3 <- coefci(model, vcov. = vcovHC(model, type = "HC3"))[2:3, ]\\
+
+\# Tạo dataframe để vẽ biểu đồ\\
+df\_plot <- data.frame(
+  Variable = rep(c("Income", "Education"), 2),\\
+  Method = rep(c("1. OLS Standard Errors", "2. Robust SE (HC3)"), each = 2),\\
+  Estimate = rep(coef(model)[2:3], 2),\\
+  Lower = c(ci\_ols[, 1], ci\_hc3[, 1]),\\
+  Upper = c(ci\_ols[, 2], ci\_hc3[, 2])\\
+)\\
+
+\# Vẽ biểu đồ và lưu vào biến bieu\_do\\
+bieu\_do <- ggplot(df\_plot, aes(x = Variable, y = Estimate, color = Method)) +\\ 
+  geom\_point(position = position\_dodge(width = 0.5), size = 3) +\\
+  geom\_errorbar(aes(ymin = Lower, ymax = Upper),\\ 
+                position = position\_dodge(width = 0.5),\\ 
+                width = 0.2, linewidth = 1) +\\
+  facet\_wrap(~ Variable, scales = "free") +\\
+  labs(title = "So sánh Khoảng tin cậy 95\% (OLS vs Robust HC3)",\\
+       subtitle = "Khoảng tin cậy rộng hơn cho thấy SE đã được hiệu chỉnh mạnh mẽ",\\
+       x = "Biến độc lập",\\
+       y = "Giá trị hệ số ước lượng") +\\
+  theme\_minimal() +\\
+  scale\_color\_manual(values = c("steelblue", "firebrick")) +\\
+  theme(legend.position = "bottom",
+        text = element\_text(size = 12),
+        strip.text = element\_text(face = "bold", size = 12))\\
+
+\# Lệnh này sẽ in trực tiếp biểu đồ ggplot ra tab Plots\\
+print(bieu\_do)
+		\end{minipage}%
+	}
+\begin{figure}
+    \centering
+    \includegraphics[width=0.8\textwidth]{nhuw/1.png}
+    \caption{Biểu đồ chẩn đoán cơ bản}
+    \label{fig:Biểu đồ chẩn đoán cơ bản}
 \end{figure}
-
-Hình~\ref{fig:homoscedasticity_prestige_hc3_ci} nhấn mạnh điểm thực hành quan trọng: robust SE không thay đổi hệ số OLS, mà thay đổi cách đo độ bất định của hệ số. Vì các khoảng tin cậy HC3 vẫn nằm cùng phía so với $0$, kết luận về tác động dương của \texttt{income} và \texttt{education} vẫn ổn định.
-
-\begin{notebox}
-\textbf{Bài học từ Prestige.} Breusch--Pagan có thể không phát hiện phương sai thay đổi tuyến tính, trong khi White test và Scale-Location plot gợi ý cấu trúc phức tạp hơn. Khi nghi ngờ SE cổ điển, báo cáo HC3 giúp suy diễn thận trọng hơn mà vẫn giữ nguyên hệ số OLS.
-\end{notebox}
-
-% -----------------------------------------------------------------------------
+Dựa vào ảnh trên, ta có thể thấy rằng đồ thị chẩn đoán gồm hai cấu phần độc lập đóng vai trò kiểm tra các giả định nền tảng của mô hình OLS gốc trước khi tiến hành suy diễn thống kê.\\
+Đối với đồ thị bên trái: "Residuals vs Fitted" (Phân tán phần dư). Đồ thị này chủ yếu được sử dụng để thẩm định giả định A1 về tính tuyến tính và sàng lọc các quan sát ngoại lai có tầm ảnh hưởng lớn. Đặc tính hình học của đồ thị được thể hiện qua đường xu hướng màu đỏ (đường làm mịn dạng LOESS) vẽ xuyên qua đám mây phần dư. Về tổng thể, đường màu đỏ này bám tương đối sát và dao động xung quanh đường tham chiếu nét đứt $e = 0$ tại phân khúc tập trung mật độ dữ liệu cao (giá trị dự báo từ 30 đến 70). Tuy nhiên, khi giá trị dự báo vượt ngưỡng 70, đường xu hướng có xu hướng chúi xuống tương đối rõ nét. Sự lệch hướng ở phần đuôi này phát ra một chỉ dấu thực nghiệm về một sự vi phạm cục bộ đối với dạng hàm tuyến tính thuần túy ở các vùng biên dữ liệu cao. Thêm vào đó, thuật toán đồ thị đã tự động gắn nhãn định danh cho ba quan sát có phần dư cực đoan nhất trong mẫu: điểm farmers nằm cô lập ở phía trên đại diện cho sai số dương lớn (mô hình dự báo thấp hơn thực tế), trong khi hai điểm collectors và newsboys bị kéo mạnh xuống phía dưới đáy đồ thị biểu thị sai số âm nghiêm trọng (mô hình dự báo vượt quá xa thực tế).\\
+Bên cạnh đó, đồ thị bên phải: "Scale-Location" (Kiểm tra phương sai) cung cấp bằng chứng trực quan định tính, đóng vai trò nền tảng củng cố cho kết quả của kiểm định White ($p = 0.02371$) về việc vi phạm giả định A3: Đồng nhất phương sai. Đồ thị biểu diễn mối quan hệ giữa căn bậc hai của giá trị tuyệt đối phần dư chuẩn hóa và giá trị dự báo. Nếu giả định đồng nhất phương sai được thỏa mãn, đường xu hướng màu đỏ bắt buộc phải là một đường thẳng nằm ngang hoàn hảo và đám mây dữ liệu phải phân tán đều đặn theo chiều thẳng đứng. Trái lại, đồ thị thực tế hiển thị đường màu đỏ uốn lượn hình sóng, ban đầu hơi võng xuống ở mức giá trị 40 và sau đó dốc ngược đi lên khi vượt quá mức 70.Đồng thời, cấu trúc hình học của các điểm dữ liệu cho thấy sự bất đối xứng nghiêm trọng về độ phân tán dọc. Tại phân khúc giá trị dự báo từ 30 đến 60, các điểm dữ liệu tạo thành một cột phương sai rất cao và dày đặc, bị đẩy lên đỉnh bởi các quan sát ngoại lai có độ biến động cực lớn đã được nhận diện là newsboys, farmers và collectors. Ngược lại, khi tiến về phía cuối trục hoành, mật độ điểm co cụm lại và biên độ phân tán dọc bị thay đổi hình thái. Hiện tượng đám mây phần dư phình-ngót không đều và đường xu hướng uốn cong này là một minh chứng hình học kinh điển cho thấy phương sai của sai số ngẫu nhiên bị phụ thuộc vào đại lượng dự báo. Nó bác bỏ hoàn toàn giả thuyết về một hằng số phương sai duy nhất, khẳng định mô hình đã mắc căn bệnh phương sai thay đổi do các tác động phi tuyến gây ra, và chứng minh việc bạn sử dụng liều thuốc sai số chuẩn vững HC3 ở đồ thị trước là một bước xử lý kỹ thuật hoàn toàn bắt buộc và chính xác.
+\begin{figure}
+    \centering
+    \includegraphics[width=0.8\textwidth]{nhuw/2.png}
+    \caption{Biểu đồ so sánh Khoảng tin cậy bằng ggplot2}
+    \label{fig:Biểu đồ so sánh Khoảng tin cậy bằng ggplot2}
+\end{figure}
+Dựa vào ảnh trên, đồ thị so sánh khoảng tin cậy 95\% cung cấp một minh chứng trực quan rõ rệt cho giai đoạn khắc phục hiện tượng phương sai thay đổi trong quy trình phân tích. Đồ thị thực hiện so sánh các khoảng tin cậy của hệ số hồi quy được tính toán từ sai số chuẩn OLS truyền thống (màu xanh) và sai số chuẩn vững Huber-White hệ số hiệu chỉnh HC3 (màu đỏ) đối với hai biến độc lập là trình độ học vấn (Education) và thu nhập (Income).Đặc tính cốt lõi đầu tiên cần ghi nhận là vị trí của các điểm ước lượng (các chấm tròn biểu diễn hệ số $\hat{\beta}$) của cả hai phương pháp đều hoàn toàn trùng khớp nhau trên cùng một đường ngang. Đặc điểm này chứng minh một nguyên lý tảng băng trong kinh tế lượng: việc hiệu chỉnh sai số chuẩn vững không hề làm thay đổi giá trị của các hệ số hồi quy mẫu vốn đã đạt tính không chệch, mà nó chỉ tái định lượng độ biến động phân phối mẫu của chúng.Tuy nhiên, đặc tính kỹ thuật quan trọng nhất nằm ở chiều dài của các thanh sai số (error bars). Khoảng tin cậy màu đỏ của hệ số vững HC3 ở cả hai biến đều giãn rộng hơn một cách rõ rệt so với khoảng tin cậy màu xanh của OLS gốc. Khi mô hình tồn tại hiện tượng phương sai thay đổi, thuật toán OLS thông thường sẽ làm hạ thấp sai số chuẩn một cách sai lệch, từ đó bóp nghẹt khoảng tin cậy khiến người nghiên cứu rơi vào trạng thái "lạc quan giả tạo". Phép hiệu chỉnh HC3 đã trừng phạt và đẩy sai số chuẩn về đúng quy mô tiệm cận thực tế của nó, làm mở rộng khoảng tin cậy để phản ánh đúng mức độ rủi ro của dữ liệu. Điểm mấu chốt cuối cùng là dù khoảng tin cậy HC3 có bị kéo rộng ra, cả hai thanh sai số đều nằm hoàn toàn về một phía so với giá trị 0 (thanh của Education duy trì vị trí cao trên mức 3.0 và thanh của Income nằm hoàn toàn trên mức 0.00075). Điều này khẳng định kết luận trong bảng tổng hợp của bài báo cáo: sau khi chịu một cơ chế phạt nghiêm khắc từ HC3, tác động biên của thu nhập và học vấn đến uy tín nghề nghiệp vẫn giữ nguyên vẹn ý nghĩa thống kê tối cao ($***$).

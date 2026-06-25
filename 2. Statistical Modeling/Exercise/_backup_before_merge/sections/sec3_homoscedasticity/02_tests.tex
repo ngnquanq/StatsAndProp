@@ -1,0 +1,44 @@
+\subsection{Kiểm Định Hình Thức}
+
+Các kiểm định phương sai thay đổi nên được dùng như bằng chứng bổ sung cho chẩn đoán đồ thị. Một p-value nhỏ cho thấy có dấu hiệu phương sai thay đổi, nhưng vẫn cần xem mức độ vi phạm có đủ lớn để ảnh hưởng đến kết luận hay không.
+
+\subsubsection{Kiểm Định Breusch--Pagan}
+
+Kiểm định Breusch--Pagan phù hợp khi nghi ngờ phương sai sai số thay đổi theo một hàm tuyến tính của các biến giải thích \cite{breusch1979}. Ý tưởng chính là kiểm tra xem bình phương phần dư từ mô hình gốc có được giải thích bởi các biến dự báo hay không.
+
+Giả thuyết kiểm định:
+\[
+  H_0: \mathrm{Var}(\varepsilon_i\mid\mathbf{x}_i)=\sigma^2,
+  \qquad
+  H_1: \mathrm{Var}(\varepsilon_i\mid\mathbf{x}_i)\text{ thay đổi theo }\mathbf{x}_i.
+\]
+
+Quy trình thực hiện:
+\begin{enumerate}
+  \item Khớp mô hình OLS gốc và lấy phần dư $\hat e_i$.
+  \item Hồi quy phụ $\hat e_i^2$ theo các biến giải thích.
+  \item Dùng thống kê dựa trên $R^2$ của hồi quy phụ, thường viết $LM=nR^2_{\mathrm{aux}}$.
+\end{enumerate}
+
+Dưới $H_0$, thống kê này xấp xỉ phân phối $\chi^2$ với bậc tự do bằng số biến trong hồi quy phụ. Phiên bản studentized của Koenker \cite{koenker1981} thường được dùng trong phần mềm vì bền hơn khi sai số không chuẩn.
+
+\subsubsection{Kiểm Định White}
+
+Kiểm định White tổng quát hơn Breusch--Pagan vì không cần chỉ định trước dạng tuyến tính của phương sai thay đổi \cite{white1980}. Hồi quy phụ có thể bao gồm biến gốc, bình phương biến và các tích chéo:
+\[
+  \hat e_i^2
+  = \gamma_0
+    + \sum_j \gamma_j X_{ij}
+    + \sum_j \delta_j X_{ij}^2
+    + \sum_{j<\ell}\theta_{j\ell}X_{ij}X_{i\ell}
+    + v_i.
+\]
+Thống kê kiểm định thường là:
+\[
+  W = nR^2_{\mathrm{aux}} \sim \chi^2(p),
+\]
+trong đó $p$ là số biến giải thích trong hồi quy phụ.
+
+\textbf{Điểm mạnh} của White test là khả năng phát hiện nhiều dạng phương sai thay đổi. \textbf{Điểm yếu} là số biến trong hồi quy phụ tăng nhanh, làm hao bậc tự do và giảm độ ổn định trong mẫu nhỏ. Vì vậy, trong thực hành có thể dùng phiên bản rút gọn: hồi quy $\hat e_i^2$ theo $\hat y_i$ và $\hat y_i^2$.
+
+% -----------------------------------------------------------------------------

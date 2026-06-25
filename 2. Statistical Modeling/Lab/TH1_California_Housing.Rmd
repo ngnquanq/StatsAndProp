@@ -1,0 +1,565 @@
+---
+title: "Bài thực hành số 1: Dự đoán giá nhà ở California"
+author: "Nhóm thực hiện"
+date: "`r Sys.Date()`"
+output:
+  html_document:
+    toc: true
+    toc_depth: 3
+    number_sections: true
+    df_print: paged
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  echo = TRUE,
+  message = FALSE,
+  warning = FALSE,
+  fig.align = "center",
+  fig.width = 8,
+  fig.height = 5
+)
+
+required_packages <- c(
+  "dplyr", "tidyr", "ggplot2", "broom", "knitr", "scales", "glmnet"
+)
+
+missing_packages <- required_packages[
+  !vapply(required_packages, requireNamespace, logical(1), quietly = TRUE)
+]
+
+if (length(missing_packages) > 0) {
+  stop(
+    "Cần cài thêm package trước khi knit: ",
+    paste(missing_packages, collapse = ", "),
+    ". Ví dụ: install.packages(c(",
+    paste(sprintf('\"%s\"', missing_packages), collapse = ", "),
+    "))",
+    call. = FALSE
+  )
+}
+
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+library(broom)
+library(knitr)
+library(scales)
+library(glmnet)
+
+theme_set(theme_minimal(base_size = 12))
+set.seed(123)
+```
+
+# Giới thiệu
+
+Bộ dữ liệu California Housing gồm các quan sát ở cấp **census block group** tại bang California. Mục tiêu của bài thực hành là xây dựng mô hình dự đoán `median_house_value`, tức giá trị nhà trung vị của một khu vực, dựa trên các đặc trưng địa lý, nhân khẩu học, thu nhập và vị trí so với biển.
+
+Cần lưu ý rằng mỗi dòng dữ liệu không đại diện cho một căn nhà riêng lẻ. Các biến như `total_rooms`, `population` và `households` là số liệu tổng hợp ở cấp khu vực điều tra dân số.
+
+# Đọc dữ liệu
+
+```{r read-data}
+housing <- read.csv("California_housing.csv", stringsAsFactors = FALSE)
+
+dim(housing)
+str(housing)
+```
+
+```{r data-preview}
+head(housing) |>
+  kable(caption = "Một số quan sát đầu tiên trong dữ liệu")
+```
+
+# Khám phá dữ liệu
+
+## Kiểm tra dữ liệu thiếu
+
+```{r missing-values}
+missing_table <- data.frame(
+  variable = names(housing),
+  missing_count = colSums(is.na(housing)),
+  missing_rate = colMeans(is.na(housing))
+)
+
+missing_table |>
+  arrange(desc(missing_count)) |>
+  mutate(missing_rate = percent(missing_rate, accuracy = 0.01)) |>
+  kable(caption = "Số lượng và tỷ lệ giá trị thiếu theo biến")
+```
+
+Dữ liệu chỉ có giá trị thiếu ở biến `total_bedrooms`, với `r sum(is.na(housing$total_bedrooms))` quan sát, tương đương `r percent(mean(is.na(housing$total_bedrooms)), accuracy = 0.01)` toàn bộ dữ liệu. Vì tỷ lệ thiếu thấp, bước tiếp theo cần kiểm tra xem thiếu có tập trung theo một nhóm địa lý hay nhóm `ocean_proximity` cụ thể không. Nếu thiếu tập trung mạnh ở một nhóm, việc thay thế bằng median chung có thể làm mất đặc điểm riêng của nhóm đó; nếu thiếu rải rác và nhóm thiếu có đặc điểm tương đối gần nhóm không thiếu, median imputation là lựa chọn đơn giản và đủ ổn cho bài thực hành tuyến tính này.
+
+```{r missing-pattern-ocean}
+missing_by_ocean <- housing |>
+  group_by(ocean_proximity) |>
+  summarise(
+    n = n(),
+    missing_total_bedrooms = sum(is.na(total_bedrooms)),
+    missing_rate = mean(is.na(total_bedrooms)),
+    .groups = "drop"
+  )
+
+missing_by_ocean |>
+  mutate(missing_rate = percent(missing_rate, accuracy = 0.01)) |>
+  kable(caption = "Tỷ lệ thiếu total_bedrooms theo ocean_proximity")
+```
+
+```{r missing-pattern-summary}
+missing_pattern_summary <- housing |>
+  mutate(
+    total_bedrooms_status = ifelse(
+      is.na(total_bedrooms),
+      "Thiếu total_bedrooms",
+      "Không thiếu total_bedrooms"
+    )
+  ) |>
+  group_by(total_bedrooms_status) |>
+  summarise(
+    n = n(),
+    median_income_median = median(median_income),
+    median_house_value_median = median(median_house_value),
+    total_rooms_median = median(total_rooms),
+    population_median = median(population),
+    households_median = median(households),
+    .groups = "drop"
+  )
+
+missing_pattern_summary |>
+  kable(
+    digits = 2,
+    caption = "So sánh nhanh nhóm thiếu và không thiếu total_bedrooms"
+  )
+```
+
+Kết quả cho thấy thiếu dữ liệu không phải do toàn bộ một biến bị lỗi, mà chỉ xuất hiện ở `total_bedrooms`. Tỷ lệ thiếu theo các nhóm `ocean_proximity` đều thấp và không chỉ tập trung vào một nhóm lớn duy nhất; nhóm `ISLAND` không có giá trị thiếu nhưng chỉ có rất ít quan sát nên không đủ để kết luận riêng. So sánh nhóm thiếu và không thiếu cũng không cho thấy khác biệt cực đoan về thu nhập trung vị hay giá nhà trung vị. Vì vậy, trong phạm vi bài này, có thể xem cơ chế thiếu gần với thiếu ngẫu nhiên có điều kiện theo các đặc trưng quan sát được hơn là lỗi hệ thống rõ ràng. Tuy nhiên, không thể chứng minh dữ liệu là MCAR tuyệt đối chỉ từ bảng này.
+
+Do đó, thay thế `total_bedrooms` thiếu bằng median là hợp lý vì: tỷ lệ thiếu thấp, median bền vững hơn mean khi các biến đếm như số phòng có đuôi phải dài, và median được tính trên tập training để tránh rò rỉ thông tin từ validation. Một cách cải thiện tốt hơn trong nghiên cứu sâu hơn là impute theo nhóm `ocean_proximity` hoặc dùng mô hình imputation dựa trên `total_rooms`, `households` và `population`.
+
+## Thống kê mô tả
+
+```{r summary-table}
+skewness <- function(x) {
+  x <- x[!is.na(x)]
+  mean((x - mean(x))^3) / sd(x)^3
+}
+
+numeric_summary <- housing |>
+  select(where(is.numeric)) |>
+  pivot_longer(everything(), names_to = "variable", values_to = "value") |>
+  group_by(variable) |>
+  summarise(
+    n = sum(!is.na(value)),
+    missing_count = sum(is.na(value)),
+    mean = mean(value, na.rm = TRUE),
+    sd = sd(value, na.rm = TRUE),
+    min = min(value, na.rm = TRUE),
+    q1 = quantile(value, 0.25, na.rm = TRUE),
+    median = median(value, na.rm = TRUE),
+    q3 = quantile(value, 0.75, na.rm = TRUE),
+    max = max(value, na.rm = TRUE),
+    iqr = IQR(value, na.rm = TRUE),
+    skewness = skewness(value),
+    .groups = "drop"
+  )
+
+numeric_summary |>
+  kable(digits = 2, caption = "Thống kê mô tả các biến định lượng")
+```
+
+```{r ocean-proximity-table}
+housing |>
+  count(ocean_proximity, sort = TRUE) |>
+  mutate(rate = percent(n / sum(n), accuracy = 0.01)) |>
+  kable(caption = "Phân bố biến ocean_proximity")
+```
+
+`ocean_proximity` là biến phân loại mô tả vị trí tương đối của census block group so với biển hoặc vịnh. Các mức chính gồm:
+
+- `<1H OCEAN`: khu vực cách biển dưới khoảng một giờ di chuyển.
+- `INLAND`: khu vực sâu trong đất liền.
+- `NEAR BAY`: khu vực gần vịnh.
+- `NEAR OCEAN`: khu vực gần biển.
+- `ISLAND`: khu vực đảo.
+
+Biến này quan trọng vì vị trí ven biển hoặc gần vịnh thường gắn với khả năng tiếp cận việc làm, tiện ích, khí hậu, mật độ đô thị và mức khan hiếm đất khác với khu vực sâu trong đất liền. Do đó, `ocean_proximity` không chỉ là nhãn địa lý mà còn là proxy cho nhiều yếu tố kinh tế - xã hội ảnh hưởng đến giá nhà. Phân bố của biến này cũng không cân bằng: nhóm `<1H OCEAN` và `INLAND` chiếm phần lớn dữ liệu, trong khi `ISLAND` chỉ có rất ít quan sát. Vì vậy, hệ số hoặc kết luận riêng cho `ISLAND` cần được diễn giải rất thận trọng; mô hình có thể học kém cho nhóm hiếm này.
+
+Từ bảng thống kê mô tả, nhiều biến đếm như `total_rooms`, `total_bedrooms`, `population` và `households` có khoảng cách lớn giữa median và max, cho thấy phân phối lệch phải và có các khu vực rất lớn. Vì các biến này là tổng theo khu vực chứ không phải đặc điểm của một căn nhà riêng lẻ, diễn giải trực tiếp hệ số của chúng cần cẩn trọng. Các biến tỷ lệ được tạo thêm ở phần tiền xử lý như `rooms_per_household`, `bedrooms_per_room` và `population_per_household` giúp chuyển thông tin tổng hợp này thành đặc điểm dễ so sánh hơn giữa các khu vực.
+
+## Phân phối biến mục tiêu
+
+```{r target-distribution}
+ggplot(housing, aes(x = median_house_value)) +
+  geom_histogram(bins = 50, fill = "#2F6F8F", color = "white") +
+  scale_x_continuous(labels = dollar_format()) +
+  labs(
+    title = "Phân phối giá nhà trung vị",
+    x = "Median house value",
+    y = "Số quan sát"
+  )
+```
+
+```{r target-distribution-summary}
+target_summary <- data.frame(
+  min = min(housing$median_house_value),
+  q1 = quantile(housing$median_house_value, 0.25),
+  median = median(housing$median_house_value),
+  mean = mean(housing$median_house_value),
+  q3 = quantile(housing$median_house_value, 0.75),
+  max = max(housing$median_house_value),
+  capped_count = sum(housing$median_house_value == max(housing$median_house_value)),
+  capped_rate = mean(housing$median_house_value == max(housing$median_house_value)),
+  skewness = skewness(housing$median_house_value)
+)
+
+target_summary |>
+  mutate(capped_rate = percent(capped_rate, accuracy = 0.01)) |>
+  kable(digits = 2, caption = "Tóm tắt phân phối median_house_value")
+```
+
+Biến mục tiêu `median_house_value` bị lệch phải và có giá trị lớn nhất bằng `r dollar(max(housing$median_house_value))`. Có `r sum(housing$median_house_value == max(housing$median_house_value))` quan sát nằm đúng tại giá trị lớn nhất này, tương đương `r percent(mean(housing$median_house_value == max(housing$median_house_value)), accuracy = 0.01)` dữ liệu. Đây là dấu hiệu dữ liệu bị chặn trên: các khu vực có giá trị thực tế cao hơn ngưỡng này vẫn được ghi nhận cùng một giá trị.
+
+Đây là một vấn đề quan trọng cho cả dự báo và diễn giải. Với mô hình hồi quy tuyến tính dùng MSE/RMSE, các quan sát giá cao có ảnh hưởng lớn đến hàm mất mát, nhưng do phần đỉnh bị gộp tại `500001`, mô hình không thể học được khác biệt thật giữa các khu vực rất đắt. Vì vậy, sai số ở phân khúc cao có thể bị diễn giải sai: dự đoán thấp hơn `500001` không nhất thiết chỉ là mô hình kém, mà còn phản ánh việc nhãn mục tiêu đã bị kiểm duyệt/capping. Khi diễn giải hệ số, cần hiểu rằng tác động của các biến như `median_income` hoặc vị trí gần biển lên giá nhà cao cấp có thể bị đánh giá thấp vì biến mục tiêu không còn tăng sau ngưỡng này.
+
+## Thu nhập và giá nhà
+
+```{r income-vs-price}
+ggplot(housing, aes(x = median_income, y = median_house_value)) +
+  geom_point(alpha = 0.25, color = "#3B6EA8") +
+  geom_smooth(method = "lm", se = FALSE, color = "#C04B37") +
+  scale_y_continuous(labels = dollar_format()) +
+  labs(
+    title = "Quan hệ giữa thu nhập trung vị và giá nhà trung vị",
+    x = "Median income",
+    y = "Median house value"
+  )
+```
+
+`median_income` có xu hướng tương quan dương rõ rệt với `median_house_value`. Đây thường là một trong những biến dự báo quan trọng nhất của giá nhà.
+
+## Giá nhà theo vị trí so với biển
+
+```{r price-by-ocean}
+ggplot(housing, aes(x = ocean_proximity, y = median_house_value, fill = ocean_proximity)) +
+  geom_boxplot(outlier.alpha = 0.15) +
+  scale_y_continuous(labels = dollar_format()) +
+  guides(fill = "none") +
+  labs(
+    title = "Giá nhà theo vị trí so với biển",
+    x = "Ocean proximity",
+    y = "Median house value"
+  )
+```
+
+Các khu vực gần biển hoặc gần vịnh có xu hướng giá nhà cao hơn khu vực `INLAND`.
+
+## Tương quan giữa các biến định lượng
+
+```{r correlation-plot}
+cor_data <- housing |>
+  select(where(is.numeric)) |>
+  cor(use = "pairwise.complete.obs")
+
+cor_long <- as.data.frame(as.table(cor_data))
+names(cor_long) <- c("var1", "var2", "correlation")
+
+ggplot(cor_long, aes(x = var1, y = var2, fill = correlation)) +
+  geom_tile(color = "white") +
+  scale_fill_gradient2(
+    low = "#B4433C",
+    mid = "white",
+    high = "#2F6F8F",
+    midpoint = 0,
+    limits = c(-1, 1)
+  ) +
+  coord_equal() +
+  labs(
+    title = "Ma trận tương quan giữa các biến định lượng",
+    x = NULL,
+    y = NULL,
+    fill = "Tương quan"
+  ) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+# Tiền xử lý dữ liệu
+
+## Chia training và validation
+
+```{r train-validation-split}
+n <- nrow(housing)
+train_id <- sample(seq_len(n), size = floor(0.8 * n))
+
+train_raw <- housing[train_id, ]
+valid_raw <- housing[-train_id, ]
+
+c(
+  training_size = nrow(train_raw),
+  validation_size = nrow(valid_raw)
+)
+```
+
+## Impute missing values và tạo biến mới
+
+```{r preprocessing}
+bedrooms_median_train <- median(train_raw$total_bedrooms, na.rm = TRUE)
+
+prepare_data <- function(data, bedrooms_median) {
+  data |>
+    mutate(
+      total_bedrooms = ifelse(
+        is.na(total_bedrooms),
+        bedrooms_median,
+        total_bedrooms
+      ),
+      ocean_proximity = factor(ocean_proximity),
+      rooms_per_household = total_rooms / households,
+      bedrooms_per_room = total_bedrooms / total_rooms,
+      population_per_household = population / households
+    )
+}
+
+train <- prepare_data(train_raw, bedrooms_median_train)
+valid <- prepare_data(valid_raw, bedrooms_median_train)
+
+colSums(is.na(train))
+colSums(is.na(valid))
+```
+
+Ba biến mới được tạo để phản ánh cấu trúc khu vực tốt hơn:
+
+- `rooms_per_household`: số phòng trung bình trên mỗi hộ.
+- `bedrooms_per_room`: tỷ lệ phòng ngủ trên tổng số phòng.
+- `population_per_household`: số người trung bình trên mỗi hộ.
+
+## Tạo ma trận thiết kế cho mô hình
+
+```{r design-matrix}
+model_formula <- median_house_value ~ longitude + latitude +
+  housing_median_age + total_rooms + total_bedrooms + population +
+  households + median_income + ocean_proximity +
+  rooms_per_household + bedrooms_per_room + population_per_household
+
+x_train <- model.matrix(model_formula, data = train)[, -1]
+x_valid <- model.matrix(model_formula, data = valid)[, -1]
+
+y_train <- train$median_house_value
+y_valid <- valid$median_house_value
+
+dim(x_train)
+dim(x_valid)
+```
+
+# Xây dựng mô hình
+
+## Hàm đánh giá mô hình
+
+```{r metrics-functions}
+calculate_metrics <- function(actual, predicted) {
+  residual <- actual - predicted
+  data.frame(
+    RMSE = sqrt(mean(residual^2)),
+    MAE = mean(abs(residual)),
+    MAPE = mean(abs(residual / actual)) * 100,
+    R2 = 1 - sum(residual^2) / sum((actual - mean(actual))^2)
+  )
+}
+```
+
+## Hồi quy tuyến tính bội OLS
+
+```{r ols-model}
+ols_model <- lm(model_formula, data = train)
+ols_pred <- predict(ols_model, newdata = valid)
+
+ols_metrics <- calculate_metrics(y_valid, ols_pred) |>
+  mutate(model = "OLS", .before = 1)
+```
+
+```{r ols-coefficients}
+tidy(ols_model) |>
+  arrange(desc(abs(estimate))) |>
+  head(15) |>
+  kable(digits = 4, caption = "15 hệ số OLS có độ lớn tuyệt đối cao nhất")
+```
+
+## Ridge Regression
+
+```{r ridge-model}
+ridge_cv <- cv.glmnet(
+  x = x_train,
+  y = y_train,
+  alpha = 0,
+  nfolds = 10,
+  standardize = TRUE
+)
+
+ridge_pred <- as.numeric(predict(ridge_cv, newx = x_valid, s = "lambda.min"))
+
+ridge_metrics <- calculate_metrics(y_valid, ridge_pred) |>
+  mutate(model = "Ridge", .before = 1)
+
+ridge_cv$lambda.min
+```
+
+## LASSO Regression
+
+```{r lasso-model}
+lasso_cv <- cv.glmnet(
+  x = x_train,
+  y = y_train,
+  alpha = 1,
+  nfolds = 10,
+  standardize = TRUE
+)
+
+lasso_pred <- as.numeric(predict(lasso_cv, newx = x_valid, s = "lambda.min"))
+
+lasso_metrics <- calculate_metrics(y_valid, lasso_pred) |>
+  mutate(model = "LASSO", .before = 1)
+
+lasso_cv$lambda.min
+```
+
+## Elastic Net Regression
+
+```{r elastic-net-model}
+alpha_grid <- c(0.1, 0.25, 0.5, 0.75, 0.9)
+
+elastic_results <- lapply(alpha_grid, function(alpha_value) {
+  fit <- cv.glmnet(
+    x = x_train,
+    y = y_train,
+    alpha = alpha_value,
+    nfolds = 10,
+    standardize = TRUE
+  )
+
+  data.frame(
+    alpha = alpha_value,
+    lambda_min = fit$lambda.min,
+    cvm_min = min(fit$cvm),
+    fit = I(list(fit))
+  )
+})
+
+elastic_results <- bind_rows(elastic_results)
+best_elastic <- elastic_results |>
+  arrange(cvm_min) |>
+  slice(1)
+
+elastic_model <- best_elastic$fit[[1]]
+elastic_pred <- as.numeric(
+  predict(elastic_model, newx = x_valid, s = "lambda.min")
+)
+
+elastic_metrics <- calculate_metrics(y_valid, elastic_pred) |>
+  mutate(model = "Elastic Net", .before = 1)
+
+elastic_results |>
+  select(alpha, lambda_min, cvm_min) |>
+  arrange(cvm_min) |>
+  kable(digits = 4, caption = "Kết quả Cross Validation theo alpha của Elastic Net")
+```
+
+# So sánh mô hình
+
+```{r model-comparison}
+metrics_table <- bind_rows(
+  ols_metrics,
+  ridge_metrics,
+  lasso_metrics,
+  elastic_metrics
+) |>
+  arrange(RMSE)
+
+metrics_table |>
+  mutate(
+    RMSE = round(RMSE, 2),
+    MAE = round(MAE, 2),
+    MAPE = round(MAPE, 2),
+    R2 = round(R2, 4)
+  ) |>
+  kable(caption = "So sánh các mô hình trên tập validation")
+```
+
+```{r metrics-plot}
+metrics_table |>
+  select(model, RMSE, MAE, MAPE, R2) |>
+  pivot_longer(-model, names_to = "metric", values_to = "value") |>
+  ggplot(aes(x = reorder(model, value), y = value, fill = model)) +
+  geom_col() +
+  facet_wrap(~ metric, scales = "free_y") +
+  guides(fill = "none") +
+  labs(
+    title = "So sánh trực quan các chỉ số đánh giá",
+    x = "Mô hình",
+    y = "Giá trị"
+  ) +
+  theme(axis.text.x = element_text(angle = 30, hjust = 1))
+```
+
+```{r best-model}
+best_model_name <- metrics_table$model[1]
+best_model_name
+```
+
+Mô hình có RMSE thấp nhất trên tập validation là `r best_model_name`. Đây là mô hình được ưu tiên nếu mục tiêu chính là độ chính xác dự đoán. Nếu cần diễn giải đơn giản, mô hình OLS vẫn hữu ích vì hệ số hồi quy trực tiếp hơn, nhưng cần chú ý đến đa cộng tuyến giữa các biến tổng hợp như `total_rooms`, `total_bedrooms`, `population` và `households`.
+
+# Diễn giải biến ảnh hưởng
+
+## Hệ số của mô hình tốt nhất trong nhóm điều chuẩn
+
+```{r regularized-coefficients}
+coef_to_table <- function(model, s = "lambda.min") {
+  coef_matrix <- as.matrix(coef(model, s = s))
+  data.frame(
+    variable = rownames(coef_matrix),
+    coefficient = as.numeric(coef_matrix[, 1]),
+    row.names = NULL
+  ) |>
+    filter(variable != "(Intercept)", coefficient != 0) |>
+    mutate(abs_coefficient = abs(coefficient)) |>
+    arrange(desc(abs_coefficient))
+}
+
+regularized_models <- list(
+  Ridge = ridge_cv,
+  LASSO = lasso_cv,
+  `Elastic Net` = elastic_model
+)
+
+best_regularized_name <- metrics_table |>
+  filter(model %in% names(regularized_models)) |>
+  slice(1) |>
+  pull(model)
+
+best_regularized_coef <- coef_to_table(regularized_models[[best_regularized_name]])
+
+best_regularized_coef |>
+  head(15) |>
+  select(variable, coefficient) |>
+  kable(digits = 4, caption = paste("15 biến có hệ số lớn nhất theo", best_regularized_name))
+```
+
+Các biến thường có ảnh hưởng mạnh đến giá nhà gồm `median_income`, vị trí địa lý (`longitude`, `latitude`), tuổi trung vị của nhà, vị trí so với biển và các biến tỷ lệ như số phòng trung bình trên mỗi hộ. Dấu của hệ số cho biết chiều tác động khi các biến khác được giữ cố định; tuy nhiên đây là phân tích hồi quy dự báo, không khẳng định quan hệ nhân quả.
+
+## Nhận xét theo nội dung bài toán
+
+- Thu nhập trung vị cao thường đi kèm giá nhà cao hơn.
+- Khu vực gần biển hoặc gần vịnh có xu hướng giá nhà cao hơn khu vực sâu trong đất liền.
+- Các biến tổng như `total_rooms`, `population` và `households` cần được hiểu là đặc điểm cấp khu vực, không phải đặc điểm của từng căn nhà.
+- Biến mục tiêu bị chặn trên ở `500001`, vì vậy mô hình có thể đánh giá thấp hoặc khó phân biệt các khu vực giá rất cao.
+
+# Kết luận và đề xuất
+
+Bài thực hành đã xây dựng và so sánh bốn mô hình dự đoán giá nhà ở California: OLS, Ridge Regression, LASSO Regression và Elastic Net Regression. Các mô hình Ridge, LASSO và Elastic Net sử dụng 10-fold Cross Validation để chọn tham số điều chuẩn tối ưu.
+
+Dựa trên kết quả validation, mô hình `r best_model_name` là lựa chọn phù hợp nhất theo tiêu chí RMSE. Trong thực tế, nếu mục tiêu là dự báo, nên ưu tiên mô hình có lỗi validation thấp và ổn định. Nếu mục tiêu là giải thích, nên kết hợp kết quả từ OLS với hệ số của LASSO/Elastic Net để nhận diện các biến quan trọng.
+
+Một số hướng cải thiện có thể thực hiện thêm:
+
+- Thử biến đổi log cho `median_house_value` để giảm ảnh hưởng của phân phối lệch phải.
+- Xử lý riêng nhóm giá nhà bị chặn trên ở `500001`.
+- Thêm tương tác giữa vị trí địa lý và `ocean_proximity`.
+- So sánh thêm với các mô hình phi tuyến như Random Forest hoặc Gradient Boosting nếu mục tiêu là tăng độ chính xác dự đoán.

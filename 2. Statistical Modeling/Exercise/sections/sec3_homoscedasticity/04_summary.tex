@@ -1,30 +1,7 @@
-\subsection{So Sánh và Quy Tắc Thực Hành}
-
-\begin{center}
-\small
-\begin{tabularx}{\textwidth}{@{}>{\bfseries}l>{\raggedright\arraybackslash}X>{\raggedright\arraybackslash}X@{}}
-\toprule
-Công cụ & Khi nên dùng & Lưu ý chính \\
-\midrule
-Residuals vs fitted & Bước chẩn đoán đầu tiên. & Tìm hình phễu, nhóm phân tán khác nhau hoặc pattern theo $\hat y$. \\
-Breusch--Pagan & Nghi ngờ phương sai thay đổi tuyến tính theo biến giải thích. & Nên ưu tiên phiên bản studentized khi không chắc sai số chuẩn. \\
-White test & Chưa biết dạng phương sai thay đổi. & Có thể tốn nhiều bậc tự do nếu mô hình có nhiều biến. \\
-HC3 robust SE & Mô hình trung bình hợp lý nhưng suy diễn cổ điển đáng nghi. & Giữ hệ số OLS, điều chỉnh sai số chuẩn và p-value. \\
-\bottomrule
-\end{tabularx}
-\end{center}
-
-\subsubsection{Workflow Đề Xuất}
-
-\begin{enumerate}
-  \item Vẽ phần dư theo giá trị khớp và theo các biến dự báo quan trọng.
-  \item Nếu có pattern về độ phân tán, dùng Breusch--Pagan hoặc White test để bổ sung bằng chứng.
-  \item Nếu phương sai thay đổi nhưng dạng hàm trung bình vẫn hợp lý, báo cáo kết quả với sai số chuẩn vững HC3; ví dụ \texttt{Prestige} minh họa cách SE và khoảng tin cậy thay đổi sau hiệu chỉnh.
-  \item Nếu phương sai thay đổi phản ánh sai dạng mô hình, biến bị thiếu hoặc thang đo phản hồi không phù hợp, cần sửa mô hình thay vì chỉ đổi sai số chuẩn.
-\end{enumerate}
-
-\begin{tipbox}
-\textbf{Quy tắc ngắn.} Heteroscedasticity chủ yếu làm hỏng sai số chuẩn cổ điển, không tự động làm hỏng hệ số OLS. Nhưng nếu nó đi kèm pattern trong phần dư, đó có thể là dấu hiệu mô hình trung bình chưa đúng.
-\end{tipbox}
-
-% -----------------------------------------------------------------------------
+	\paragraph{Kết luận:}
+	Dưới tác động của hiện tượng phương sai thay đổi, sai số chuẩn tính toán từ thuật toán OLS thông thường có xu hướng bị hạ thấp quá mức so với thực tế (lạc quan sai lệch). Sau khi hiệu chỉnh bằng chuẩn vững HC3, các sai số chuẩn (\textit{Std. Error}) đều tăng lên. Tuy nhiên, mức độ ý nghĩa thống kê của hai biến độc lập cốt lõi là \texttt{income} và \texttt{education} \textbf{vẫn giữ nguyên vẹn ký hiệu ý nghĩa tối cao ($***$)}. Điều này chứng minh mối quan hệ tác động tích cực của thu nhập và trình độ học vấn đến uy tín nghề nghiệp là hoàn toàn bền vững và có độ tin cậy khoa học rất cao.
+	\begin{itemize}
+		\item \textbf{B-P Test:} Nhanh, mạnh khi phương sai thay đổi tuyến tính, nhưng dễ sai lệch nếu phân phối sai số bất thường (Khắc phục bằng Koenker studentized).
+		\item \textbf{White Test:} Toàn diện, không cần định hình trước cấu trúc, nhưng hao tốn quá nhiều bậc tự do, yếu ở mẫu nhỏ.
+		\item \textbf{Robust SE (HC3):} Không phải là phép kiểm định mà là "liều thuốc chữa bệnh". Giữ vững tính không chệch của OLS, hiệu chỉnh lại $SE$ để đưa ra quyết định thống kê khoa học nhất.
+	\end{itemize}
