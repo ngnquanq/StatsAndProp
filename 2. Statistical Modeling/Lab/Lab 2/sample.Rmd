@@ -66,7 +66,7 @@ Cần lưu ý rằng mỗi dòng dữ liệu không đại diện cho một căn
 # Đọc dữ liệu
 
 ```{r read-data}
-housing <- read.csv("California_housing.csv", stringsAsFactors = FALSE)
+housing <- read.csv("../California_housing.csv", stringsAsFactors = FALSE)
 
 dim(housing)
 str(housing)

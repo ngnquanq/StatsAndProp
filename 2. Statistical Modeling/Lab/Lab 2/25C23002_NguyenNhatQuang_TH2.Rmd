@@ -1,0 +1,672 @@
+---
+title: "Bài thực hành số 2: Dự đoán chất lượng rượu vang trắng"
+author: "Tác giả: Nguyễn Nhật Quang"
+date: "`r Sys.Date()`"
+output:
+  html_document:
+    toc: true
+    toc_depth: 3
+    number_sections: true
+    df_print: paged
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  echo = TRUE,
+  message = FALSE,
+  warning = FALSE,
+  fig.align = "center",
+  fig.width = 8,
+  fig.height = 5
+)
+
+required_packages <- c("dplyr", "tidyr", "ggplot2", "knitr", "scales", "psych")
+missing_packages <- required_packages[
+  !vapply(required_packages, requireNamespace, logical(1), quietly = TRUE)
+]
+
+if (length(missing_packages) > 0) {
+  stop(
+    "Cần cài thêm package trước khi knit: ",
+    paste(missing_packages, collapse = ", "),
+    call. = FALSE
+  )
+}
+
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+library(knitr)
+library(scales)
+library(psych)
+
+theme_set(theme_minimal(base_size = 12))
+set.seed(123)
+```
+
+# Giới thiệu
+
+Bộ dữ liệu **Wine Quality** được công bố bởi UCI Machine Learning Repository. 
+Bài thực hành sử dụng tập `winequality-white.csv`, gồm 4,898 mẫu rượu vang trắng vùng Vinho Verde, Bồ Đào Nha.
+
+Mục tiêu là dự đoán biến `quality`, tức điểm chất lượng rượu vang trên thang điểm 0-10, từ 11 biến hóa học:
+
+- `fixed.acidity`, `volatile.acidity`, `citric.acid`
+- `residual.sugar`, `chlorides`
+- `free.sulfur.dioxide`, `total.sulfur.dioxide`
+- `density`, `pH`, `sulphates`, `alcohol`
+
+Phương pháp chính của bài là **Hồi Quy Trên Thành Phần Chính - Principal Component Regression (PCR)**, các bước thực hiện sẽ như sau:
+
+- Khám phá dữ liệu Wine Quality và kiểm tra dữ liệu thiếu, trùng lặp.
+- Loại các dòng trùng lặp hoàn toàn trước khi chia dữ liệu để giảm rủi ro leakage giữa training set và validation set.
+- Chia dữ liệu thành training set và validation set theo tỷ lệ 80/20.
+- Chuẩn hóa các biến giải thích và xây dựng mô hình PCR.
+- Kiểm tra sơ bộ độ phù hợp của phương pháp PCA bằng KMO và Bartlett test kết hợp với các phương pháp loại dần biến để làm dữ liệu phù hợp hơn cho mô hình PCR.
+- Chọn số thành phần chính bằng 10-fold cross-validation dựa trên tiêu chí RMSE.
+- Đánh giá mô hình trên validation set bằng RMSE, MAE và \(R^2\).
+- Chuyển hệ số PCR về hệ số trên biến gốc để diễn giải ảnh hưởng của các biến hóa học.
+
+# Đọc dữ liệu
+
+```{r read-data}
+wine_raw <- read.csv("winequality-white.csv", sep = ";", stringsAsFactors = FALSE)
+
+dim(wine_raw)
+str(wine_raw)
+```
+
+```{r preview}
+head(wine_raw) |>
+  kable(caption = "Xem các dòng đầu tiên của data")
+```
+
+Dữ liệu gốc có `r nrow(wine_raw)` quan sát và `r ncol(wine_raw)` biến. Tất cả biến đều là biến định lượng, phù hợp để chuẩn hóa và chạy PCA/PCR.
+
+# Khám phá dữ liệu và tiền xử lý
+
+Mục tiêu của trực quan hoá dữ liệu là để hỗ trợ 2 điều chính:
+- Đưa ra hoặc đề xuất được các giả thuyết, nhận định về bài toán.
+- Hỗ trợ cho quá trình tiền xử lí dữ liệu thông qua các thống kê mô tả hoặc hình vẽ để kiểm tra xem dữ liệu có bị trùng lặp
+hoặc là dữ liệu có bị thiếu hoặc là dữ liệu có các giá trị nhiễu cần phải xử lí hay không. 
+
+## Kiểm tra dữ liệu thiếu và trùng lặp
+
+```{r missing-duplicate}
+missing_table <- data.frame(
+  variable = names(wine_raw),
+  missing_count = colSums(is.na(wine_raw)),
+  missing_rate = colMeans(is.na(wine_raw))
+)
+
+missing_table |>
+  mutate(missing_rate = percent(missing_rate, accuracy = 0.01)) |>
+  kable(caption = "Số lượng và tỷ lệ giá trị thiếu")
+
+n_duplicates <- sum(duplicated(wine_raw))
+n_duplicates
+```
+
+Dữ liệu không có giá trị thiếu. Có `r n_duplicates` dòng trùng lặp hoàn toàn.
+
+Trong bài này, các dòng trùng lặp được loại bỏ **trước khi chia training/validation**. Lý do là nếu cùng một bộ thông số lý hóa xuất hiện ở cả training set và 
+validation set, mô hình đã gián tiếp nhìn thấy một phần dữ liệu validation trong lúc học. Khi đó các chỉ số đánh giá như RMSE, MAE và \(R^2\) trên validation set 
+có thể lạc quan hơn thực tế nhưng lại chưa đúng khi mà chúng ta mang nó ra ngoài thực tế cho tập test
+
+```{r deduplicate}
+wine <- wine_raw |>
+  distinct()
+
+data.frame(
+  dataset = c("Dữ liệu gốc", "Sau khi loại duplicate"),
+  n = c(nrow(wine_raw), nrow(wine)),
+  removed = c(0, nrow(wine_raw) - nrow(wine))
+) |>
+  kable(caption = "Số quan sát trước và sau khi loại trùng lặp")
+```
+
+Sau khi loại trùng lặp, dữ liệu còn `r nrow(wine)` quan sát. Các phân tích EDA, chia tập dữ liệu và mô hình hóa bên dưới đều dùng phiên bản đã deduplicate.
+
+## Thống kê mô tả
+
+```{r summary-table}
+summary_table <- wine |>
+  summarise(
+    across(
+      everything(),
+      list(
+        mean = mean,
+        sd = sd,
+        min = min,
+        median = median,
+        max = max
+      )
+    )
+  ) |>
+  pivot_longer(
+    everything(),
+    names_to = c("variable", ".value"),
+    names_pattern = "(.+)_(mean|sd|min|median|max)"
+  )
+
+summary_table |>
+  mutate(across(where(is.numeric), ~ round(.x, 3))) |>
+  kable(caption = "Thống kê mô tả các biến")
+```
+
+Có thể thấy rằng giá trị của các biến này đều rất khác với nhau, điều này dẫn đến việc chúng ta có thể sẽ phải cân nhắc việc chuẩn hoá dữ liệu về cùng khoảng trước khi thực hiện
+phương pháp PCA cho việc PCR.
+
+## Phân phối biến mục tiêu
+
+```{r quality-distribution}
+ggplot(wine, aes(x = factor(quality))) +
+  geom_bar(fill = "#2f80ed", alpha = 0.85) +
+  labs(
+    title = "Phân phối điểm chất lượng rượu",
+    x = "Quality",
+    y = "Số mẫu"
+  )
+```
+
+Điểm chất lượng tập trung chủ yếu ở mức 5, 6 và 7 và có hình dáng xấp xỉ phân phối chuẩn. Vì biến `quality` là các điểm rời rạc nhưng có thứ tự nên trong bài này vẫn xem nó 
+như là một biến định lượng để thực hiện hồi quy theo yêu cầu đề bài.
+
+## Tương quan giữa các biến
+
+```{r correlation-heatmap}
+cor_mat <- cor(wine)
+cor_df <- as.data.frame(as.table(cor_mat))
+names(cor_df) <- c("var1", "var2", "correlation")
+
+ggplot(cor_df, aes(x = var1, y = var2, fill = correlation)) +
+  geom_tile(color = "white") +
+  scale_fill_gradient2(
+    high = "#c0392b",
+    mid = "white",
+    low = "#2166ac",
+    midpoint = 0,
+    limits = c(-1, 1)
+  ) +
+  labs(
+    title = "Ma trận tương quan",
+    x = NULL,
+    y = NULL,
+    fill = "Corr"
+  ) +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1),
+    panel.grid = element_blank()
+  )
+```
+
+Một số biến giải thích có tương quan đáng kể với nhau. Ví dụ, trên dữ liệu đã loại trùng lặp, `density` có tương quan dương mạnh với `residual.sugar` (`r round(cor_mat["density", "residual.sugar"], 3)`) và 
+tương quan âm mạnh với `alcohol` (`r round(cor_mat["density", "alcohol"], 3)`). Điều này hợp lý về mặt ngữ nghĩa của biến, lấy ví dụ như rượu còn nhiều đường dư thường có 
+mật độ cao hơn, trong khi rượu có nồng độ cồn cao thường có mật độ thấp hơn. Như vậy, ba biến này không mang thông tin hoàn toàn độc lập mà cùng mô tả một phần 
+cấu trúc hóa học của rượu.
+
+Và đây là lý do PCR có ý nghĩa thực hành trong bài này. Thay vì đưa trực tiếp nhiều biến có tương quan vào hồi quy, phương páhp PCA tạo ra các thành phần chính là 
+tổ hợp tuyến tính của các biến gốc. Các thành phần chính này không tương quan với nhau, nên mô hình PCR có thể giảm vấn đề đa cộng tuyến và 
+tóm tắt nhóm thông tin chung từ các biến như `density`, `residual.sugar` và `alcohol`.
+
+# Chia training và validation
+
+```{r train-validation-split}
+set.seed(123)
+
+train_index <- sample(seq_len(nrow(wine)), size = floor(0.8 * nrow(wine)))
+train <- wine[train_index, ]
+validation <- wine[-train_index, ]
+
+predictor_names <- setdiff(names(wine), "quality")
+
+data.frame(
+  dataset = c("Training", "Validation"),
+  n = c(nrow(train), nrow(validation)),
+  rate = percent(c(nrow(train), nrow(validation)) / nrow(wine), accuracy = 0.1)
+) |>
+  kable(caption = "Kích thước training set và validation set")
+```
+
+Các biến giải thích sẽ được chuẩn hóa dựa trên trung bình và độ lệch chuẩn của training set bởi vì như ở trên có đề cập thì do các biến này có các khoảng giá trị khác nhau. Việc 
+chuẩn hóa sẽ đưa chúng về cùng khoảng giá trị để có thể đưa vào PCA.
+
+# Kiểm tra độ phù hợp với PCA/PCR
+
+## KMO và kiểm định Bartlett
+
+```{r pca-suitability}
+train_x <- train[, predictor_names]
+train_cor <- cor(train_x)
+
+kmo_result <- KMO(train_cor)
+bartlett_result <- cortest.bartlett(train_cor, n = nrow(train_x))
+kmo_value <- kmo_result$MSA
+
+data.frame(
+  check = c("KMO overall MSA", "Bartlett chi-square", "Bartlett df", "Bartlett p-value"),
+  value = c(
+    round(kmo_value, 3),
+    round(bartlett_result$chisq, 2),
+    bartlett_result$df,
+    format.pval(bartlett_result$p.value)
+  )
+) |>
+  kable(caption = "Kiểm tra độ phù hợp của dữ liệu với PCA")
+```
+
+Kiểm định Bartlett được dùng để kiểm tra xem ma trận tương quan của các biến giải thích có khác ma trận đơn vị hay không:
+
+- \(H_0\): Ma trận tương quan là tương đương với ma trận đơn vị, tức là các biến gần như không tương quan với nhau.
+- \(H_1\): Ma trận tương quan khác ma trận đơn vị, tức là tồn tại tương quan giữa các biến.
+
+Kết quả Bartlett có p-value rất nhỏ (`r format.pval(bartlett_result$p.value)`), nên ta có đủ điều kiện để bác bỏ \(H_0\). Điều này cho thấy dữ liệu 
+hiện tại của chúng tacó cấu trúc tương quan để PCA khai thác. Tuy nhiên, KMO hiện tại đang là `r round(kmo_value, 3)`, không cao (dưới 0.5). Vì vậy, PCA/PCR vẫn 
+có thể thực hiện theo yêu cầu đề bài, nhưng cần xem xét thêm MSA đơn lẻ của từng biến để loại bớt các biến không phù hợp.
+
+Nhưng bên cạnh đó, ta cũng có thể cải thiện KMO bằng cách loại các biến có individual MSA thấp trước khi chạy PCA/PCR. Tuy nhiên, không nên loại quá nhiều biến chỉ 
+để làm KMO đẹp hơn, vì như vậy mô hình có thể mất các thông tin hóa học có ý nghĩa. Do đó ở đây ta dùng chiến lược đơn giản như là xem MSA của từng biến đơn lẻ, 
+thử loại dần các biến có MSA thấp nhất, rồi chọn một tập biến cân bằng giữa KMO và khả năng diễn giải của mô hình.
+
+```{r kmo-tuning}
+msa_table <- data.frame(
+  variable = names(kmo_result$MSAi),
+  MSA = as.numeric(kmo_result$MSAi)
+) |>
+  arrange(MSA)
+
+msa_table |>
+  mutate(MSA = round(MSA, 3)) |>
+  kable(caption = "Individual MSA của từng biến, sắp xếp tăng dần")
+
+kmo_scenarios <- list(
+  "11 biến gốc" = predictor_names,
+  "Loại pH" = setdiff(predictor_names, "pH"),
+  "Loại pH và sulphates" = setdiff(predictor_names, c("pH", "sulphates")),
+  "Loại thêm fixed.acidity" = setdiff(predictor_names, c("pH", "sulphates", "fixed.acidity")),
+  "Loại thêm volatile.acidity" = setdiff(predictor_names, c("pH", "sulphates", "fixed.acidity", "volatile.acidity"))
+)
+
+kmo_tuning_table <- bind_rows(lapply(names(kmo_scenarios), function(scenario_name) {
+  vars <- kmo_scenarios[[scenario_name]]
+  scenario_kmo <- KMO(cor(train[, vars]))
+  scenario_bartlett <- cortest.bartlett(cor(train[, vars]), n = nrow(train))
+
+  data.frame(
+    scenario = scenario_name,
+    n_variables = length(vars),
+    KMO = scenario_kmo$MSA,
+    min_MSA_variable = names(which.min(scenario_kmo$MSAi)),
+    min_MSA = min(scenario_kmo$MSAi),
+    bartlett_p_value = scenario_bartlett$p.value
+  )
+}))
+
+kmo_tuning_table |>
+  mutate(
+    KMO = round(KMO, 3),
+    min_MSA = round(min_MSA, 3),
+    bartlett_p_value = format.pval(bartlett_p_value)
+  ) |>
+  kable(caption = "KMO và Bartlett sau khi thử loại dần các biến có MSA thấp")
+
+removed_for_pcr <- c("pH", "sulphates")
+pcr_predictor_names <- setdiff(predictor_names, removed_for_pcr)
+
+train_x <- train[, pcr_predictor_names]
+train_cor <- cor(train_x)
+kmo_reduced <- KMO(train_cor)
+bartlett_reduced <- cortest.bartlett(train_cor, n = nrow(train_x))
+
+data.frame(
+  check = c("KMO sau tuning", "Bartlett chi-square", "Bartlett df", "Bartlett p-value"),
+  value = c(
+    round(kmo_reduced$MSA, 3),
+    round(bartlett_reduced$chisq, 2),
+    bartlett_reduced$df,
+    format.pval(bartlett_reduced$p.value)
+  )
+) |>
+  kable(caption = "Kiểm tra PCA sau khi loại pH và sulphates")
+
+predictor_names <- pcr_predictor_names
+```
+
+Kết quả cho thấy nếu giữ cả 11 biến thì KMO thấp. Hai biến có MSA thấp nhất là `pH` và `sulphates`; sau khi loại hai biến này, 
+KMO tăng lên `r round(kmo_reduced$MSA, 3)`. Nếu tiếp tục loại thêm `fixed.acidity` hoặc `volatile.acidity`, KMO chỉ tăng nhẹ nhưng 
+mất thêm biến hóa học có ý nghĩa. Vì vậy, trong phần PCR bên dưới, ta dùng tập biến đã loại `pH` và `sulphates`.
+
+## Tỷ lệ phương sai giải thích bởi PC
+
+```{r pca-variance}
+train_center <- colMeans(train_x)
+train_scale <- apply(train_x, 2, sd)
+train_x_scaled <- scale(train_x, center = train_center, scale = train_scale)
+
+pca_full <- prcomp(train_x_scaled, center = FALSE, scale. = FALSE)
+
+pca_variance <- data.frame(
+  PC = seq_along(pca_full$sdev),
+  variance = pca_full$sdev^2 / sum(pca_full$sdev^2),
+  cumulative = cumsum(pca_full$sdev^2 / sum(pca_full$sdev^2))
+)
+
+pca_variance |>
+  mutate(
+    PC = paste0("PC", PC),
+    variance = percent(variance, accuracy = 0.1),
+    cumulative = percent(cumulative, accuracy = 0.1)
+  ) |>
+  kable(caption = "Tỷ lệ phương sai giải thích bởi các thành phần chính")
+```
+
+```{r scree-plot}
+ggplot(pca_variance, aes(x = PC, y = cumulative)) +
+  geom_line(color = "#2f80ed") +
+  geom_point(color = "#2f80ed", size = 2) +
+  scale_y_continuous(labels = percent_format(accuracy = 1), limits = c(0, 1)) +
+  labs(
+    title = "Phương sai tích lũy theo số thành phần chính",
+    x = "Số PC",
+    y = "Phương sai tích lũy"
+  )
+```
+
+Dựa vào hình vẽ trên, ta có thể thấy rằng không có quá nhiều khác biệt giữa các thành phần chính với nhau, do đó dẫn đến việc chúng ta có thể sẽ cần sử dụng thêm các 
+phương pháp đánh giá khác để có thể chọn ra được số lượng thành phần chính phù hợp. Ở phía dưới thì chúng ta sẽ so xem cái RMSE nào là nhỏ nhất ứng với từng thành phần 
+chính khác nhau để có thể đưa ra kết quả cuối cùng.
+
+# Xây dựng mô hình PCR
+
+Chỉ dựa vào hình vẽ phương sai tích luỹ theo số thành phần chính là chưa đủ để chúng ta chọn ra được số thành phần chính tối ưu, do đó chúng ta cần một cách định lượng hơn
+cho việc này, đó là lí do tại sao chúng ta sẽ sử dụng RMSE như là một thước đo để so sánh tính phù hợp của các thành phần chính
+
+## Hàm đánh giá và hàm PCR
+
+```{r pcr-functions}
+metrics <- function(actual, predicted) {
+  data.frame(
+    RMSE = sqrt(mean((actual - predicted)^2)),
+    MAE = mean(abs(actual - predicted)),
+    R2 = 1 - sum((actual - predicted)^2) / sum((actual - mean(actual))^2)
+  )
+}
+
+fit_pcr <- function(train_data, test_data, predictors, target, ncomp) {
+  train_x <- as.matrix(train_data[, predictors])
+  test_x <- as.matrix(test_data[, predictors])
+  train_y <- train_data[[target]]
+
+  center <- colMeans(train_x)
+  scale_value <- apply(train_x, 2, sd)
+
+  train_scaled <- scale(train_x, center = center, scale = scale_value)
+  test_scaled <- scale(test_x, center = center, scale = scale_value)
+
+  pca <- prcomp(train_scaled, center = FALSE, scale. = FALSE)
+  train_scores <- pca$x[, seq_len(ncomp), drop = FALSE]
+  test_scores <- test_scaled %*% pca$rotation[, seq_len(ncomp), drop = FALSE]
+
+  pcr_model <- lm(train_y ~ train_scores)
+  predicted <- as.numeric(cbind(1, test_scores) %*% coef(pcr_model))
+
+  list(
+    predicted = predicted,
+    model = pcr_model,
+    pca = pca,
+    center = center,
+    scale = scale_value,
+    ncomp = ncomp
+  )
+}
+```
+
+## Chọn số PC bằng 10-fold cross-validation
+
+```{r choose-pc}
+set.seed(123)
+
+n_folds <- 10
+fold_id <- sample(rep(seq_len(n_folds), length.out = nrow(train)))
+max_pc <- length(predictor_names)
+
+cv_results <- data.frame(
+  ncomp = seq_len(max_pc),
+  RMSE = NA_real_
+)
+
+for (k in seq_len(max_pc)) {
+  fold_pred <- rep(NA_real_, nrow(train))
+
+  for (fold in seq_len(n_folds)) {
+    cv_train <- train[fold_id != fold, ]
+    cv_test <- train[fold_id == fold, ]
+
+    fold_pred[fold_id == fold] <- fit_pcr(
+      train_data = cv_train,
+      test_data = cv_test,
+      predictors = predictor_names,
+      target = "quality",
+      ncomp = k
+    )$predicted
+  }
+
+  cv_results$RMSE[k] <- sqrt(mean((train$quality - fold_pred)^2))
+}
+
+best_ncomp <- cv_results$ncomp[which.min(cv_results$RMSE)]
+
+cv_results |>
+  mutate(RMSE = round(RMSE, 4)) |>
+  kable(caption = "RMSE cross-validation theo số PC")
+```
+
+```{r cv-plot}
+ggplot(cv_results, aes(x = ncomp, y = RMSE)) +
+  geom_line(color = "#2f80ed") +
+  geom_point(color = "#2f80ed", size = 2) +
+  geom_vline(xintercept = best_ncomp, linetype = "dashed", color = "#c0392b") +
+  scale_x_continuous(breaks = seq_len(max_pc)) +
+  labs(
+    title = "Chọn số PC bằng cross-validation",
+    x = "Số thành phần chính",
+    y = "CV RMSE"
+  )
+```
+
+Số PC được chọn là `r best_ncomp`, vì mức này cho RMSE cross-validation thấp nhất trên training set.
+
+# Đánh giá trên validation set
+
+Sau khi đã thực hiện xong việc chọn ra số lượng thành phần chính phù hợp nhất, ta cần phải mang mô hình đó và đi đánh giá xem liệu mô hình này có nên được sử dụng rộng
+rãi ngoài thực tế hay không.
+
+```{r validation-evaluation}
+pcr_selected <- fit_pcr(
+  train_data = train,
+  test_data = validation,
+  predictors = predictor_names,
+  target = "quality",
+  ncomp = best_ncomp
+)
+
+pcr_all <- fit_pcr(
+  train_data = train,
+  test_data = validation,
+  predictors = predictor_names,
+  target = "quality",
+  ncomp = max_pc
+)
+
+ols_model <- lm(quality ~ ., data = train)
+ols_pred <- predict(ols_model, newdata = validation)
+
+model_comparison <- bind_rows(
+  metrics(validation$quality, pcr_selected$predicted) |> mutate(model = paste0("PCR (", best_ncomp, " PC)")),
+  metrics(validation$quality, pcr_all$predicted) |> mutate(model = "PCR (all PC)"),
+  metrics(validation$quality, ols_pred) |> mutate(model = "OLS")
+) |>
+  select(model, RMSE, MAE, R2)
+
+model_comparison |>
+  mutate(across(where(is.numeric), ~ round(.x, 4))) |>
+  kable(caption = "Đánh giá mô hình trên validation set")
+```
+
+```{r predicted-vs-actual}
+validation_plot <- data.frame(
+  actual = validation$quality,
+  predicted = pcr_selected$predicted
+)
+
+ggplot(validation_plot, aes(x = actual, y = predicted)) +
+  geom_jitter(alpha = 0.35, width = 0.1, height = 0.1, color = "#2f80ed") +
+  geom_abline(slope = 1, intercept = 0, linetype = "dashed", color = "#c0392b") +
+  labs(
+    title = "PCR: Giá trị dự đoán so với thực tế",
+    x = "Quality thực tế",
+    y = "Quality dự đoán"
+  )
+```
+
+```{r residual-plot}
+validation_plot <- validation_plot |>
+  mutate(residual = actual - predicted)
+
+ggplot(validation_plot, aes(x = predicted, y = residual)) +
+  geom_point(alpha = 0.4, color = "#2f80ed") +
+  geom_hline(yintercept = 0, linetype = "dashed", color = "#c0392b") +
+  labs(
+    title = "Phần dư của mô hình PCR",
+    x = "Quality dự đoán",
+    y = "Residual"
+  )
+```
+
+\(R^2\) của mô hình PCR được chọn là `r round(model_comparison$R2[model_comparison$model == paste0("PCR (", best_ncomp, " PC)")], 3)`. 
+Có thể hiểu là mô hình chỉ giải thích được khoảng `r percent(model_comparison$R2[model_comparison$model == paste0("PCR (", best_ncomp, " PC)")], accuracy = 0.1)` biến thiên của 
+biến mục tiêu `quality` trên validation set. Đây là mức không cao, nhưng vẫn chấp nhận được trong bài toán này vì `quality` là điểm 
+đánh giá cảm quan của con người, không phải một đại lượng vật lý được đo trực tiếp do đó có thể bị ảnh hưởng bởi nhiều bién khác mà chúng ta không cho vào trong mô hình hồi quy
+hoặc là không có trong bộ dữ liệu của chúng ta. 
+
+Cụ thể hơn, các biến trong dữ liệu chỉ mô tả một số đặc trưng hóa học cơ bản, trong khi chất lượng rượu còn có thể phụ thuộc 
+vào những cái khác như mùi, vị, quy trình sản xuất, điều kiện bảo quản, sai khác giữa người chấm và các yếu tố không có trong dataset.
+
+Do đó, trong trường hợp của bộ dữ liệu này, \(R^2\) thấp không nhất thiết cho thấy mô hình bị sai về mặt kỹ thuật mà nó cho thấy quan 
+hệ giữa các thông số lý hóa và điểm chất lượng chỉ giải thích được một phần giới hạn của bài toán. 
+
+
+# Diễn giải hệ số PCR trên biến gốc
+
+Thông qua việc phân tích thành phần chính, chúng ta đang ánh xạ các biến hiện có lên không gian của thành phần chính, vấn đề ở chỗ không gian này không
+phù hợp cho việc giải thích mô hình hồi quy, do đó để có thể diễn giải các hệ số thành phần chính này lên trên các biến gốc ban đầu, chúngg ta 
+phải có thêm các bước chuyển đổi ngược từ không gian các thành phần chính về lại không gian biến gốc ban đầu.  
+
+Với dữ liệu chuẩn hóa:
+
+\[
+\hat{y} = \alpha + Z V_k \gamma
+\]
+
+trong đó \(Z\) là ma trận biến gốc đã chuẩn hóa, \(V_k\) là ma trận loading của các thành phần chính được chọn, và \(\gamma\) 
+là hệ số hồi quy trên PC. Hệ số trên biến gốc chuẩn hóa là:
+
+\[
+\beta_{scaled} = V_k \gamma
+\]
+
+Sau đó chuyển về đơn vị gốc bằng cách chia cho độ lệch chuẩn của từng biến.
+
+```{r original-coefficients}
+pc_coef <- coef(pcr_selected$model)[-1]
+loading_selected <- pcr_selected$pca$rotation[, seq_len(best_ncomp), drop = FALSE]
+
+beta_scaled <- as.numeric(loading_selected %*% pc_coef)
+beta_original <- beta_scaled / pcr_selected$scale
+intercept_original <- coef(pcr_selected$model)[1] -
+  sum(pcr_selected$center * beta_original)
+
+coef_table <- data.frame(
+  variable = predictor_names,
+  coefficient_original_scale = beta_original,
+  coefficient_scaled = beta_scaled
+) |>
+  arrange(desc(abs(coefficient_scaled)))
+
+coef_table |>
+  mutate(across(where(is.numeric), ~ round(.x, 4))) |>
+  kable(caption = "Hệ số PCR quy đổi về các biến gốc")
+
+intercept_original
+```
+
+```{r coefficient-interpretation-table}
+coef_interpretation <- coef_table |>
+  mutate(
+    interpretation = ifelse(
+      coefficient_original_scale >= 0,
+      paste0(
+        "Tăng 1 đơn vị ", variable,
+        " -> quality dự đoán tăng khoảng ",
+        round(coefficient_original_scale, 4), " điểm"
+      ),
+      paste0(
+        "Tăng 1 đơn vị ", variable,
+        " -> quality dự đoán giảm khoảng ",
+        abs(round(coefficient_original_scale, 4)), " điểm"
+      )
+    )
+  )
+
+coef_interpretation |>
+  select(variable, coefficient_original_scale, interpretation) |>
+  mutate(coefficient_original_scale = round(coefficient_original_scale, 4)) |>
+  kable(caption = "Diễn giải hệ số trên thang đo gốc")
+```
+
+```{r coefficient-plot}
+ggplot(coef_table, aes(x = reorder(variable, coefficient_scaled), y = coefficient_scaled)) +
+  geom_col(fill = "#2f80ed", alpha = 0.85) +
+  coord_flip() +
+  labs(
+    title = "Mức độ ảnh hưởng của biến gốc trong mô hình PCR",
+    x = NULL,
+    y = "Hệ số trên thang chuẩn hóa"
+  )
+```
+
+Vì hệ số đã được chuyển về thang đo gốc, ta có thể diễn giải theo dạng: nếu một biến tăng 1 đơn vị, thì biến mục tiêu `quality` 
+dự đoán thay đổi một lượng bằng hệ số tương ứng, khi các biến khác được giữ theo cấu trúc tuyến tính của mô hình. 
+Ví dụ, nếu hệ số của `alcohol` là 0.9 thì khi `alcohol` tăng thêm 1 đơn vị, điểm `quality` dự đoán tăng khoảng 0.9 điểm.
+
+Tuy nhiên, như đã đề cập ở trên, ta lưu ý rằng `quality` trong dữ liệu thực chất là điểm rời rạc từ 0 đến 10, nhưng trong mô hình hồi quy tuyến tính/PCR, 
+ta đang xem `quality` như một biến định lượng liên tục. Vì vậy, hệ số không có nghĩa là mẫu rượu chắc chắn nhảy từ điểm 6 lên điểm 7. 
+Nó chỉ có nghĩa là giá trị dự đoán trung bình của mô hình tăng hoặc giảm bao nhiêu điểm trên thang quality. 
+Vì vậy mà các thay đổi như 0.1, 0.2 hoặc 0.3 điểm trong biến `quality` vẫn sẽ có ý nghĩa trong mô hình hồi quy, dù điểm quan sát thực tế là số nguyên.
+
+Bên cạnh đó, thông qua hình vẽ trên, các biến có trị tuyệt đối hệ số trên thang chuẩn hóa lớn hơn được xem là có ảnh hưởng mạnh hơn trong mô hình PCR. 
+Dấu dương cho thấy khi giá trị của biến gốc tăng lên thì `quality` dự đoán tăng; dấu âm cho thấy biến tăng thì `quality` dự đoán giảm.
+
+Trong kết quả thường thấy, `alcohol`, `residual.sugar`,`free.sulfur.dioxide` có ảnh hưởng dương rõ rệt đến chất lượng rượu. 
+Một số biến như `density`, `volatile.acidity` hoặc `chlorides` có thể có hệ số âm, phản ánh rằng nồng độ cồn cao hơn thường đi cùng điểm chất lượng cao hơn, 
+còn độ axit bay hơi hoặc mật độ cao hơn có thể đi cùng điểm chất lượng thấp hơn trong mắt của những người đánh giá rượu.
+
+# Kết luận và đề xuất
+
+Bài thực hành đã thực hiện đầy đủ các bước chính:
+
+- Khám phá dữ liệu Wine Quality và kiểm tra dữ liệu thiếu, trùng lặp.
+- Loại các dòng trùng lặp hoàn toàn trước khi chia dữ liệu để giảm rủi ro leakage giữa training set và validation set.
+- Chia dữ liệu thành training set và validation set theo tỷ lệ 80/20.
+- Chuẩn hóa các biến giải thích và xây dựng mô hình PCR.
+- Kiểm tra sơ bộ độ phù hợp của phương pháp PCA bằng KMO và Bartlett test kết hợp với các phương pháp loại dần biến để làm dữ liệu phù hợp hơn cho mô hình PCR.
+- Chọn số thành phần chính bằng 10-fold cross-validation dựa trên tiêu chí RMSE.
+- Đánh giá mô hình trên validation set bằng RMSE, MAE và \(R^2\).
+- Chuyển hệ số PCR về hệ số trên biến gốc để diễn giải ảnh hưởng của các biến hóa học.
+
+Kết quả cho thấy PCR dự đoán được một phần chất lượng rượu vang trắng, nhưng hiệu quả chưa quá cao. Nguyên nhân có thể là `quality` là điểm cảm quan, trong khi dữ liệu chỉ 
+chứa các đặc trưng hóa học cơ bản. Nếu tiếp tục cải thiện, có thể thử thêm các mô hình học máy như Random Forest hoặc Gradient Boosting, hoặc xử lý bài toán như phân loại 
+thứ bậc thay vì hồi quy tuyến tính. 
+
+Ngoài ra trong trường hợp này, các hướng phát triển tương lai đối với bộ dữ liệu này có thể họ sẽ phải thu thập thêm các thông tin khác bên cạnh các chỉ số lý hoá, chẳng hạn như 
+rượu này được làm từ nho gì, sản xuất ở đâu, hãng sản xuất, v.v...
