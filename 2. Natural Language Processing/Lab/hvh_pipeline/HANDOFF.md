@@ -3,18 +3,19 @@
 The CLC Kim Hán Nôm API rate-limits anonymous use after a handful of pages, so
 the ~2036-page corpus runs as **two tracks at once**:
 
-- **Local track (primary, this machine):** fine-tuned PaddleOCRv5 OCRs every
-  page locally on the GPU — no rate limit. Model: HF space
+- **Candidate-model track (this GPU machine):** run local OCR models without the
+  API rate limit. The first candidate is the fine-tuned PaddleOCRv5 model from
   [MinhDS/Fine-tuned-PaddleOCRv5](https://huggingface.co/spaces/MinhDS/Fine-tuned-PaddleOCRv5)
-  (HCMUS; PP-OCRv5_server_rec fine-tuned on ~400K Sino-Nom line images).
-- **API track (quality):** the CLC API stays the gold standard. Colleagues run
+  (HCMUS; PP-OCRv5_server_rec fine-tuned on ~400K Sino-Nom line images). TrOCR
+  candidates can be tested through `bench_trocr.py` / `--engine trocr`, and NomNaOCR candidates through `bench_nomnaocr.py` / `--engine nomnaocr`.
+- **API benchmark track:** the CLC API is the website benchmark. Colleagues run
   their `--person P1..P4` shares from their own machines (separate rate-limit
   buckets) and send back their `cache/` folders. Wherever an API result exists
-  for a page it automatically wins over the local result, and pages with both
-  feed the CER quality report (`verify.py`).
+  for a page it automatically wins over candidate results, and pages with both
+  feed the CER benchmark report (`verify.py`).
 
-NomNaOCR is the bench fallback — only wire it up if the fine-tuned model fails
-validation (step 2 below).
+The goal is to test multiple local models against the rate-limited website/API
+benchmark, not to treat one local model as the final source before comparison.
 
 ## What to copy
 
@@ -50,27 +51,47 @@ python local_ocr.py images/HVH_090/page_001.jpg
 
 1. **Finish the crawl** (resumable; survives per-volume failures):
    `python download_images.py`
-2. **Validate the local model.** Get API gold for HVH_090 (11 pages — one
-   evening of polite pacing): `python run_pipeline.py HVH_090`, then
-   `python run_pipeline.py --engine local HVH_090` and
-   `python verify.py HVH_090`.
-   **Go/no-go:** mean CER ≲ 0.3 vs the CLC gold → proceed; much worse →
-   stop and bench NomNaOCR instead. Also eyeball page 1: the local line order
-   must match the API's (columns right-to-left).
-3. **Bulk local run:** `python run_pipeline.py --engine local`
-   (all units; GPU-hours, not weeks). Segmentation in this mode is the
-   punctuation fallback — see "Segmentation" below.
+2. **Benchmark candidate models.** Get API benchmark text for HVH_090 (11 pages
+   — one evening of polite pacing): `python run_pipeline.py HVH_090`, then run
+   candidates such as `python run_pipeline.py --engine local HVH_090`,
+   `python bench_trocr.py HVH_090`, and
+   `conda run -n py310-ml python bench_nomnaocr.py HVH_090`. To cache a TrOCR
+   or NomNaOCR candidate, use a distinct
+   suffix such as `python run_pipeline.py --engine trocr --orientation rot_ccw --candidate-name trocr_rot_ccw HVH_090`.
+   Finish with `python verify.py HVH_090`.
+   Record each candidate's mean CER vs the CLC/API benchmark; also eyeball page
+   1 so local line order matches the API's columns right-to-left.
+3. **Bulk candidate run:** run only candidates that look acceptable on the
+   benchmark sample, for example `python run_pipeline.py --engine trocr --candidate-name trocr_v1` or
+   `python run_pipeline.py --engine local`. Segmentation in candidate mode is
+   the punctuation segmenter — see "Segmentation" below.
 4. **In parallel, the team's API track:** each colleague runs
    `python download_images.py --person Pn` and
    `python run_pipeline.py --person Pn` on their own machine and sends back
    `cache/`. **Merging = copying their `cache/` folders into yours** — API
-   files (`page_NNN.json`) never collide with local ones (`page_NNN.local.json`)
-   and win by the read rule. After each merge run `python verify.py` to grow
-   `verify_report.tsv`; units with high CER go to the team for full API re-OCR.
+   files (`page_NNN.json`) never collide with candidate files such as
+   `page_NNN.local.json` or `page_NNN.trocr.json` and win by the read rule.
+   After each merge run `python verify.py` to grow `verify_report.tsv`; units
+   with high candidate CER go to the team for full API re-OCR.
    `python verify.py --sample 3` additionally spends a little API budget on
    random local-only pages to widen gold coverage.
 5. **Regenerate outputs** once caches settle: `python run_pipeline.py --reseg`
    re-writes `output/` from cache without any OCR, segmenting through the API.
+
+## Current benchmark status
+
+As of 2026-07-05, the CLC/API benchmark sample for `HVH_090` shows the
+PaddleOCRv5 candidate at mean CER `0.4766`, with worst page `page_003` at
+`0.5774`. The tested TrOCR candidate
+`nxquang-al/finetuned-trocr-base-vietnamese-nom` is also poor on `HVH_090`:
+`rot_cw` mean CER `0.985`, `rot_ccw` `0.976`, and `vertical` `0.998`.
+
+NomNaOCR is wired as a TensorFlow candidate model but still needs external
+assets before it can be benchmarked: clone `https://github.com/ds4v/NomNaOCR`
+to `models/NomNaOCR/source`, place `All.txt` or `vocab.json` in
+`models/NomNaOCR`, and extract the downloaded weights into `models/NomNaOCR/weights` preserving the author folders such as `Fine-tuning/` and `NomNaOCR/`.
+Run it from the existing `py310-ml` env; generate `.local.json` boxes first from
+the `hvh` env.
 
 ## Segmentation caveat
 
@@ -88,6 +109,7 @@ budget) or evaluate a local classical-Chinese punctuation-restoration model
 | `assignments.py` | 4-way team split (`--person P1..P4`) |
 | `download_images.py` | stage 1: crawl JPEGs from lib.nomfoundation.org |
 | `ocr_client.py` | CLC Kim Hán Nôm API client (backoff, rate-limit waits) |
-| `local_ocr.py` | local engine: detection + reading order + fine-tuned rec |
-| `run_pipeline.py` | stages 2+3: OCR (either engine) + outputs; merge rule |
-| `verify.py` | CER report local-vs-API → `verify_report.tsv` |
+| `local_ocr.py` | PaddleOCRv5 candidate: detection + reading order + fine-tuned rec |
+| `nomnaocr_ocr.py` | NomNaOCR candidate recognizer using cached `.local.json` boxes |
+| `run_pipeline.py` | stages 2+3: API/candidate OCR + outputs; merge rule |
+| `verify.py` | CER report candidate-vs-API benchmark → `verify_report.tsv` |
