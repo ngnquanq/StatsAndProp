@@ -80,18 +80,18 @@ python local_ocr.py images/HVH_090/page_001.jpg
 
 ## Current benchmark status
 
-As of 2026-07-05, the CLC/API benchmark sample for `HVH_090` shows the
-PaddleOCRv5 candidate at mean CER `0.4766`, with worst page `page_003` at
-`0.5774`. The tested TrOCR candidate
-`nxquang-al/finetuned-trocr-base-vietnamese-nom` is also poor on `HVH_090`:
-`rot_cw` mean CER `0.985`, `rot_ccw` `0.976`, and `vertical` `0.998`.
+As of 2026-07-05, all surveyed public candidates are benchmarked on the
+`HVH_090` CLC/API sample (see `verify_report.tsv` and `REPORT.md`):
+PaddleOCRv5 candidate mean CER `0.4766` (but `0.195` on Han-prose HVH_094 —
+the only PASS); TrOCR checkpoints `nxquang-al/...` and `tt1225/...` both
+≈ `0.98` (weak checkpoints); NomNaOCR CRNN `0.971` / SC-Transformer `0.975`.
 
-NomNaOCR is wired as a TensorFlow candidate model but still needs external
-assets before it can be benchmarked: clone `https://github.com/ds4v/NomNaOCR`
-to `models/NomNaOCR/source`, place `All.txt` or `vocab.json` in
-`models/NomNaOCR`, and extract the downloaded weights into `models/NomNaOCR/weights` preserving the author folders such as `Fine-tuning/` and `NomNaOCR/`.
-Run it from the existing `py310-ml` env; generate `.local.json` boxes first from
-the `hvh` env.
+NomNaOCR's assets are fully installed under `models/NomNaOCR/` and the
+harness is *verified correct* (it decodes the authors' bundled demo patch
+exactly). Its failure on HVH_090 is a genuine domain-generalization limit,
+not a wiring bug. Critical gotcha: `models/NomNaOCR/All.txt` must be the
+byte-exact Kaggle `Patches/All.txt` — the decode vocabulary's tie-break
+depends on its line order (see `models/NomNaOCR/MISSING_METADATA.md`).
 
 ## Segmentation caveat
 

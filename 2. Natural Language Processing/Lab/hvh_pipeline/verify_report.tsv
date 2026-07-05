@@ -1,5 +1,6 @@
 unit	candidate	pages_compared	mean_CER	worst_page	worst_CER
 HVH_090	local	11	0.4766	page_003	0.5774
-HVH_090	nomnaocr_crnn_vertical	11	0.9716	page_003	0.9868
+HVH_090	nomnaocr_crnn_ctc_vertical	11	0.9708	page_003	0.9887
+HVH_090	nomnaocr_sc_transformer_vertical	11	0.9754	page_003	0.9849
 HVH_093	local	3	0.4189	page_010	0.6349
 HVH_094	local	3	0.1952	page_007	0.2273

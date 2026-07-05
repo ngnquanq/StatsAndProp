@@ -65,8 +65,9 @@ adoption-grade).
 |---|---|---|---|---|
 | PaddleOCRv5 fine-tune (MinhDS/Fine-tuned-PaddleOCRv5, HCMUS) | **0.477** | 0.419 | **0.195** | PASS on Hán prose only |
 | TrOCR `nxquang-al/finetuned-trocr-base-vietnamese-nom` | 0.976–0.998 (3 orientations) | — | — | FAIL |
-| NomNaOCR CRNN+CTC (pretrained weights, vertical) | 0.972 | — | — | FAIL |
-| NomNaOCR SC-CNN×Transformer (pretrained weights) | 0.977 vertical / 0.999 rotated | — | — | FAIL |
+| TrOCR `tt1225/finetuned-trocr-base-vietnamese-nom` | 0.975–0.999 (3 orientations) | — | — | FAIL |
+| NomNaOCR CRNN+CTC (verified decode, vertical) | 0.971 | — | — | FAIL — no domain transfer |
+| NomNaOCR SC-CNN×Transformer (verified decode, vertical) | 0.975 | — | — | FAIL — no domain transfer |
 
 ### Findings
 
@@ -81,17 +82,23 @@ adoption-grade).
    0.69 → 0.42, 0.64 → 0.48). Per-unit mean confidence from the bulk local
    pass therefore classifies units into "ship the local draft" (Hán prose)
    vs "route to the API team first" (Nôm-heavy) — without needing gold.
-3. **NomNaOCR's published numbers (val CER 0.029) did not transfer.** With
-   the only publicly downloadable weights (the pretrained set; the paper's
-   fine-tuned weights are not in the authors' Drive folder) both
-   architectures output well-formed but wrong glyph sequences (CER ≈ 0.97).
-   Since the vocabulary had to be reconstructed from the dataset's
-   `All.txt`, a token-index/vocabulary-order mismatch cannot be excluded —
-   the verdict is provisional, but the candidate is unusable as-is.
-4. **The tested TrOCR checkpoint is a dud** (plausible Nôm glyphs at correct
-   line lengths, wrong content; 1 download on HF — likely a stub). The
-   sibling `tt1225/finetuned-trocr-*-vietnamese-nom` checkpoints, whose
-   vocab verifiably contains Ext-B entries, remain untested.
+3. **NomNaOCR's published numbers (val CER 0.029) did not transfer — and we
+   can prove it's the model, not our harness.** A first run scored ≈ 0.97
+   because the decode vocabulary (7,479 characters ordered by frequency
+   with ties broken by first occurrence in the dataset's `All.txt`) had
+   been rebuilt from a copy with a different line order — same characters,
+   same counts, scrambled tie groups, so every token decoded to a
+   same-frequency sibling. After installing the byte-exact Kaggle
+   `Patches/All.txt`, the harness decodes the authors' own demo patch
+   perfectly (CRNN 8/8 characters) — yet HVH_090 stays at CER 0.971/0.975.
+   The models emit valid but wrong (and truncated: their decoder caps at
+   24 characters, our columns run ~27) text on unseen works. This matches
+   the paper's own caveat: trained on 3 works with 64 % train/val
+   character overlap, the models do not generalize to new manuscripts.
+4. **Both public TrOCR Nôm checkpoints are duds** (plausible Nôm glyphs at
+   correct line lengths, wrong content, best CER 0.975). Unlike NomNaOCR
+   they carry their own self-contained tokenizers, so no decode-table
+   issue is possible — the checkpoints are simply weak.
 5. **Detection also loses lines on dense pages** (31 vs the API's 38 lines
    on HVH_093 p010, dense interlinear script), inflating CER via deletions.
 
@@ -120,9 +127,11 @@ confidence router) are prioritized for the 4-person API track.
 - **Segmentation**: punctuation-splitting fails on unpunctuated scans (giant
   "sentences"); final `_seg.tsv` requires the `--reseg` API pass, or a
   classical-Chinese punctuation-restoration model (open task).
-- **Remaining candidates**: tt1225 TrOCR variants; if all fail, fine-tuning
-  a PARSeq-style recognizer with an Ext-B-complete charset on NomNaOCR data
-  + CLC pseudo-labels from our 2,071 pages is the fallback (day-scale task).
+- **All surveyed public candidates are now benchmarked and fail on Nôm.**
+  The remaining local option is fine-tuning our own recognizer with an
+  Ext-B-complete charset on NomNaOCR data + CLC pseudo-labels from our
+  2,071 pages (day-scale task); otherwise Nôm-heavy units are covered by
+  the team's API track per the routing strategy.
 - **NER** (`_ner.json`) applies when input is text and is not part of the
   OCR scope covered here.
 - CER here is *agreement with the CLC API*, not with human ground truth —
