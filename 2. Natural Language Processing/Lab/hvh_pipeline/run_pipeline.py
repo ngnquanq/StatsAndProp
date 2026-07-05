@@ -5,13 +5,18 @@ Per OutputRequirement.pdf (section B, HVH):
     output/HVH_xxx/HVH_xxx_seg.tsv   — [sentence_id]\t[sentence]
 Multi-volume works nest chapters: output/HVH_107/HVH_107_01/HVH_107_01_raw.txt ...
 
-Each page's OCR result is cached as JSON under cache/<unit>/page_NNN.json so the
-run can resume and the output files can be regenerated without re-OCR.
+Two OCR engines share one cache (cache/<unit>/):
+    page_NNN.json        — CLC Kim Hán Nôm API result (the gold standard)
+    page_NNN.local.json  — fine-tuned PaddleOCRv5 result (local_ocr.py)
+Outputs always prefer the API file, so merging a colleague's API cache into
+cache/ upgrades pages without re-running anything.
 
 Usage:
-    python run_pipeline.py                  # all works with downloaded images
-    python run_pipeline.py HVH_090 ...       # given work/unit codes
-    python run_pipeline.py --person P1       # this person's assigned share
+    python run_pipeline.py                    # API engine, all downloaded works
+    python run_pipeline.py --person P1        # this person's assigned API share
+    python run_pipeline.py --engine local     # GPU bulk run, no rate limit
+    python run_pipeline.py --reseg HVH_090    # no OCR: rebuild outputs from
+                                              # cache, segmenting via the API
 """
 
 import json
@@ -32,34 +37,56 @@ DELAY_S = 5.0  # each page = 2–4 API calls; the server's burst quota is small
 SENT_END = "。！？；"
 
 
-def ocr_unit(client, unit_code):
-    """OCR all pages of one unit; returns list of per-page results (page order)."""
+def _page_stems(unit_code):
+    """Page stems (page_001, ...) from images, or from cache when images are
+    absent (lets --reseg rebuild outputs on a machine that only has cache/)."""
     image_dir = IMAGES_DIR / unit_code
-    pages = sorted(image_dir.glob("page_*.jpg"))
-    if not pages:
-        raise OCRError(f"{unit_code}: no images in {image_dir} — run download_images.py first")
+    pages = sorted(p.stem for p in image_dir.glob("page_*.jpg"))
+    if pages:
+        return pages
+    cache_dir = CACHE_DIR / unit_code
+    return sorted({f.name.split(".")[0] for f in cache_dir.glob("page_*.json")})
+
+
+def ocr_unit(unit_code, api_client=None, local_engine=None):
+    """OCR uncached pages with whichever engine is given, then return the best
+    cached result per page (API wins over local); page order throughout."""
+    stems = _page_stems(unit_code)
+    if not stems:
+        raise OCRError(f"{unit_code}: no images and no cache — run download_images.py first")
 
     cache_dir = CACHE_DIR / unit_code
     cache_dir.mkdir(parents=True, exist_ok=True)
 
     results, failures = [], []
-    for page in pages:
-        cache_file = cache_dir / (page.stem + ".json")
-        if cache_file.exists():
-            results.append(json.loads(cache_file.read_text()))
-            continue
-        try:
-            result = client.ocr_page(page)
-        except OCRError as err:
-            print(f"  {page.name}: FAILED — {err}")
-            failures.append({"page": page.name, "error": str(err)})
-            continue
-        cache_file.write_text(json.dumps(result, ensure_ascii=False, indent=1))
-        results.append(result)
-        n_lines = len(result["lines"])
-        note = result.get("skipped", f"{n_lines} lines")
-        print(f"  {page.name}: {note}")
-        time.sleep(DELAY_S)
+    for stem in stems:
+        api_file = cache_dir / f"{stem}.json"
+        local_file = cache_dir / f"{stem}.local.json"
+        image = IMAGES_DIR / unit_code / f"{stem}.jpg"
+
+        engine = None
+        if api_client is not None and not api_file.exists():
+            engine, target = api_client, api_file
+        elif local_engine is not None and not api_file.exists() and not local_file.exists():
+            engine, target = local_engine, local_file
+
+        if engine is not None:
+            try:
+                result = engine.ocr_page(image)
+            except Exception as err:  # OCRError / LocalOCRError
+                print(f"  {image.name}: FAILED — {err}")
+                failures.append({"page": image.name, "error": str(err)})
+            else:
+                target.write_text(json.dumps(result, ensure_ascii=False, indent=1))
+                note = result.get("skipped", f"{len(result['lines'])} lines")
+                print(f"  {image.name}: {note} ({result.get('source', 'api')})")
+                if engine is api_client:
+                    time.sleep(DELAY_S)
+
+        if api_file.exists():
+            results.append(json.loads(api_file.read_text()))
+        elif local_file.exists():
+            results.append(json.loads(local_file.read_text()))
 
     if failures:
         (cache_dir / "failures.json").write_text(json.dumps(failures, ensure_ascii=False, indent=1))
@@ -87,6 +114,10 @@ def segment_page(client, lines):
     as a newline-separated string in data["sentences"]. Segmenting per page
     keeps payloads small (the whole-work blob comes back empty) at the cost of
     cutting sentences that straddle a page boundary.
+
+    With client=None (local bulk run) only the punctuation fallback is used;
+    rebuild seg.tsv later with --reseg once API budget allows. Classical scans
+    are often unpunctuated, so watch for giant "sentences" in that mode.
     """
     text = "".join(lines).strip()
     if not text:
@@ -120,7 +151,8 @@ def write_outputs(client, unit_code, page_results, out_dir):
         sentences.extend(page_sents)
         if page_sents:
             hows.add(how)
-        time.sleep(DELAY_S)
+        if client is not None:
+            time.sleep(DELAY_S)
 
     with open(out_dir / f"{unit_code}_seg.tsv", "w", encoding="utf-8") as fh:
         for i, sent in enumerate(sentences, start=1):
@@ -129,25 +161,50 @@ def write_outputs(client, unit_code, page_results, out_dir):
 
 
 def main():
-    selection = select(sys.argv[1:])
-    explicit = len(sys.argv) > 1  # a specific request may target a not-yet-complete unit
-    client = KimHanNomClient()
+    argv = sys.argv[1:]
+    engine = "api"
+    if "--engine" in argv:
+        i = argv.index("--engine")
+        engine = argv[i + 1]
+        del argv[i:i + 2]
+        if engine not in ("local", "api"):
+            raise SystemExit(f"--engine must be 'local' or 'api', not {engine!r}")
+    reseg = "--reseg" in argv
+    if reseg:
+        argv.remove("--reseg")
+
+    selection = select(argv)
+    explicit = bool(argv)  # a specific request may target a not-yet-complete unit
+
+    api_client = local_engine = None
+    if reseg:
+        api_client = KimHanNomClient()  # segmentation only, no OCR
+    elif engine == "api":
+        api_client = KimHanNomClient()
+    else:
+        from local_ocr import LocalOCR
+        local_engine = LocalOCR()
+    seg_client = api_client
 
     for work, unit_code, _vol in selection:
         image_dir = IMAGES_DIR / unit_code
-        if not image_dir.exists():
+        if not image_dir.exists() and not (CACHE_DIR / unit_code).exists():
             print(f"{unit_code}: no images downloaded yet, skipping")
             continue
-        if not (image_dir / ".complete").exists() and not explicit:
+        if not (image_dir / ".complete").exists() and not explicit and not reseg:
             print(f"{unit_code}: download still in progress, skipping this pass")
             continue
         print(f"== {unit_code} ({work['title']}) ==")
-        page_results = ocr_unit(client, unit_code)
+        page_results = ocr_unit(
+            unit_code,
+            api_client=None if reseg else api_client,
+            local_engine=local_engine,
+        )
         # multi-volume works nest each volume under the work folder
         out_dir = OUTPUT_DIR / work["code"]
         if unit_code != work["code"]:
             out_dir = out_dir / unit_code
-        write_outputs(client, unit_code, page_results, out_dir)
+        write_outputs(seg_client, unit_code, page_results, out_dir)
 
 
 if __name__ == "__main__":

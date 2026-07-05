@@ -23,7 +23,7 @@ from works import select
 BASE = "https://lib.nomfoundation.org"
 IMAGES_DIR = Path(__file__).parent / "images"
 DELAY_S = 1.0
-RETRIES = 3
+RETRIES = 6  # nomfoundation.org intermittently read-times-out for minutes
 
 session = requests.Session()
 session.headers["User-Agent"] = "Mozilla/5.0 (HVH corpus project; academic use)"
@@ -41,7 +41,7 @@ def get(url, **kw):
             return resp
         except requests.RequestException as err:
             last_err = err
-            time.sleep(2 ** attempt * 2)
+            time.sleep(min(2 ** attempt * 3, 120))  # 3s .. 96s
     raise RuntimeError(f"GET {url} failed after {RETRIES} tries: {last_err}")
 
 
@@ -81,8 +81,18 @@ def download_volume(unit_code, volume_id):
 
 
 def main():
+    # One bad volume must not kill an overnight run — record and move on;
+    # the crawl is resumable, so failed volumes are just re-run later.
+    failed = []
     for _work, unit_code, volume_id in select(sys.argv[1:]):
-        download_volume(unit_code, volume_id)
+        try:
+            download_volume(unit_code, volume_id)
+        except (RuntimeError, requests.RequestException) as err:
+            print(f"{unit_code}: giving up on this volume — {err}")
+            failed.append(unit_code)
+    if failed:
+        print(f"\nincomplete volumes (re-run to resume): {' '.join(failed)}")
+        sys.exit(1)
 
 
 if __name__ == "__main__":

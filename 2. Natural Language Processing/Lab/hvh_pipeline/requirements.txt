@@ -1,3 +1,7 @@
 requests
 openpyxl
 tqdm
+rapidfuzz          # verify.py CER (optional — falls back to pure python)
+# Local OCR track only (the GPU machine — see HANDOFF.md):
+# paddlepaddle-gpu   (or paddlepaddle for a CPU smoke test)
+# paddleocr>=3.0
