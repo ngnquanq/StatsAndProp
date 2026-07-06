@@ -82,14 +82,17 @@ evidence); CLC's own models (never released — that's the benchmark API).
 
 ## Next steps, in order
 
-1. **Bench tt1225 TrOCR variants** (30 min): `cd hvh_pipeline &&
-   python bench_trocr.py tt1225/finetuned-trocr-base-vietnamese-nom` (env
-   `hvh`; script tests 3 orientations vs HVH_090 gold — expect rot_ccw to be
-   the valid one).
-2. **Fetch NomNaOCR assets and bench** (the infrastructure is already wired;
-   see `HANDOFF.md` "Current benchmark status" for exact asset layout), then
-   `conda run -n py310-ml python bench_nomnaocr.py HVH_090`. This is the most
-   promising Nôm candidate (published CER 0.03 in-domain).
+1. ~~Bench tt1225 TrOCR variants~~ **DONE (2026-07-05): FAIL, best 0.975
+   (rot_ccw).** Weak checkpoint; has its own tokenizer, so no decode-table
+   excuse applies.
+2. ~~Fetch NomNaOCR assets and bench~~ **DONE (2026-07-05): FAIL, CRNN 0.971
+   / SC-Transformer 0.975 on HVH_090 — with a *verified-correct* harness**
+   (decodes the authors' demo patch 8/8 after installing the byte-exact
+   Kaggle `Patches/All.txt`; the vocab tie-break depends on that file's
+   line order — see `models/NomNaOCR/MISSING_METADATA.md`). No domain
+   transfer; decoder also caps at 24 chars/line. Net: no public local
+   model passes on Nôm — routing (step 5) + the API team track carry
+   Nôm-heavy units, and step 8 (fine-tune) is the only local avenue left.
 3. **Acceptance gate** per candidate: mean CER < 0.3 on HVH_090 (Nôm) —
    below 0.2 is adoption-grade. Record every result in `verify_report.tsv`
    via candidate cache files + `verify.py` (multi-candidate aware).
