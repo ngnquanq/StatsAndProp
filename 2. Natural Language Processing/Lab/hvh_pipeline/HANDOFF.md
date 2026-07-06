@@ -1,5 +1,52 @@
 # Handoff — running the HVH pipeline on the GPU machine
 
+## Session status — 2026-07-06 (cloud fleet run, paused mid-way)
+
+A one-shot 8-VM GCE fleet (`--startup-run`, `infra/`) was launched to crawl and
+API-OCR the whole corpus in parallel. It was **stopped early and torn down**;
+here is exactly where things stand so the next person/agent can resume.
+
+**Collected and merged into this repo (durable):**
+- `images_large/` — **1986 / 2071 high-res /large/ scans (96%)**, corpus-wide.
+  The missing ~85 are mostly HVH_103 (volume nlvnpf-0600 has no `/large/`
+  variant on nomfoundation — a 404, expected). This unblocks the punct track
+  for essentially all 38 units.
+- `cache/` — **228 new API pages** (`page_NNN.json`) across ~12 units, plus the
+  full `.local.json` geometry (2071 pages) from the earlier GPU pass.
+- `output/` regenerated (`run_pipeline.py --engine local`): all 38 units have
+  non-empty `_raw.txt` + `_seg.tsv`; API pages win where present.
+
+**Why it stopped — CLC API incident (not an IP block):**
+The fleet's OCR stalled at ~29 pages/worker. Diagnosis (evidence, not
+inference): the CLC **OCR/upload endpoint degraded for *all* clients** — the
+same `image-upload` call went from 6.3 s to 25 s timeouts **from the home IP
+too**, while `tools.clc.hcmus.edu.vn/` homepage stayed fast (0.25 s) and general
+connectivity from the VMs was fine (nomfoundation, google all 200). So it is a
+server-side OCR-backend saturation, and 8 VMs + retries hammering a modest
+academic server plausibly contributed. Earlier over-confident "GCP IP is
+blocked" / "null-route" guesses were **wrong** — see the corrected reasoning.
+The right move was to back off and let the server recover. CLC use here is
+authorized instructor-assigned work; this was load management, not a ban.
+
+**What remains (the handoff):**
+1. **Finish API OCR** for the ~1843 pages not yet API-covered, *once CLC
+   recovers*. Do it gently — a single stream from a home IP (which works), or
+   very few workers with larger delays; do not re-launch 8 concurrent VMs at the
+   same endpoint. Resume is idempotent (cached pages skip): `python
+   run_pipeline.py` (or `--person P1..P4` shares across teammates' machines).
+2. **Run the punct track corpus-wide** now that `images_large/` exists:
+   `python punct_detect.py <unit>` then `python run_pipeline.py --reseg --punct`.
+   Geometry comes from API `result_bbox` where present, else `.local.json`.
+3. Re-run `verify.py` to refresh CER numbers as API coverage grows.
+
+**Infra to resume the fleet** (if ever): `infra/run_gce_workers.sh
+--startup-run --workers N` provisions, `infra/collect_run.sh --watch --merge`
+gathers + merges bundles. Note GCP quota caps this project at **8 in-use IPs**
+in asia-southeast1. Always `terraform destroy` after collecting.
+
+---
+
+
 The CLC Kim Hán Nôm API rate-limits anonymous use after a handful of pages, so
 the ~2036-page corpus runs as **two tracks at once**:
 

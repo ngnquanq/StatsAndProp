@@ -257,6 +257,10 @@ def main():
     read_suffixes = ("api", candidate_suffix)
     if reseg:
         api_client = KimHanNomClient()  # segmentation only, no OCR
+        # read every produced track so a bare --reseg regenerates every unit
+        # (API wins; local/candidate drafts fill units the API hasn't reached).
+        # Without local here, local-only units would rewrite to empty outputs.
+        read_suffixes = ("api", "local", candidate_suffix)
     elif engine == "api":
         api_client = KimHanNomClient()
         read_suffixes = ("api",)
