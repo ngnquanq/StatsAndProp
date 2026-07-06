@@ -1,0 +1,122 @@
+#!/usr/bin/env bash
+set -Eeuo pipefail
+
+LOG_FILE="/var/log/hvh-startup-smoke.log"
+STATUS_FILE="/tmp/hvh-startup-smoke-status.json"
+WORKER_NAME="${worker_name}"
+BUNDLE_FILE="/tmp/${worker_name}.tgz"
+CHECKOUT_DIR="/opt/StatsAndProp"
+PIPELINE_DIR="${pipeline_dir}"
+GCS_BUCKET="${gcs_bucket}"
+GCS_PREFIX="${gcs_prefix}"
+REPO_URL="${repo_url}"
+REPO_VERSION="${repo_version}"
+REPO_SPARSE_PATH="${repo_sparse_path}"
+SMOKE_UNIT="${smoke_unit}"
+SMOKE_MAX_PAGES="${smoke_max_pages}"
+SMOKE_TIMEOUT_SECONDS="${smoke_timeout_seconds}"
+STATUS="running"
+MESSAGE="startup smoke is running"
+
+exec > >(tee -a "$LOG_FILE") 2>&1
+
+json_escape() {
+  python3 -c 'import json, sys; print(json.dumps(sys.stdin.read())[1:-1])'
+}
+
+object_urlencode() {
+  python3 -c 'import sys, urllib.parse; print(urllib.parse.quote(sys.argv[1], safe=""))' "$1"
+}
+
+gcs_token() {
+  curl -fsS -H "Metadata-Flavor: Google" \
+    "http://metadata.google.internal/computeMetadata/v1/instance/service-accounts/default/token" \
+    | python3 -c 'import json, sys; print(json.load(sys.stdin)["access_token"])'
+}
+
+upload_file() {
+  local source="$1"
+  local object="$2"
+  local content_type="$3"
+
+  if [[ ! -f "$source" ]]; then
+    echo "Skipping missing upload source: $source"
+    return 0
+  fi
+
+  local encoded_object token
+  encoded_object="$(object_urlencode "$object")"
+  token="$(gcs_token)"
+  curl -fsS -X POST \
+    -H "Authorization: Bearer $token" \
+    -H "Content-Type: $content_type" \
+    --data-binary "@$source" \
+    "https://storage.googleapis.com/upload/storage/v1/b/$GCS_BUCKET/o?uploadType=media&name=$encoded_object" \
+    >/dev/null
+}
+
+write_status() {
+  local exit_code="$1"
+  local escaped_message
+  escaped_message="$(printf '%s' "$MESSAGE" | json_escape)"
+  cat > "$STATUS_FILE" <<JSON
+{
+  "status": "$STATUS",
+  "exit_code": $exit_code,
+  "worker": "$WORKER_NAME",
+  "unit": "$SMOKE_UNIT",
+  "max_pages": $SMOKE_MAX_PAGES,
+  "message": "$escaped_message",
+  "timestamp": "$(date -Iseconds)"
+}
+JSON
+}
+
+finish() {
+  local exit_code=$?
+  set +e
+
+  if [[ "$exit_code" -eq 0 ]]; then
+    STATUS="succeeded"
+    MESSAGE="startup smoke completed"
+  else
+    STATUS="failed"
+    MESSAGE="startup smoke failed; inspect $WORKER_NAME.log"
+  fi
+
+  mkdir -p "$PIPELINE_DIR/cache" "$PIPELINE_DIR/output"
+  tar -C "$PIPELINE_DIR" -czf "$BUNDLE_FILE" cache output
+
+  write_status "$exit_code"
+  upload_file "$LOG_FILE" "$GCS_PREFIX/$WORKER_NAME.log" "text/plain"
+  upload_file "$BUNDLE_FILE" "$GCS_PREFIX/$WORKER_NAME.tgz" "application/gzip"
+  upload_file "$STATUS_FILE" "$GCS_PREFIX/$WORKER_NAME.status.json" "application/json"
+
+  exit "$exit_code"
+}
+trap finish EXIT
+
+echo "Starting HVH startup smoke on $WORKER_NAME at $(date -Iseconds)"
+echo "Repository: $REPO_URL ($REPO_VERSION)"
+echo "Sparse path: $REPO_SPARSE_PATH"
+echo "Smoke unit: $SMOKE_UNIT; max pages: $SMOKE_MAX_PAGES; OCR timeout: ${smoke_timeout_seconds}s"
+
+export DEBIAN_FRONTEND=noninteractive
+apt-get update
+apt-get install -y ca-certificates curl git python3 python3-requests tar gzip
+
+write_status 0
+upload_file "$STATUS_FILE" "$GCS_PREFIX/$WORKER_NAME.status.json" "application/json"
+
+if [[ ! -d "$CHECKOUT_DIR/.git" ]]; then
+  git clone --depth=1 --filter=blob:none --sparse --branch "$REPO_VERSION" "$REPO_URL" "$CHECKOUT_DIR"
+else
+  git -C "$CHECKOUT_DIR" fetch --depth=1 origin "$REPO_VERSION"
+  git -C "$CHECKOUT_DIR" reset --hard FETCH_HEAD
+fi
+
+git -C "$CHECKOUT_DIR" sparse-checkout set "$REPO_SPARSE_PATH"
+
+cd "$PIPELINE_DIR"
+python3 download_images.py "$SMOKE_UNIT" --max-pages "$SMOKE_MAX_PAGES"
+timeout "$SMOKE_TIMEOUT_SECONDS"s python3 run_pipeline.py "$SMOKE_UNIT" --max-pages "$SMOKE_MAX_PAGES"

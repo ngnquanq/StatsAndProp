@@ -46,6 +46,17 @@ workers, writes the Ansible inventory, and runs the OCR playbook:
 infra/run_gce_workers.sh --workers 20 --auto-approve
 ```
 
+For the current SSH issue, use startup-script smoke mode. This avoids Ansible
+and runs the capped smoke workload from the VM boot script, then downloads the
+status/log/bundle locally before destroy:
+
+```bash
+infra/run_gce_workers.sh --startup-smoke --smoke-unit HVH_100 --smoke-pages 1 --auto-approve --destroy-after
+```
+
+Downloaded smoke files are written under `infra/artifacts/smoke/<timestamp>/`:
+`status.json`, `startup.log`, and `bundle.tgz` when the VM produced a bundle.
+
 For one shared Google Cloud filesystem mounted by every worker, enable
 Filestore:
 

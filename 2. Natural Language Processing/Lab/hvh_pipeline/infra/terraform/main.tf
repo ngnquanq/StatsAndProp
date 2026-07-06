@@ -11,6 +11,7 @@ locals {
   artifact_bucket_name         = var.artifact_bucket_name == "" ? "${var.project_id}-${var.name_prefix}-artifacts" : var.artifact_bucket_name
   filestore_name               = var.filestore_name == "" ? "${var.name_prefix}-shared" : var.filestore_name
   ssh_public_key               = trimspace(file(pathexpand(var.public_key_path)))
+  startup_smoke_prefix         = "${var.artifact_prefix}/startup-smoke"
 }
 
 resource "google_service_account" "worker" {
@@ -109,9 +110,25 @@ resource "google_compute_instance" "worker" {
     }
   }
 
-  metadata = {
-    ssh-keys = "${var.ssh_user}:${local.ssh_public_key}"
-  }
+  metadata = merge(
+    {
+      ssh-keys = "${var.ssh_user}:${local.ssh_public_key}"
+    },
+    var.startup_smoke ? {
+      startup-script = templatefile("${path.module}/startup_smoke.sh.tftpl", {
+        repo_url              = var.repo_url
+        repo_version          = var.repo_version
+        repo_sparse_path      = var.repo_sparse_path
+        pipeline_dir          = "/opt/StatsAndProp/${var.repo_sparse_path}"
+        smoke_unit            = var.startup_smoke_unit
+        smoke_max_pages       = var.startup_smoke_max_pages
+        smoke_timeout_seconds = var.startup_smoke_timeout_seconds
+        gcs_bucket            = local.artifact_bucket_name
+        gcs_prefix            = local.startup_smoke_prefix
+        worker_name           = format("hvh-worker-%02d", count.index + 1)
+      })
+    } : {}
+  )
 
   scheduling {
     automatic_restart           = var.spot ? false : true

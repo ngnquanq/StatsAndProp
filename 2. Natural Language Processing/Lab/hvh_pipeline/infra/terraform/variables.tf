@@ -143,6 +143,48 @@ variable "artifact_prefix" {
   default     = "runs/hvh-api-ocr"
 }
 
+variable "startup_smoke" {
+  description = "Run the capped smoke test from a VM startup script instead of Ansible."
+  type        = bool
+  default     = false
+}
+
+variable "startup_smoke_unit" {
+  description = "Unit code for startup-script smoke tests."
+  type        = string
+  default     = "HVH_100"
+}
+
+variable "startup_smoke_max_pages" {
+  description = "Maximum pages to process during startup-script smoke tests."
+  type        = number
+  default     = 1
+}
+
+variable "startup_smoke_timeout_seconds" {
+  description = "Timeout in seconds for the OCR command inside startup-script smoke tests."
+  type        = number
+  default     = 600
+}
+
+variable "repo_url" {
+  description = "Git repository URL cloned by startup-script workers."
+  type        = string
+  default     = "https://github.com/ngnquanq/StatsAndProp.git"
+}
+
+variable "repo_version" {
+  description = "Git branch, tag, or ref cloned by startup-script workers."
+  type        = string
+  default     = "master"
+}
+
+variable "repo_sparse_path" {
+  description = "Sparse checkout path containing the HVH pipeline."
+  type        = string
+  default     = "2. Natural Language Processing/Lab/hvh_pipeline"
+}
+
 
 variable "create_filestore" {
   description = "Create a shared Filestore NFS instance for worker images/cache/output."

@@ -50,3 +50,18 @@ output "ansible_inventory" {
     ]
   ))
 }
+
+output "startup_smoke_status_object" {
+  description = "GCS object path for the first worker startup-smoke status JSON."
+  value       = var.startup_smoke ? "${local.startup_smoke_prefix}/hvh-worker-01.status.json" : ""
+}
+
+output "startup_smoke_log_object" {
+  description = "GCS object path for the first worker startup-smoke log."
+  value       = var.startup_smoke ? "${local.startup_smoke_prefix}/hvh-worker-01.log" : ""
+}
+
+output "startup_smoke_bundle_object" {
+  description = "GCS object path for the first worker startup-smoke cache/output bundle."
+  value       = var.startup_smoke ? "${local.startup_smoke_prefix}/hvh-worker-01.tgz" : ""
+}

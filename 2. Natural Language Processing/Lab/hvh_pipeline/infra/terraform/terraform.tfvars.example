@@ -17,6 +17,13 @@ artifact_bucket_location     = "ASIA-SOUTHEAST1"
 artifact_bucket_force_destroy = false
 artifact_prefix              = "runs/hvh-api-ocr"
 
+# Startup-script smoke mode avoids SSH command execution and is intended for
+# one-page validation runs.
+startup_smoke                 = false
+startup_smoke_unit            = "HVH_100"
+startup_smoke_max_pages       = 1
+startup_smoke_timeout_seconds = 600
+
 # Optional shared NFS filesystem for all workers. This is useful for the full
 # multi-VM run, but Filestore has a 1 TiB minimum on BASIC_HDD, so leave it off
 # for tiny tests unless you want the shared filesystem behavior.
