@@ -14,6 +14,7 @@
     remote_bundle: "/tmp/{{ inventory_hostname }}-hvh-cache-output.tgz"
     gcs_object: "{{ gcs_prefix }}/{{ inventory_hostname }}-shard-{{ shard_index }}-of-{{ shard_total }}.tgz"
     run_download: true
+    run_download_large: true  # high-res scans for the red-ink punctuation track
     run_ocr: true
     run_reseg: false
     upload_to_gcs: true
@@ -109,6 +110,7 @@
         mode: "0755"
       loop:
         - images
+        - images_large
         - cache
         - output
       when: shared_storage_enabled | default(false) | bool
@@ -119,6 +121,7 @@
         state: absent
       loop:
         - images
+        - images_large
         - cache
         - output
       when: shared_storage_enabled | default(false) | bool
@@ -130,6 +133,7 @@
         state: link
       loop:
         - images
+        - images_large
         - cache
         - output
       when: shared_storage_enabled | default(false) | bool
@@ -139,6 +143,12 @@
         cmd: "{{ 'python3 download_images.py ' ~ smoke_unit ~ ' --max-pages ' ~ smoke_max_pages if smoke_test | bool else 'python3 download_images.py --shard ' ~ shard_index ~ '/' ~ shard_total }}"
         chdir: "{{ pipeline_dir }}"
       when: run_download | bool
+
+    - name: Download this worker's high-res image shard (punct track)
+      ansible.builtin.command:
+        cmd: "{{ 'python3 download_images.py --large ' ~ smoke_unit ~ ' --max-pages ' ~ smoke_max_pages if smoke_test | bool else 'python3 download_images.py --large --shard ' ~ shard_index ~ '/' ~ shard_total }}"
+        chdir: "{{ pipeline_dir }}"
+      when: run_download_large | bool
 
     - name: Run API OCR for this worker's shard
       ansible.builtin.command:
@@ -154,11 +164,10 @@
       environment: "{{ api_environment }}"
       when: run_reseg | bool
 
-    - name: Archive cache and output directories
+    - name: Archive cache, output, and high-res image directories
       ansible.builtin.archive:
-        path:
-          - "{{ pipeline_dir }}/cache"
-          - "{{ pipeline_dir }}/output"
+        path: "{{ [pipeline_dir ~ '/cache', pipeline_dir ~ '/output']
+                  + ([pipeline_dir ~ '/images_large'] if run_download_large | bool else []) }}"
         dest: "{{ remote_bundle }}"
         format: gz
       when:
@@ -191,11 +200,10 @@
     upload_to_gcs: true
 
   tasks:
-    - name: Archive shared cache and output directories
+    - name: Archive shared cache, output, and high-res image directories
       ansible.builtin.archive:
-        path:
-          - "{{ shared_mount_path }}/cache"
-          - "{{ shared_mount_path }}/output"
+        path: "{{ [shared_mount_path ~ '/cache', shared_mount_path ~ '/output']
+                  + ([shared_mount_path ~ '/images_large'] if run_download_large | default(true) | bool else []) }}"
         dest: "{{ shared_bundle }}"
         format: gz
       when:

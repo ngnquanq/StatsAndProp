@@ -72,8 +72,12 @@ for small tests.
 ## 3. Run OCR
 
 The Ansible playbook clones the current GitHub repo on each worker, installs the
-minimal Python packages needed for API OCR, downloads that worker's image shard,
-and runs API OCR for the same shard. When shared storage is enabled, the playbook
+minimal Python packages needed for API OCR, downloads that worker's image shard
+(both the default ~700px scans and the `/large/` ~2000px scans used by the
+red-ink punctuation track — disable the latter with `-e run_download_large=false`),
+and runs API OCR for the same shard. Red-mark detection itself
+(`punct_detect.py`) is *not* run on workers: it needs the `.local.json` line
+geometry from the GPU machine, so it runs centrally after bundles are merged. When shared storage is enabled, the playbook
 mounts Filestore first and links the repo's `images/`, `cache/`, and `output/`
 directories to that shared filesystem.
 

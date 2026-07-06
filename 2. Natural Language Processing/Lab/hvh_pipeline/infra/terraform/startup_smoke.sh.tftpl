@@ -84,8 +84,8 @@ finish() {
     MESSAGE="startup smoke failed; inspect $WORKER_NAME.log"
   fi
 
-  mkdir -p "$PIPELINE_DIR/cache" "$PIPELINE_DIR/output"
-  tar -C "$PIPELINE_DIR" -czf "$BUNDLE_FILE" cache output
+  mkdir -p "$PIPELINE_DIR/cache" "$PIPELINE_DIR/output" "$PIPELINE_DIR/images_large"
+  tar -C "$PIPELINE_DIR" -czf "$BUNDLE_FILE" cache output images_large
 
   write_status "$exit_code"
   upload_file "$LOG_FILE" "$GCS_PREFIX/$WORKER_NAME.log" "text/plain"
@@ -119,4 +119,5 @@ git -C "$CHECKOUT_DIR" sparse-checkout set "$REPO_SPARSE_PATH"
 
 cd "$PIPELINE_DIR"
 python3 download_images.py "$SMOKE_UNIT" --max-pages "$SMOKE_MAX_PAGES"
+python3 download_images.py --large "$SMOKE_UNIT" --max-pages "$SMOKE_MAX_PAGES"
 timeout "$SMOKE_TIMEOUT_SECONDS"s python3 run_pipeline.py "$SMOKE_UNIT" --max-pages "$SMOKE_MAX_PAGES"
