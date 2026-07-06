@@ -9,3 +9,6 @@ infra/terraform/terraform.tfstate.backup
 infra/terraform/*.tfvars
 infra/ansible/inventory.ini
 infra/ansible/artifacts/
+images_large/
+infra/artifacts/
+debug_punct/

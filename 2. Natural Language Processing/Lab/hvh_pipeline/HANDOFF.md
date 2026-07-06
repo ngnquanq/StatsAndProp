@@ -96,10 +96,16 @@ depends on its line order (see `models/NomNaOCR/MISSING_METADATA.md`).
 ## Segmentation convention
 
 For HVH image OCR, `_seg.tsv` treats each ordered OCR line as one sentence-like
-unit. Sentence ids preserve source page and line position, e.g.
-`HVH_090_000001_000001` means document HVH_090, page 1, line/sentence 1. A
-future manual cleanup pass can merge or split these line units if stricter
-sentence boundaries are required.
+unit by default. Sentence ids preserve source page and line position, e.g.
+`HVH_090_000001_000001` means document HVH_090, page 1, line/sentence 1.
+
+`run_pipeline.py --reseg --punct` upgrades pages to true sentence units using
+the reader's red-ink punctuation (see `punct_detect.py` and REPORT.md §5):
+detected rings insert `。`, dashes insert `、`, lines are joined in reading
+order and split at `。`. Prerequisites per unit: `images_large/` scans
+(`download_images.py --large`) and `.local.json` geometry (`--engine local`).
+Sentences spanning a page boundary are cut at the page edge to keep id
+provenance. Pilot on HVH_090: 211 lines -> 85 sentences, 11/11 pages.
 
 ## File map
 
@@ -111,5 +117,7 @@ sentence boundaries are required.
 | `ocr_client.py` | CLC Kim Hán Nôm API client (backoff, rate-limit waits) |
 | `local_ocr.py` | PaddleOCRv5 candidate: detection + reading order + fine-tuned rec |
 | `nomnaocr_ocr.py` | NomNaOCR candidate recognizer using cached `.local.json` boxes |
-| `run_pipeline.py` | stages 2+3: API/candidate OCR + outputs; merge rule |
+| `run_pipeline.py` | stages 2+3: API/candidate OCR + outputs; merge rule; `--punct` |
+| `punct_detect.py` | red-ink punctuation detection on `images_large/` scans |
+| `bench_punct.py` | red-mark segmentation vs CLC `/separate-sentences` → `punct_report.tsv` |
 | `verify.py` | CER report candidate-vs-API benchmark → `verify_report.tsv` |

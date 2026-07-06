@@ -21,6 +21,9 @@ Usage:
     python run_pipeline.py --engine nomnaocr  # NomNaOCR candidate
     python run_pipeline.py --engine trocr --orientation rot_ccw --candidate-name trocr_rot_ccw
     python run_pipeline.py --reseg HVH_090    # no OCR: rebuild outputs from cache
+    python run_pipeline.py --reseg --punct HVH_090  # sentence units from red-ink
+                                              # marks (needs page_NNN.punct.json,
+                                              # see punct_detect.py)
     python run_pipeline.py HVH_100 --max-pages 1  # smoke test
 """
 
@@ -139,20 +142,57 @@ def _page_number(result, fallback):
     return fallback
 
 
-def write_outputs(client, unit_code, page_results, out_dir):
+def _punct_sentences(unit_code, res):
+    """Sentence units for one page from red-ink marks, or None to fall back to
+    line units (no punct cache / no usable geometry alignment)."""
+    stem = res.get("_page_stem")
+    punct_file = CACHE_DIR / unit_code / f"{stem}.punct.json"
+    local_file = CACHE_DIR / unit_code / f"{stem}.local.json"
+    if not stem or not punct_file.exists() or not local_file.exists():
+        return None
+    marks = json.loads(punct_file.read_text()).get("marks") or []
+    if not marks:
+        return None
+    from punct_detect import align_lines, apply_marks, split_sentences
+
+    # marks are anchored to the .local.json line grid; remap them onto the text
+    # being segmented (usually API), whose lines may split/merge differently
+    geom_lines = json.loads(local_file.read_text()).get("lines") or []
+    if len(res["lines"]) == len(geom_lines):
+        mapping = {i: i for i in range(len(geom_lines))}
+    else:
+        mapping = align_lines(geom_lines, res["lines"])
+        if len(mapping) < len(geom_lines) * 0.5:
+            print(f"  {stem}: only {len(mapping)}/{len(geom_lines)} geometry lines align — keeping line units")
+            return None
+    remapped = [
+        {**m, "line": mapping[m["line"]]} for m in marks if m["line"] in mapping
+    ]
+    return split_sentences(apply_marks(res["lines"], remapped))
+
+
+def write_outputs(client, unit_code, page_results, out_dir, punct=False):
     # client is accepted for backward-compatible call sites; segmentation uses
-    # OCR line boundaries to preserve page provenance.
+    # OCR line boundaries (or red-ink punctuation with punct=True) to preserve
+    # page provenance.
     out_dir.mkdir(parents=True, exist_ok=True)
 
     raw_lines = [line for res in page_results for line in res["lines"]]
     (out_dir / f"{unit_code}_raw.txt").write_text("\n".join(raw_lines) + "\n", encoding="utf-8")
 
-    seg_rows = []
+    seg_rows, punct_pages = [], 0
     for page_idx, res in enumerate(page_results, start=1):
         page_no = _page_number(res, page_idx)
+        units = None
+        if punct:
+            units = _punct_sentences(unit_code, res)
+            if units is not None:
+                punct_pages += 1
+        if units is None:
+            units = res["lines"]
         page_sent_idx = 0
-        for line in res["lines"]:
-            sent = str(line).strip()
+        for unit in units:
+            sent = str(unit).strip()
             if not sent:
                 continue
             page_sent_idx += 1
@@ -162,7 +202,8 @@ def write_outputs(client, unit_code, page_results, out_dir):
     with open(out_dir / f"{unit_code}_seg.tsv", "w", encoding="utf-8") as fh:
         for sentence_id, sent in seg_rows:
             fh.write(f"{sentence_id}\t{sent}\n")
-    print(f"  {unit_code}: {len(raw_lines)} OCR lines -> {len(seg_rows)} line-sentences")
+    kind = f"sentences ({punct_pages}/{len(page_results)} pages punct-segmented)" if punct else "line-sentences"
+    print(f"  {unit_code}: {len(raw_lines)} OCR lines -> {len(seg_rows)} {kind}")
 
 
 def _pop_option(argv, name, default=None):
@@ -198,6 +239,9 @@ def main():
     reseg = "--reseg" in argv
     if reseg:
         argv.remove("--reseg")
+    punct = "--punct" in argv
+    if punct:
+        argv.remove("--punct")
 
     selection = select(argv)
     explicit = bool(argv)  # a specific request may target a not-yet-complete unit
@@ -249,7 +293,7 @@ def main():
         out_dir = OUTPUT_DIR / work["code"]
         if unit_code != work["code"]:
             out_dir = out_dir / unit_code
-        write_outputs(seg_client, unit_code, page_results, out_dir)
+        write_outputs(seg_client, unit_code, page_results, out_dir, punct=punct)
 
 
 if __name__ == "__main__":

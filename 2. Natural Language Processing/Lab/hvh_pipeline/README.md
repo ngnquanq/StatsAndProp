@@ -44,6 +44,24 @@ python download_images.py HVH_090 HVH_107_06
 python run_pipeline.py   HVH_090 HVH_107_06
 ```
 
+### Sentence segmentation from red-ink marks (punct track)
+
+The scans carry reader punctuation in red ink (dashes = clause break `、`,
+hollow rings = sentence end `。`). `punct_detect.py` recovers them with
+OpenCV from the high-resolution scans and `--punct` turns `_seg.tsv` rows
+into sentence units (pages without detections keep line units):
+
+```bash
+python download_images.py --large HVH_090   # ~2000px scans -> images_large/
+python punct_detect.py HVH_090 --debug      # -> cache/.../page_NNN.punct.json
+                                            #    + overlays in debug_punct/
+python run_pipeline.py --reseg --punct HVH_090
+python bench_punct.py HVH_090               # vs CLC /separate-sentences
+```
+
+Needs the unit's `.local.json` files for line geometry (run
+`--engine local` first). Details and pilot numbers: `REPORT.md` section 5.
+
 Both stages are resumable: downloaded images, per-page OCR JSON in `cache/`,
 and `.complete` markers are skipped on re-run. For HVH image OCR, each ordered
 OCR line is emitted as one `_seg.tsv` row; the sentence id preserves document,

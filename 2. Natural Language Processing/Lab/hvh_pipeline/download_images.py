@@ -5,11 +5,16 @@ Each volume page embeds a static JPEG:
 and shows "Page n of N", so we read the count once, then follow each page's
 own <img> tag (numbering is not always contiguous, so we don't guess URLs).
 
+Each page also links a high-resolution scan under /large/ (~2000px vs ~700px
+for /jpeg/); `--large` downloads those into images_large/ instead. The red-ink
+punctuation marks (mực chu) are only reliably detectable at /large/ size.
+
 Usage:
     python download_images.py                  # all works
     python download_images.py HVH_090 ...       # given work/unit codes
     python download_images.py --person P1       # this person's assigned share
     python download_images.py HVH_100 --max-pages 1  # smoke test
+    python download_images.py --large HVH_090   # high-res scans -> images_large/
 """
 
 import re
@@ -23,6 +28,7 @@ from works import select
 
 BASE = "https://lib.nomfoundation.org"
 IMAGES_DIR = Path(__file__).parent / "images"
+IMAGES_LARGE_DIR = Path(__file__).parent / "images_large"
 DELAY_S = 1.0
 RETRIES = 6  # nomfoundation.org intermittently read-times-out for minutes
 
@@ -56,8 +62,8 @@ def page_info(volume_id, page_no):
     return int(count.group(1)), BASE + img.group(1)
 
 
-def download_volume(unit_code, volume_id, max_pages=None):
-    out_dir = IMAGES_DIR / unit_code
+def download_volume(unit_code, volume_id, max_pages=None, large=False):
+    out_dir = (IMAGES_LARGE_DIR if large else IMAGES_DIR) / unit_code
     out_dir.mkdir(parents=True, exist_ok=True)
 
     total, _ = page_info(volume_id, 1)
@@ -73,6 +79,8 @@ def download_volume(unit_code, volume_id, max_pages=None):
         if out_file.exists() and out_file.stat().st_size > 0:
             continue
         _, img_url = page_info(volume_id, n)
+        if large:
+            img_url = img_url.replace("/jpeg/", "/large/")
         data = get(img_url).content
         out_file.write_bytes(data)
         print(f"  page {n}/{total} ({len(data) // 1024} KB)")
@@ -99,6 +107,9 @@ def _pop_option(argv, name, default=None):
 
 def main():
     argv = sys.argv[1:]
+    large = "--large" in argv
+    if large:
+        argv.remove("--large")
     max_pages_s = _pop_option(argv, "--max-pages")
     max_pages = None
     if max_pages_s is not None:
@@ -114,7 +125,7 @@ def main():
     failed = []
     for _work, unit_code, volume_id in select(argv):
         try:
-            download_volume(unit_code, volume_id, max_pages=max_pages)
+            download_volume(unit_code, volume_id, max_pages=max_pages, large=large)
         except (RuntimeError, requests.RequestException) as err:
             print(f"{unit_code}: giving up on this volume — {err}")
             failed.append(unit_code)

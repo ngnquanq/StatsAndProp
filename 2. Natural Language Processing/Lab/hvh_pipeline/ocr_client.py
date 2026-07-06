@@ -207,6 +207,7 @@ class KimHanNomClient:
                 "classification": {k: cls.get(k) for k in ("ocr_id", "lang_type", "reading_direction")},
                 "source": "structure-classification",
                 "lines": [str(l) for l in lines],
+                "result_bbox": result.get("result_bbox"),
             }
 
         ocr_id = cls.get("ocr_id") or 1
@@ -226,4 +227,5 @@ class KimHanNomClient:
             "classification": {k: cls.get(k) for k in ("ocr_id", "lang_type", "reading_direction")},
             "source": "image-ocr",
             "lines": [str(l) for l in (ocr.get("result_ocr_text") or [])],
+            "result_bbox": ocr.get("result_bbox"),
         }

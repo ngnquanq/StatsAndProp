@@ -121,12 +121,57 @@ confidence router) are prioritized for the 4-person API track.
 - `verify_report.tsv` records all candidate scores and regenerates from the
   cache at any time (`python verify.py`).
 
-## 5. Limitations and next steps
+## 5. Red-ink punctuation segmentation (pilot, HVH_090)
 
-- **Segmentation**: `_seg.tsv` now treats each OCR line as a sentence-like
-  unit and keeps page provenance in the id (`unit_page_line`). A future manual
-  cleanup pass can still merge or split lines if stricter sentence boundaries
-  are required.
+The manuscripts carry reader-added punctuation in red ink (mực chu): slanted
+dashes after clause breaks and small hollow rings (khuyên ○). These are
+invisible to every OCR engine, but recoverable with OpenCV — **only on the
+`/large/` ~2000px scans** (`download_images.py --large`); on the default
+~700px crawl the marks are 2–4 px and cannot even be classified.
+
+Pipeline (`punct_detect.py` → `run_pipeline.py --reseg --punct`):
+
+1. HSV red masking (two hue bands) + connected components, filtered by size,
+   distance from the page border, and containment in a detector line box;
+   fragments of one physical mark are merged.
+2. Circle-vs-stroke by shape: khuyên rings are round **and hollow**
+   (minAreaRect elongation ≤ 1.8, fill ≤ 0.6); everything else — slashes and
+   solid dots — is a stroke. Zoomed spot checks on HVH_090 p003/p009 confirm
+   the ring detections are genuine khuyên.
+3. Marks anchor to (line, relative Y) on the detector's line grid, then remap
+   onto the API text lines by CER-based sequence alignment
+   (`punct_detect.align_lines`), so API/local line-count disagreements don't
+   lose pages.
+4. Rings insert `。`, dashes insert `、`; page lines are joined in reading
+   order and split at `。`. Splits shorter than 4 characters merge into the
+   previous sentence — consecutive rings often flag proper names (one ring
+   per character, e.g. 丁佃), not back-to-back sentence ends.
+
+**Pilot result:** 11/11 HVH_090 pages segmented; 211 physical lines →
+85 sentence units (~117–148 raw marks per page, of which 2–19 rings).
+Sentences read as coherent prose spans with clause-level `、` inside.
+
+**Baseline check:** the CLC `/separate-sentences` endpoint was also cached
+per page (`bench_punct.py` → `punct_report.tsv`). It proved too coarse to be
+a reference for raw Nôm prose — 1–7 boundaries per ~500-character page at
+positions that never coincide with the red marks (boundary F1 = 0 at ±2
+chars). The red marks are a human reader's segmentation; the disagreement
+mainly reflects the CLC splitter's weakness on unpunctuated Nôm, so proper
+evaluation needs a small hand-annotated gold sample.
+
+**Open questions:** (a) some khuyên may mark names/emphasis rather than
+sentence ends — needs a Hán-Nôm expert ruling; (b) mark→character-index
+mapping is proportional within the line box, so ±1-character insertion error
+is possible on uneven handwriting; (c) only HVH_090 is piloted — other units
+need their `--large` scans (and `.local.json` geometry) before `--punct`
+applies.
+
+## 6. Limitations and next steps
+
+- **Segmentation**: `_seg.tsv` defaults to line units; `--punct` (section 5)
+  upgrades pages that have red-mark detections to sentence units. A manual
+  cleanup pass can still merge or split units if stricter boundaries are
+  required.
 - **All surveyed public candidates are now benchmarked and fail on Nôm.**
   The remaining local option is fine-tuning our own recognizer with an
   Ext-B-complete charset on NomNaOCR data + CLC pseudo-labels from our
