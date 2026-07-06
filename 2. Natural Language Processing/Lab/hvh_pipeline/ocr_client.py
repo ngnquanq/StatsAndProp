@@ -180,6 +180,17 @@ class KimHanNomClient:
             "separate-sentences",
         )
 
+    def download_temp_image(self, file_name, dest):
+        """Fetch a server-side image from wwwroot/ocr-temp-images (the uploaded
+        original, the preprocessed file the result_bbox coordinates refer to,
+        or a temp_ boxes overlay) and write it to dest. Returns dest."""
+        resp = self.session.get(
+            f"{BASE}/ocr-temp-images/{file_name}", headers=self._headers(), timeout=180,
+        )
+        resp.raise_for_status()
+        Path(dest).write_bytes(resp.content)
+        return dest
+
     # ---- one full page ------------------------------------------------------
 
     def ocr_page(self, image_path):
@@ -208,6 +219,9 @@ class KimHanNomClient:
                 "source": "structure-classification",
                 "lines": [str(l) for l in lines],
                 "result_bbox": result.get("result_bbox"),
+                # server-side image the bbox coordinates refer to; fetchable
+                # with download_temp_image()
+                "result_file_name": result.get("result_file_name") or file_name,
             }
 
         ocr_id = cls.get("ocr_id") or 1
@@ -228,4 +242,5 @@ class KimHanNomClient:
             "source": "image-ocr",
             "lines": [str(l) for l in (ocr.get("result_ocr_text") or [])],
             "result_bbox": ocr.get("result_bbox"),
+            "result_file_name": ocr.get("result_file_name") or new_file,
         }

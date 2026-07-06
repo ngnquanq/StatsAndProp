@@ -138,10 +138,17 @@ Pipeline (`punct_detect.py` → `run_pipeline.py --reseg --punct`):
    (minAreaRect elongation ≤ 1.8, fill ≤ 0.6); everything else — slashes and
    solid dots — is a stroke. Zoomed spot checks on HVH_090 p003/p009 confirm
    the ring detections are genuine khuyên.
-3. Marks anchor to (line, relative Y) on the detector's line grid, then remap
-   onto the API text lines by CER-based sequence alignment
-   (`punct_detect.align_lines`), so API/local line-count disagreements don't
-   lose pages.
+3. Marks anchor to (line, relative Y) on a line grid, then remap onto the
+   API text lines by CER-based sequence alignment
+   (`punct_detect.align_lines`), so line-count disagreements don't lose
+   pages. The grid comes from the CLC API itself where available: the
+   `/structure-classification` and `/image-ocr` responses include
+   `result_bbox` — one polygon per line in the uploaded image's coordinate
+   space (verified by overlaying them on the upload) — which the client now
+   persists in the page cache; pages OCRed before that fall back to the
+   PaddleOCR `.local.json` boxes. The server also exposes the stored
+   original/preprocessed images at `/ocr-temp-images/<file_name>`
+   (`ocr_client.download_temp_image`).
 4. Rings insert `。`, dashes insert `、`; page lines are joined in reading
    order and split at `。`. Splits shorter than 4 characters merge into the
    previous sentence — consecutive rings often flag proper names (one ring

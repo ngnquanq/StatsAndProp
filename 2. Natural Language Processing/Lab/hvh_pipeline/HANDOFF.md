@@ -103,7 +103,9 @@ unit by default. Sentence ids preserve source page and line position, e.g.
 the reader's red-ink punctuation (see `punct_detect.py` and REPORT.md §5):
 detected rings insert `。`, dashes insert `、`, lines are joined in reading
 order and split at `。`. Prerequisites per unit: `images_large/` scans
-(`download_images.py --large`) and `.local.json` geometry (`--engine local`).
+(`download_images.py --large`) and line geometry — the API cache's
+`result_bbox` (pages OCRed with the current client) or `.local.json`
+(`--engine local`).
 Sentences spanning a page boundary are cut at the page edge to keep id
 provenance. Pilot on HVH_090: 211 lines -> 85 sentences, 11/11 pages.
 

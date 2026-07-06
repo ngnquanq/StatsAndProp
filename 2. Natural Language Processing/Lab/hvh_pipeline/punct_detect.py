@@ -244,19 +244,55 @@ def split_sentences(punctuated_lines):
 # ---- per-page driver ---------------------------------------------------------
 
 
-def load_geometry(unit_code, stem):
-    """(large image, scaled line boxes, line texts) for one page, or None when
-    the page lacks either the large scan or the .local.json geometry."""
-    local_file = CACHE_DIR / unit_code / f"{stem}.local.json"
-    large_image = IMAGES_LARGE_DIR / unit_code / f"{stem}.jpg"
-    small_image = IMAGES_DIR / unit_code / f"{stem}.jpg"
-    if not (local_file.exists() and large_image.exists() and small_image.exists()):
+def _api_geometry(unit_code, stem):
+    """(boxes, texts) from the API cache's result_bbox (present on pages OCRed
+    since the bbox-persisting client), or None. Polygons are collapsed to
+    axis-aligned boxes; coordinates are in the uploaded images/ space, same as
+    the .local.json boxes."""
+    api_file = CACHE_DIR / unit_code / f"{stem}.json"
+    if not api_file.exists():
         return None
+    cached = json.loads(api_file.read_text())
+    bbox, texts = cached.get("result_bbox"), cached.get("lines")
+    if not bbox or not texts or len(bbox) != len(texts):
+        return None
+    boxes = []
+    for item in bbox:
+        poly = item[0] if isinstance(item[0][0], (list, tuple)) else item
+        xs, ys = [p[0] for p in poly], [p[1] for p in poly]
+        boxes.append([min(xs), min(ys), max(xs), max(ys)])
+    return boxes, texts
 
+
+def _local_geometry(unit_code, stem):
+    local_file = CACHE_DIR / unit_code / f"{stem}.local.json"
+    if not local_file.exists():
+        return None
     cached = json.loads(local_file.read_text())
     boxes, texts = cached.get("boxes"), cached.get("lines")
     if not boxes or not texts or len(boxes) != len(texts):
         return None
+    return boxes, texts
+
+
+def load_geometry(unit_code, stem):
+    """(large image, scaled line boxes, line texts, scale, source) for one
+    page, or None when the large scan or all geometry sources are missing.
+    API result_bbox wins (same engine as the merged text); PaddleOCR
+    .local.json boxes are the fallback."""
+    large_image = IMAGES_LARGE_DIR / unit_code / f"{stem}.jpg"
+    small_image = IMAGES_DIR / unit_code / f"{stem}.jpg"
+    if not (large_image.exists() and small_image.exists()):
+        return None
+
+    source = "api"
+    geometry = _api_geometry(unit_code, stem)
+    if geometry is None:
+        source = "local"
+        geometry = _local_geometry(unit_code, stem)
+    if geometry is None:
+        return None
+    boxes, texts = geometry
 
     img = cv2.imread(str(large_image))
     small = cv2.imread(str(small_image))
@@ -264,7 +300,7 @@ def load_geometry(unit_code, stem):
         return None
     scale = img.shape[1] / small.shape[1]
     scaled = [[v * scale for v in box] for box in boxes]
-    return img, scaled, texts, scale
+    return img, scaled, texts, scale, source
 
 
 def detect_unit(unit_code, debug=False, force=False):
@@ -284,14 +320,16 @@ def detect_unit(unit_code, debug=False, force=False):
             continue
         geom = load_geometry(unit_code, stem)
         if geom is None:
-            print(f"  {stem}: missing .local.json geometry or images, skipping")
+            print(f"  {stem}: no line geometry (API result_bbox or .local.json) or images, skipping")
             skipped += 1
             continue
-        img, boxes, texts, scale = geom
+        img, boxes, texts, scale, source = geom
         marks = detect_marks(img, boxes, texts)
         out_file.write_text(json.dumps({
             "image_large": str(large_image.relative_to(HERE)),
             "scale": round(scale, 4),
+            "geometry": source,
+            "lines": texts,  # the line texts the marks are anchored to
             "marks": marks,
         }, ensure_ascii=False, indent=1))
         kinds = [m["kind"] for m in marks]

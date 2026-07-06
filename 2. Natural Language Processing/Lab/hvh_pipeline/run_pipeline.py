@@ -147,17 +147,23 @@ def _punct_sentences(unit_code, res):
     line units (no punct cache / no usable geometry alignment)."""
     stem = res.get("_page_stem")
     punct_file = CACHE_DIR / unit_code / f"{stem}.punct.json"
-    local_file = CACHE_DIR / unit_code / f"{stem}.local.json"
-    if not stem or not punct_file.exists() or not local_file.exists():
+    if not stem or not punct_file.exists():
         return None
-    marks = json.loads(punct_file.read_text()).get("marks") or []
+    punct = json.loads(punct_file.read_text())
+    marks = punct.get("marks") or []
     if not marks:
         return None
     from punct_detect import align_lines, apply_marks, split_sentences
 
-    # marks are anchored to the .local.json line grid; remap them onto the text
-    # being segmented (usually API), whose lines may split/merge differently
-    geom_lines = json.loads(local_file.read_text()).get("lines") or []
+    # marks are anchored to the geometry's line grid (stored in the punct file;
+    # older files fall back to .local.json); remap them onto the text being
+    # segmented (usually API), whose lines may split/merge differently
+    geom_lines = punct.get("lines")
+    if geom_lines is None:
+        local_file = CACHE_DIR / unit_code / f"{stem}.local.json"
+        if not local_file.exists():
+            return None
+        geom_lines = json.loads(local_file.read_text()).get("lines") or []
     if len(res["lines"]) == len(geom_lines):
         mapping = {i: i for i in range(len(geom_lines))}
     else:

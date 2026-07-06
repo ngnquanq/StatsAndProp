@@ -59,8 +59,14 @@ python run_pipeline.py --reseg --punct HVH_090
 python bench_punct.py HVH_090               # vs CLC /separate-sentences
 ```
 
-Needs the unit's `.local.json` files for line geometry (run
-`--engine local` first). Details and pilot numbers: `REPORT.md` section 5.
+Line geometry comes from the API cache's `result_bbox` (saved automatically
+for every page OCRed with the current client — the CLC API returns each
+line's polygon in the uploaded image's coordinates) and falls back to the
+unit's `.local.json` files (run `--engine local` first) for pages OCRed
+before bbox persisting. `ocr_client.download_temp_image()` can also fetch
+the server-side original/preprocessed image behind a result
+(`/ocr-temp-images/<file_name>`). Details and pilot numbers: `REPORT.md`
+section 5.
 
 Both stages are resumable: downloaded images, per-page OCR JSON in `cache/`,
 and `.complete` markers are skipped on re-run. For HVH image OCR, each ordered
