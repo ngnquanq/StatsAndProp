@@ -148,6 +148,9 @@
       ansible.builtin.command:
         cmd: "{{ 'python3 download_images.py --large ' ~ smoke_unit ~ ' --max-pages ' ~ smoke_max_pages if smoke_test | bool else 'python3 download_images.py --large --shard ' ~ shard_index ~ '/' ~ shard_total }}"
         chdir: "{{ pipeline_dir }}"
+      # best-effort: some volumes (e.g. HVH_103) have no /large/ variant, and a
+      # missing high-res scan must not block API OCR below
+      failed_when: false
       when: run_download_large | bool
 
     - name: Run API OCR for this worker's shard

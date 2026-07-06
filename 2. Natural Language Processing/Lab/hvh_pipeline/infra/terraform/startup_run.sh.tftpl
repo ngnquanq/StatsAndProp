@@ -138,6 +138,10 @@ heartbeat &
 HEARTBEAT_PID=$!
 
 cd "$PIPELINE_DIR"
-python3 download_images.py --shard "$SHARD_INDEX/$SHARD_TOTAL"
-python3 download_images.py --large --shard "$SHARD_INDEX/$SHARD_TOTAL"
+# API OCR is the primary deliverable and must run even if some images fail to
+# download. The regular crawl and the /large/ crawl (used only by the punct
+# track, and missing for some volumes, e.g. HVH_103) are best-effort: a 404 or
+# partial shard must not abort the shard before OCR.
+python3 download_images.py --shard "$SHARD_INDEX/$SHARD_TOTAL" || echo "regular crawl reported failures; continuing"
+python3 download_images.py --large --shard "$SHARD_INDEX/$SHARD_TOTAL" || echo "large crawl reported failures; continuing"
 timeout "$RUN_TIMEOUT_SECONDS"s python3 run_pipeline.py --shard "$SHARD_INDEX/$SHARD_TOTAL"
