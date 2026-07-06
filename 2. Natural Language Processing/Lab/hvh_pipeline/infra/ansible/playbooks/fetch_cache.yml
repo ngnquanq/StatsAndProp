@@ -1,0 +1,38 @@
+---
+- name: Fetch HVH OCR cache bundles from workers
+  hosts: hvh_workers
+  become: true
+
+  vars:
+    checkout_dir: "/opt/StatsAndProp"
+    pipeline_dir: "{{ checkout_dir }}/2. Natural Language Processing/Lab/hvh_pipeline"
+    remote_bundle: "/tmp/{{ inventory_hostname }}-hvh-cache.tgz"
+    local_artifact_dir: "{{ playbook_dir }}/../artifacts"
+
+  tasks:
+    - name: Create local artifact directory
+      ansible.builtin.file:
+        path: "{{ local_artifact_dir }}"
+        state: directory
+        mode: "0755"
+      delegate_to: localhost
+      become: false
+
+    - name: Archive cache and output directories on worker
+      ansible.builtin.archive:
+        path:
+          - "{{ pipeline_dir }}/cache"
+          - "{{ pipeline_dir }}/output"
+        dest: "{{ remote_bundle }}"
+        format: gz
+
+    - name: Fetch worker bundle
+      ansible.builtin.fetch:
+        src: "{{ remote_bundle }}"
+        dest: "{{ local_artifact_dir }}/{{ inventory_hostname }}-hvh-cache.tgz"
+        flat: true
+
+    - name: Remove remote bundle
+      ansible.builtin.file:
+        path: "{{ remote_bundle }}"
+        state: absent

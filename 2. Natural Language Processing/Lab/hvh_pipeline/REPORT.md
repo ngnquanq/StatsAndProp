@@ -35,10 +35,9 @@ Four resumable stages, all sharing one per-page cache (`cache/<unit>/`):
      (`page_NNN.local.json`, `.trocr.json`, `.nomnaocr*.json`) that never
      collide with API files (`page_NNN.json`); wherever an API result
      exists it wins when outputs are regenerated.
-3. **Segmentation** — the API's separate-sentences endpoint when API budget
-   allows, else a punctuation splitter on 。！？；. Classical scans are often
-   unpunctuated, so final `_seg.tsv` files are rebuilt with
-   `run_pipeline.py --reseg` once caches settle.
+3. **Segmentation** — for HVH image OCR, each ordered OCR line is emitted as
+   one `_seg.tsv` row. Sentence ids preserve document, page, and line/sentence
+   position, e.g. `HVH_090_000001_000001`.
 4. **Verification** (`verify.py`) — character error rate (CER, Levenshtein
    distance / reference length) of every candidate against the API text on
    pages that have both, reported per (unit, candidate) in
@@ -124,9 +123,10 @@ confidence router) are prioritized for the 4-person API track.
 
 ## 5. Limitations and next steps
 
-- **Segmentation**: punctuation-splitting fails on unpunctuated scans (giant
-  "sentences"); final `_seg.tsv` requires the `--reseg` API pass, or a
-  classical-Chinese punctuation-restoration model (open task).
+- **Segmentation**: `_seg.tsv` now treats each OCR line as a sentence-like
+  unit and keeps page provenance in the id (`unit_page_line`). A future manual
+  cleanup pass can still merge or split lines if stricter sentence boundaries
+  are required.
 - **All surveyed public candidates are now benchmarked and fail on Nôm.**
   The remaining local option is fine-tuning our own recognizer with an
   Ext-B-complete charset on NomNaOCR data + CLC pseudo-labels from our

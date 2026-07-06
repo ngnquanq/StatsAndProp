@@ -55,8 +55,23 @@ def select(argv):
       - work codes         -> "HVH_091" (expands to its unit(s))
       - unit codes         -> "HVH_107_06" (a single volume of a multi-volume work)
       - "--person P1"      -> that person's assignment list (see assignments.py)
+      - "--shard N/TOTAL"  -> 1-based modulo split, for cloud workers
     """
     codes = list(argv)
+    shard = None
+    if "--shard" in codes:
+        i = codes.index("--shard")
+        try:
+            spec = codes[i + 1]
+            shard_index_s, shard_total_s = spec.split("/", 1)
+            shard_index, shard_total = int(shard_index_s), int(shard_total_s)
+        except (IndexError, ValueError):
+            raise SystemExit("--shard expects N/TOTAL, for example --shard 1/20")
+        if shard_index < 1 or shard_total < 1 or shard_index > shard_total:
+            raise SystemExit("--shard requires 1 <= N <= TOTAL")
+        shard = (shard_index, shard_total)
+        codes = codes[:i] + codes[i + 2:]
+
     if "--person" in codes:
         i = codes.index("--person")
         from assignments import ASSIGNMENTS
@@ -73,17 +88,25 @@ def select(argv):
             work_of.setdefault(work["code"], []).append(unit_code)
 
     if not codes:
-        return [index[u] for u in index]
+        chosen = [index[u] for u in index]
+    else:
+        chosen, seen = [], set()
+        for code in codes:
+            unit_codes = [code] if code in index else work_of.get(code)
+            if not unit_codes:
+                raise SystemExit(f"unknown work/unit code: {code!r}")
+            for u in unit_codes:
+                if u not in seen:
+                    seen.add(u)
+                    chosen.append(index[u])
 
-    chosen, seen = [], set()
-    for code in codes:
-        unit_codes = [code] if code in index else work_of.get(code)
-        if not unit_codes:
-            raise SystemExit(f"unknown work/unit code: {code!r}")
-        for u in unit_codes:
-            if u not in seen:
-                seen.add(u)
-                chosen.append(index[u])
+    if shard is not None:
+        shard_index, shard_total = shard
+        chosen = [
+            row for i, row in enumerate(chosen, start=1)
+            if (i - shard_index) % shard_total == 0
+        ]
+
     return chosen
 
 

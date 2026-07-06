@@ -1,0 +1,218 @@
+---
+- name: Configure and run HVH API OCR workers
+  hosts: hvh_workers
+  become: true
+  strategy: free
+
+  vars:
+    repo_url: "https://github.com/ngnquanq/StatsAndProp.git"
+    repo_version: "master"
+    checkout_dir: "/opt/StatsAndProp"
+    repo_sparse_path: "2. Natural Language Processing/Lab/hvh_pipeline"
+    pipeline_dir: "{{ checkout_dir }}/2. Natural Language Processing/Lab/hvh_pipeline"
+    upload_script: "/usr/local/bin/hvh-upload-to-gcs"
+    remote_bundle: "/tmp/{{ inventory_hostname }}-hvh-cache-output.tgz"
+    gcs_object: "{{ gcs_prefix }}/{{ inventory_hostname }}-shard-{{ shard_index }}-of-{{ shard_total }}.tgz"
+    run_download: true
+    run_ocr: true
+    run_reseg: false
+    upload_to_gcs: true
+    smoke_test: false
+    smoke_unit: "HVH_100"
+    smoke_max_pages: 1
+    api_environment:
+      KHN_USERNAME: "{{ lookup('env', 'KHN_USERNAME') | default('', true) }}"
+      KHN_PASSWORD: "{{ lookup('env', 'KHN_PASSWORD') | default('', true) }}"
+
+  tasks:
+    - name: Validate shard and GCS variables from Terraform inventory
+      ansible.builtin.assert:
+        that:
+          - shard_index is defined
+          - shard_total is defined
+          - shard_index | int >= 1
+          - shard_total | int >= shard_index | int
+          - gcs_bucket is defined
+          - gcs_prefix is defined
+        fail_msg: "Inventory must define shard_index, shard_total, gcs_bucket, and gcs_prefix."
+
+    - name: Validate shared storage variables
+      ansible.builtin.assert:
+        that:
+          - filestore_ip | length > 0
+          - filestore_share_name | length > 0
+          - shared_mount_path | length > 0
+        fail_msg: "Shared storage requires filestore_ip, filestore_share_name, and shared_mount_path."
+      when: shared_storage_enabled | default(false) | bool
+
+    - name: Install API worker dependencies
+      ansible.builtin.apt:
+        name:
+          - ca-certificates
+          - git
+          - nfs-common
+          - python3
+          - python3-requests
+        state: present
+        update_cache: true
+
+    - name: Install GCS upload helper
+      ansible.builtin.copy:
+        src: ../files/upload_to_gcs.py
+        dest: "{{ upload_script }}"
+        mode: "0755"
+
+    - name: Check sparse checkout directory
+      ansible.builtin.stat:
+        path: "{{ checkout_dir }}/.git"
+      register: checkout_git
+
+    - name: Sparse clone project repository
+      ansible.builtin.command:
+        cmd: "git clone --depth=1 --filter=blob:none --sparse --branch {{ repo_version }} {{ repo_url }} {{ checkout_dir }}"
+      when: not checkout_git.stat.exists
+
+    - name: Update sparse checkout repository
+      ansible.builtin.command:
+        cmd: "git -C {{ checkout_dir }} fetch --depth=1 origin {{ repo_version }}"
+      when: checkout_git.stat.exists
+
+    - name: Reset sparse checkout repository
+      ansible.builtin.command:
+        cmd: "git -C {{ checkout_dir }} reset --hard FETCH_HEAD"
+      when: checkout_git.stat.exists
+
+    - name: Limit checkout to HVH pipeline directory
+      ansible.builtin.command:
+        cmd: "git -C {{ checkout_dir }} sparse-checkout set {{ repo_sparse_path }}"
+
+    - name: Create shared storage mount point
+      ansible.builtin.file:
+        path: "{{ shared_mount_path }}"
+        state: directory
+        mode: "0755"
+      when: shared_storage_enabled | default(false) | bool
+
+    - name: Mount shared Filestore export
+      ansible.posix.mount:
+        path: "{{ shared_mount_path }}"
+        src: "{{ filestore_ip }}:/{{ filestore_share_name }}"
+        fstype: nfs
+        opts: "rw,hard,timeo=600,retrans=3"
+        state: mounted
+      when: shared_storage_enabled | default(false) | bool
+
+    - name: Create shared pipeline directories
+      ansible.builtin.file:
+        path: "{{ shared_mount_path }}/{{ item }}"
+        state: directory
+        mode: "0755"
+      loop:
+        - images
+        - cache
+        - output
+      when: shared_storage_enabled | default(false) | bool
+
+    - name: Replace local pipeline directories with shared links
+      ansible.builtin.file:
+        path: "{{ pipeline_dir }}/{{ item }}"
+        state: absent
+      loop:
+        - images
+        - cache
+        - output
+      when: shared_storage_enabled | default(false) | bool
+
+    - name: Link pipeline directories to shared storage
+      ansible.builtin.file:
+        src: "{{ shared_mount_path }}/{{ item }}"
+        dest: "{{ pipeline_dir }}/{{ item }}"
+        state: link
+      loop:
+        - images
+        - cache
+        - output
+      when: shared_storage_enabled | default(false) | bool
+
+    - name: Download this worker's image shard
+      ansible.builtin.command:
+        cmd: "{{ 'python3 download_images.py ' ~ smoke_unit ~ ' --max-pages ' ~ smoke_max_pages if smoke_test | bool else 'python3 download_images.py --shard ' ~ shard_index ~ '/' ~ shard_total }}"
+        chdir: "{{ pipeline_dir }}"
+      when: run_download | bool
+
+    - name: Run API OCR for this worker's shard
+      ansible.builtin.command:
+        cmd: "{{ 'python3 run_pipeline.py ' ~ smoke_unit ~ ' --max-pages ' ~ smoke_max_pages if smoke_test | bool else 'python3 run_pipeline.py --shard ' ~ shard_index ~ '/' ~ shard_total }}"
+        chdir: "{{ pipeline_dir }}"
+      environment: "{{ api_environment }}"
+      when: run_ocr | bool
+
+    - name: Rebuild segmentation from cache for this worker's shard
+      ansible.builtin.command:
+        cmd: "python3 run_pipeline.py --reseg --shard {{ shard_index }}/{{ shard_total }}"
+        chdir: "{{ pipeline_dir }}"
+      environment: "{{ api_environment }}"
+      when: run_reseg | bool
+
+    - name: Archive cache and output directories
+      ansible.builtin.archive:
+        path:
+          - "{{ pipeline_dir }}/cache"
+          - "{{ pipeline_dir }}/output"
+        dest: "{{ remote_bundle }}"
+        format: gz
+      when:
+        - upload_to_gcs | bool
+        - not (shared_storage_enabled | default(false) | bool)
+
+    - name: Upload worker bundle to GCS
+      ansible.builtin.command:
+        cmd: "{{ upload_script }} {{ gcs_bucket }} {{ gcs_object }} {{ remote_bundle }}"
+      register: gcs_upload
+      when:
+        - upload_to_gcs | bool
+        - not (shared_storage_enabled | default(false) | bool)
+
+    - name: Show uploaded object
+      ansible.builtin.debug:
+        var: gcs_upload.stdout
+      when:
+        - upload_to_gcs | bool
+        - not (shared_storage_enabled | default(false) | bool)
+
+- name: Archive shared HVH OCR result tree
+  hosts: hvh_workers[0]
+  become: true
+
+  vars:
+    upload_script: "/usr/local/bin/hvh-upload-to-gcs"
+    shared_bundle: "/tmp/hvh-shared-cache-output.tgz"
+    shared_gcs_object: "{{ gcs_prefix }}/hvh-shared-cache-output.tgz"
+    upload_to_gcs: true
+
+  tasks:
+    - name: Archive shared cache and output directories
+      ansible.builtin.archive:
+        path:
+          - "{{ shared_mount_path }}/cache"
+          - "{{ shared_mount_path }}/output"
+        dest: "{{ shared_bundle }}"
+        format: gz
+      when:
+        - shared_storage_enabled | default(false) | bool
+        - upload_to_gcs | bool
+
+    - name: Upload shared bundle to GCS
+      ansible.builtin.command:
+        cmd: "{{ upload_script }} {{ gcs_bucket }} {{ shared_gcs_object }} {{ shared_bundle }}"
+      register: shared_gcs_upload
+      when:
+        - shared_storage_enabled | default(false) | bool
+        - upload_to_gcs | bool
+
+    - name: Show uploaded shared object
+      ansible.builtin.debug:
+        var: shared_gcs_upload.stdout
+      when:
+        - shared_storage_enabled | default(false) | bool
+        - upload_to_gcs | bool

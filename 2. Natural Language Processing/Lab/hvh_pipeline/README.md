@@ -38,23 +38,21 @@ python run_pipeline.py --engine local   # PaddleOCRv5 candidate
 python run_pipeline.py --engine trocr   # TrOCR candidate
 conda run -n py310-ml python run_pipeline.py --engine nomnaocr --orientation vertical HVH_090
 python run_pipeline.py --engine trocr --orientation rot_ccw --candidate-name trocr_rot_ccw
-python run_pipeline.py --reseg HVH_090  # no OCR: rebuild outputs from cache,
-                                        # segmenting via the API
+python run_pipeline.py --reseg HVH_090  # no OCR: rebuild outputs from cache
 # or restrict to specific work/unit codes:
 python download_images.py HVH_090 HVH_107_06
 python run_pipeline.py   HVH_090 HVH_107_06
 ```
 
 Both stages are resumable: downloaded images, per-page OCR JSON in `cache/`,
-and `.complete` markers are skipped on re-run. Sentence segmentation uses the
-API when the API engine is active and falls back to splitting on 。！？；
-otherwise; classical scans are often unpunctuated, so after a local bulk run
-rebuild `_seg.tsv` with `--reseg` once API budget allows. Output format
-follows `../OutputRequirement.pdf` section B:
+and `.complete` markers are skipped on re-run. For HVH image OCR, each ordered
+OCR line is emitted as one `_seg.tsv` row; the sentence id preserves document,
+page, and line/sentence position, for example `HVH_090_000001_000001`.
+Output format follows `../OutputRequirement.pdf` section B:
 
 ```
 output/HVH_090/HVH_090_raw.txt      raw OCR text
-output/HVH_090/HVH_090_seg.tsv      sentence_id<TAB>sentence
+output/HVH_090/HVH_090_seg.tsv      HVH_090_000001_000001<TAB>sentence
 output/HVH_107/HVH_107_01/...       multi-volume works nest chapters
 ```
 

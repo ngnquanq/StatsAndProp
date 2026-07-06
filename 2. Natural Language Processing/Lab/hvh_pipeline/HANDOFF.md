@@ -63,8 +63,8 @@ python local_ocr.py images/HVH_090/page_001.jpg
    1 so local line order matches the API's columns right-to-left.
 3. **Bulk candidate run:** run only candidates that look acceptable on the
    benchmark sample, for example `python run_pipeline.py --engine trocr --candidate-name trocr_v1` or
-   `python run_pipeline.py --engine local`. Segmentation in candidate mode is
-   the punctuation segmenter — see "Segmentation" below.
+   `python run_pipeline.py --engine local`. `_seg.tsv` uses the ordered OCR
+   lines as sentence-like units and keeps page provenance in the ids.
 4. **In parallel, the team's API track:** each colleague runs
    `python download_images.py --person Pn` and
    `python run_pipeline.py --person Pn` on their own machine and sends back
@@ -76,7 +76,7 @@ python local_ocr.py images/HVH_090/page_001.jpg
    `python verify.py --sample 3` additionally spends a little API budget on
    random local-only pages to widen gold coverage.
 5. **Regenerate outputs** once caches settle: `python run_pipeline.py --reseg`
-   re-writes `output/` from cache without any OCR, segmenting through the API.
+   re-writes `output/` from cache without any OCR.
 
 ## Current benchmark status
 
@@ -93,13 +93,13 @@ not a wiring bug. Critical gotcha: `models/NomNaOCR/All.txt` must be the
 byte-exact Kaggle `Patches/All.txt` — the decode vocabulary's tie-break
 depends on its line order (see `models/NomNaOCR/MISSING_METADATA.md`).
 
-## Segmentation caveat
+## Segmentation convention
 
-CLC separate-sentences is rate-limited like the OCR, so the bulk local run
-falls back to splitting on 。！？；. Classical scans are often *unpunctuated* —
-if `_seg.tsv` shows giant one-page "sentences", rebuild with `--reseg` (API
-budget) or evaluate a local classical-Chinese punctuation-restoration model
-(open research task, not built here).
+For HVH image OCR, `_seg.tsv` treats each ordered OCR line as one sentence-like
+unit. Sentence ids preserve source page and line position, e.g.
+`HVH_090_000001_000001` means document HVH_090, page 1, line/sentence 1. A
+future manual cleanup pass can merge or split these line units if stricter
+sentence boundaries are required.
 
 ## File map
 

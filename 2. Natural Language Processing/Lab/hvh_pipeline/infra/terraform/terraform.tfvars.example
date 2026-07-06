@@ -1,0 +1,31 @@
+project_id       = "YOUR_GCP_PROJECT_ID"
+region           = "asia-southeast1"
+zone             = "asia-southeast1-a"
+worker_count     = 4
+machine_type     = "e2-small"
+ssh_user         = "hvh"
+public_key_path  = "~/.ssh/hvh_gce.pub"
+private_key_path = "~/.ssh/hvh_gce"
+
+# Prefer your own public IP, for example ["203.0.113.10/32"].
+ssh_source_ranges = ["0.0.0.0/0"]
+
+# GCS artifact bucket. Defaults to PROJECT_ID-hvh-ocr-artifacts when blank.
+create_artifact_bucket       = true
+artifact_bucket_name         = ""
+artifact_bucket_location     = "ASIA-SOUTHEAST1"
+artifact_bucket_force_destroy = false
+artifact_prefix              = "runs/hvh-api-ocr"
+
+# Optional shared NFS filesystem for all workers. This is useful for the full
+# multi-VM run, but Filestore has a 1 TiB minimum on BASIC_HDD, so leave it off
+# for tiny tests unless you want the shared filesystem behavior.
+create_filestore       = false
+filestore_name         = ""
+filestore_tier         = "BASIC_HDD"
+filestore_capacity_gb  = 1024
+filestore_share_name   = "hvhshare"
+shared_mount_path      = "/mnt/hvh_shared"
+
+# Set true only if interruption is acceptable.
+spot = false

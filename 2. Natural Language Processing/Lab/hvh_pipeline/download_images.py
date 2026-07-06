@@ -9,6 +9,7 @@ Usage:
     python download_images.py                  # all works
     python download_images.py HVH_090 ...       # given work/unit codes
     python download_images.py --person P1       # this person's assigned share
+    python download_images.py HVH_100 --max-pages 1  # smoke test
 """
 
 import re
@@ -55,7 +56,7 @@ def page_info(volume_id, page_no):
     return int(count.group(1)), BASE + img.group(1)
 
 
-def download_volume(unit_code, volume_id):
+def download_volume(unit_code, volume_id, max_pages=None):
     out_dir = IMAGES_DIR / unit_code
     out_dir.mkdir(parents=True, exist_ok=True)
 
@@ -65,8 +66,9 @@ def download_volume(unit_code, volume_id):
         print(f"{unit_code}: already complete ({total} pages), skipping")
         return
 
+    page_limit = min(total, max_pages) if max_pages is not None else total
     print(f"{unit_code}: volume {volume_id}, {total} pages")
-    for n in range(1, total + 1):
+    for n in range(1, page_limit + 1):
         out_file = out_dir / f"page_{n:03d}.jpg"
         if out_file.exists() and out_file.stat().st_size > 0:
             continue
@@ -76,17 +78,43 @@ def download_volume(unit_code, volume_id):
         print(f"  page {n}/{total} ({len(data) // 1024} KB)")
         time.sleep(DELAY_S)
 
-    done_marker.touch()
-    print(f"{unit_code}: done")
+    if page_limit == total:
+        done_marker.touch()
+        print(f"{unit_code}: done")
+    else:
+        print(f"{unit_code}: downloaded {page_limit}/{total} pages for limited run")
+
+
+def _pop_option(argv, name, default=None):
+    if name not in argv:
+        return default
+    i = argv.index(name)
+    try:
+        value = argv[i + 1]
+    except IndexError as err:
+        raise SystemExit(f"{name} needs a value") from err
+    del argv[i:i + 2]
+    return value
 
 
 def main():
+    argv = sys.argv[1:]
+    max_pages_s = _pop_option(argv, "--max-pages")
+    max_pages = None
+    if max_pages_s is not None:
+        try:
+            max_pages = int(max_pages_s)
+        except ValueError as err:
+            raise SystemExit("--max-pages must be an integer") from err
+        if max_pages < 1:
+            raise SystemExit("--max-pages must be >= 1")
+
     # One bad volume must not kill an overnight run — record and move on;
     # the crawl is resumable, so failed volumes are just re-run later.
     failed = []
-    for _work, unit_code, volume_id in select(sys.argv[1:]):
+    for _work, unit_code, volume_id in select(argv):
         try:
-            download_volume(unit_code, volume_id)
+            download_volume(unit_code, volume_id, max_pages=max_pages)
         except (RuntimeError, requests.RequestException) as err:
             print(f"{unit_code}: giving up on this volume — {err}")
             failed.append(unit_code)
