@@ -14,6 +14,11 @@ Options:
   --smoke-pages N    Page cap for --smoke-test. Default: 1.
   --smoke-timeout T  Timeout for smoke OCR command. Default: 10m.
   --startup-smoke   Run the capped smoke test from a VM startup script; skips Ansible.
+  --startup-run     Full sharded crawl + API OCR from VM startup scripts; skips
+                    Ansible. Each of the N workers processes shard N/TOTAL and
+                    uploads its bundle to GCS. Monitor and merge with
+                    infra/collect_run.sh.
+  --run-timeout T   Timeout for the OCR command inside --startup-run. Default: 12h.
   --startup-timeout T
                     Timeout while waiting for startup-smoke status. Default: 20m.
   --artifact-dir D  Local directory for downloaded startup-smoke artifacts.
@@ -46,6 +51,8 @@ SMOKE_UNIT="HVH_100"
 SMOKE_PAGES="1"
 SMOKE_TIMEOUT="10m"
 STARTUP_SMOKE=false
+STARTUP_RUN=false
+RUN_TIMEOUT="12h"
 STARTUP_TIMEOUT="20m"
 ARTIFACT_DIR="${SCRIPT_DIR}/artifacts/smoke"
 AUTO_APPROVE=false
@@ -83,6 +90,14 @@ while [[ $# -gt 0 ]]; do
     --startup-smoke)
       STARTUP_SMOKE=true
       shift
+      ;;
+    --startup-run)
+      STARTUP_RUN=true
+      shift
+      ;;
+    --run-timeout)
+      RUN_TIMEOUT="${2:?--run-timeout requires a value}"
+      shift 2
       ;;
     --startup-timeout)
       STARTUP_TIMEOUT="${2:?--startup-timeout requires a value}"
@@ -149,6 +164,11 @@ duration_to_seconds() {
   esac
 }
 
+if [[ "$STARTUP_SMOKE" == true && "$STARTUP_RUN" == true ]]; then
+  echo "--startup-smoke and --startup-run are mutually exclusive" >&2
+  exit 2
+fi
+
 if [[ "$STARTUP_SMOKE" == true ]]; then
   RUN_ANSIBLE=false
   if [[ -z "$WORKERS" ]]; then
@@ -159,6 +179,10 @@ if [[ "$STARTUP_SMOKE" == true ]]; then
   fi
 fi
 
+if [[ "$STARTUP_RUN" == true ]]; then
+  RUN_ANSIBLE=false
+fi
+
 require_command terraform
 if [[ "$RUN_ANSIBLE" == true ]]; then
   require_command ansible-playbook
@@ -166,7 +190,7 @@ fi
 if [[ "$SMOKE_TEST" == true || "$STARTUP_SMOKE" == true ]]; then
   require_command timeout
 fi
-if [[ "$STARTUP_SMOKE" == true ]]; then
+if [[ "$STARTUP_SMOKE" == true || "$STARTUP_RUN" == true ]]; then
   require_command gcloud
 fi
 
@@ -189,6 +213,14 @@ if [[ "$STARTUP_SMOKE" == true ]]; then
     -var="startup_smoke_unit=${SMOKE_UNIT}"
     -var="startup_smoke_max_pages=${SMOKE_PAGES}"
     -var="startup_smoke_timeout_seconds=$(duration_to_seconds "$SMOKE_TIMEOUT")"
+    -var="create_artifact_bucket=true"
+    -var="artifact_bucket_force_destroy=true"
+  )
+fi
+if [[ "$STARTUP_RUN" == true ]]; then
+  TF_ARGS+=(
+    -var="startup_run=true"
+    -var="startup_run_timeout_seconds=$(duration_to_seconds "$RUN_TIMEOUT")"
     -var="create_artifact_bucket=true"
     -var="artifact_bucket_force_destroy=true"
   )

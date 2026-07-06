@@ -12,6 +12,7 @@ locals {
   filestore_name               = var.filestore_name == "" ? "${var.name_prefix}-shared" : var.filestore_name
   ssh_public_key               = trimspace(file(pathexpand(var.public_key_path)))
   startup_smoke_prefix         = "${var.artifact_prefix}/startup-smoke"
+  startup_run_prefix           = "${var.artifact_prefix}/startup-run"
 }
 
 resource "google_service_account" "worker" {
@@ -114,7 +115,20 @@ resource "google_compute_instance" "worker" {
     {
       ssh-keys = "${var.ssh_user}:${local.ssh_public_key}"
     },
-    var.startup_smoke ? {
+    var.startup_run ? {
+      startup-script = templatefile("${path.module}/startup_run.sh.tftpl", {
+        repo_url            = var.repo_url
+        repo_version        = var.repo_version
+        repo_sparse_path    = var.repo_sparse_path
+        pipeline_dir        = "/opt/StatsAndProp/${var.repo_sparse_path}"
+        shard_index         = count.index + 1
+        shard_total         = var.worker_count
+        run_timeout_seconds = var.startup_run_timeout_seconds
+        gcs_bucket          = local.artifact_bucket_name
+        gcs_prefix          = local.startup_run_prefix
+        worker_name         = format("hvh-worker-%02d", count.index + 1)
+      })
+    } : var.startup_smoke ? {
       startup-script = templatefile("${path.module}/startup_smoke.sh.tftpl", {
         repo_url              = var.repo_url
         repo_version          = var.repo_version

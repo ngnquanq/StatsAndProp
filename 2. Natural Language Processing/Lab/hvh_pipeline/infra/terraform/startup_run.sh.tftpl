@@ -1,0 +1,143 @@
+#!/usr/bin/env bash
+set -Eeuo pipefail
+
+LOG_FILE="/var/log/hvh-startup-run.log"
+STATUS_FILE="/tmp/hvh-startup-run-status.json"
+WORKER_NAME="${worker_name}"
+BUNDLE_FILE="/tmp/${worker_name}.tgz"
+CHECKOUT_DIR="/opt/StatsAndProp"
+PIPELINE_DIR="${pipeline_dir}"
+GCS_BUCKET="${gcs_bucket}"
+GCS_PREFIX="${gcs_prefix}"
+REPO_URL="${repo_url}"
+REPO_VERSION="${repo_version}"
+REPO_SPARSE_PATH="${repo_sparse_path}"
+SHARD_INDEX="${shard_index}"
+SHARD_TOTAL="${shard_total}"
+RUN_TIMEOUT_SECONDS="${run_timeout_seconds}"
+STATUS="running"
+MESSAGE="startup run is running"
+HEARTBEAT_PID=""
+
+exec > >(tee -a "$LOG_FILE") 2>&1
+
+json_escape() {
+  python3 -c 'import json, sys; print(json.dumps(sys.stdin.read())[1:-1])'
+}
+
+object_urlencode() {
+  python3 -c 'import sys, urllib.parse; print(urllib.parse.quote(sys.argv[1], safe=""))' "$1"
+}
+
+gcs_token() {
+  curl -fsS -H "Metadata-Flavor: Google" \
+    "http://metadata.google.internal/computeMetadata/v1/instance/service-accounts/default/token" \
+    | python3 -c 'import json, sys; print(json.load(sys.stdin)["access_token"])'
+}
+
+upload_file() {
+  local source="$1"
+  local object="$2"
+  local content_type="$3"
+
+  if [[ ! -f "$source" ]]; then
+    echo "Skipping missing upload source: $source"
+    return 0
+  fi
+
+  local encoded_object token
+  encoded_object="$(object_urlencode "$object")"
+  token="$(gcs_token)"
+  curl -fsS -X POST \
+    -H "Authorization: Bearer $token" \
+    -H "Content-Type: $content_type" \
+    --data-binary "@$source" \
+    "https://storage.googleapis.com/upload/storage/v1/b/$GCS_BUCKET/o?uploadType=media&name=$encoded_object" \
+    >/dev/null
+}
+
+count_files() {
+  find "$1" -type f 2>/dev/null | wc -l | tr -d ' '
+}
+
+write_status() {
+  local exit_code="$1"
+  local escaped_message
+  escaped_message="$(printf '%s' "$MESSAGE" | json_escape)"
+  cat > "$STATUS_FILE" <<JSON
+{
+  "status": "$STATUS",
+  "exit_code": $exit_code,
+  "worker": "$WORKER_NAME",
+  "shard": "$SHARD_INDEX/$SHARD_TOTAL",
+  "images": $(count_files "$PIPELINE_DIR/images"),
+  "images_large": $(count_files "$PIPELINE_DIR/images_large"),
+  "cache_files": $(count_files "$PIPELINE_DIR/cache"),
+  "message": "$escaped_message",
+  "timestamp": "$(date -Iseconds)"
+}
+JSON
+}
+
+publish_status() {
+  write_status "$${1:-0}"
+  upload_file "$STATUS_FILE" "$GCS_PREFIX/$WORKER_NAME.status.json" "application/json"
+}
+
+heartbeat() {
+  while true; do
+    sleep 300
+    MESSAGE="heartbeat"
+    publish_status 0 || true
+  done
+}
+
+finish() {
+  local exit_code=$?
+  set +e
+  [[ -n "$HEARTBEAT_PID" ]] && kill "$HEARTBEAT_PID" 2>/dev/null
+
+  if [[ "$exit_code" -eq 0 ]]; then
+    STATUS="succeeded"
+    MESSAGE="startup run completed"
+  else
+    STATUS="failed"
+    MESSAGE="startup run failed; inspect $WORKER_NAME.log"
+  fi
+
+  mkdir -p "$PIPELINE_DIR/cache" "$PIPELINE_DIR/output" "$PIPELINE_DIR/images_large"
+  tar -C "$PIPELINE_DIR" -czf "$BUNDLE_FILE" cache output images_large
+
+  upload_file "$LOG_FILE" "$GCS_PREFIX/$WORKER_NAME.log" "text/plain"
+  upload_file "$BUNDLE_FILE" "$GCS_PREFIX/$WORKER_NAME.tgz" "application/gzip"
+  publish_status "$exit_code"
+
+  exit "$exit_code"
+}
+trap finish EXIT
+
+echo "Starting HVH startup run on $WORKER_NAME at $(date -Iseconds)"
+echo "Repository: $REPO_URL ($REPO_VERSION)"
+echo "Shard: $SHARD_INDEX/$SHARD_TOTAL; OCR timeout: $${RUN_TIMEOUT_SECONDS}s"
+
+export DEBIAN_FRONTEND=noninteractive
+apt-get update
+apt-get install -y ca-certificates curl git python3 python3-requests tar gzip
+
+if [[ ! -d "$CHECKOUT_DIR/.git" ]]; then
+  git clone --depth=1 --filter=blob:none --sparse --branch "$REPO_VERSION" "$REPO_URL" "$CHECKOUT_DIR"
+else
+  git -C "$CHECKOUT_DIR" fetch --depth=1 origin "$REPO_VERSION"
+  git -C "$CHECKOUT_DIR" reset --hard FETCH_HEAD
+fi
+
+git -C "$CHECKOUT_DIR" sparse-checkout set "$REPO_SPARSE_PATH"
+
+publish_status 0
+heartbeat &
+HEARTBEAT_PID=$!
+
+cd "$PIPELINE_DIR"
+python3 download_images.py --shard "$SHARD_INDEX/$SHARD_TOTAL"
+python3 download_images.py --large --shard "$SHARD_INDEX/$SHARD_TOTAL"
+timeout "$RUN_TIMEOUT_SECONDS"s python3 run_pipeline.py --shard "$SHARD_INDEX/$SHARD_TOTAL"

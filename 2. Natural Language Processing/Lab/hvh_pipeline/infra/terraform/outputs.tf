@@ -51,6 +51,16 @@ output "ansible_inventory" {
   ))
 }
 
+output "startup_run_prefix" {
+  description = "GCS object prefix (inside artifact_bucket) for startup-run status/log/bundle objects."
+  value       = var.startup_run ? local.startup_run_prefix : ""
+}
+
+output "startup_run_workers" {
+  description = "Worker names participating in the startup run."
+  value       = var.startup_run ? [for i in range(var.worker_count) : format("hvh-worker-%02d", i + 1)] : []
+}
+
 output "startup_smoke_status_object" {
   description = "GCS object path for the first worker startup-smoke status JSON."
   value       = var.startup_smoke ? "${local.startup_smoke_prefix}/hvh-worker-01.status.json" : ""

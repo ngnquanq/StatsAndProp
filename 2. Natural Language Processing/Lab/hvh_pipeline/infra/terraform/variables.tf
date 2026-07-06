@@ -167,6 +167,18 @@ variable "startup_smoke_timeout_seconds" {
   default     = 600
 }
 
+variable "startup_run" {
+  description = "Run the full sharded crawl + API OCR from a VM startup script instead of Ansible. Each worker processes shard N/worker_count and uploads its cache/output/images_large bundle to GCS."
+  type        = bool
+  default     = false
+}
+
+variable "startup_run_timeout_seconds" {
+  description = "Timeout in seconds for the OCR command inside startup-script full runs."
+  type        = number
+  default     = 43200
+}
+
 variable "repo_url" {
   description = "Git repository URL cloned by startup-script workers."
   type        = string
