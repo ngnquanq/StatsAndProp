@@ -15,6 +15,7 @@ REPO_SPARSE_PATH="${repo_sparse_path}"
 SHARD_INDEX="${shard_index}"
 SHARD_TOTAL="${shard_total}"
 RUN_TIMEOUT_SECONDS="${run_timeout_seconds}"
+SEED_OBJECT="${seed_object}"
 STATUS="running"
 MESSAGE="startup run is running"
 HEARTBEAT_PID=""
@@ -54,6 +55,19 @@ upload_file() {
     --data-binary "@$source" \
     "https://storage.googleapis.com/upload/storage/v1/b/$GCS_BUCKET/o?uploadType=media&name=$encoded_object" \
     >/dev/null
+}
+
+download_file() {
+  local object="$1"
+  local dest="$2"
+
+  local encoded_object token
+  encoded_object="$(object_urlencode "$object")"
+  token="$(gcs_token)"
+  curl -fsS \
+    -H "Authorization: Bearer $token" \
+    -o "$dest" \
+    "https://storage.googleapis.com/storage/v1/b/$GCS_BUCKET/o/$encoded_object?alt=media"
 }
 
 count_files() {
@@ -138,10 +152,30 @@ heartbeat &
 HEARTBEAT_PID=$!
 
 cd "$PIPELINE_DIR"
-# API OCR is the primary deliverable and must run even if some images fail to
-# download. The regular crawl and the /large/ crawl (used only by the punct
-# track, and missing for some volumes, e.g. HVH_103) are best-effort: a 404 or
-# partial shard must not abort the shard before OCR.
-python3 download_images.py --shard "$SHARD_INDEX/$SHARD_TOTAL" || echo "regular crawl reported failures; continuing"
-python3 download_images.py --large --shard "$SHARD_INDEX/$SHARD_TOTAL" || echo "large crawl reported failures; continuing"
-timeout "$RUN_TIMEOUT_SECONDS"s python3 run_pipeline.py --shard "$SHARD_INDEX/$SHARD_TOTAL"
+# Prefer the operator-uploaded seed tarball (pre-crawled images/ + cache/):
+# the corpus already exists on the operator's machine, so re-crawling
+# nomfoundation from every worker wastes their bandwidth, and the seeded
+# cache/ keeps already-OCR'd pages from being re-sent to the CLC API. The
+# retry loop covers the boot race where workers start before the upload
+# lands. No /large/ crawl here: it feeds only the punct track, which runs on
+# the operator's machine.
+SEEDED=0
+if [[ -n "$SEED_OBJECT" ]]; then
+  for attempt in 1 2 3 4 5; do
+    if download_file "$SEED_OBJECT" /tmp/hvh_seed.tgz \
+        && tar -xzf /tmp/hvh_seed.tgz -C "$PIPELINE_DIR"; then
+      rm -f /tmp/hvh_seed.tgz
+      SEEDED=1
+      echo "Seed applied from gs://$GCS_BUCKET/$SEED_OBJECT"
+      break
+    fi
+    echo "Seed attempt $attempt failed; retrying in 60s"
+    sleep 60
+  done
+fi
+if [[ "$SEEDED" -eq 0 ]]; then
+  # API OCR is the primary deliverable and must run even if some images fail
+  # to download; the crawl is best-effort.
+  python3 download_images.py --shard "$SHARD_INDEX/$SHARD_TOTAL" || echo "regular crawl reported failures; continuing"
+fi
+timeout "$RUN_TIMEOUT_SECONDS"s python3 run_pipeline.py --delay 10 --shard "$SHARD_INDEX/$SHARD_TOTAL"

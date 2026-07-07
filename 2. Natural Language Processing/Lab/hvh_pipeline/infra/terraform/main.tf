@@ -124,6 +124,7 @@ resource "google_compute_instance" "worker" {
         shard_index         = count.index + 1
         shard_total         = var.worker_count
         run_timeout_seconds = var.startup_run_timeout_seconds
+        seed_object         = var.seed_object
         gcs_bucket          = local.artifact_bucket_name
         gcs_prefix          = local.startup_run_prefix
         worker_name         = format("hvh-worker-%02d", count.index + 1)
