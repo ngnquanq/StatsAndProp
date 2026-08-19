@@ -1,0 +1,752 @@
+%=========================================================================
+%  Q&A — Thống kê phi tham số (Nonparametric Statistics)
+%  Ghi lại những điều CẦN BIẾT khi học môn này, dưới dạng Hỏi — Đáp.
+%  Biên dịch:  xelatex QnA.tex   (chạy 2 lần để có mục lục câu hỏi)
+%-------------------------------------------------------------------------
+%  CÁCH THÊM MỘT CÂU HỎI MỚI  (copy khối dưới đây rồi điền vào):
+%
+%  \begin{cauhoi}[Nhãn ngắn hiện ở mục lục]{q:nhan-tham-chieu}
+%  Nội dung câu hỏi ...
+%  \end{cauhoi}
+%
+%  \begin{chot}
+%  Câu trả lời ngắn 1--3 câu — đọc riêng khối này là đã đủ để trả lời miệng.
+%  \end{chot}
+%
+%  \muc{1. Trực giác}   ... vì sao lại thế, hiểu bằng lời ...
+%  \muc{2. Chi tiết toán học}  ... định nghĩa, định lý, chứng minh/dẫn dắt ...
+%  \muc{3. Ví dụ}       ... số liệu cụ thể hoặc code R/Python ...
+%
+%  \begin{luuy}
+%  Bẫy thường gặp / nhầm lẫn hay mắc khi thi.
+%  \end{luuy}
+%
+%  \lienhe{Slide tr. 11--17; xem thêm Câu~\ref{q:nhan-khac}.}
+%=========================================================================
+\documentclass[12pt,a4paper]{article}
+
+%--- Ngôn ngữ & font -----------------------------------------------------
+\usepackage{fontspec}
+\usepackage{polyglossia}
+\setdefaultlanguage{vietnamese}
+\setotherlanguage{english}
+\setmainfont{texgyretermes}[
+  Extension=.otf, UprightFont=*-regular, BoldFont=*-bold,
+  ItalicFont=*-italic, BoldItalicFont=*-bolditalic]
+\setsansfont{texgyreheros}[
+  Extension=.otf, UprightFont=*-regular, BoldFont=*-bold,
+  ItalicFont=*-italic, BoldItalicFont=*-bolditalic]
+\setmonofont{texgyrecursor}[
+  Extension=.otf, UprightFont=*-regular, BoldFont=*-bold,
+  ItalicFont=*-italic, BoldItalicFont=*-bolditalic, Scale=0.86]
+
+%--- Toán học ------------------------------------------------------------
+\usepackage{amsmath}
+\usepackage{unicode-math}
+\setmathfont{texgyretermes-math.otf}
+\allowdisplaybreaks
+
+%--- Trình bày trang -----------------------------------------------------
+\usepackage[a4paper,top=2.3cm,bottom=2.3cm,left=2.3cm,right=2.3cm]{geometry}
+\usepackage{microtype}
+\usepackage{parskip}
+\usepackage{xcolor}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{enumitem}
+\setlist{topsep=3pt,itemsep=2pt,parsep=0pt,leftmargin=1.4em}
+
+\definecolor{accent}{HTML}{1F4E79}      % xanh chủ đạo — câu hỏi
+\definecolor{accentlight}{HTML}{E8F0F8}
+\definecolor{boxrule}{HTML}{9DB8D2}
+\definecolor{qgreen}{HTML}{1B6B45}       % xanh lá — chốt nhanh
+\definecolor{qgreenlight}{HTML}{E7F3EC}
+\definecolor{qamber}{HTML}{9A6100}       % vàng cam — lưu ý / bẫy
+\definecolor{qamberlight}{HTML}{FDF4E3}
+\definecolor{codeframe}{HTML}{C9C9C9}
+\definecolor{graytext}{HTML}{5A5A5A}
+
+%--- Đề mục --------------------------------------------------------------
+\usepackage{titlesec}
+\setcounter{secnumdepth}{-2}
+\titleformat{\section}
+  {\normalfont\Large\bfseries\color{accent}}{}{0pt}{}
+  [\vspace{-6pt}{\color{boxrule}\rule{\linewidth}{0.8pt}}]
+\titlespacing*{\section}{0pt}{20pt}{10pt}
+
+%--- Các khung Hỏi / Chốt / Lưu ý ---------------------------------------
+\usepackage[skins,breakable,hooks]{tcolorbox}
+\tcbset{qnastyle/.style={enhanced, breakable, arc=2pt, boxrule=0.7pt,
+        left=8pt, right=8pt, top=6pt, bottom=6pt}}
+
+% Khung CÂU HỎI: tự đánh số, tự đưa vào "Mục lục câu hỏi"
+\newtcolorbox[auto counter, list inside=qna]{cauhoi}[2][]{
+  qnastyle,
+  colback=accentlight, colframe=accent,
+  fonttitle=\bfseries,
+  title={Câu \thetcbcounter.\ #1},
+  list entry={\protect\numberline{\thetcbcounter}#1},
+  label={#2}
+}
+
+% Khung CHỐT NHANH: câu trả lời ngắn gọn nhất
+\newtcolorbox{chot}{
+  qnastyle,
+  colback=qgreenlight, colframe=qgreen,
+  fonttitle=\bfseries, title={Chốt nhanh}
+}
+
+% Khung LƯU Ý / BẪY
+\newtcolorbox{luuy}{
+  qnastyle, sharp corners,
+  colback=qamberlight, colframe=qamber, boxrule=0pt,
+  borderline west={2.5pt}{0pt}{qamber},
+  colbacktitle=qamberlight, coltitle=qamber,
+  fonttitle=\bfseries, title={Lưu ý \& bẫy thường gặp}
+}
+
+% Tiêu đề mục nhỏ bên trong phần trả lời
+\newcommand{\muc}[1]{\par\vspace{7pt}\noindent{\bfseries\color{accent}#1}\par\vspace{1pt}}
+% Dòng liên hệ / nguồn tham chiếu ở cuối mỗi câu
+\newcommand{\lienhe}[1]{\par\vspace{5pt}\noindent{\small\color{graytext}\textit{Liên hệ: #1}}\par\vspace{2pt}}
+
+%--- Khối code -----------------------------------------------------------
+\usepackage{fvextra}
+\DefineVerbatimEnvironment{verbatim}{Verbatim}
+  {fontsize=\small, breaklines=true, breakanywhere=true,
+   frame=single, rulecolor=\color{codeframe}, framesep=6pt,
+   xleftmargin=0pt, samepage=false}
+
+%--- Đầu/chân trang ------------------------------------------------------
+\usepackage{fancyhdr}
+\setlength{\headheight}{14.5pt}
+\addtolength{\topmargin}{-2.5pt}
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\small\color{accent}Thống kê phi tham số — Hỏi \& Đáp}
+\fancyhead[R]{\small\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+
+%--- Liên kết ------------------------------------------------------------
+\usepackage{hyperref}
+\usepackage{xurl}
+\hypersetup{
+  colorlinks=true, linkcolor=accent, urlcolor=accent, citecolor=accent,
+  pdftitle={Hỏi & Đáp — Thống kê phi tham số},
+  pdfauthor={Cao học LT Thống kê Toán}
+}
+
+\begin{document}
+
+\begin{center}
+  {\LARGE\bfseries\color{accent} Thống kê phi tham số — Hỏi \& Đáp}\\[6pt]
+  {\large Những điều cần nắm khi học môn Nonparametric Statistics}\\[8pt]
+  {\normalsize Lớp: Cao học LT Thống kê Toán \quad---\quad GV: Hoàng Văn Hà}
+\end{center}
+
+\vspace{6pt}
+
+\noindent{\small\color{graytext}\textit{Ký hiệu:} \textbf{[W]} = Wasserman, \textit{All of Nonparametric Statistics}; \textbf{[SS]} = Sprent \& Smeeton, \textit{Applied Nonparametric Statistical Methods}. Mỗi câu gồm: \textbf{Chốt nhanh} (trả lời trong 30 giây) $\to$ \textbf{Trực giác} $\to$ \textbf{Chi tiết toán học} $\to$ \textbf{Ví dụ} $\to$ \textbf{Bẫy}.}
+
+\vspace{10pt}
+{\color{boxrule}\rule{\linewidth}{0.8pt}}
+
+\tcblistof[\section*]{qna}{Mục lục câu hỏi}
+
+\section{Chương 1. Giới thiệu \& Hàm phân phối thực nghiệm (ECDF)}
+
+%-------------------------------------------------------------------------
+\begin{cauhoi}[Thống kê phi tham số là gì, khác gì thống kê tham số?]{q:phitham}
+Thế nào là một mô hình \textit{phi tham số}? Nó khác mô hình tham số ở điểm nào, và ta được gì --- mất gì khi chọn hướng phi tham số?
+\end{cauhoi}
+
+\begin{chot}
+Mô hình tham số giả định phân phối nằm gọn trong một họ được mô tả bởi \emph{hữu hạn} tham số ($X\sim P_\theta$, $\theta\in\Theta\subseteq\mathbb{R}^d$, $d<\infty$); mô hình phi tham số chỉ giả định $X\sim F$ với $F$ thuộc một lớp \emph{vô hạn chiều} $\mathcal{F}$ (ví dụ ``mọi phân phối liên tục''). Tinh thần (Wasserman): \emph{dùng dữ liệu để suy diễn về một đại lượng chưa biết trong khi đặt càng ít giả định càng tốt}. Đổi lại tính linh hoạt và bền vững, ta mất một phần hiệu quả (efficiency) và cần nhiều dữ liệu hơn.
+\end{chot}
+
+\muc{1. Trực giác}
+Tham số hóa là một \emph{lời hứa} về dạng của $F$. Nếu lời hứa đúng, ta chỉ còn phải ước lượng vài con số $\Rightarrow$ rất hiệu quả. Nếu lời hứa sai (\textit{model mis-specification}), mọi suy diễn phía sau đều lệch một cách hệ thống, và tăng $n$ cũng không cứu được. Phi tham số từ chối đưa ra lời hứa đó: chấp nhận trả giá bằng phương sai lớn hơn để không phải gánh rủi ro chệch do sai mô hình.
+
+\muc{2. Chi tiết toán học}
+\begin{itemize}
+\item \textbf{Tham số:} $\mathcal{P}=\{P_\theta:\theta\in\Theta\subseteq\mathbb{R}^d\},\ d<\infty$. Ví dụ $\mathcal{N}(\mu,\sigma^2)$, $\mathrm{Poisson}(\lambda)$, $\mathrm{Bernoulli}(p)$.
+\item \textbf{Phi tham số:} $\mathcal{F}=\{F: F \text{ là hàm phân phối}\}$ hoặc một lớp con bị ràng buộc \emph{định tính} (liên tục, có mật độ trơn, đơn điệu\dots) --- không tham số hóa được bằng $\mathbb{R}^d$ với $d$ hữu hạn.
+\item Năm bài toán trung tâm của suy diễn phi tham số:
+  \begin{enumerate}
+  \item Ước lượng hàm phân phối $F(x)=\mathbb{P}(X\le x)$ \textit{(nội dung chương 1)};
+  \item Ước lượng phiếm hàm thống kê $T(F)$, ví dụ $T(F)=\int x\,dF(x)$;
+  \item Ước lượng mật độ $f(x)=F'(x)$;
+  \item Hồi quy phi tham số $r(x)=\mathbb{E}[Y\mid X=x]$;
+  \item Kiểm định giả thuyết: goodness-of-fit, hai mẫu, kiểm định dựa trên hạng.
+  \end{enumerate}
+\end{itemize}
+
+\muc{3. Được \& mất}
+\begin{center}
+\begin{tabular}{@{}p{0.46\linewidth}p{0.46\linewidth}@{}}
+\toprule
+\textbf{Ưu điểm} & \textbf{Nhược điểm}\\
+\midrule
+Linh hoạt: mô tả được cấu trúc phức tạp mà không áp đặt dạng hàm & Hiệu quả: nếu mô hình tham số \emph{đúng} thì phương pháp tham số hiệu quả hơn (dù mức thiệt thường nhỏ)\\
+Bền vững: ít nhạy với ngoại lai và với sai mô hình & Diễn giải: kết quả đôi khi khó diễn giải hơn\\
+Tổng quát: dùng được cho dữ liệu thứ bậc (rank-based) & Tính toán: tốn kém hơn (nay đã được máy tính hiện đại hoá giải)\\
+Hợp lệ: bảo vệ trước rủi ro sai đặc tả mô hình & Cỡ mẫu: thường cần nhiều dữ liệu hơn\\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\begin{luuy}
+``Phi tham số'' \textbf{không} có nghĩa là ``không có giả định nào''. Ta vẫn luôn giả định i.i.d. (hoặc một cấu trúc phụ thuộc nào đó), và thường thêm các giả định định tính như $F$ liên tục, $f$ khả vi, $r$ trơn. Chính xác hơn: \emph{ít giả định về dạng hàm}, chứ không phải \emph{không giả định}.
+\end{luuy}
+
+\lienhe{Slide tr. 3--5; [W] Ch. 1.}
+
+%-------------------------------------------------------------------------
+\begin{cauhoi}[Vì sao lấy CDF làm công cụ trung tâm, không phải PDF/PMF?]{q:cdf}
+Tại sao trong thống kê phi tham số ta xuất phát từ hàm phân phối tích lũy $F$ mà không phải hàm mật độ $f$ hay hàm khối xác suất?
+\end{cauhoi}
+
+\begin{chot}
+Vì \textbf{CDF luôn tồn tại} với mọi biến ngẫu nhiên, còn PDF chỉ tồn tại cho biến liên tục và PMF chỉ cho biến rời rạc. CDF là biểu diễn \emph{thống nhất} duy nhất --- kể cả với biến hỗn hợp không có cả PDF lẫn PMF. Thêm nữa, $F$ ước lượng được với tốc độ $n^{-1/2}$ mà không cần tham số trơn hoá, trong khi ước lượng mật độ luôn chậm hơn và phải chọn băng thông.
+\end{chot}
+
+\muc{1. Chi tiết toán học}
+Với biến ngẫu nhiên $X$, hàm phân phối tích lũy là
+\[ F(x)=\mathbb{P}(X\le x),\qquad x\in\mathbb{R}, \]
+với các tính chất đặc trưng:
+\begin{itemize}
+\item (Miền giá trị) $0\le F(x)\le 1$;
+\item (Đơn điệu) $x\le y \Rightarrow F(x)\le F(y)$;
+\item (Liên tục phải) $\lim_{x\to y^{+}}F(x)=F(y)$;
+\item $\lim_{x\to-\infty}F(x)=0$, $\lim_{x\to+\infty}F(x)=1$;
+\item Bước nhảy tại $x$ chính là khối xác suất: $\mathbb{P}(X=x)=F(x)-F(x^{-})$.
+\end{itemize}
+Ngược lại, mọi hàm thỏa bốn tính chất đầu đều là CDF của một phân phối nào đó --- nên làm việc với $F$ là làm việc trực tiếp trên toàn bộ lớp mô hình $\mathcal{F}$.
+
+\muc{2. Ví dụ: biến không có PDF lẫn PMF}
+Cho $X=0.5$ với xác suất $1/2$; ngược lại $X\sim \mathcal{U}([0,1])$. Khi đó $X$ không liên tục (có một nguyên tử tại $0.5$) và cũng không rời rạc (phần còn lại trải liên tục trên $[0,1]$), nên \emph{không} có PDF, cũng \emph{không} có PMF --- nhưng CDF vẫn tồn tại và mô tả trọn vẹn phân phối:
+\[
+F(x)=\begin{cases}
+0, & x<0,\\
+x/2, & 0\le x<0.5,\\
+x/2+1/2, & 0.5\le x\le 1,\\
+1, & x>1.
+\end{cases}
+\]
+
+\muc{3. Hệ quả dùng nhiều: phép biến đổi nghịch đảo}
+Hàm nghịch đảo suy rộng (hàm phân vị) $F^{-1}(u)=\inf\{x: F(x)\ge u\}$, $u\in(0,1)$, cho ta:
+\begin{itemize}
+\item Nếu $U\sim \mathcal{U}([0,1])$ thì $W=F^{-1}(U)$ có hàm phân phối đúng bằng $F$;
+\item Ngược lại, nếu $X\sim F$ với $F$ liên tục thì $V=F(X)\sim \mathcal{U}([0,1])$ \textit{(probability integral transform)}.
+\end{itemize}
+Ví dụ với $\mathrm{Exp}(\lambda)$: $F(x)=1-e^{-\lambda x}\Rightarrow F^{-1}(u)=-\tfrac{1}{\lambda}\log(1-u)$, nên sinh $U\sim\mathcal{U}([0,1])$ rồi đặt $X=-\tfrac{1}{\lambda}\log(1-U)$ ta được mẫu $\mathrm{Exp}(\lambda)$. Đây là nền tảng của bộ sinh số ngẫu nhiên và của mô phỏng Monte Carlo.
+
+\begin{luuy}
+$F^{-1}$ ở đây là \emph{nghịch đảo suy rộng} (dùng $\inf$), không đòi hỏi $F$ đơn điệu ngặt hay liên tục --- nhờ vậy công thức vẫn đúng cho phân phối rời rạc và hỗn hợp. Chiều thuận ($F^{-1}(U)\sim F$) đúng cho \emph{mọi} $F$; chiều ngược ($F(X)\sim\mathcal{U}$) cần $F$ \emph{liên tục}.
+\end{luuy}
+
+\lienhe{Slide tr. 6--9; xem Câu~\ref{q:ecdf} cho phiên bản thực nghiệm $\widehat F_n$.}
+
+%-------------------------------------------------------------------------
+\begin{cauhoi}[ECDF và các tính chất thống kê của nó]{q:ecdf}
+Hàm phân phối thực nghiệm $\widehat F_n$ được định nghĩa thế nào, và vì sao nó là ước lượng ``tốt'' của $F$? Nêu các tính chất điểm và tính chất đều.
+\end{cauhoi}
+
+\begin{chot}
+$\widehat F_n(x)=\frac1n\sum_{i=1}^n \mathbb{I}(X_i\le x)$ --- hàm bậc thang đặt khối lượng $1/n$ tại mỗi quan sát. Tại mỗi $x$ cố định, $n\widehat F_n(x)\sim \mathcal{B}(n,F(x))$, nên $\widehat F_n(x)$ \textbf{không chệch}, \textbf{vững}, và \textbf{tiệm cận chuẩn}. Mạnh hơn nữa, Glivenko--Cantelli cho hội tụ \emph{đều} h.c.c. trên toàn $\mathbb{R}$, và bất đẳng thức DKW cho một chặn \emph{hữu hạn mẫu} dùng để dựng dải tin cậy.
+\end{chot}
+
+\muc{1. Trực giác}
+$F(x_0)=\mathbb{P}(X_i\le x_0)$ là một \emph{xác suất}; cách ước lượng tự nhiên nhất cho xác suất là \emph{tần suất}. Luật số lớn bảo đảm tần suất hội tụ về xác suất; làm việc này đồng thời cho mọi $x$ ta được một ước lượng cho \emph{toàn bộ hàm} $F$.
+
+\muc{2. Chi tiết toán học}
+Với $X_1,\dots,X_n\overset{iid}{\sim}F$, đặt $Y_i=\mathbb{I}(X_i\le x)$ với $x$ \emph{cố định}. Khi đó $Y_i\overset{iid}{\sim}\mathrm{Bernoulli}(p)$ với $p=F(x)$, và $\widehat F_n(x)=\bar Y$, $n\widehat F_n(x)\sim\mathcal{B}(n,F(x))$. Suy ra:
+\[
+\mathbb{E}\big[\widehat F_n(x)\big]=F(x),\qquad
+\mathbb{V}\big[\widehat F_n(x)\big]=\frac{F(x)\big(1-F(x)\big)}{n}.
+\]
+\begin{enumerate}
+\item \textbf{Không chệch:} $\mathrm{Bias}[\widehat F_n(x)]=0$ với mọi $n$.
+\item \textbf{Vững:} $\mathbb{V}[\widehat F_n(x)]\to 0$ khi $n\to\infty$, do đó $\widehat F_n(x)\xrightarrow{P}F(x)$.
+\item \textbf{Tiệm cận chuẩn (CLT):}
+\[ \sqrt{n}\big(\widehat F_n(x)-F(x)\big)\xrightarrow{d}\mathcal{N}\big(0,\,F(x)(1-F(x))\big). \]
+\item \textbf{Glivenko--Cantelli (hội tụ đều):}
+\[ \sup_{x\in\mathbb{R}}\big|\widehat F_n(x)-F(x)\big|\xrightarrow{a.s.}0. \]
+\item \textbf{DKW (chặn hữu hạn mẫu):} với mọi $\varepsilon>0$ và mọi $n\ge 1$,
+\[ \mathbb{P}\Big(\sup_{x\in\mathbb{R}}\big|F(x)-\widehat F_n(x)\big|>\varepsilon\Big)\le 2e^{-2n\varepsilon^{2}}. \]
+Chọn $\varepsilon_n=\sqrt{\log(2/\alpha)/(2n)}$ và đặt $L(x)=\max\{\widehat F_n(x)-\varepsilon_n,0\}$, $U(x)=\min\{\widehat F_n(x)+\varepsilon_n,1\}$ thì $\mathbb{P}\big(L(x)\le F(x)\le U(x)\ \forall x\big)\ge 1-\alpha$ --- \emph{dải tin cậy đồng thời}, đúng với mọi $F$ và mọi $n$.
+\end{enumerate}
+
+\muc{3. Ví dụ số}
+Cho $X_1,\dots,X_{100}\overset{iid}{\sim}\mathcal{U}([0,2])$, tìm phân phối của $\widehat F_n(0.8)$. Ta có $F(0.8)=0.8/2=0.4$, nên
+\[
+\mathbb{E}\big[\widehat F_n(0.8)\big]=0.4,\qquad
+\mathbb{V}\big[\widehat F_n(0.8)\big]=\frac{0.4\times 0.6}{100}=2.4\times10^{-3},
+\]
+và $100\,\widehat F_n(0.8)\sim\mathcal{B}(100,\,0.4)$.
+
+\begin{verbatim}
+# R: vẽ ECDF cùng dải tin cậy DKW 95%
+set.seed(1); x <- rnorm(100); alpha <- 0.05
+eps <- sqrt(log(2/alpha) / (2*length(x)))
+Fn  <- ecdf(x); grid <- sort(x)
+plot(Fn, main = "ECDF + dải DKW 95%")
+lines(grid, pmax(Fn(grid) - eps, 0), lty = 2)
+lines(grid, pmin(Fn(grid) + eps, 1), lty = 2)
+\end{verbatim}
+
+\begin{luuy}
+\begin{itemize}
+\item Ba tính chất (1)--(3) là \textbf{theo từng điểm} ($x$ cố định); Glivenko--Cantelli và DKW mới là \textbf{đều theo $x$}. Đừng dùng khoảng tin cậy điểm rồi tuyên bố nó phủ $F$ tại \emph{mọi} $x$.
+\item $\varepsilon_n$ của DKW \emph{không} phụ thuộc $x$ nên dải có bề rộng hằng số --- rộng hơn khoảng tin cậy điểm ở hai đuôi, đó là cái giá của bảo đảm đồng thời.
+\item Phương sai $F(x)(1-F(x))/n$ đạt cực đại tại $F(x)=1/2$ và tiến về $0$ ở hai đuôi; nhớ cắt tỉa các mút về $[0,1]$.
+\end{itemize}
+\end{luuy}
+
+\lienhe{Slide tr. 10--19; [W] Ch. 2. Xem thêm bài tập chương 1 (Delta-method cho $\sqrt{F(x_0)}$, khoảng tin cậy Hoeffding).}
+
+%-------------------------------------------------------------------------
+\begin{cauhoi}[ECDF liên kết thế nào với phân phối Bernoulli?]{q:ecdf-bernoulli}
+ECDF có liên kết gì với phân phối Bernoulli? Vì sao mối liên kết đó lại quan trọng đến vậy?
+\end{cauhoi}
+
+\begin{chot}
+Cố định ngưỡng $x$ thì $Y_i(x)=\mathbb{I}(X_i\le x)$ là biến Bernoulli với tham số $p=F(x)$, và $\widehat F_n(x)$ chính là \emph{trung bình mẫu} của chúng, $n\widehat F_n(x)\sim\mathrm{Binomial}(n,F(x))$. Nhờ vậy toàn bộ kho công cụ cho Bernoulli/nhị thức --- LLN, CLT, Hoeffding/Chernoff --- áp thẳng được lên ECDF.
+\end{chot}
+
+\muc{A. Motivation \& Ý nghĩa (The ``Why'')}
+Hàm phân phối tích lũy thực nghiệm (ECDF) $\widehat F_n(x)$ thực chất là \textbf{tỷ lệ số quan sát rơi vào khoảng $(-\infty,x]$}.
+
+Khi cố định một ngưỡng $x$, bài toán thống kê phi tham số phức tạp lập tức biến thành bài toán cơ bản nhất của xác suất: \textbf{đếm số lần thành công trong một chuỗi phép thử đồng xu (Bernoulli trials)}.
+\begin{itemize}
+\item Với mỗi mẫu $X_i$, ta chỉ quan tâm: nó có ``nhỏ hơn hoặc bằng $x$'' hay không?
+\item Sự kiện này chỉ có 2 kết cục: \textbf{Thành công (1)} hoặc \textbf{Thất bại (0)}.
+\item Nhờ mối liên hệ này, toàn bộ các công cụ mạnh mẽ dành cho phân phối Bernoulli và phân phối Nhị thức (Binomial) như Định luật số lớn, Định lý giới hạn trung tâm, Bất đẳng thức Hoeffding/Chernoff đều được áp dụng trực tiếp lên ECDF.
+\end{itemize}
+
+\muc{B. Chi tiết Toán học (The ``How'')}
+
+\textit{1. Định nghĩa và biến đổi đại số.} Cho mẫu ngẫu nhiên i.i.d. $X_1,X_2,\dots,X_n\sim F$. Cố định một điểm $x\in\mathbb{R}$. Định nghĩa biến chỉ thị (indicator variable):
+\[
+Y_i(x)=\mathbb{I}(X_i\le x)=\begin{cases} 1 & \text{nếu } X_i\le x,\\ 0 & \text{nếu } X_i>x.\end{cases}
+\]
+Vì $X_i$ là các biến ngẫu nhiên độc lập cùng phân phối:
+\begin{itemize}
+\item $P(Y_i(x)=1)=P(X_i\le x)=F(x)=p$;
+\item $P(Y_i(x)=0)=1-F(x)=1-p$.
+\end{itemize}
+Do đó
+\[ Y_i(x)\overset{\text{i.i.d}}{\sim}\mathrm{Bernoulli}(p),\qquad \text{với } p=F(x). \]
+
+\textit{2. ECDF là trung bình mẫu của các biến Bernoulli.} ECDF tại điểm $x$ được viết lại dưới dạng
+\[ \widehat F_n(x)=\frac1n\sum_{i=1}^n \mathbb{I}(X_i\le x)=\frac1n\sum_{i=1}^n Y_i(x)=\bar Y_n(x). \]
+Nếu nhân cả hai vế với $n$, tổng số điểm nhỏ hơn hoặc bằng $x$ tuân theo phân phối nhị thức:
+\[ n\widehat F_n(x)=\sum_{i=1}^n Y_i(x)\sim \mathrm{Binomial}\big(n,F(x)\big). \]
+
+\textit{3. Các hệ quả trực tiếp từ tính chất Bernoulli.} Từ các đặc trưng của phân phối $\mathrm{Bernoulli}(p)$ với $p=F(x)$:
+\begin{itemize}
+\item \textbf{Kỳ vọng (tính không chệch --- unbiased):}
+\[ \mathbb{E}\big[\widehat F_n(x)\big]=\mathbb{E}\big[Y_i(x)\big]=F(x)\implies \mathrm{bias}=0. \]
+\item \textbf{Phương sai (variance \& standard error):}
+\[ \mathbb{V}\big(\widehat F_n(x)\big)=\frac{\mathbb{V}(Y_i(x))}{n}=\frac{F(x)(1-F(x))}{n}\implies \mathrm{se}=\sqrt{\frac{F(x)(1-F(x))}{n}}. \]
+\item \textbf{Hội tụ theo xác suất (pointwise consistency):} theo luật mạnh số lớn (SLLN) áp dụng cho dãy Bernoulli $Y_i$,
+\[ \widehat F_n(x)\xrightarrow{a.s.}F(x). \]
+\item \textbf{Tính chuẩn tiệm cận (asymptotic normality):} theo định lý giới hạn trung tâm (CLT),
+\[ \sqrt{n}\big(\widehat F_n(x)-F(x)\big)\rightsquigarrow\mathcal{N}\big(0,\,F(x)(1-F(x))\big). \]
+\end{itemize}
+
+\muc{C. Ví dụ Thực tế \& Đa ngành (The ``Where'')}
+\begin{itemize}
+\item \textbf{Cybersecurity \& IAM (đánh giá tỷ lệ Risk Score vượt ngưỡng):}
+  \begin{itemize}
+  \item Đặt $X_i$ là risk score của các phiên truy cập login. Ta muốn ước lượng xác suất một phiên truy cập là an toàn ($X_i\le x_{\text{threshold}}$).
+  \item Mỗi log truy cập đổ về đóng vai trò là một phép thử Bernoulli $Y_i=\mathbb{I}(X_i\le x_{\text{threshold}})$.
+  \item ECDF $\widehat F_n(x_{\text{threshold}})$ chính là tỷ lệ thành công của mẫu. Nhờ phân phối Bernoulli, ta dựng được ngay khoảng tin cậy Clopper--Pearson hoặc Wilson Score Interval chính xác cho tỷ lệ rủi ro của hệ thống mà không cần giả định phân phối log ban đầu.
+  \end{itemize}
+\item \textbf{Non-parametric Statistical Inference (dựng dải tin cậy Dvoretzky--Kiefer--Wolfowitz):}
+  \begin{itemize}
+  \item Vì từng điểm là Bernoulli, ta có thể áp dụng bất đẳng thức nồng độ \textbf{Hoeffding's Inequality} cho tổng Bernoulli để chặn sai số cực đại:
+  \[ P\Big(\sup_{x}\big|\widehat F_n(x)-F(x)\big|>\varepsilon\Big)\le 2e^{-2n\varepsilon^{2}}. \]
+  \item Bất đẳng thức DKW này cho phép kỹ sư/nhà nghiên cứu dựng một \textbf{Confidence Band (dải tin cậy)} bao phủ toàn bộ đường cong phân phối xác suất với độ tin cậy $1-\alpha$ chuẩn xác cho mọi cỡ mẫu $n$.
+  \end{itemize}
+\end{itemize}
+
+\lienhe{Slide tr. 14--15, 18--19; xem Câu~\ref{q:ecdf} (tính chất ECDF) và Câu~\ref{q:kyhieu} (bias/se/MSE).}
+
+%-------------------------------------------------------------------------
+\begin{cauhoi}[Ước lượng hàm phân phối khác gì ước lượng phiếm hàm?]{q:functional}
+Đâu là sự khác nhau giữa \textbf{ước lượng hàm phân phối xác suất} (estimating the distribution function) và \textbf{ước lượng phiếm hàm} (estimating statistical functionals)?
+\end{cauhoi}
+
+\begin{chot}
+Khác nhau cốt lõi nằm ở \textbf{đối tượng toán học cần ước lượng}: một bên khôi phục toàn bộ một \emph{hàm số} --- đối tượng vô hạn chiều $F\in\mathcal{F}$ (hoặc mật độ $f$); bên kia chỉ ước lượng một \emph{đặc trưng tổng hợp} $\theta=T(F)$ --- một ánh xạ vô hướng (hữu hạn chiều) trích ra từ phân phối đó, ví dụ trung bình, phương sai, phân vị, entropy.
+\end{chot}
+
+\muc{1. Động cơ \& trực giác}
+\begin{itemize}
+\item \textbf{Ước lượng hàm phân phối (toàn cục / toàn diện).} Mục tiêu: hiểu bức tranh tổng thể về cơ chế sinh dữ liệu mà không áp đặt một giả định tham số cứng nhắc. Trực giác: khôi phục lại \emph{toàn bộ hình dáng} của $F(x)$ (hoặc $f(x)$) trên toàn miền xác định.
+\item \textbf{Ước lượng phiếm hàm (cục bộ / đặc trưng hoá).} Mục tiêu: không cần biết toàn bộ phân phối, chỉ quan tâm một đại lượng tóm tắt phục vụ trực tiếp cho ra quyết định hoặc kiểm định giả thuyết. Trực giác: một \emph{phiếm hàm} $T(F)$ là ánh xạ nhận đầu vào là cả hàm phân phối $F$ và trả về một số thực (hoặc vector trong $\mathbb{R}^k$).
+\end{itemize}
+
+\begin{center}
+\begin{tabular}{@{}p{0.20\linewidth}p{0.36\linewidth}p{0.36\linewidth}@{}}
+\toprule
+\textbf{Tiêu chí} & \textbf{Ước lượng hàm phân phối} & \textbf{Ước lượng phiếm hàm}\\
+\midrule
+Không gian đích & Không gian hàm vô hạn chiều $\mathcal{F}$ & Không gian hữu hạn chiều $\mathbb{R}$ hoặc $\mathbb{R}^k$\\
+Tốc độ hội tụ & Chậm hơn ($L_\infty$, Glivenko--Cantelli; KDE đạt $n^{-2/5}$) & Thường đạt tốc độ chuẩn $\sqrt{n}$\\
+Công cụ đánh giá & Hội tụ đều $\sup_x|\widehat F_n(x)-F(x)|$, mất mát $L_2$ & Chuẩn tiệm cận, hàm ảnh hưởng, hiệu quả bán tham số\\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\muc{2. Chi tiết toán học}
+
+\textit{2.1. Ước lượng hàm phân phối.} Cho mẫu i.i.d. $X_1,\dots,X_n\sim F$, ước lượng hiển nhiên là ECDF
+\[ \widehat F_n(x)=\frac1n\sum_{i=1}^n \mathbb{I}(X_i\le x). \]
+\begin{itemize}
+\item \emph{Hội tụ điểm:} với mọi $x$, $\widehat F_n(x)\xrightarrow{P}F(x)$ theo luật số lớn.
+\item \emph{Hội tụ đều} --- định lý Glivenko--Cantelli:
+  \[ \sup_{x\in\mathbb{R}}\big|\widehat F_n(x)-F(x)\big|\xrightarrow{a.s.}0. \]
+\item \emph{Quá trình thực nghiệm} --- định lý Donsker:
+  \[ \sqrt{n}\big(\widehat F_n(x)-F(x)\big)\rightsquigarrow \mathbb{G}(x)\quad\text{(cầu Brown, Brownian bridge).} \]
+\end{itemize}
+
+\textit{2.2. Ước lượng phiếm hàm.} Một phiếm hàm thống kê là ánh xạ $T:\mathcal{F}\to\mathbb{R}$, tham số cần ước lượng là $\theta=T(F)$.
+\begin{itemize}
+\item \textbf{Ước lượng cắm vào (plug-in):} $\widehat\theta_n=T(\widehat F_n)$.
+\item \textbf{Phiếm hàm tuyến tính:}
+  \[ T(F)=\int g(x)\,dF(x)\ \Longrightarrow\ T(\widehat F_n)=\frac1n\sum_{i=1}^n g(X_i), \]
+  ví dụ kỳ vọng ứng với $g(x)=x$.
+\item \textbf{Phiếm hàm phi tuyến \& đạo hàm Von Mises.} Khi $T$ phi tuyến (phân vị, entropy\dots), ta khai triển Taylor trong không gian phiếm hàm:
+  \[ T(\widehat F_n)-T(F)=\int \mathrm{IF}(x;T,F)\,d(\widehat F_n-F)(x)+R_n, \]
+  với \textbf{hàm ảnh hưởng} (influence function)
+  \[ \mathrm{IF}(x;T,F)=\lim_{\epsilon\to 0}\frac{T\big((1-\epsilon)F+\epsilon\delta_x\big)-T(F)}{\epsilon}. \]
+  Khi phần dư thoả $R_n=o_P(n^{-1/2})$, ta thu được tính chuẩn tiệm cận
+  \[ \sqrt{n}\big(T(\widehat F_n)-T(F)\big)\xrightarrow{d}\mathcal{N}\Big(0,\ \int \mathrm{IF}(x;T,F)^2\,dF(x)\Big). \]
+\end{itemize}
+
+\muc{3. Ví dụ thực tế \& đa ngành}
+\begin{itemize}
+\item \textbf{An ninh mạng \& IAM (phát hiện mối đe doạ nội bộ, chấm điểm bất thường).}
+  \emph{Ước lượng phân phối:} dựng mô hình KDE trên toàn không gian hành vi đăng nhập (thời điểm truy cập, lượng dữ liệu tải xuống) để có phân phối nền $f(x)$ cho từng nhóm user/role.
+  \emph{Ước lượng phiếm hàm:} chỉ cần phân vị $99\%$, $q_{0.99}=F^{-1}(0.99)$, hoặc entropy vi phân $H(F)=-\int f(x)\log f(x)\,dx$ của luồng authentication log. Entropy tụt đột ngột (dấu hiệu botnet brute-force tự động) hoặc log-volume vượt $q_{0.99}$ thì kích hoạt xác thực bước hai (MFA).
+\item \textbf{Tài chính \& quản trị rủi ro.}
+  \emph{Ước lượng phân phối:} mô phỏng toàn bộ đường phân phối lợi suất tài sản tương lai bằng ECDF.
+  \emph{Ước lượng phiếm hàm:} tính trực tiếp $\mathrm{VaR}$, $T(F)=F^{-1}(\alpha)$, hoặc $\mathrm{CVaR}$ (Expected Shortfall), $T(F)=\mathbb{E}\big[X\mid X\le F^{-1}(\alpha)\big]$.
+\end{itemize}
+
+\begin{luuy}
+\begin{itemize}
+\item Hai bài toán không tách rời: nguyên lý plug-in nói rằng cứ ước lượng $F$ trước rồi \emph{cắm} $\widehat F_n$ vào $T$. Glivenko--Cantelli chính là thứ bảo đảm $T(\widehat F_n)\xrightarrow{a.s.}T(F)$ với mọi $T$ liên tục theo chuẩn sup.
+\item Đừng nhầm ``tốc độ $\sqrt{n}$'' là đặc quyền của mọi phiếm hàm: chỉ những $T$ \emph{khả vi Hadamard} với phần dư $R_n=o_P(n^{-1/2})$ mới đạt được. Các phiếm hàm phụ thuộc mật độ (ví dụ $f(x_0)$, mode) vẫn chịu tốc độ chậm kiểu phi tham số.
+\item Ước lượng $F$ ($n^{-1/2}$, đều) \emph{dễ} hơn ước lượng $f$ ($n^{-2/5}$ với KDE băng thông tối ưu) --- đạo hàm là phép toán không ổn định, đây là lý do ta luôn xuất phát từ CDF.
+\end{itemize}
+\end{luuy}
+
+\lienhe{Slide tr. 5, 21--26 (Statistical Functionals \& Plug-in Principle); [W] Ch. 2--3. Xem thêm Câu~\ref{q:ecdf}.}
+
+\section{Nền giải tích cho suy diễn phi tham số: dãy hàm \& các kiểu hội tụ}
+
+%-------------------------------------------------------------------------
+\begin{cauhoi}[Một dãy hàm nghĩa là gì? Hình dung nó ra sao?]{q:dayham}
+Khi nói ``dãy hàm $f_n$'' thì thực chất ta đang nói về đối tượng gì, và nên hình dung nó như thế nào cho trực quan?
+\end{cauhoi}
+
+\begin{chot}
+Một dãy \emph{số} cho mỗi $n$ một con số; một dãy \emph{hàm} cho mỗi $n$ nguyên một \emph{đồ thị}. Hãy hình dung nó như một thước phim hoạt hình: mỗi $n$ là một khung hình chứa nguyên đường cong $y=f_n(x)$, và khi $n\to\infty$ toàn bộ sợi dây đồ thị uốn lượn, xẹp xuống hay dịch chuyển để biến dần thành hình dáng đích $f(x)$.
+\end{chot}
+
+\muc{A. Motivation \& Ý nghĩa (The ``Why'')}
+Thay vì nghĩ đến một dãy số quen thuộc như $1,\frac12,\frac13,\dots$ (mỗi bước $n$ cho ra một \textbf{con số}), hãy hình dung một dãy hàm $f_n(x)$ giống như một \textbf{thước phim hoạt hình (animation)}:
+\begin{itemize}
+\item Mỗi số nguyên $n=1,2,3,\dots$ tương ứng với một \textbf{khung hình (frame)}.
+\item Tại mỗi khung hình $n$, ta có nguyên một \textbf{đồ thị đường cong} $y=f_n(x)$ trải dài trên trục hoành.
+\item Khi cho $n$ chạy từ $1\to\infty$, thước phim bắt đầu chuyển động: \textbf{toàn bộ sợi dây đồ thị uốn lượn, xẹp xuống, dốc lên hoặc dịch chuyển} để biến đổi dần thành một hình dáng đích cuối cùng (gọi là hàm giới hạn $f(x)$).
+\end{itemize}
+
+\muc{B. Chi tiết Toán học (The ``How'')}
+Để thấy rõ ``hình hài'' của một dãy hàm, hãy quan sát 2 ví dụ trực quan đối lập nhau:
+
+\textit{1. Dãy hàm hội tụ đều: ``Sợi dây co giãn ép sát về 0''.} Xét dãy hàm $f_n(x)=\dfrac{\sin(nx)}{n}$ trên đoạn $[-\pi,\pi]$:
+\begin{itemize}
+\item \textbf{$n=1$:} Đồ thị là đường sóng sin chuẩn $y=\sin(x)$, dao động giữa $-1$ và $1$.
+\item \textbf{$n=2$:} $y=\frac{\sin(2x)}{2}$, sóng gợn nhanh gấp đôi nhưng biên độ co lại chỉ còn giữa $-0.5$ và $0.5$.
+\item \textbf{$n=100$:} $y=\frac{\sin(100x)}{100}$, sóng gợn li ti và biên độ chỉ còn tối đa $0.01$.
+\end{itemize}
+Toàn bộ đường cong $f_n(x)$ bị kẹp chặt giữa hai dải biên giới $\pm\frac1n\to 0$. Toàn bộ sợi dây đồ thị đồng loạt dẹp lép thành đường thẳng $y=0$ (Hội tụ đều).
+
+\textit{2. Dãy hàm chỉ hội tụ điểm: ``Góc gấp ngày càng nhọn''.} Xét dãy hàm $f_n(x)=x^{n}$ trên $[0,1]$:
+\begin{itemize}
+\item \textbf{$n=1$:} Đường chéo $y=x$.
+\item \textbf{$n=2$:} Parabol $y=x^{2}$ võng xuống.
+\item \textbf{$n=10$:} Đồ thị gần như dán sát đáy trục hoành ở hầu hết đoạn $[0,\,0.8]$, nhưng đến sát $x=1$ thì bất ngờ dựng ngược dốc đứng lên điểm $(1,1)$.
+\item \textbf{$n\to\infty$:} Với bất kỳ điểm $x<1$ nào, giá trị đều bị kéo tụt về $0$. Nhưng tại đúng $x=1$, giá trị luôn giữ nguyên bằng $1$. Sợi dây liên tục bị ``kéo đứt'' tại điểm cuối.
+\end{itemize}
+
+\muc{C. Ví dụ Thực tế \& Đa ngành (The ``Where'')}
+\begin{itemize}
+\item \textbf{Thống kê \& Data Science (Empirical CDF $\widehat F_n(x)$):}
+  \begin{itemize}
+  \item Mỗi khi thu thập thêm dữ liệu ($n=10,100,1000$ mẫu), ta vẽ lại đồ thị hàm phân phối bậc thang $\widehat F_n(x)$.
+  \item Dãy hàm ở đây chính là \textbf{chuỗi các đường bậc thang}. Khi $n$ tăng dần, các bậc thang mịn dần và uốn nắn thành đường cong liên tục mượt mà của hàm phân phối lý thuyết $F(x)$.
+  \end{itemize}
+\item \textbf{ML \& Deep Learning (Quá trình Training Mạng Neural):}
+  \begin{itemize}
+  \item Đặt $f_n(x)$ là hàm dự đoán của model tại epoch thứ $n$ (với $x$ là vector đặc trưng đầu vào).
+  \item Qua từng vòng lặp Gradient Descent, đồ thị hàm quyết định (decision boundary) $f_n(x)$ liên tục uốn lượn, dịch chuyển trong không gian để fit vào dữ liệu phân loại. Dãy các mô hình qua từng epoch chính là một dãy hàm.
+  \end{itemize}
+\end{itemize}
+
+\lienhe{Kiến thức nền cho Câu~\ref{q:hoitu-ham}; ứng dụng trực tiếp vào $\widehat F_n$ ở Câu~\ref{q:ecdf}.}
+
+%-------------------------------------------------------------------------
+\begin{cauhoi}[Hội tụ điểm và hội tụ đều khác nhau thế nào?]{q:hoitu-ham}
+Phân biệt \textbf{hội tụ điểm} (pointwise convergence) và \textbf{hội tụ đều} (uniform convergence) của một dãy hàm. Vì sao sự phân biệt này lại quan trọng trong thống kê phi tham số?
+\end{cauhoi}
+
+\begin{chot}
+Hội tụ điểm: mỗi $x$ có ngưỡng $N(x,\varepsilon)$ riêng, tốc độ hội tụ độc lập giữa các điểm nên không kiểm soát được điểm tệ nhất --- và do đó \emph{không bảo toàn} tính liên tục hay phép lấy giới hạn qua tích phân/đạo hàm. Hội tụ đều: một ngưỡng $N(\varepsilon)$ dùng chung cho \emph{mọi} $x$, tương đương $\sup_{x}|f_n(x)-f(x)|\to 0$ --- toàn bộ đồ thị bị ép vào một dải hẹp quanh $f$ cùng lúc. Glivenko--Cantelli chính là phiên bản ``hội tụ đều'' cho ECDF.
+\end{chot}
+
+\muc{A. Motivation \& Ý nghĩa (The ``Why'')}
+Trong giải tích hàm và lý thuyết xác suất, việc xét một dãy hàm $f_n(x)$ tiến về $f(x)$ khi $n\to\infty$ phức tạp hơn dãy số thông thường rất nhiều, vì mỗi điểm $x$ có thể tiến về đích với một ``tốc độ'' khác nhau.
+\begin{itemize}
+\item \textbf{Hội tụ điểm (Pointwise Convergence):}
+  \begin{itemize}
+  \item \emph{Bản chất:} Ta đứng yên tại một điểm $x_0$ cố định và quan sát giá trị $f_n(x_0)$. Khi $n\to\infty$, giá trị này tiến về $f(x_0)$.
+  \item \emph{Vấn đề:} Mỗi điểm $x$ có tốc độ hội tụ độc lập. Có điểm cần $n=100$ là đã sát đích, nhưng có điểm lân cận lại cần $n=1.000.000$. Do không kiểm soát được điểm tệ nhất (worst-case), hội tụ điểm \textbf{không bảo toàn các tính chất tốt} như tính liên tục hay phép lấy tích phân/đạo hàm qua giới hạn.
+  \end{itemize}
+\item \textbf{Hội tụ đều (Uniform Convergence):}
+  \begin{itemize}
+  \item \emph{Bản chất:} Toàn bộ đồ thị hàm số $f_n$ bị ``ép'' dần vào một dải hẹp quanh đồ thị $f$ trên \textbf{toàn bộ miền xác định} cùng một lúc.
+  \item \emph{Ý nghĩa:} Tốc độ hội tụ được đảm bảo đồng đều trên mọi $x$. Đây là điều kiện chuẩn mực giúp bảo toàn tính liên tục và đảm bảo sai số toàn cục được chặn trên một cách an toàn.
+  \end{itemize}
+\end{itemize}
+
+\muc{B. Chi tiết Toán học (The ``How'')}
+
+\textit{1. Định nghĩa chuẩn tắc.} Cho dãy hàm $f_n:E\to\mathbb{R}$ và hàm giới hạn $f:E\to\mathbb{R}$.
+\begin{itemize}
+\item \textbf{Hội tụ điểm} ($f_n\xrightarrow{\text{pointwise}}f$):
+\[ \forall x\in E,\ \forall \varepsilon>0,\ \exists N(x,\varepsilon)\in\mathbb{N}\quad\text{sao cho}\quad \forall n\ge N \implies |f_n(x)-f(x)|<\varepsilon. \]
+\emph{(Lưu ý: $N$ phụ thuộc vào cả $\varepsilon$ và vị trí $x$.)}
+\item \textbf{Hội tụ đều} ($f_n\xrightarrow{\text{uniform}}f$ hay $f_n\rightrightarrows f$):
+\[ \forall \varepsilon>0,\ \exists N(\varepsilon)\in\mathbb{N}\quad\text{sao cho}\quad \forall n\ge N,\ \forall x\in E \implies |f_n(x)-f(x)|<\varepsilon. \]
+Tương đương với việc chuẩn cực đại (supremum norm) của sai số tiến về $0$:
+\[ \lim_{n\to\infty}\ \sup_{x\in E}|f_n(x)-f(x)| = 0. \]
+\end{itemize}
+
+\textit{2. Phản ví dụ kinh điển: mất tính liên tục khi chỉ hội tụ điểm.} Xét dãy hàm $f_n(x)=x^{n}$ trên đoạn $[0,1]$:
+\begin{itemize}
+\item Khi $x\in[0,1)$: $\lim_{n\to\infty}x^{n}=0$.
+\item Khi $x=1$: $\lim_{n\to\infty}1^{n}=1$.
+\end{itemize}
+Hàm giới hạn là
+\[
+f(x)=\begin{cases} 0 & \text{khi } 0\le x<1,\\ 1 & \text{khi } x=1.\end{cases}
+\]
+Mặc dù mọi $f_n(x)=x^{n}$ đều là hàm liên tục, hàm giới hạn $f(x)$ lại bị \textbf{gián đoạn} tại $x=1$. Lý do: càng tiến gần về $1$, giá trị $x^{n}$ tiến về $0$ càng chậm, khiến sai số cực đại luôn là $\sup_{x\in[0,1)}|x^{n}-0|=1\neq 0$ (không thể hội tụ đều trên $[0,1]$).
+
+\textit{3. Cầu nối sang Xác suất \& Thống kê: Glivenko--Cantelli.} Khi áp dụng vào hàm phân phối thực nghiệm $\widehat F_n(x)=\frac1n\sum_{i=1}^n\mathbb{I}(X_i\le x)$:
+\begin{itemize}
+\item \textbf{Hội tụ điểm:} Theo Luật số lớn (LLN), với mỗi ngưỡng $x$ cố định, biến ngẫu nhiên $\mathbb{I}(X_i\le x)$ là biến Bernoulli, nên $\widehat F_n(x)\xrightarrow{P}F(x)$.
+\item \textbf{Hội tụ đều (Định lý Glivenko--Cantelli):} Kết quả mạnh hơn rất nhiều:
+\[ \big\|\widehat F_n-F\big\|_\infty=\sup_{x\in\mathbb{R}}\big|\widehat F_n(x)-F(x)\big|\xrightarrow{a.s.}0. \]
+Nghĩa là sai số trên toàn bộ miền giá trị đồng thời co về $0$, đảm bảo đường cong thực nghiệm tiến sát hoàn toàn vào đường cong lý thuyết.
+\end{itemize}
+
+\muc{C. Ví dụ Thực tế \& Đa ngành (The ``Where'')}
+\begin{itemize}
+\item \textbf{Cybersecurity \& Threat Detection (KS-Test for Anomaly/Drift Detection):}
+  \begin{itemize}
+  \item Để kiểm tra xem phân phối log truy cập hiện tại có bị tấn công (Data Drift / Adversarial Shift) so với phân phối chuẩn hay không, ta dùng \textbf{Kolmogorov--Smirnov Test}:
+  \[ D_n=\sup_{x}\big|\widehat F_n(x)-F_0(x)\big|. \]
+  \item Kiểm định này hoạt động được là nhờ \textbf{hội tụ đều}. Nếu chỉ có hội tụ điểm, giá trị $D_n$ lớn nhất có thể bị thổi phồng ở các điểm biên (edge cases), gây ra tỷ lệ False Positive (báo động giả) cực cao khi phân tích log.
+  \end{itemize}
+\item \textbf{Machine Learning \& Generalization Bounds (Vapnik--Chervonenkis / PAC Learning):}
+  \begin{itemize}
+  \item Trong ML, ta tối ưu hoá Empirical Risk $\widehat R_n(h)=\frac1n\sum L(h(x_i),y_i)$ để hy vọng True Risk $R(h)=\mathbb{E}[L(h(X),Y)]$ cũng nhỏ.
+  \item Nếu thuật toán chỉ hội tụ điểm cho từng mô hình $h$, ta dễ gặp hiện tượng \textbf{Overfitting} (chọn được một model $h$ có $\widehat R_n(h)$ rất nhỏ nhưng $R(h)$ lại rất lớn).
+  \item Khái niệm \textbf{Uniform Convergence over Hypothesis Class} $\mathcal{H}$ ($\sup_{h\in\mathcal{H}}|\widehat R_n(h)-R(h)|\to 0$) là điều kiện nền tảng để đảm bảo mô hình không bị học vẹt.
+  \end{itemize}
+\end{itemize}
+
+\lienhe{Slide tr. 16--17 (Glivenko--Cantelli); [W] Ch. 2. Xem thêm Câu~\ref{q:ecdf}.}
+
+%-------------------------------------------------------------------------
+\begin{cauhoi}[Hội tụ theo phân phối và hội tụ theo xác suất có phải là một?]{q:hoitu-bnn}
+\textit{Convergence in distribution} và \textit{convergence in probability} có phải là một khái niệm không? Nếu không, quan hệ giữa chúng là gì?
+\end{cauhoi}
+
+\begin{chot}
+\textbf{Không}, hai khái niệm này \textbf{không phải là một}. \emph{Convergence in probability} (hội tụ theo xác suất) là một điều kiện \textbf{mạnh hơn} và kéo theo \emph{convergence in distribution} (hội tụ theo phân phối). Chiều ngược lại nhìn chung \textbf{không đúng} (trừ trường hợp giới hạn là một hằng số).
+\end{chot}
+
+\muc{A. Motivation \& Ý nghĩa (The ``Why'')}
+Sự khác biệt cốt lõi nằm ở việc ta đang so sánh \textbf{giá trị cụ thể của các biến ngẫu nhiên trên cùng không gian mẫu} hay chỉ đang so sánh \textbf{hình dáng quy luật phân phối} của chúng.
+\begin{itemize}
+\item \textbf{Convergence in Probability} ($X_n\xrightarrow{P}X$ --- so sánh giá trị thực tế):
+  \begin{itemize}
+  \item \emph{Bản chất:} $X_n$ và $X$ phải sống trên \textbf{cùng một không gian xác suất} $(\Omega,\mathcal{F},P)$.
+  \item \emph{Trực giác:} Với $n$ đủ lớn, xác suất để giá trị cụ thể của $X_n(\omega)$ lệch khỏi $X(\omega)$ một khoảng dù rất nhỏ $\varepsilon$ sẽ tiến về $0$. Nghĩa là $X_n$ và $X$ gần như biến thành ``cùng một đại lượng'' với từng kết cục $\omega$.
+  \end{itemize}
+\item \textbf{Convergence in Distribution} ($X_n\xrightarrow{d}X$ hay $X_n\rightsquigarrow X$ --- so sánh hình dáng/luật):
+  \begin{itemize}
+  \item \emph{Bản chất:} $X_n$ và $X$ \textbf{không cần} sống chung một không gian xác suất.
+  \item \emph{Trực giác:} Ta hoàn toàn không quan tâm từng giá trị $X_n(\omega)$ có gần $X(\omega)$ hay không. Ta chỉ quan tâm đường cong phân phối xác suất (CDF/PDF) của $X_n$ có biến đổi dần để khớp với đường cong phân phối của $X$ hay không.
+  \end{itemize}
+\end{itemize}
+
+\muc{B. Chi tiết Toán học (The ``How'')}
+
+\textit{1. Định nghĩa chuẩn.} Cho dãy biến ngẫu nhiên $X_1,X_2,\dots,X_n$ và biến ngẫu nhiên $X$:
+\begin{itemize}
+\item \textbf{Hội tụ theo xác suất} ($X_n\xrightarrow{P}X$):
+\[ \forall \varepsilon>0,\qquad \lim_{n\to\infty}P\big(|X_n-X|>\varepsilon\big)=0. \]
+\item \textbf{Hội tụ theo phân phối} ($X_n\xrightarrow{d}X$):
+\[ \lim_{n\to\infty}F_{X_n}(x)=F_X(x)\quad\text{tại mọi điểm } x \text{ mà } F_X \text{ liên tục.} \]
+\emph{(Tương đương: $\mathbb{E}[g(X_n)]\to\mathbb{E}[g(X)]$ với mọi hàm $g$ liên tục và bị chặn.)}
+\end{itemize}
+
+\textit{2. Mối quan hệ và hệ phân cấp (Hierarchy of Convergence).}
+\[ \text{Hội tụ hầu chắc chắn (almost sure)}\implies X_n\xrightarrow{P}X\implies X_n\xrightarrow{d}X. \]
+\begin{itemize}
+\item \textbf{Định lý đảo đặc biệt:} Nếu giới hạn là một hằng số $c$ (không phải biến ngẫu nhiên), thì hai khái niệm này tương đương:
+\[ X_n\xrightarrow{d}c \iff X_n\xrightarrow{P}c. \]
+\end{itemize}
+
+\textit{3. Phản ví dụ kinh điển: hội tụ theo phân phối NHƯNG KHÔNG hội tụ theo xác suất.} Xét phép tung một đồng xu cân bằng:
+\begin{itemize}
+\item Cho $X\sim\mathrm{Bernoulli}(0.5)$ nhận giá trị $1$ (Ngửa) hoặc $-1$ (Sấp) với xác suất $0.5$.
+\item Đặt dãy biến ngẫu nhiên $X_n=-X$ với mọi $n\ge 1$.
+\end{itemize}
+\textbf{Phân tích:}
+\begin{enumerate}
+\item \textbf{Xét hội tụ theo phân phối} ($X_n\xrightarrow{d}X$):
+  \begin{itemize}
+  \item $P(X_n=1)=P(-X=1)=P(X=-1)=0.5$.
+  \item $P(X_n=-1)=P(-X=-1)=P(X=1)=0.5$.
+  \item Phân phối của $X_n$ và $X$ hoàn toàn giống hệt nhau ở mọi $n$. Do đó hiển nhiên $X_n\xrightarrow{d}X$.
+  \end{itemize}
+\item \textbf{Xét hội tụ theo xác suất} ($X_n\xrightarrow{P}X$):
+  \begin{itemize}
+  \item Ta xét khoảng cách $|X_n-X|=|-X-X|=|-2X|=2|X|=2$ (luôn bằng $2$ với xác suất $100\%$).
+  \item Chọn $\varepsilon=1$:
+  \[ P\big(|X_n-X|>1\big)=P(2>1)=1\neq 0\quad\text{khi } n\to\infty. \]
+  \item $\implies X_n$ \textbf{không thể} hội tụ theo xác suất về $X$. Dù hai biến có phân phối giống hệt nhau, chúng luôn trái dấu nhau ở mọi phép thử.
+  \end{itemize}
+\end{enumerate}
+
+\muc{C. Ví dụ Thực tế \& Đa ngành (The ``Where'')}
+\begin{itemize}
+\item \textbf{Luật số lớn (WLLN) vs. Định lý Giới hạn Trung tâm (CLT):}
+  \begin{itemize}
+  \item \textbf{Weak Law of Large Numbers:} $\bar X_n\xrightarrow{P}\mu$. Trung bình mẫu thực sự \textbf{bằng} giá trị kỳ vọng lý thuyết khi dữ liệu đủ lớn (ước lượng điểm nhất quán --- consistent estimator).
+  \item \textbf{Central Limit Theorem:} $\sqrt{n}(\bar X_n-\mu)/\sigma\xrightarrow{d}\mathcal{N}(0,1)$. Đại lượng này không biến thành một con số cố định, mà \textbf{hình dáng sai số} của nó biến thành hình chuông Gauss chuẩn để ta tính khoảng tin cậy (confidence interval) và p-value.
+  \end{itemize}
+\item \textbf{Cyber Security \& IAM (Behavioral Analytics \& Anomaly Detection):}
+  \begin{itemize}
+  \item \emph{Scenario:} Theo dõi độ trễ xác thực (authentication latency) $T_n$ của một user.
+  \item Nếu hệ thống yêu cầu $T_n\xrightarrow{P}T_{\text{baseline}}$: mỗi lần đăng nhập, thời gian phản hồi của người dùng phải sát khớp với hành vi gốc (nếu lệch $\to$ nghi ngờ replay attack hoặc bot script).
+  \item Nếu hệ thống kiểm tra $T_n\xrightarrow{d}T_{\text{baseline}}$: hệ thống chỉ cần kiểm tra xem tổng thể phân phối độ trễ trong ngày có tuân theo profile chuẩn hay không (dùng kiểm định Kolmogorov--Smirnov), không bắt buộc từng phiên đơn lẻ phải giống nhau.
+  \end{itemize}
+\end{itemize}
+
+\lienhe{Xem Câu~\ref{q:hoitu-ham} (hội tụ điểm/đều) và Câu~\ref{q:ecdf} (tính chất của $\widehat F_n$); [W] Ch. 5.}
+
+\section{Bảng ký hiệu \& từ vựng tiệm cận thường gặp}
+
+%-------------------------------------------------------------------------
+\begin{cauhoi}[Bảng ký hiệu tiệm cận, sai số và hội tụ nghĩa là gì?]{q:kyhieu}
+Giải nghĩa bộ ký hiệu hay gặp trong giáo trình: $o,\ O,\ \sim,\ \asymp$; $\xrightarrow{a.s.},\ \xrightarrow{P},\ \rightsquigarrow$; $\mathrm{bias},\ \mathrm{se},\ \mathrm{MSE},\ \Phi,\ z_\alpha$. Chúng liên hệ với nhau thế nào?
+\end{cauhoi}
+
+\begin{chot}
+Bảng ký hiệu này (thường thấy trong các giáo trình Thống kê Nâng cao \& Lý thuyết Tiệm cận kinh điển như \textit{All of Nonparametric Statistics} của Larry Wasserman) là \textbf{bộ từ vựng nền tảng} để đo lường chất lượng của các thuật toán và mô hình ước lượng khi kích thước mẫu $n\to\infty$.
+\end{chot}
+
+\muc{A. Motivation \& Ý nghĩa (The ``Why'')}
+Để đánh giá một mô hình thống kê / Machine Learning khi có nhiều dữ liệu, ta cần trả lời 3 câu hỏi cốt lõi:
+\begin{enumerate}
+\item \textbf{Tốc độ tăng trưởng / suy giảm thế nào?} $\to$ Dùng \textbf{ký hiệu tiệm cận} (asymptotics: $o,O,\sim,\asymp$).
+\item \textbf{Ước lượng có tiến về đúng giá trị thực hay không?} $\to$ Dùng \textbf{các dạng hội tụ ngẫu nhiên} ($\xrightarrow{a.s.},\ \xrightarrow{P},\ \rightsquigarrow$).
+\item \textbf{Sai số cụ thể đo bằng gì và dựng khoảng tin cậy ra sao?} $\to$ Dùng \textbf{chỉ số sai số \& phân phối chuẩn} ($\mathrm{bias},\ \mathrm{se},\ \mathrm{MSE},\ \Phi,\ z_\alpha$).
+\end{enumerate}
+Ba nhóm ký hiệu này không đứng rời rạc mà kết nối chặt chẽ thành một pipeline: \textbf{đo lường sai số $(\mathrm{MSE})\to$ khảo sát tốc độ co lại theo $n$ $(O,o)\to$ thiết lập định lý giới hạn $(\rightsquigarrow\Phi)\to$ suy diễn thống kê $(z_\alpha)$}.
+
+\muc{B. Chi tiết Toán học \& Mối liên hệ (The ``How'')}
+
+\begin{tcolorbox}[qnastyle, colback=white, colframe=boxrule]
+\textbf{Ước lượng} $\widehat\theta_n$ --- đi theo ba nhánh:
+\begin{enumerate}[leftmargin=1.6em]
+\item \textbf{Sai số mẫu hữu hạn:} $\mathrm{MSE}=\mathrm{bias}^2+\mathrm{se}^2$.
+\item \textbf{Tốc độ thu nhỏ sai số:} $\mathrm{MSE}=O(1/n)$ hoặc $o(1)$.
+\item \textbf{Tiệm cận vô hạn:}
+  \begin{itemize}[leftmargin=1.4em]
+  \item Hội tụ mạnh: $\widehat\theta_n\xrightarrow{a.s.}\theta$ \quad(nhất quán mạnh)
+  \item Hội tụ theo xác suất: $\widehat\theta_n\xrightarrow{P}\theta$ \quad(nhất quán yếu)
+  \item Chuẩn hoá tiệm cận: $\dfrac{\widehat\theta_n-\theta}{\widehat{\mathrm{se}}}\rightsquigarrow\mathcal{N}(0,1)$ \quad(CDF là $\Phi$)
+    \begin{itemize}[leftmargin=1.4em]
+    \item[$\hookrightarrow$] Dựng khoảng tin cậy: $\widehat\theta_n\pm z_{\alpha/2}\cdot\widehat{\mathrm{se}}$
+    \end{itemize}
+  \end{itemize}
+\end{enumerate}
+\end{tcolorbox}
+
+\textit{1. Nhóm tiệm cận giải tích (Asymptotic Notations).} Nhóm này đo tương quan tốc độ giữa hai đại lượng $a_n$ và $b_n$:
+\begin{itemize}
+\item $x_n=o(a_n)$ \textbf{(little-o):} $x_n$ nhỏ hơn và tắt nhanh hơn hẳn $a_n$ ($\lim \frac{x_n}{a_n}=0$).
+\item $x_n=O(a_n)$ \textbf{(big-O):} $x_n$ bị chặn trên bởi $a_n$ về bậc độ lớn (cùng bậc hoặc nhỏ hơn).
+\item $a_n\sim b_n$ \textbf{(asymptotic equivalence):} $a_n$ và $b_n$ tiến sát nhau theo tỷ lệ $1{:}1$ ($\lim\frac{a_n}{b_n}=1$).
+\item $a_n\asymp b_n$ \textbf{(same order / tight bound):} $a_n$ và $b_n$ cùng tốc độ tăng/giảm (tương đương $\Theta(b_n)$ trong khoa học máy tính).
+\end{itemize}
+
+\textit{2. Nhóm đo lường sai số của ước lượng (Estimator Properties).} Cho $\widehat\theta_n$ là ước lượng của tham số đích $\theta$:
+\begin{itemize}
+\item $\mathrm{bias}=\mathbb{E}(\widehat\theta_n)-\theta$: sai số hệ thống (độ lệch tâm). Ước lượng là không chệch (unbiased) nếu $\mathrm{bias}=0$.
+\item $\mathrm{se}=\sqrt{\mathbb{V}(\widehat\theta_n)}$: độ lệch chuẩn của ước lượng (đo độ phân tán/dao động quanh tâm). Vì $\mathbb{V}(\widehat\theta_n)$ chứa tham số chưa biết, ta dùng $\widehat{\mathrm{se}}$ (cắm dữ liệu mẫu vào) để tính toán thực tế.
+\item \textbf{Mối liên hệ MSE Decomposition (định lý phân rã bias--variance):}
+\[ \mathrm{MSE}=\mathbb{E}\big[(\widehat\theta_n-\theta)^2\big]=\mathrm{bias}^2+\mathrm{se}^2. \]
+\end{itemize}
+
+\textit{3. Nhóm dạng hội tụ ngẫu nhiên (Modes of Convergence).} Thứ bậc chặt chẽ giữa các khái niệm hội tụ:
+\[ X_n\xrightarrow{a.s.}X \implies X_n\xrightarrow{P}X \implies X_n\rightsquigarrow X. \]
+\begin{itemize}
+\item \textbf{Consistency (tính nhất quán):} Nếu $\mathrm{MSE}\to 0$ (hay $\mathrm{bias}=o(1)$ và $\mathrm{se}=o(1)$), theo bất đẳng thức Chebyshev kéo theo $\widehat\theta_n\xrightarrow{P}\theta$.
+\item \textbf{Strong consistency:} Khi $\widehat\theta_n\xrightarrow{a.s.}\theta$ (theo luật mạnh số lớn --- SLLN).
+\end{itemize}
+
+\textit{4. Nhóm phân phối chuẩn \& suy diễn (Asymptotic Normality).}
+\begin{itemize}
+\item $\Phi(z)$: hàm phân phối tích lũy của phân phối chuẩn $\mathcal{N}(0,1)$.
+\item $z_\alpha=\Phi^{-1}(1-\alpha)$: điểm phân vị trên (sao cho $P(Z>z_\alpha)=\alpha$).
+\item \textbf{Kết nối suy diễn:} Theo định lý giới hạn trung tâm (CLT):
+\[ \frac{\widehat\theta_n-\theta}{\widehat{\mathrm{se}}}\rightsquigarrow Z\sim\mathcal{N}(0,1)\quad(\text{có CDF là }\Phi). \]
+Từ đó, khoảng tin cậy $(1-\alpha)$ xấp xỉ của $\theta$ được viết thành
+\[ \Big[\widehat\theta_n-z_{\alpha/2}\widehat{\mathrm{se}},\ \ \widehat\theta_n+z_{\alpha/2}\widehat{\mathrm{se}}\Big]. \]
+\end{itemize}
+
+\muc{C. Ví dụ Thực tế \& Đa ngành (The ``Where'')}
+\begin{itemize}
+\item \textbf{Cyber Security \& IAM (Real-time Anomaly Scoring / Rate-Limiter):}
+  \begin{itemize}
+  \item Đặt $\theta$ là tần suất đăng nhập trung bình thực sự của một User/Role trong giờ cao điểm. Ta dùng $\widehat\theta_n$ (trung bình trượt qua $n$ log events).
+  \item Ta chứng minh thuật toán có $\mathrm{bias}=O(1/n)$ và $\mathrm{se}\asymp 1/\sqrt{n}$, suy ra $\mathrm{MSE}=O(1/n)\to 0 \implies \widehat\theta_n\xrightarrow{P}\theta$ (mô hình không bị lệch khi log dồn về).
+  \item Ngưỡng cảnh báo tự động (anomaly threshold) cho hệ thống SIEM/SOC được dựng bằng khoảng tin cậy: $\mathrm{Threshold}=\widehat\theta_n+z_{0.005}\cdot\widehat{\mathrm{se}}$ (với mức tin cậy $99\%$).
+  \end{itemize}
+\item \textbf{Machine Learning \& MLOps (Generalization Rate):}
+  \begin{itemize}
+  \item Trong Non-parametric Regression / KDE, sai số xấp xỉ không đạt tốc độ thông thường $O(1/n)$ mà bị làm chậm bởi hiện tượng số chiều (curse of dimensionality): $\mathrm{MSE}\asymp n^{-\frac{2\beta}{2\beta+d}}$. Ta dùng ký hiệu $a_n\asymp b_n$ để khẳng định tốc độ này là tối ưu (minimax optimal).
+  \end{itemize}
+\end{itemize}
+
+\lienhe{Dùng chung cho toàn bộ tài liệu; xem Câu~\ref{q:hoitu-bnn} (thứ bậc hội tụ) và Câu~\ref{q:ecdf} (áp dụng cho $\widehat F_n$).}
+
+%=========================================================================
+%  << THÊM CÂU HỎI MỚI Ở ĐÂY >>
+%=========================================================================
+
+\end{document}
