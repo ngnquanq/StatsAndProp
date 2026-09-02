@@ -1,0 +1,17 @@
+=== CHUNK 25 anova-fit ===
+--- header: ```{r anova-fit} 
+
+
+[BẢNG] Mô hình chính (cộng tính): ANOVA Type II cho HWI ~ Habitat + Habitat.Density. 
+                   Sum Sq  Df F value Pr(>F)
+Habitat          109.8670   4  2.6658 0.0323
+Habitat.Density   29.9769   2  1.4547 0.2348
+Residuals       3688.6426 358      NA     NA
+
+[MESSAGE] Note: model has aliased coefficients
+      sums of squares computed by model comparison
+
+[BẢNG] Kiểm định một phần hiệu ứng tương tác (chỉ trên các contrast ước lượng được). 
+                         Sum Sq Df F value Pr(>F)
+Habitat:Habitat.Density 34.9413  5  0.6752 0.6425
+

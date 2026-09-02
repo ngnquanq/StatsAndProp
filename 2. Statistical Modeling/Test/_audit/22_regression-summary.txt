@@ -1,0 +1,18 @@
+=== CHUNK 22 regression-summary ===
+--- header: ```{r regression-summary} 
+
+
+[BẢNG] Tổng hợp hiệu năng dự báo; baseline luôn dự đoán bằng trung bình tập huấn luyện. 
+                Mô hình Test RMSE (log) Test R² (log) Repeated-CV RMSE
+1                   OLS          0.1503         0.874           0.1688
+2                 Ridge          0.1517         0.872           0.1691
+3                 LASSO          0.1741         0.831           0.1806
+4                   PCR          0.1587         0.860           0.1777
+5 Baseline (mean train)          0.4244        -0.004               NA
+  Test MAE (g) Số biến/thành phần
+1        0.661                 10
+2        0.667                 10
+3        0.727                  5
+4        0.698                  2
+5        1.801                  0
+

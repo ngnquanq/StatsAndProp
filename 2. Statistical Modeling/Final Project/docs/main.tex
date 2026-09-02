@@ -1,0 +1,111 @@
+
+\documentclass[12pt]{article}
+
+\usepackage{my-template}
+
+% Disable indentation on new paragraphs
+\setlength{\parindent}{0pt}
+
+% Line spacing 1.5
+% \renewcommand{\baselinestretch}{1.5}
+
+% Optional: graphic path
+% \graphicspath{PATH_TO_GRAPHIC_FOLDER}
+
+% To use Times font family, uncomment this row
+% \usepackage{mathptmx}
+
+% To use roman section / subsection, uncomment these rows
+% \renewcommand{\thesection}{\Roman{section}}
+% \renewcommand{\thesubsection}{\thesection.\Roman{subsection}}
+
+% Define course name, report name and report title.
+\newcommand{\coursename}{Mô hình hoá thống kê}
+\newcommand{\reportname}{ĐỒ ÁN CUỐI KỲ}
+\newcommand{\reporttitle}{ĐỒ ÁN CUỐI KỲ}
+
+% TODO: điền mã số học viên và họ tên đầy đủ của Nghi vào dòng thứ ba.
+\newcommand{\studentname}
+{
+25C23002 & Nguyễn Nhật Quang\\
+25C23014 & Lê Hoàng Như\\
+25C23012 & Phạm Đoàn Vịnh Nghi\\
+
+}
+
+\newcommand{\teachername}{TS. Nguyễn Thị Mộng Ngọc}
+
+% Header
+% \lhead{\reporttitle}
+% \rhead{
+%   Trường Đại học Khoa học Tự nhiên - ĐHQG HCM\\
+%   \coursename
+% }
+
+\usepackage{tikz}
+
+% Bảng T5 của gói vietnam không có dấu ogonek (ą) trong tên tác giả Ba Lan.
+% Chuyển cục bộ ký tự dùng \k sang T1 để giữ đúng dấu mà không ảnh hưởng tiếng Việt.
+\DeclareTextCommand{\k}{T5}[1]{{\fontencoding{T1}\selectfont\k{#1}}}
+
+% Bảng dài có thể ngắt trang và bảng rộng xoay ngang.
+\usepackage{longtable}
+\usepackage{multirow}
+\usepackage{pdflscape}
+\usepackage{calc}
+\usepackage{caption}
+\captionsetup[table]{skip=8pt}
+\captionsetup[figure]{skip=8pt}
+
+% Hỗ trợ danh sách được xuất tự động từ Pandoc/R Markdown.
+\providecommand{\tightlist}{%
+  \setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}
+\providecommand{\real}[1]{#1}
+
+% Tạo khoảng thở cho bảng/hình và các hàng trong bảng.
+\renewcommand{\arraystretch}{1.18}
+\setlength{\floatsep}{18pt plus 4pt minus 3pt}
+\setlength{\textfloatsep}{20pt plus 4pt minus 3pt}
+\setlength{\intextsep}{18pt plus 4pt minus 3pt}
+
+% Footer
+% \newcommand{\leftfooter}{\LaTeX\ by \href{https://github.com/trhgquan}{Quan, Tran Hoang}}
+% \lfoot{\leftfooter}
+% ============ DOCUMENT ============
+\begin{document}
+\pagenumbering{roman}
+\input{content/title.tex}
+
+\tableofcontents
+\thispagestyle{empty}
+\pagebreak
+
+\pagenumbering{arabic}
+\setcounter{page}{1}
+
+\input{content/assignment}
+\newpage 
+
+\input{content/section-1}
+\newpage
+\input{content/section-2}
+\newpage
+\input{content/section-3}
+
+\clearpage
+\bibliographystyle{plain}
+\bibliography{reference}
+% \input{content/hinhanh}
+% \input{content/bangbieu}
+% \input{content/congthuctoan}
+% \input{content/thuattoan}
+% \input{content/code}
+% \input{content/ngonngu}
+% \input{content/cite}
+
+% Appendix
+% \appendix
+% Add \cleardoublepage to move appendices to next page.
+% \input{appendix/appendix.tex}
+
+\end{document}

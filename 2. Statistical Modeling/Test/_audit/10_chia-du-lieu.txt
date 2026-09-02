@@ -1,0 +1,9 @@
+=== CHUNK 10 chia-du-lieu ===
+--- header: ```{r chia-du-lieu} 
+
+
+[BẢNG] Phân phối biến phản hồi giữa hai tập. 
+         Tập   n Trung bình logMass Độ lệch chuẩn
+1 Huấn luyện 291           1.551735     0.3968773
+2  Kiểm định  73           1.577626     0.4265523
+

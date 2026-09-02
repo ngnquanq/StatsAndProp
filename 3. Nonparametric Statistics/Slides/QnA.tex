@@ -106,6 +106,14 @@
   fonttitle=\bfseries, title={Lưu ý \& bẫy thường gặp}
 }
 
+% Khung TRÍCH DẪN / ghi chú phụ (gạch xám bên trái)
+\newtcolorbox{ghichu}{
+  qnastyle, sharp corners,
+  colback=white, colframe=white, boxrule=0pt,
+  borderline west={2.5pt}{0pt}{graytext},
+  left=10pt, right=4pt, top=4pt, bottom=4pt
+}
+
 % Tiêu đề mục nhỏ bên trong phần trả lời
 \newcommand{\muc}[1]{\par\vspace{7pt}\noindent{\bfseries\color{accent}#1}\par\vspace{1pt}}
 % Dòng liên hệ / nguồn tham chiếu ở cuối mỗi câu
@@ -448,7 +456,7 @@ Công cụ đánh giá & Hội tụ đều $\sup_x|\widehat F_n(x)-F(x)|$, mất
 
 \lienhe{Slide tr. 5, 21--26 (Statistical Functionals \& Plug-in Principle); [W] Ch. 2--3. Xem thêm Câu~\ref{q:ecdf}.}
 
-\section{Nền giải tích cho suy diễn phi tham số: dãy hàm \& các kiểu hội tụ}
+\section{Nền giải tích cho suy diễn phi tham số: dãy hàm, hội tụ \& không gian hàm}
 
 %-------------------------------------------------------------------------
 \begin{cauhoi}[Một dãy hàm nghĩa là gì? Hình dung nó ra sao?]{q:dayham}
@@ -656,6 +664,149 @@ Sự khác biệt cốt lõi nằm ở việc ta đang so sánh \textbf{giá tr�
 \end{itemize}
 
 \lienhe{Xem Câu~\ref{q:hoitu-ham} (hội tụ điểm/đều) và Câu~\ref{q:ecdf} (tính chất của $\widehat F_n$); [W] Ch. 5.}
+
+%-------------------------------------------------------------------------
+\begin{cauhoi}[Không gian hàm là gì, và vì sao $F$ chưa biết lại có mật độ $f=F'$?]{q:khonggian-ham}
+Không gian hàm (function space) nghĩa là gì trong bài toán ước lượng mật độ, và vì sao một hàm phân phối $F$ chưa biết lại có mật độ $f=F'$?
+\end{cauhoi}
+
+\begin{chot}
+Ước lượng phi tham số phải tìm nghiệm trong một \emph{không gian hàm} vô hạn chiều ($L^1$, $L^2$, Sobolev $H^s$) thay vì trong $\mathbb{R}^k$, vì đối tượng cần tìm là cả một hàm số chứ không phải vài con số. Còn $f=F'$ tồn tại \textbf{không phải hiển nhiên}: nó là hệ quả của định lý Radon--Nikodym khi độ đo $P_X$ \emph{tuyệt đối liên tục} theo độ đo Lebesgue $\lambda$; nếu $P_X\perp\lambda$ (ví dụ phân phối Cantor) thì $F$ vẫn liên tục và tăng nhưng \emph{không} có mật độ nào cả.
+\end{chot}
+
+\muc{A. Motivation \& Ý nghĩa (The ``Why'')}
+Trong thống kê cổ điển (Parametric Estimation), không gian tìm kiếm là không gian Euclid hữu hạn chiều $\mathbb{R}^k$ (ví dụ tìm vector tham số $\theta=(\mu,\sigma^2)\in\mathbb{R}\times\mathbb{R}^{+}$). Khi bước sang \textbf{Non-parametric Density Estimation}, ta không giả định hàm mật độ thuộc bất kỳ họ tham số cụ thể nào. Mục tiêu lúc này là tìm một \textbf{hàm số} $f$ chưa biết.
+
+Để làm được điều đó, ta phải mở rộng không gian tìm kiếm từ vector hữu hạn chiều sang \textbf{không gian hàm (Function Space)} --- một không gian vector vô hạn chiều được trang bị cấu trúc metric/norm để đo lường khoảng cách sai số giữa hàm ước lượng $\widehat f$ và chân lý $f$.
+
+Về mặt dữ liệu thực nghiệm, mẫu quan sát $X_1,\dots,X_n$ cho phép ta dễ dàng xấp xỉ hàm phân phối tích lũy $F(x)=P(X\le x)$ thông qua hàm phân phối thực nghiệm (Empirical CDF) $F_n(x)$. Tuy nhiên, $F(x)$ chỉ cung cấp thông tin tích lũy toàn cục. Để xác định tốc độ tập trung xác suất cục bộ (local concentration of probability) hay phát hiện các bất thường tại từng điểm dữ liệu, ta cần tốc độ biến thiên tức thời của xác suất, tức hàm mật độ $f(x)=F'(x)$.
+
+\muc{B. Chi tiết Toán học (The ``How'')}
+
+\textit{1. Không gian hàm trong Density Estimation.} Một không gian hàm $\mathcal{F}$ là một không gian vector mà mỗi phần tử của nó là một hàm số $g:\mathbb{R}^d\to\mathbb{R}$. Trong Density Estimation, ba lớp không gian đóng vai trò then chốt:
+\begin{itemize}
+\item \textbf{Không gian Lebesgue $L^p(\mathbb{R})$:} tập hợp các hàm đo được thỏa mãn $\int|g(x)|^{p}dx<\infty$.
+  \begin{itemize}
+  \item $L^1(\mathbb{R})$: ràng buộc cốt lõi của hàm mật độ xác suất ($\|f\|_{L_1}=\int|f(x)|dx=1$, $f(x)\ge 0$).
+  \item $L^2(\mathbb{R})$: không gian Hilbert trang bị tích vô hướng $\langle u,v\rangle=\int u(x)v(x)dx$ và chuẩn $\|u\|_{L_2}=\sqrt{\int u(x)^2dx}$. Đây là không gian tiêu chuẩn để tính sai số toàn phương tích hợp \textbf{MISE (Mean Integrated Squared Error)}:
+  \[ \mathrm{MISE}(\widehat f)=\mathbb{E}\Big[\big\|\widehat f-f\big\|_{L_2}^{2}\Big]=\int \mathrm{Var}\big(\widehat f(x)\big)dx+\int \mathrm{Bias}^{2}\big(\widehat f(x)\big)dx. \]
+  \end{itemize}
+\item \textbf{Không gian Sobolev $H^{s}(\mathbb{R})$:} không gian chứa các hàm $f\in L^2(\mathbb{R})$ có các đạo hàm suy rộng (weak derivatives) đến cấp $s$ cũng thuộc $L^2(\mathbb{R})$. Độ trơn $s$ trong không gian Sobolev đặt ra giới hạn lý thuyết cho tốc độ hội tụ minimax tối ưu của bài toán ước lượng:
+\[ R_n^{*}\asymp n^{-\frac{2s}{2s+1}}. \]
+\end{itemize}
+
+\textit{2. Tại sao hàm phân phối $F$ lại có mật độ $f=F'$?} Mối quan hệ giữa $F$ và $f$ được thiết lập chặt chẽ thông qua \textbf{lý thuyết độ đo (Measure Theory)}:
+\begin{itemize}
+\item \textbf{Độ đo xác suất và độ đo Lebesgue.} Xét không gian xác suất $(\Omega,\mathcal{F},P)$ và biến ngẫu nhiên $X$. $X$ cảm sinh ra một độ đo xác suất $P_X$ trên không gian Borel $(\mathbb{R},\mathcal{B}(\mathbb{R}))$:
+\[ P_X(B)=P\big(X^{-1}(B)\big)=P(X\in B)\qquad \forall B\in\mathcal{B}(\mathbb{R}). \]
+Gọi $\lambda$ là độ đo Lebesgue chuẩn trên $\mathbb{R}$.
+\item \textbf{Tính tuyệt đối liên tục (Absolute Continuity).} Độ đo $P_X$ được gọi là tuyệt đối liên tục đối với $\lambda$ (ký hiệu $P_X\ll\lambda$) nếu
+\[ \forall B\in\mathcal{B}(\mathbb{R}),\qquad \lambda(B)=0\implies P_X(B)=0. \]
+\item \textbf{Định lý Radon--Nikodym.} Nếu $P_X\ll\lambda$, thì tồn tại duy nhất (hầu khắp nơi --- \emph{almost everywhere}, a.e., theo độ đo $\lambda$) một hàm đo được $f:\mathbb{R}\to[0,\infty)$ khả tích Lebesgue sao cho với mọi tập Borel $B$:
+\[ P_X(B)=\int_B f(x)\,d\lambda(x). \]
+Hàm $f=\dfrac{dP_X}{d\lambda}$ được gọi là \textbf{đạo hàm Radon--Nikodym} của $P_X$ theo $\lambda$, chính là \textbf{hàm mật độ xác suất (Probability Density Function --- PDF)}.
+\item \textbf{Định lý cơ bản của giải tích Lebesgue (Lebesgue Differentiation Theorem).} Khi $B=(-\infty,x]$, hàm phân phối tích lũy là
+\[ F(x)=P_X\big((-\infty,x]\big)=\int_{-\infty}^{x}f(t)\,dt. \]
+Do $f\in L^1(\mathbb{R})$, hàm $F(x)$ là hàm tuyệt đối liên tục trên mọi đoạn hữu hạn. Theo định lý vi phân Lebesgue, $F(x)$ khả vi hầu khắp nơi trên $\mathbb{R}$ và
+\[ F'(x)=\lim_{h\to 0}\frac{F(x+h)-F(x)}{h}=\lim_{h\to 0}\frac1h\int_x^{x+h}f(t)\,dt=f(x)\qquad \text{a.e. }[\lambda]. \]
+\end{itemize}
+
+\begin{ghichu}
+\textbf{Điều kiện biên / Phản ví dụ (Singular Distribution):} Nếu $F$ liên tục nhưng \textbf{không tuyệt đối liên tục} (ví dụ: hàm phân phối Cantor / Devil's Staircase), ta có $F'(x)=0$ hầu khắp nơi, nhưng $F$ vẫn tăng liên tục từ $0$ lên $1$. Khi đó $P_X\perp\lambda$ (hai độ đo trực giao nhau) và \textbf{không tồn tại hàm mật độ $f$ theo nghĩa Lebesgue thông thường}.
+\end{ghichu}
+
+\muc{C. Ví dụ Thực tế \& Đa ngành (The ``Where'')}
+\begin{itemize}
+\item \textbf{Bản chất của Empirical Data trong Security/IAM Logs.} Trong bài toán User and Entity Behavior Analytics (UEBA), log hành vi như kích thước gói tin chuyển giao (outbound bytes) hay thời gian giữa các lần gửi request tạo ra một tập điểm rời rạc. Hàm phân phối thực nghiệm $F_n(x)=\frac1n\sum_{i=1}^n\mathbb{I}(X_i\le x)$ là một hàm bậc thang. Đạo hàm cổ điển $F_n'(x)$ bằng $0$ ở khắp nơi ngoại trừ các điểm nhảy (tại đó là các hàm Dirac delta $\delta(x-X_i)$). Phân phối thực nghiệm này không nằm trong $L^2(\mathbb{R})$ dưới dạng hàm thông thường.
+\item \textbf{Kernel Smoothing như phép chiếu không gian hàm.} Kỹ thuật Kernel Density Estimation (KDE) thực chất là tích chập (convolution) $F_n$ với một hàm nhân trơn $K\in H^{s}(\mathbb{R})$:
+\[ \widehat f_h(x)=\big(F_n'*K_h\big)(x)=\frac{1}{nh}\sum_{i=1}^{n}K\!\left(\frac{x-X_i}{h}\right). \]
+Phép biến đổi này chiếu phân phối dữ liệu rời rạc về lại một không gian hàm trơn Sobolev $H^{s}$, cho phép tính giá trị $f(x)$ liên tục. Từ đó, ta tính được Log-Likelihood $\log\widehat f(x)$ để gắn điểm rủi ro (Risk Score) cho các hành vi bất thường trong kiến trúc Zero Trust.
+\end{itemize}
+
+\lienhe{Nối tiếp Câu~\ref{q:cdf} (vì sao CDF luôn tồn tại còn PDF thì không) và Câu~\ref{q:kyhieu} (phân rã bias--variance, tốc độ minimax); [W] Ch. 6 (Density Estimation).}
+
+%-------------------------------------------------------------------------
+\begin{cauhoi}[Vì sao phương pháp phi tham số hội tụ chậm hơn tham số?]{q:toc-do-hoi-tu}
+Tại sao các phương pháp phi tham số lại bị coi là hội tụ chậm hơn so với các phương pháp tham số?
+\end{cauhoi}
+
+\begin{chot}
+Vì \textbf{không gian giả thuyết} lớn hơn hẳn: tham số chỉ phải tìm $k$ con số nên MSE đạt $\mathcal{O}(n^{-1})$ \emph{độc lập với số chiều} $d$; phi tham số phải tìm cả một hàm trong không gian vô hạn chiều, ước lượng cục bộ trên lân cận thể tích $h^{d}$, nên tốc độ tối ưu chỉ là $\mathcal{O}\big(n^{-2s/(2s+d)}\big)$ --- \emph{xấu đi theo $d$}. Đó chính là lời nguyền số chiều.
+\end{chot}
+
+\muc{A. Motivation \& Ý nghĩa (The ``Why'')}
+Sự khác biệt về tốc độ hội tụ bắt nguồn từ \textbf{kích thước của không gian giả thuyết (Hypothesis Space)}:
+\begin{itemize}
+\item \textbf{Phương pháp tham số (Parametric):} Giả định phân phối thuộc một họ hàm hữu hạn chiều $\mathcal{P}=\{f_\theta:\theta\in\Theta\subset\mathbb{R}^{k}\}$. Ta chỉ cần ước lượng $k$ con số (ví dụ: $\mu,\sigma^2$). Khi số chiều dữ liệu $d$ tăng lên, nếu mô hình đúng (well-specified), bài toán vẫn giữ nguyên số lượng tham số cần tìm.
+\item \textbf{Phương pháp phi tham số (Non-parametric):} Giả thuyết nằm trong một không gian hàm vô hạn chiều (như Sobolev space $H^{s}$ hoặc Hölder class $\Sigma(s,L)$). Không có giả định hình dạng tiên nghiệm, thuật toán phải tự ``khám phá'' cục bộ cấu trúc hàm mật độ tại từng lân cận điểm $x$.
+\end{itemize}
+Khi dữ liệu phân tán trong không gian nhiều chiều, thể tích không gian tăng theo hàm mũ, dẫn đến hiện tượng dữ liệu cực kỳ thưa thớt (\textbf{Lời nguyền số chiều --- Curse of Dimensionality}). Để phủ kín các lân cận cục bộ và làm mượt hàm mật độ, số lượng mẫu $n$ đòi hỏi phải tăng theo cấp số nhân.
+
+\muc{B. Chi tiết Toán học (The ``How'')}
+
+\textit{1. Tốc độ hội tụ của Parametric Estimation (MLE).} Xét ước lượng hợp lý cực đại (MLE) $\widehat\theta_n$ cho tham số $\theta_0\in\mathbb{R}^{k}$. Dưới các điều kiện chính quy (regularity conditions) chuẩn:
+\begin{itemize}
+\item Theo \textbf{định lý giới hạn trung tâm (CLT) cho MLE}:
+\[ \sqrt{n}\big(\widehat\theta_n-\theta_0\big)\xrightarrow{d}\mathcal{N}\big(0,\,I(\theta_0)^{-1}\big), \]
+với $I(\theta_0)$ là ma trận thông tin Fisher.
+\item Sai số toàn phương trung bình (MSE) giảm theo tốc độ
+\[ \mathrm{MSE}(\widehat\theta_n)=\mathbb{E}\big[\|\widehat\theta_n-\theta_0\|^{2}\big]=\mathcal{O}\Big(\frac1n\Big)=\mathcal{O}(n^{-1}). \]
+\item Đặc biệt, sai số ước lượng hàm mật độ tham số $\|\widehat f-f\|_{L_2}^{2}$ cũng đạt tốc độ $\mathcal{O}(n^{-1})$ bất kể số chiều $d$ của dữ liệu.
+\end{itemize}
+
+\textit{2. Tốc độ hội tụ của Non-parametric Estimation (KDE).} Xét ước lượng KDE đa chiều với mẫu $X_1,\dots,X_n\in\mathbb{R}^{d}$ và ma trận băng thông $H=h^{2}I_d$:
+\[ \widehat f_h(x)=\frac{1}{nh^{d}}\sum_{i=1}^{n}K\!\left(\frac{x-X_i}{h}\right). \]
+Phân rã sai số toàn phương tích hợp tiệm cận (\textbf{AMISE}):
+\begin{itemize}
+\item \textbf{Variance:} Do ước lượng cục bộ trên một hình cầu thể tích cỡ $h^{d}$, số lượng mẫu rơi vào lân cận của $x$ tỷ lệ với $nh^{d}$. Phương sai tiệm cận là
+\[ \mathrm{Var}\big(\widehat f_h(x)\big)\approx\frac{f(x)R(K)}{nh^{d}} \implies \int \mathrm{Var}\big(\widehat f_h(x)\big)dx=\mathcal{O}\Big(\frac{1}{nh^{d}}\Big), \]
+\emph{(với $R(K)=\int K(u)^2du$).}
+\item \textbf{Bias:} Sử dụng khai triển Taylor bậc 2 cho hàm mật độ trơn bậc 2 ($f\in C^{2}$):
+\[ \mathbb{E}\big[\widehat f_h(x)\big]-f(x)\approx\frac12 h^{2}\mu_2(K)\nabla^{2}f(x) \implies \int \mathrm{Bias}^{2}\big(\widehat f_h(x)\big)dx=\mathcal{O}(h^{4}), \]
+\emph{(với $\mu_2(K)=\int u^{2}K(u)du$).}
+\item \textbf{Tối ưu hoá AMISE:}
+\[ \mathrm{AMISE}(h)=\mathcal{O}(h^{4})+\mathcal{O}\Big(\frac{1}{nh^{d}}\Big). \]
+Để cân bằng Bias và Variance, ta đạo hàm theo $h$ và giải:
+\[ \frac{d}{dh}\mathrm{AMISE}(h)=4c_1h^{3}-\frac{d\cdot c_2}{nh^{d+1}}=0 \implies h^{*}\asymp n^{-\frac{1}{4+d}}. \]
+\item \textbf{Tốc độ hội tụ tối ưu (Minimax Optimal Rate):} Thế $h^{*}$ trở lại biểu thức AMISE:
+\[ \mathrm{MISE}(\widehat f)\asymp (h^{*})^{4}\asymp\Big(n^{-\frac{1}{4+d}}\Big)^{4}=\mathcal{O}\Big(n^{-\frac{4}{4+d}}\Big). \]
+Tổng quát hoá với không gian Sobolev $H^{s}(\mathbb{R}^{d})$ (độ trơn cấp $s$):
+\[ \mathrm{MISE}^{*}\asymp n^{-\frac{2s}{2s+d}}. \]
+\end{itemize}
+
+\begin{center}
+\begin{tabular}{@{}p{0.30\linewidth}p{0.30\linewidth}p{0.34\linewidth}@{}}
+\toprule
+\textbf{Phương diện} & \textbf{Parametric (MLE)} & \textbf{Non-parametric (KDE)}\\
+\midrule
+Không gian giả thuyết & Hữu hạn chiều ($\Theta\subset\mathbb{R}^{k}$) & Vô hạn chiều ($f\in H^{s}(\mathbb{R}^{d})$)\\
+Tốc độ hội tụ MSE/MISE & $\mathcal{O}(n^{-1})$ (độc lập với $d$) & $\mathcal{O}\big(n^{-\frac{2s}{2s+d}}\big)$ (phụ thuộc vào $d$)\\
+Khi $d=1,\ s=2$ & $\mathcal{O}(n^{-1})=\mathcal{O}(n^{-1.00})$ & $\mathcal{O}(n^{-4/5})=\mathcal{O}(n^{-0.80})$\\
+Khi $d=4,\ s=2$ & $\mathcal{O}(n^{-1})=\mathcal{O}(n^{-1.00})$ & $\mathcal{O}(n^{-4/8})=\mathcal{O}(n^{-0.50})$\\
+Khi $d=16,\ s=2$ & $\mathcal{O}(n^{-1})=\mathcal{O}(n^{-1.00})$ & $\mathcal{O}(n^{-4/20})=\mathcal{O}(n^{-0.20})$\\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\begin{ghichu}
+\textbf{Hệ quả số mẫu:} Để giảm sai số đi 10 lần ở $d=16$ ($s=2$), phương pháp tham số cần gấp $10$ lần mẫu ($10^{1}$), trong khi phi tham số cần gấp $10^{20/4}=10^{5}=100{,}000$ lần mẫu.
+\end{ghichu}
+
+\muc{C. Ví dụ Thực tế \& Đa ngành (The ``Where'')}
+\begin{itemize}
+\item \textbf{Security Logs \& Insider Threat Detection (CERT Dataset / UEBA):} Nếu ta mô hình hoá hành vi tải file của người dùng bằng một vector đặc trưng $d=20$ chiều (gồm: dung lượng file, giờ trong ngày, tần suất request, entropy đường dẫn, độ dài session, v.v.):
+  \begin{itemize}
+  \item \textbf{Parametric (Multivariate Gaussian / GMM):} Hội tụ rất nhanh chỉ với vài nghìn log lines, nhưng nếu hành vi người dùng là phân phối đa đỉnh phức tạp hoặc lệch (skewed/multimodal) mà mô hình không khớp, ta sẽ bị \textbf{Misspecification Bias} vĩnh viễn không thể triệt tiêu dù $n\to\infty$.
+  \item \textbf{Standard KDE:} Không chịu bias mô hình tiên nghiệm, nhưng với $d=20$, tốc độ hội tụ $\mathcal{O}(n^{-4/24})=\mathcal{O}(n^{-1/6})$ khiến việc ước lượng trên streaming logs đòi hỏi hàng tỷ records và tính toán cực kỳ nặng nề.
+  \end{itemize}
+\item \textbf{Hướng giải quyết trong Engineering/MLOps:} Để khắc phục tốc độ hội tụ chậm của Non-parametric trên không gian nhiều chiều:
+  \begin{enumerate}
+  \item \textbf{Giảm chiều (Dimensionality Reduction):} Chiếu dữ liệu xuống manifold chiều thấp ($d\le 3$) bằng UMAP, PCA hoặc Autoencoder trước khi áp KDE.
+  \item \textbf{Mô hình lai (Semiparametric / Normalizing Flows):} Sử dụng mạng nơ-ron khả nghịch (Invertible Neural Networks) biến đổi phân phối phức tạp về một phân phối chuẩn đa biến $z\sim\mathcal{N}(0,I)$, kết hợp ưu điểm hội tụ tham số với tính linh hoạt của phi tham số.
+  \end{enumerate}
+\end{itemize}
+
+\lienhe{Định lượng lại đánh đổi đã nêu ở Câu~\ref{q:phitham}; dùng không gian hàm \& MISE của Câu~\ref{q:khonggian-ham} và ký hiệu $\mathcal{O},\asymp$ ở Câu~\ref{q:kyhieu}; [W] Ch. 6.}
 
 \section{Bảng ký hiệu \& từ vựng tiệm cận thường gặp}
 

@@ -1,0 +1,9 @@
+=== CHUNK 27 kruskal ===
+--- header: ```{r kruskal} 
+
+
+[BẢNG] Kiểm định Kruskal-Wallis (kiểm chứng phi tham số, MỘT nhân tố). 
+  Kiểm định phi tham số chi-squared p-value
+1         HWI ~ Habitat       21.63 < 0.001
+2 HWI ~ Habitat.Density       10.12   0.006
+

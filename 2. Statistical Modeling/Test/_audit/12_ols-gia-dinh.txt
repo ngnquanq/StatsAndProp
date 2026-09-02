@@ -1,0 +1,10 @@
+=== CHUNK 12 ols-gia-dinh ===
+--- header: ```{r ols-gia-dinh, fig.width=9, fig.height=4} 
+
+
+[BẢNG] Kiểm định giả định của mô hình OLS. 
+                              Giả định p-value
+1 Phương sai đồng nhất (Breusch-Pagan)   0.852
+2         Phần dư chuẩn (Shapiro-Wilk) < 0.001
+3  Không tự tương quan (Durbin-Watson)   0.557
+

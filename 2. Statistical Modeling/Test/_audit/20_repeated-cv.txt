@@ -1,0 +1,11 @@
+=== CHUNK 20 repeated-cv ===
+--- header: ```{r repeated-cv} 
+
+
+[BẢNG] Repeated 5×10-fold CV (RMSE thang log, tuning lồng trong mỗi fold). 
+  Mô hình RMSE trung bình Độ lệch chuẩn
+1     OLS          0.1688        0.0298
+2   Ridge          0.1691        0.0308
+3   LASSO          0.1806        0.0262
+4     PCR          0.1777        0.0319
+

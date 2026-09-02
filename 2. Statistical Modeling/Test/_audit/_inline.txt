@@ -1,0 +1,74 @@
+=== GIÁ TRỊ CỦA MỌI BIỂU THỨC INLINE `r ...` (theo thứ tự tài liệu) ===
+
+dòng    5 | Sys.Date()                                                   => [1] "2026-07-26"
+dòng  153 | nrow(raw)                                                    => [1] 366
+dòng  154 | dplyr::n_distinct(raw$Species1)                              => [1] 366
+dòng  182 | n_dup                                                        => [1] 0
+dòng  207 | nrow(reg)                                                    => [1] 364
+dòng  208 | nrow(anv)                                                    => [1] 365
+dòng  242 | round(psych::describe(reg$Mass)$skew, 2)                     => [1] 1.51
+dòng  257 | round(psych::describe(reg$Mass)$skew, 2)                     => [1] 1.51
+dòng  258 | round(psych::describe(reg$logMass)$skew, 2)                  => [1] 0.02
+dòng  291 | round(max(car::vif(ols_full)), 0)                            => [1] 401
+dòng  329 | length(y_train)                                              => [1] 291
+dòng  329 | length(y_val)                                                => [1] 73
+dòng  331 | length(y_train)                                              => [1] 291
+dòng  331 | length(pred_vars)                                            => [1] 10
+dòng  337 | length(morph_vars)                                           => [1] 9
+dòng  371 | fmt_p(lmtest::bptest(ols)$p.value)                           =>      BP  | "0.852" 
+dòng  372 | fmt_p(shapiro.test(residuals(ols))$p.value)                  => [1] "< 0.001"
+dòng  376 | fmt_p(lmtest::dwtest(ols)$p.value)                           => [1] "0.557"
+dòng  407 | names(coef_std)[1]                                           => [1] "Secondary1"
+dòng  407 | round(abs(coef_std)[1], 3)                                   => Secondary1  |      0.208 
+dòng  407 | names(coef_std)[2]                                           => [1] "Kipps.Distance"
+dòng  408 | round(abs(coef_std)[2], 3)                                   => Kipps.Distance  |          0.193 
+dòng  408 | names(coef_std)[3]                                           => [1] "Beak.Length_Culmen"
+dòng  408 | round(abs(coef_std)[3], 3)                                   => Beak.Length_Culmen  |               0.18 
+dòng  415 | which(names(coef_std) == "Beak.Width")                       => [1] 6
+dòng  415 | length(coef_std)                                             => [1] 10
+dòng  416 | fmt_p(rob["Beak.Width", "Pr(>|t|)"])                         => [1] "0.002"
+dòng  418 | round(coef(ols)["Beak.Width"], 3)                            => Beak.Width  |      0.102 
+dòng  419 | round(100 * (exp(coef(ols)["Beak.Width"]) - 1), 1)           => Beak.Width  |       10.8 
+dòng  420 | round(100 * coef(ols)["Beak.Width"], 1)                      => Beak.Width  |       10.2 
+dòng  424 | fmt_p(rob["Wing.Length", "Pr(>|t|)"])                        => [1] "0.648"
+dòng  425 | fmt_p(rob["Kipps.Distance", "Pr(>|t|)"])                     => [1] "0.202"
+dòng  445 | round(cv_ridge$lambda.min, 4)                                => [1] 0.0346
+dòng  446 | round(m_ridge["RMSE"], 4)                                    =>   RMSE  | 0.1517 
+dòng  446 | round(m_ridge["R2"], 3)                                      =>    R2  | 0.872 
+dòng  470 | sum(co[, 1] != 0) - 1                                        => [1] 5
+dòng  470 | paste(setdiff(rownames(kept), "(Intercept)"), collapse = ", ") => [1] "Beak.Length_Culmen, Beak.Width, Beak.Depth, Wing.Length, Secondary1"
+dòng  477 | round(m_lasso["RMSE"], 4)                                    =>   RMSE  | 0.1741 
+dòng  478 | round(m_lasso["R2"], 3)                                      =>    R2  | 0.831 
+dòng  520 | k_min                                                        => 10 comps  |       10 
+dòng  521 | k_os                                                         => [1] 2
+dòng  522 | round(100 * pve[k_os], 1)                                    => Comp 2  |   71.9 
+dòng  523 | k_os                                                         => [1] 2
+dòng  524 | round(m_pcr["R2"], 3)                                        =>   R2  | 0.86 
+dòng  535 | round(100 * pve[1], 1)                                       => Comp 1  |   53.4 
+dòng  557 | length(y_val)                                                => [1] 73
+dòng  596 | round(colMeans(rep_res)["OLS"], 4)                           =>    OLS  | 0.1688 
+dòng  596 | round(colMeans(rep_res)["Ridge"], 4)                         =>  Ridge  | 0.1691 
+dòng  598 | round(mean(apply(rep_res, 2, sd)[c("OLS","Ridge")]), 3)      => [1] 0.03
+dòng  634 | round(min(gram_tab$"Hệ số smearing", na.rm = TRUE), 3)   => [1] 1.015
+dòng  634 | round(max(gram_tab$"Hệ số smearing", na.rm = TRUE), 3)   => [1] 1.018
+dòng  637 | round(gram_tab$"MAE (g)"[1], 2)                              => [1] 0.66
+dòng  637 | round(gram_tab$"MAE (g)"[5], 2)                              => [1] 1.8
+dòng  638 | round(100 * (1 - gram_tab$"MAE (g)"[1] / gram_tab$"MAE (g)"[5]), 0) => [1] 63
+dòng  695 | ncol(Xmm)                                                    => [1] 15
+dòng  695 | qr(Xmm)$rank                                                 => [1] 12
+dòng  696 | sum(is.na(coef(aov_full)))                                   => [1] 3
+dòng  716 | round(car::Anova(aov_add, type = 2)["Habitat", "Pr(>F)"], 3) => [1] 0.032
+dòng  718 | round(car::Anova(aov_add, type = 2)["Habitat.Density", "Pr(>F)"], 3) => [1] 0.235
+dòng  719 | round(inter_row[["Pr(>F)"]], 3)                              => [1] 0.643
+dòng  743 | fmt_p(lev$"Pr(>F)"[1])                                       => [1] "0.692"
+dòng  745 | round(psych::describe(anv$Hand.Wing.Index)$skew, 1)          => [1] -3.2
+dòng  746 | n_cook                                                       => [1] 11
+dòng  764 | fmt_p(kw_d$p.value)                                          => [1] "0.006"
+dòng  827 | round(max(abs(sensitivity_emm[[2]] - sensitivity_emm[[4]])), 2) => [1] 0.58
+dòng  833 | round(eta$Eta2_partial[eta$Parameter == "Habitat"], 3)       => [1] 0.029
+dòng  834 | round(omega$Omega2_partial[omega$Parameter == "Habitat"], 3) => [1] 0.018
+dòng  837 | round(min(pw$p.value), 3)                                    => [1] 0.149
+dòng  870 | round(gram_tab$"MAE (g)"[1], 2)                              => [1] 0.66
+dòng  871 | round(median(exp(y_val)), 1)                                 => [1] 4.8
+dòng  881 | round(eta$Eta2_partial[eta$Parameter == "Habitat"], 3)       => [1] 0.029
+dòng  883 | round(min(pw$p.value), 2)                                    => [1] 0.15

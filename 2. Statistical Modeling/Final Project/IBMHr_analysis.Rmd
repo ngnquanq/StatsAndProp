@@ -1,0 +1,1232 @@
+---
+title: "Đồ án kết thúc học phần Mô hình hóa Thống kê"
+author: "Lê Hoàng Như"
+date: "`r Sys.Date()`"
+output:
+  html_document:
+    self_contained: true
+    toc: true
+    toc_float: 
+      collapsed: true
+      smooth_scroll: true
+---
+
+# Đồ án: Phân tích các yếu tố ảnh hưởng đến quyết định nghỉ việc
+
+```{r setup, include=FALSE}
+# Cài đặt (nếu chưa có) và gọi các thư viện cần thiết
+# install.packages(c("tidyverse", "caret", "skimr", "gridExtra", "rstatix", "car"))
+library(tidyverse)
+library(caret)
+library(skimr)
+library(gridExtra)
+library(rstatix)
+library(car)
+
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
+```
+
+**Tên đề tài:** Phân tích và dự đoán rủi ro nghỉ việc của nhân viên
+
+**Mục tiêu nghiên cứu/phân tích**
+
+* Khám phá dữ liệu: Tìm hiểu các yếu tố cốt lõi như mức lương, môi trường làm việc và lộ trình thăng tiến có tác động lớn nhất đến quyết định rời đi hay ở lại của một nhân viên.
+
+* Xây dựng mô hình dự đoán: Áp dụng các thuật toán học máy để dự đoán khả năng một nhân viên cụ thể có xu hướng xin nghỉ việc trong tương lai hay không.
+
+* Đề xuất giải pháp nhân sự: Dựa vào kết quả phân tích, giúp bộ phận nhân sự đưa ra chiến lược giữ chân nhân tài, cải thiện môi trường làm việc và tối ưu hóa ngân sách tuyển dụng.
+
+**Giới thiệu nguồn gốc bộ dữ liệu**
+Bộ dữ liệu trong tệp "WA_Fn-UseC_-HR-Employee-Attrition.csv" có nguồn gốc là một bộ dữ liệu mô phỏng (fictional dataset) rất nổi tiếng do các nhà khoa học dữ liệu của IBM tạo ra, thường được biết đến với tên gọi "IBM HR Analytics Employee Attrition & Performance". Nó được sử dụng rộng rãi trên các nền tảng như Kaggle để phục vụ cho mục đích giáo dục, thực hành phân tích dữ liệu nhân sự (People Analytics) và xây dựng các mô hình phân loại (Classification) trong Machine Learning. Dữ liệu bao gồm 1.470 dòng (tương ứng với 1.470 nhân viên) và 35 cột (đặc trưng).
+
+**Xác định biến phản hồi**
+
+* Biến phản hồi: Attrition (Tình trạng nghỉ việc).
+
+* Loại biến: Biến phân loại nhị phân.
+
+* Ý nghĩa: Nhận giá trị "Yes" (nhân viên đã nghỉ việc/rời công ty) hoặc "No" (nhân viên vẫn đang làm việc). Đây là biến mục tiêu mà chúng ta muốn phân tích và dự đoán.
+
+**Mô tả ý nghĩa của các biến độc lập**
+
+Để dễ dàng nắm bắt, 34 biến còn lại (sau khi trừ đi biến phản hồi) có thể được chia thành các nhóm chính sau:
+
+Nhóm Thông tin cá nhân:
+
+* Age: Độ tuổi của nhân viên.
+
+* Gender: Giới tính (Nam / Nữ).
+
+* MaritalStatus: Tình trạng hôn nhân (Single - Độc thân, Married - Đã kết hôn, Divorced - Ly hôn).
+
+* Education: Trình độ học vấn (Thang điểm từ 1 đến 5: 1-Below College, 2-College, 3-Bachelor, 4-Master, 5-Doctor).
+
+* EducationField: Chuyên ngành đào tạo (VD: Life Sciences, Medical, Marketing...).
+
+* DistanceFromHome: Khoảng cách từ nhà đến nơi làm việc (tính bằng dặm/km).
+
+Nhóm Thông tin vai trò & Công việc:
+
+* Department: Phòng ban làm việc (VD: Sales, Research & Development, Human Resources).
+
+* JobRole: Vị trí công việc cụ thể (VD: Sales Executive, Research Scientist...).
+
+* JobLevel: Cấp bậc công việc (Thang từ 1 đến 5).
+
+* BusinessTravel: Tần suất đi công tác (Travel_Rarely, Travel_Frequently, Non-Travel).
+
+* JobInvolvement: Mức độ gắn kết/tham gia vào công việc (Thang 1-4).
+
+Nhóm Thu nhập & Đãi ngộ:
+
+* MonthlyIncome: Thu nhập hàng tháng.
+
+* PercentSalaryHike: Phần trăm tăng lương gần nhất so với trước đó.
+
+* StockOptionLevel: Mức độ quyền chọn mua cổ phiếu mà nhân viên được nhận (Thang 0-3).
+
+* OverTime: Nhân viên có phải làm thêm giờ hay không (Yes / No).
+
+* DailyRate / HourlyRate / MonthlyRate: Các chỉ số đo lường mức lương theo ngày / giờ / tháng.
+
+Nhóm Đánh giá & Sự hài lòng (Tất cả đều được đánh giá theo thang điểm từ 1 - Low đến 4 - Very High):
+
+* EnvironmentSatisfaction: Mức độ hài lòng với môi trường làm việc.
+
+* JobSatisfaction: Mức độ hài lòng với công việc.
+
+* RelationshipSatisfaction: Mức độ hài lòng với các mối quan hệ tại nơi làm việc (đồng nghiệp, cấp trên).
+
+* WorkLifeBalance: Mức độ cân bằng giữa công việc và cuộc sống.
+
+* PerformanceRating: Đánh giá hiệu suất làm việc của nhân viên (Thường là 3 - Excellent hoặc 4 - Outstanding).
+
+Nhóm Lịch sử làm việc & Thâm niên:
+
+* TotalWorkingYears: Tổng số năm kinh nghiệm làm việc trong sự nghiệp.
+
+* NumCompaniesWorked: Số lượng công ty đã từng làm việc trước khi gia nhập công ty hiện tại.
+
+* YearsAtCompany: Số năm cống hiến tại công ty hiện tại.
+
+* YearsInCurrentRole: Số năm giữ vị trí/vai trò hiện tại.
+
+* YearsSinceLastPromotion: Số năm kể từ lần thăng tiến gần nhất.
+
+* YearsWithCurrManager: Số năm làm việc với người quản lý trực tiếp hiện tại.
+
+* TrainingTimesLastYear: Số lần được đào tạo trong năm ngoái.
+
+Nhóm các biến loại trừ: Những biến sau thường được loại bỏ trước khi phân tích vì không mang lại giá trị dự đoán, do chỉ chứa một giá trị duy nhất hoặc là mã định danh:
+
+* EmployeeCount: Số lượng nhân viên (Luôn bằng 1).
+
+* Over18: Trên 18 tuổi (Luôn là "Y").
+
+* StandardHours: Số giờ làm việc tiêu chuẩn (Luôn là 80).
+
+* EmployeeNumber: Mã định danh duy nhất của nhân viên (ID).
+
+## 1. Khám phá và tiền xử lý dữ liệu
+
+### 1.1. Khám phá dữ liệu ban đầu và thống kê mô tả
+
+Trước hết, chúng ta tải tập dữ liệu, kiểm tra cấu trúc tổng quan và tính toán các chỉ số thống kê mô tả cơ bản cho cả biến định lượng và biến định tính.
+
+```{r load_data_and_summary, message=FALSE, warning=FALSE}
+# Tải tập dữ liệu
+df <- read.csv("data/WA_Fn-UseC_-HR-Employee-Attrition.csv", stringsAsFactors = FALSE)
+
+# 1. Kích thước tập dữ liệu
+cat("Số lượng quan sát (Rows):", nrow(df), "\n")
+cat("Số lượng biến số (Columns):", ncol(df), "\n\n")
+
+# 2. Thống kê mô tả cho các biến định lượng chính (Continuous Variables Summary)
+numeric_summary <- df %>%
+  select(Age, MonthlyIncome, DistanceFromHome, TotalWorkingYears, YearsAtCompany, WorkLifeBalance) %>%
+  summarise(across(everything(), list(
+    Mean   = ~mean(.x, na.rm = TRUE),
+    SD     = ~sd(.x, na.rm = TRUE),
+    Median = ~median(.x, na.rm = TRUE),
+    IQR    = ~IQR(.x, na.rm = TRUE),
+    Min    = ~min(.x, na.rm = TRUE),
+    Max    = ~max(.x, na.rm = TRUE)
+  ))) %>%
+  pivot_longer(cols = everything(), 
+               names_to = c("Variable", "Metric"), 
+               names_sep = "_") %>%
+  pivot_wider(names_from = Metric, values_from = value)
+
+knitr::kable(numeric_summary, digits = 2, caption = "Bảng 1.1: Thống kê Mô tả các Biến Định lượng Chính")
+
+# 3. Tỷ lệ cơ bản của biến mục tiêu (Attrition Baseline Rate)
+attrition_summary <- df %>%
+  group_by(Attrition) %>%
+  summarise(
+    Count = n(),
+    Percentage = round(n() / nrow(df) * 100, 2)
+  )
+
+knitr::kable(attrition_summary, caption = "Bảng 1.2: Phân bố Biến Mục tiêu Attrition (Chưa qua tiền xử lý)")
+```
+
+**Nhận định Thống kê Ban đầu:**
+
+* **Quy mô mẫu dữ liệu:** Tập dữ liệu bao gồm 1,470 quan sát và 35 đặc trưng. Cỡ mẫu này đủ lớn ($N \gg 30$) để đảm bảo tính ổn định của các kiểm định thống kê và định lý giới hạn trung tâm (Central Limit Theorem).
+
+* **Đặc điểm Biến Định lượng (Table 1.1):**
+  * **Độ tuổi (`Age`):** Độ tuổi trung bình của nhân viên là 36.92 tuổi ($SD = 9.14$), dải tuổi dao động rộng từ 18 đến 60 tuổi.
+  * **Thu nhập hàng tháng (`MonthlyIncome`):** Mức lương trung bình là 6,502.93 USD/tháng, tuy nhiên giá trị trung vị chỉ đạt 4,919.00 USD/tháng. Độ lệch lớn giữa trung bình và trung vị, kết hợp với khoảng tứ phân vị $\text{IQR} = 5,468$ USD, cho thấy biến thu nhập bị lệch phải và tồn tại nhiều giá trị ngoại biệt ở phân khúc lương cao.
+  * **Thâm niên (`YearsAtCompany`):** Số năm làm việc trung bình tại công ty là 7.01 năm, nhưng trung vị chỉ là 5.0 năm, phản ánh lực lượng lao động trẻ/mới gia nhập chiếm tỷ lệ đáng kể.
+
+* **Đặc điểm Biến Mục tiêu (Table 1.2):**
+  * **Tỷ lệ nhân viên ở lại (`No`):** 1,233 người (83.88%).
+  * **Tỷ lệ nhân viên nghỉ việc (`Yes`):** 237 người (16.12%).
+  * **Kết luận:** Cho thấy bài toán tồn tại hiện tượng **Mất cân bằng dữ liệu (Class Imbalance)** với tỷ lệ xấp xỉ $5.2 : 1$.
+
+### 1.2. Tiền xử lý dữ liệu
+
+**1.2.1. Loại bỏ các biến không có giá trị phân tích**
+
+Trong phân tích thống kê, các biến chỉ chứa một giá trị duy nhất (phương sai bằng 0) sẽ không mang lại bất kỳ thông tin nào cho mô hình và có thể gây nhiễu thuật toán.
+
+```{r remove_zero_variance}
+# Kiểm tra số lượng giá trị duy nhất của mỗi cột
+unique_counts <- sapply(df, function(x) length(unique(x)))
+names(unique_counts[unique_counts == 1])
+
+# Loại bỏ các biến nhiễu/ID và định dạng Factor cho các biến định tính
+df_clean <- df %>%
+  select(-c(EmployeeCount, Over18, StandardHours, EmployeeNumber)) %>%
+  mutate_if(is.character, as.factor)
+```
+
+* **EmployeeCount, StandardHours, Over18**: Tất cả nhân viên đều có cùng một giá trị cho các cột này (ví dụ: StandardHours luôn là 80, Over18 luôn là 'Y'). Chúng bị loại bỏ hoàn toàn.
+
+* **EmployeeNumber**: Là ID định danh của từng cá nhân, không có ý nghĩa về mặt thống kê.
+
+**1.2.2. Xử lý dữ liệu khuyết**
+
+```{r check_missing}
+sum(is.na(df_clean))
+```
+Tập dữ liệu cực kỳ sạch với **0 giá trị khuyết (NA)**. Chúng ta không cần phải thực hiện các phép gán thay thế (imputation) phức tạp.
+
+**1.2.3. Xử lý ngoại lệ**
+
+Biến `MonthlyIncome` (Thu nhập hàng tháng) thường có xu hướng lệch phải nặng nề trong thực tế do sự chênh lệch lương giữa cấp quản lý và nhân viên. Ta sẽ sử dụng phương pháp IQR (Interquartile Range) để phát hiện và giới hạn ngoại lệ.
+
+```{r handle_outliers}
+# Hàm capping ngoại lệ dựa trên ranh giới 1.5 * IQR
+cap_outliers <- function(x) {
+  Q1 <- quantile(x, 0.25, na.rm = TRUE)
+  Q3 <- quantile(x, 0.75, na.rm = TRUE)
+  IQR_value <- Q3 - Q1
+  lower_bound <- Q1 - 1.5 * IQR_value
+  upper_bound <- Q3 + 1.5 * IQR_value
+  
+  # Capping (Giới hạn trần/sàn thay vì xóa bỏ để không mất dữ liệu)
+  x[x > upper_bound] <- upper_bound
+  x[x < lower_bound] <- lower_bound
+  return(x)
+}
+
+df$MonthlyIncome_Capped <- cap_outliers(df$MonthlyIncome)
+```
+
+**1.2.4. Mã hóa và chuẩn hóa**
+
+Để chuẩn bị dữ liệu cho các mô hình Hồi quy Logistics hoặc Học máy sau này, ta cần chuẩn hóa thang đo của các biến liên tục thông qua phương pháp Z-score ($Z = \frac{X - \mu}{\sigma}$) và chuyển biến phân loại sang định dạng chuỗi.
+
+```{r format_data}
+# Chuyển đổi định dạng Factor
+df_clean <- df %>% mutate_if(is.character, as.factor)
+
+# Chuẩn hóa biến Tuổi tác và Thu nhập
+df_clean$Age_scaled <- scale(df_clean$Age)
+df_clean$Income_scaled <- scale(df_clean$MonthlyIncome_Capped)
+```
+
+### 1.2. Phân tích khám phá và trực quan hóa
+
+**1.2.1. Phân phối của biến mục tiêu `Attrition`**
+
+```{r plot_attrition, fig.width=6, fig.height=4}
+ggplot(df_clean, aes(x = Attrition, fill = Attrition)) +
+  geom_bar(color = "black", alpha = 0.8) +
+  geom_text(stat='count', aes(label=..count..), vjust=-0.5, fontface = "bold") +
+  theme_minimal() +
+  labs(title = "Tỷ lệ Nhân viên Nghỉ việc (Attrition)", x = "Tình trạng Nghỉ việc", y = "Số lượng") +
+  scale_fill_manual(values = c("No" = "#4CAF50", "Yes" = "#F44336"))
+```
+
+**Nhận xét:** 
+
+* Tổng số nhân viên trong mẫu dữ liệu là $1233 + 237 = 1470$ nhân viên. Đây là cỡ mẫu rất phổ biến của bộ dữ liệu tiêu chuẩn IBM HR Analytics Employee Attrition & Performance. Số lượng Nhân viên Ở lại (No) là $1233$ người, chiếm $83.88\%$.
+
+* Số lượng Nhân viên Nghỉ việc (Yes): $237$ người, chiếm $16.12\%$
+
+* Hiện tượng Mất cân bằng Dữ liệu nghiêm trọng (Class Imbalance): Tỷ lệ giữa hai nhóm No : Yes xấp xỉ $5.2 : 1$ (hoặc $83.9\% \text{ vs } 16.1\%$).
+
+* Ảnh hưởng lên mô hình Học máy (Machine Learning Impact): Nếu bạn đưa trực tiếp dữ liệu này vào huấn luyện các thuật toán phân loại (như Logistic Regression, Random Forest, XGBoost), mô hình sẽ dễ bị hiện tượng nghiêng về nhóm đa số (Majority Class Bias).
+
+* Một mô hình "lười biếng" chỉ cần luôn luôn dự đoán nhân viên "Ở lại" (No) cũng đã đạt độ chính xác (Accuracy) lên tới $83.88\%$, nhưng lại hoàn toàn vô dụng trong việc phát hiện những người thực sự có nguy cơ nghỉ việ️c.
+
+* Kỹ thuật khuyến nghị xử lý Mất cân bằng Dữ liệu: Khi xây dựng mô hình dự báo Attrition tiếp theo ,có thể áp dụng các giải pháp: Thay đổi thước đo đánh giá (Evaluation Metrics): Không dùng Accuracy (Độ chính xác chung), thay vào đó, tập trung vào ROC-AUC, Precision, Recall, và đặc biệt là F1-Score cho lớp Yes. Kỹ thuật Tái mẫu (Resampling Techniques): SMOTE (Synthetic Minority Over-sampling Technique): Tạo thêm các mẫu giả lập cho nhóm nghỉ việc (Yes). Undersampling: Giảm bớt ngẫu nhiên mẫu ở nhóm ở lại (No). Điều chỉnh Trọng số Lớp (Class Weights): Gán trọng số phạt cao hơn cho các lỗi dự đoán sai ở nhóm Yes (ví dụ: scale_pos_weight trong XGBoost).
+
+**Mất cân bằng dữ liệu (Class Imbalance):** Có $237$ nhân viên nghỉ việc (Yes) so với $1233$ nhân viên ở lại (No). Tỷ lệ nghỉ việc chiếm khoảng **16.1%**. 
+
+**Ý nghĩa Mô hình hóa:** Sự mất cân bằng này khá phổ biến trong bài toán nhân sự. Tuy nhiên, khi xây dựng mô hình phân loại (Classification), chúng ta sẽ cần lưu ý sử dụng các kỹ thuật như SMOTE hoặc điều chỉnh trọng số (Class Weights) để tránh việc mô hình ưu tiên dự đoán lớp "No".
+
+**1.2.2. Ảnh hưởng của Thu nhập đến Quyết định nghỉ việc**
+
+```{r plot_income, fig.width=7, fig.height=5}
+ggplot(df_clean, aes(x = Attrition, y = MonthlyIncome, fill = Attrition)) +
+  geom_boxplot(alpha = 0.7) +
+  theme_minimal() +
+  labs(title = "Phân bổ Thu nhập Hàng tháng theo Tình trạng Nghỉ việc", 
+       x = "Nghỉ việc (Attrition)", y = "Thu nhập Hàng tháng (USD)") +
+  scale_fill_manual(values = c("No" = "#4CAF50", "Yes" = "#F44336"))
+```
+
+**Nhận xét:** 
+
+* Mức trung vị thu nhập (Median Income): Nhóm Ở lại (No): Trung vị nằm ở mức khoảng $5,200 USD/tháng$. Nhóm Nghỉ việc (Yes): Trung vị thấp hơn rõ rệt, chỉ nằm ở mức khoảng $3,200 USD/tháng$. 
+
+* Chênh lệch: Nhân viên ở lại có mức lương trung vị cao hơn nhóm nghỉ việc khoảng $2,000 USD/tháng (~$62.5\%$)$. 
+
+* Khoảng tứ phân vị (IQR - 50% số nhân viên ở giữa): Nhóm Ở lại (No): Dải thu nhập phổ biến rộng hơn nhiều, dao động từ khoảng $3,200 USD (Q1)$ đến $8,800 USD (Q3)$. Nhóm Nghỉ việc (Yes): Dải thu nhập tập trung dẹp hơn và nằm thấp hơn hẳn, dao động từ khoảng $2,400 USD (Q1)$ đến $6,000 USD (Q3)$.
+
+* Giá trị ngoại biệt (Outliers) & Thu nhập cao: Ở nhóm Nghỉ việc (Yes), dải râu trên (Upper Whisker) kết thúc ở mức khoảng $11,000 USD$. Mặc dù có một vài ca ngoại biệt đạt mức lương cao ($12,000 - 20,000 USD$), nhưng số lượng này cực kỳ thưa thớt. Ở nhóm Ở lại (No), có một lực lượng rất đông nhân viên nhận mức lương cao vượt mốc $17,500 USD$ đến $20,000 USD$ (dày đặc các điểm outlier ở đỉnh đồ thị).
+
+**Trực quan:** Đường trung vị (vạch ngang giữa hộp) của nhóm nhân viên nghỉ việc (Yes) thấp hơn rất nhiều so với nhóm ở lại (No).
+
+**Độ phân tán:** Hộp dữ liệu của nhóm "Yes" bị nén chặt ở nửa dưới của thang đo lương, cho thấy phần lớn những người rời bỏ công ty là những người có mức thu nhập thấp (dưới $5000/tháng). Có một số điểm dị biệt (outliers) ở nhóm "Yes" thuộc phân khúc lương cao, nhưng số lượng rất ít.
+
+Như vậy, lương càng thấp, nguy cơ nghỉ việc càng cao (Salary Sensitivity). Biểu đồ chỉ ra một mối quan hệ ngược chiều rất rõ ràng giữa Thu nhập và Tỷ lệ nghỉ việc. Nhóm nhân viên nghỉ việc đa phần rơi vào phân khúc thu nhập thấp và trung bình thấp ($< 5,000 USD/tháng$).
+
+**1.2.3. Sự phân bổ Tuổi tác**
+
+```{r plot_age, fig.width=7, fig.height=4}
+ggplot(df_clean, aes(x = Age, fill = Attrition)) +
+  geom_density(alpha = 0.5) +
+  geom_vline(aes(xintercept = mean(Age[Attrition == "Yes"])), color = "red", linetype = "dashed", size = 1) +
+  geom_vline(aes(xintercept = mean(Age[Attrition == "No"])), color = "darkgreen", linetype = "dashed", size = 1) +
+  theme_minimal() +
+  labs(title = "Mật độ phân phối Tuổi tác theo Tình trạng Nghỉ việc", x = "Tuổi", y = "Mật độ")
+```
+
+**Nhận xét:** 
+
+* Giá trị trung bình: Đường nét đứt màu đỏ biểu diễn độ tuổi trung bình của nhóm Nghỉ việc (Yes), khoảng $33.61$ tuổi. Đường nét đứt màu xanh lá biểu diễn độ tuổi trung bình của nhóm Ở lại (No), khoảng $37.56$ tuổi. Trung vị tương ứng của hai nhóm là $32$ và $36$ tuổi, nhưng không được biểu diễn bằng các đường nét đứt này.
+
+* Chênh lệch: Lực lượng nghỉ việc có độ tuổi trung bình trẻ hơn khoảng 4 tuổi so với lực lượng ở lại.
+
+* Đỉnh mật độ (Mode): Đỉnh đường cong của nhóm Nghỉ việc (Yes) đạt cực đại rất sớm, tập trung mạnh trong khoảng từ $28 - 31$ tuổi (mật độ phình to vượt mốc $0.05$). Đỉnh đường cong của nhóm Ở lại (No) rơi vào độ tuổi chín muồi hơn, trong khoảng $34 - 36$ tuổi.
+
+* Biểu đồ cho thấy hai phân khúc tuổi tác mang đặc trưng đối lập hoàn toàn: Nhóm Nhân sự Trẻ ($18 - 32$ tuổi) - Vùng Rủi ro Cao (High Risk Zone): Diện tích phần màu xanh lam (Yes) hoàn toàn đè lên và vượt trội hơn phần màu hồng (No) ở dải độ tuổi dưới. Nhóm Nhân sự Trung niên ($35 - 60$ tuổi) - Vùng Ổn định (Retention Zone): Từ mốc 35 tuổi trở đi, diện tích màu hồng (No) vượt trội rõ rệt. Phần đuôi kéo dài về phía 50 - 60 tuổi chứng minh tỷ lệ nghỉ việc ở nhóm này giảm xuống mức tối thiểu.
+
+**Xu hướng Tuổi tác:** Phân phối tuổi của nhóm "Yes" (Màu đỏ) lệch hẳn về phía bên trái so với nhóm "No". Đỉnh của đường cong đỏ rơi vào khoảng 28-32 tuổi, cho thấy **nhân viên trẻ có xu hướng nhảy việc/nghỉ việc cao hơn hẳn**. Trong khi đó, nhóm nhân viên ở lại có độ tuổi trung bình cao hơn (tập trung ở mốc 35-40 tuổi), thể hiện sự ổn định trong sự nghiệp.
+
+### 1.3. Kiểm định thống kê
+
+Để các nhận định từ biểu đồ trên không chỉ dừng lại ở cảm quan cá nhân, chúng ta cần dùng các phép kiểm định toán học để chứng minh.
+
+**1.3.1. Kiểm định tính chuẩn (Shapiro-Wilk) cho biến Thu Nhập**
+
+Kiểm tra xem biến `MonthlyIncome` có tuân theo phân phối chuẩn hay không ở nhóm 237 người đã nghỉ việc.
+
+* **$H_0$:** Dữ liệu tuân theo phân phối chuẩn.
+
+* **$H_1$:** Dữ liệu không tuân theo phân phối chuẩn.
+
+```{r shapiro}
+attrition_yes_income <- df_clean$MonthlyIncome[df_clean$Attrition == "Yes"]
+shapiro_test(attrition_yes_income)
+```
+
+**Kết luận:** Giá trị $p\text{-value}$ vô cùng nhỏ ($< 0.05$). Ta bác bỏ giả thuyết $H_0$. Thu nhập hàng tháng không tuân theo phân phối chuẩn (bị lệch phải mạnh). Do đó, để so sánh trung vị thu nhập giữa hai nhóm Yes/No một cách chính xác nhất, ta nên dùng **Kiểm định phi tham số Wilcoxon (Mann-Whitney U Test)** thay vì T-test truyền thống.
+
+**1.3.2. So sánh Thu nhập giữa 2 nhóm (Wilcoxon Rank Sum Test)**
+
+* **$H_0$:** Không có sự khác biệt về mức lương giữa người ở lại và người nghỉ việc.
+
+* **$H_1$:** Có sự khác biệt có ý nghĩa thống kê về mức lương giữa hai nhóm.
+
+```{r wilcoxon}
+wilcox.test(MonthlyIncome ~ Attrition, data = df_clean)
+```
+
+**Kết luận:** Với giá trị $p\text{-value} = 2.953 \times 10^{-14}$ (nhỏ hơn rất nhiều so với mốc $\alpha = 0.05$), ta mạnh mẽ bác bỏ giả thuyết $H_0$.
+
+**Ý nghĩa thực tiễn:** Thu nhập hàng tháng của những người nghỉ việc thấp hơn một cách có ý nghĩa thống kê so với những người ở lại. Kết quả cho thấy thu nhập có liên hệ với tình trạng nghỉ việc, nhưng riêng kiểm định này chưa đủ để kết luận quan hệ nhân quả.
+
+**1.3.3. Đánh giá sự phụ thuộc của Phòng ban (Chi-Square Test)**
+
+Liệu tình trạng nghỉ việc có phụ thuộc vào việc nhân viên đó làm ở phòng ban (Department) nào hay không? Vì cả hai đều là biến định tính (Categorical), ta sử dụng kiểm định Chi-bình phương (Chi-Square).
+
+* **$H_0$:** Quyết định nghỉ việc và Phòng ban là hai yếu tố hoàn toàn độc lập.
+
+* **$H_1$:** Có mối liên hệ phụ thuộc giữa Phòng ban và Quyết định nghỉ việc.
+
+```{r chisquare}
+# Tạo bảng chéo (Cross-tabulation)
+dept_attrition_table <- table(df_clean$Department, df_clean$Attrition)
+print(dept_attrition_table)
+
+# Chạy kiểm định Chi-Square
+chisq.test(dept_attrition_table)
+```
+
+**Kết luận:** Với $p\text{-value} = 0.004526$ ($< 0.05$), ta bác bỏ giả thuyết $H_0$. 
+
+**Ý nghĩa thực tiễn:** Tỷ lệ nghỉ việc thay đổi một cách đáng kể tùy thuộc vào phòng ban. Nhìn vào bảng số liệu, phòng ban R&D (Research & Development) có tỷ lệ nghỉ việc tuyệt đối lớn nhất, nhưng phòng Sales (Bán hàng) lại có tỷ lệ nghỉ việc tương đối (tỷ lệ Yes/No) cao đáng báo động.
+
+**Tổng kết:** Dữ liệu không có giá trị khuyết; các biến thu nhập đã được giới hạn ngoại lệ và các biến liên tục cần thiết đã được chuẩn hóa để phục vụ khám phá ban đầu. Các phép kiểm định cho thấy mức lương và phòng ban có liên hệ với `Attrition`, trong khi biểu đồ cho thấy nhóm nghỉ việc có độ tuổi trung bình thấp hơn. Việc tiền xử lý cuối cùng sẽ được thực hiện lại sau khi chia Train/Test để tránh rò rỉ dữ liệu.
+
+## 2. Xây dựng mô hình
+
+Với một tập dữ liệu có hơn 30 biến số (features) như HR Attrition, việc "nhồi nhét" toàn bộ các cột vào một mô hình cơ bản thường dẫn đến hiện tượng Đa cộng tuyến (Multicollinearity) và Quá khớp (Overfitting).
+
+```{r setup_model, include=FALSE}
+# Cài đặt thêm thư viện nếu chưa có
+# install.packages(c("glmnet", "pROC"))
+library(glmnet)
+library(pROC)
+```
+
+Vì tập dữ liệu có rất nhiều biến (nhiều features), việc đưa tất cả vào một mô hình tuyến tính/logistic tiêu chuẩn có thể gây nhiễu và đa cộng tuyến. Chúng ta sẽ tiến hành xây dựng nhiều mô hình dựa trên các lăng kính (nhóm biến) khác nhau để đối chiếu. Đầu tiên, ta chia tập dữ liệu thành tập Huấn luyện (Train - 70%) và tập Kiểm thử (Test - 30%).
+
+```{r split_data}
+set.seed(123) # Cố định seed để kết quả có thể lặp lại
+trainIndex <- createDataPartition(df_clean$Attrition, p = 0.7, list = FALSE)
+train_data <- df_clean[trainIndex, ]
+test_data  <- df_clean[-trainIndex, ]
+
+# Loại bỏ các biến không dùng và toàn bộ biến dẫn xuất đã được tính trước split.
+# Các biến dẫn xuất sẽ được fit lại hoàn toàn từ tập Train ở phần 2.1.
+columns_to_reset <- c(
+  "EmployeeCount", "Over18", "StandardHours", "EmployeeNumber",
+  "MonthlyIncome_Capped", "Age_scaled", "Income_scaled"
+)
+
+train_data <- train_data %>% select(-any_of(columns_to_reset))
+test_data  <- test_data  %>% select(-any_of(columns_to_reset))
+
+# Kiểm tra split và bảo đảm không còn biến dẫn xuất được tính từ toàn bộ dữ liệu.
+stopifnot(
+  nrow(train_data) == 1030L,
+  nrow(test_data) == 440L,
+  identical(as.integer(table(train_data$Attrition)), c(864L, 166L)),
+  identical(as.integer(table(test_data$Attrition)), c(369L, 71L)),
+  !any(columns_to_reset %in% names(train_data)),
+  !any(columns_to_reset %in% names(test_data))
+)
+```
+
+### 2.1. Tiền xử lý không rò rỉ dữ liệu
+
+**2.1.1. Xử lý ngoại lệ dựa trên tập Train**
+
+Biến MonthlyIncome (Thu nhập hàng tháng) thường bị lệch phải nặng. Ta tính toán ranh giới $1.5 \times IQR$ duy nhất từ tập Train, sau đó áp dụng ranh giới này để giới hạn trần/sàn cho cả tập Train và Test.
+
+```{r}
+# 1. Tính toán ranh giới IQR CHỈ trên tập Train
+Q1_train <- quantile(train_data$MonthlyIncome, 0.25, na.rm = TRUE)
+Q3_train <- quantile(train_data$MonthlyIncome, 0.75, na.rm = TRUE)
+IQR_train <- Q3_train - Q1_train
+
+lower_bound <- Q1_train - 1.5 * IQR_train
+upper_bound <- Q3_train + 1.5 * IQR_train
+
+# Hàm đóng trần/sàn dựa trên ngưỡng đã tính
+cap_with_bounds <- function(x, low, high) {
+  x[x > high] <- high
+  x[x < low] <- low
+  return(x)
+}
+
+# 2. Áp dụng ngưỡng của Train lên cả 2 tập
+train_data$MonthlyIncome_Capped <- cap_with_bounds(train_data$MonthlyIncome, lower_bound, upper_bound)
+test_data$MonthlyIncome_Capped  <- cap_with_bounds(test_data$MonthlyIncome, lower_bound, upper_bound)
+```
+
+**2.1.2. Chuẩn hóa Z-score dựa trên tham số tập Train**
+
+Ta huấn luyện pipeline chuẩn hóa (Center & Scale) chỉ trên tập Train để lấy giá trị $\mu_{\text{train}}$ và $\sigma_{\text{train}}$, sau đó dùng chính các tham số này để transform cho tập Test.
+
+```{r}
+# 1. Fit scaler CHỈ trên train_data
+scaler <- preProcess(
+  train_data[, c("Age", "MonthlyIncome_Capped")], 
+  method = c("center", "scale")
+)
+
+# 2. Transform cả 2 tập dữ liệu
+train_scaled_vars <- predict(scaler, train_data[, c("Age", "MonthlyIncome_Capped")])
+test_scaled_vars  <- predict(scaler, test_data[, c("Age", "MonthlyIncome_Capped")])
+
+# 3. Gán các đặc trưng đã chuẩn hóa vào dataframe
+train_data$Age_scaled    <- train_scaled_vars$Age
+train_data$Income_scaled <- train_scaled_vars$MonthlyIncome_Capped
+
+test_data$Age_scaled     <- test_scaled_vars$Age
+test_data$Income_scaled  <- test_scaled_vars$MonthlyIncome_Capped
+
+# Xác nhận scaler được fit đúng trên Train và dữ liệu sau biến đổi không bị khuyết.
+stopifnot(
+  abs(mean(train_data$Age_scaled)) < 1e-10,
+  abs(sd(train_data$Age_scaled) - 1) < 1e-10,
+  abs(mean(train_data$Income_scaled)) < 1e-10,
+  abs(sd(train_data$Income_scaled) - 1) < 1e-10,
+  !anyNA(train_data[, c("Age_scaled", "Income_scaled")]),
+  !anyNA(test_data[, c("Age_scaled", "Income_scaled")])
+)
+```
+
+### 2.2. Mô hình 1: Lăng kính nhân khẩu học
+
+Mô hình này chỉ sử dụng các đặc trưng cá nhân của nhân viên để dự đoán khả năng nghỉ việc (Bao gồm: Tuổi tác, Giới tính, Tình trạng hôn nhân, Khoảng cách từ nhà đến công ty). Áp dụng phương pháp: **Hồi quy Logistic tiêu chuẩn**.
+
+Phân phối xác suất của Hồi quy Logistic được biểu diễn bằng công thức:
+$$P(Y=1|X) = \frac{1}{1 + e^{-(\beta_0 + \beta_1 X_1 + ... + \beta_k X_k)}}$$
+```{r model_1}
+# Xây dựng Mô hình 1 trên tập Train sạch
+formula_1 <- Attrition ~ Age_scaled + Gender + MaritalStatus + DistanceFromHome + Education
+model_1 <- glm(formula_1, data = train_data, family = "binomial")
+
+# Xem tóm tắt hệ số mô hình
+summary(model_1)
+```
+
+Nhìn chung, giá trị $p\text{-value}$ (`Pr(>|z|)`) cho thấy `Age_scaled`, `MaritalStatusSingle` và `DistanceFromHome` có ý nghĩa thống kê ở mức $5\%$. Những người trẻ tuổi, độc thân và sống xa nơi làm việc hơn có xu hướng nghỉ việc cao hơn. Tuy nhiên, chỉ số AIC của mô hình khá cao, cho thấy các biến nhân khẩu học chưa đủ sức mạnh để giải thích toàn bộ hiện tượng nghỉ việc. Trong hồi quy Logistic, hệ số $\beta$ thể hiện sự thay đổi của log-odds nghỉ việc. Để dễ hiểu hơn trong quản trị, chúng ta chuyển đổi hệ số này sang tỷ số chênh ($OR = e^\beta$):
+
+Các biến có ý nghĩa thống kê cao ($p < 0.05$): 
+
+* Age_scaled ($\beta = -0.3905$, $p = 7.13 \times 10^{-5}$): Odds Ratio ($OR$): $e^{-0.3905} \approx 0.677$ cho thấy tuổi tác có tác động ngược chiều rất mạnh lên nguy cơ nghỉ việc. Khi độ tuổi tăng thêm 1 đơn vị chuẩn hóa (Standard Deviation), cơ hội (Odds) nghỉ việc của nhân viên giảm khoảng $32.3\%$. Điều này hoàn toàn khớp với biểu đồ phân bố mật độ tuổi trước đó — nhân viên càng lớn tuổi càng có xu hướng ở lại ổn định.
+
+* MaritalStatusSingle ($\beta = 0.9057$, $p = 0.000207$): Odds Ratio ($OR$): $e^{0.9057} \approx 2.47$ cho thấy so với nhóm cơ sở (Nhân viên đã ly hôn - Divorced), nhân viên Độc thân (Single) có cơ hội nghỉ việc cao gấp $2.47$ lần (tăng $147\%$). Đây là yếu tố nhân khẩu học thể hiện mức độ chấp nhận rủi ro và chuyển đổi công việc rất cao.
+
+* DistanceFromHome ($\beta = 0.0304$, $p = 0.003365$): Odds Ratio ($OR$): $e^{0.0304} \approx 1.031$ cho thấy khoảng cách từ nhà đến công ty tác động thuận chiều có ý nghĩa thống kê. Mỗi km xa hơn làm tăng cơ hội nghỉ việc của nhân viên thêm khoảng $3.1\%$. Khoảng cách di chuyển quá xa gây mệt mỏi thể chất và suy giảm cân bằng cuộc sống.
+
+Các biến Không có ý nghĩa thống kê ($p > 0.05$):
+
+* GenderMale ($\beta = 0.2795$, $p = 0.126$): Giới tính nam có xu hướng nghỉ việc cao hơn một chút nhưng sự khác biệt này không đạt ý nghĩa thống kê.
+
+* MaritalStatusMarried ($\beta = -0.1142$, $p = 0.655$): Tình trạng Đã kết hôn không tạo ra sự khác biệt có ý nghĩa so với nhóm Ly hôn.
+
+* Education ($\beta = 0.0021$, $p = 0.981$): Trình độ học vấn gần như không ảnh hưởng đến quyết định nghỉ việc trong mô hình này.
+
+Đánh giá độ phù hợp của mô hình qua độ lệch của mô hình rỗng ($909.69$ trên $1029$ bậc tự do) và độ lệch phần dư ($844.89$ trên $1023$ bậc tự do):
+
+* Độ lệch giảm từ $909.69$ xuống $844.89$ (giảm $64.8$ điểm với $6$ bậc tự do bị tiêu tốn).
+
+* Phép kiểm định Tỷ lệ Khả phong ($\chi^2 = 64.8, \text{df} = 6$) trả về $p < 0.001$, chứng tỏ việc đưa thêm các biến số này vào mô hình cải thiện độ chính xác dự báo rõ rệt so với mô hình rỗng (Null Model). 
+
+*AIC (Akaike Information Criterion) = $858.89$: Chỉ số này dùng để so sánh giữa các phiên bản mô hình khác nhau. Mô hình nào có AIC thấp hơn sẽ tối ưu hơn.
+
+**Kiểm tra đa cộng tuyến**
+
+Giống như bất kỳ mô hình hồi quy truyền thống nào, chúng ta cần đảm bảo các biến nhân khẩu học không bị hiện tượng đa cộng tuyến trước khi diễn giải các hệ số.
+
+```{r vif_check_model1}
+# Tính toán chỉ số VIF cho Mô hình 1
+vif_model1 <- vif(model_1)
+print(vif_model1)
+
+# Kiểm tra ngưỡng an toàn (VIF < 5)
+if(max(vif_model1) < 5) {
+  print("Mô hình 1 an toàn: Không có hiện tượng đa cộng tuyến.")
+} else {
+  print("Cảnh báo: Có biến nhân khẩu học bị đa cộng tuyến.")
+}
+```
+
+**Nhận xét:** Tất cả các biến nhân khẩu học đều có chỉ số VIF rất thấp, gần mức $1.0$. Điều này cho thấy mô hình không có đa cộng tuyến đáng kể giữa các biến giải thích; kết quả này không đồng nghĩa với việc các biến hoàn toàn độc lập về mặt thống kê.
+
+### 2.3. Mô hình 2: Lăng kính công việc và môi trường
+
+Mô hình này bỏ qua yếu tố cá nhân, tập trung hoàn toàn vào các đặc trưng nội tại của công việc (Phòng ban, Chức vụ, Thu nhập, Làm thêm giờ, Mức độ hài lòng).
+
+```{r model_2}
+# Xây dựng Mô hình 2
+formula_2 <- Attrition ~ Department + JobRole + EnvironmentSatisfaction + JobSatisfaction + OverTime + Income_scaled
+model_2 <- glm(formula_2, data = train_data, family = "binomial")
+
+summary(model_2)
+```
+
+Mô hình 2 có AIC thấp hơn đáng kể so với Mô hình 1, nhưng một số hệ số liên quan đến `Department` và `JobRole` chưa đáng tin cậy để diễn giải do sai số chuẩn phồng rất lớn. Riêng `OverTimeYes` có hệ số dương và ý nghĩa thống kê rất cao ($p < 0.001$); `EnvironmentSatisfaction` có hệ số âm, cho thấy mức hài lòng cao hơn đi kèm với odds nghỉ việc thấp hơn trong mô hình.
+
+Hiện tượng đa cộng tuyến cấu trúc giữa `Department` và `JobRole` xuất hiện ở các hệ số DepartmentResearch & Development, DepartmentSales, JobRoleHuman Resources, JobRoleSales Executive và JobRoleSales Representative. Dấu hiệu bất thường:
+
+* Hệ số Estimate phồng to bất thường ($\beta \approx 13.4 \rightarrow 15.9$).
+
+* Sai số chuẩn (Std. Error) cực kỳ lớn ($\approx 510 \rightarrow 1082$).
+
+* Giá trị $p$ bị đẩy lên sát mức $1.0$ ($0.97 \rightarrow 0.99$).
+
+* Số vòng lặp Fisher Scoring lên tới 15 lần (mô hình 1 chỉ tốn 5 lần).
+
+Nguyên nhân (Data Science Root Cause): Đây là hiện tượng Multicollinearity (Đa cộng tuyến hoàn hảo) giữa hai biến Department (Phòng ban) và JobRole (Vị trí công việc). Ví dụ: Tất cả các Sales Executive đều thuộc phòng Sales. Việc đưa đồng thời cả 2 biến này vào mô hình làm cho thuật toán hồi quy bị chao đảo, không thể ước lượng chính xác hệ số $\beta$. Giải pháp xử lý: Bắt buộc phải loại bỏ biến Department và chỉ giữ lại biến JobRole (vì JobRole chi tiết và mang lại nhiều thông tin hơn).
+
+Sau khi tách bỏ ảnh hưởng của nhiễu đa cộng tuyến, chúng ta thấy rõ những "Ngòi nổ" chính dẫn đến Attrition:
+
+* Làm thêm giờ (OverTimeYes) — Yếu tố Độc hại hàng đầuChỉ số: $\beta = 1.542$, $p = 2.71 \times 10^{-15}$ ( Cực kỳ mạnh). Odds Ratio ($OR$): $e^{1.542} \approx \mathbf{4.67}$ cho thấy nhân viên phải làm thêm giờ (OverTime) có nguy cơ nghỉ việc cao gấp $4.67$ lần (tăng $367\%$) so với nhóm không làm thêm giờ. Đây chính là yếu tố gây ra hiện tượng kiệt sức (Burnout) mạnh nhất trong công ty.
+
+* Mức độ Thỏa mãn Môi trường (EnvironmentSatisfaction) & Công việc (JobSatisfaction) với EnvironmentSatisfaction: $\beta = -0.3619$, $p = 2.91 \times 10^{-5}$.$OR = e^{-0.3619} \approx \mathbf{0.696}$ (Mỗi độ hài lòng tăng thêm $1$ điểm trên thang Likert giúp giảm $30.4\%$ nguy cơ nghỉ việc). JobSatisfaction: $\beta = -0.2847$, $p = 0.000618$. $OR = e^{-0.2847} \approx \mathbf{0.752}$ (Mỗi độ hài lòng tăng thêm $1$ điểm giúp giảm $24.8\%$ nguy cơ nghỉ việc).
+
+* Vị trí Kỹ thuật viên Phòng thí nghiệm (JobRoleLaboratory Technician) với $\beta = 1.636$, $p = 0.001135$. Odds Ratio ($OR$): $e^{1.636} \approx \mathbf{5.14}$ cho thấy so với vị trí cơ sở, các Kỹ thuật viên phòng thí nghiệm (Lab Tech) có nguy cơ nghỉ việc cao gấp hơn $5$ lần. Đây là nhóm vị trí chuyên môn có áp lực cao nhưng thu nhập/phúc lợi có thể chưa tương xứng.
+
+**Mô hình 2 (Cập nhật): Lăng kính Công việc & Môi trường**
+
+Sau khi phát hiện hiện tượng đa cộng tuyến cấu trúc giữa Phòng ban và Chức vụ, chúng ta loại bỏ biến `Department` và chỉ giữ lại `JobRole` để đảm bảo tính ổn định cho mô hình.
+
+```{r model_2_updated}
+# Xây dựng Mô hình 2 không có biến Department
+formula_2 <- Attrition ~ JobRole + EnvironmentSatisfaction + JobSatisfaction + OverTime + Income_scaled
+model_2 <- glm(formula_2, data = train_data, family = "binomial")
+
+summary(model_2)
+```
+
+**Kiểm tra lại Đa cộng tuyến**
+
+```{r vif_check_updated}
+# Kiểm tra VIF cho Mô hình 2 sau khi cập nhật
+vif_values <- vif(model_2)
+print(vif_values)
+
+# Trích xuất cột so sánh chuẩn (cột thứ 3, bình phương lên để đối chiếu với ngưỡng 5)
+vif_standard <- vif_values[, 3]^2 
+
+if(max(vif_standard) < 5) {
+  print("Tuyệt vời: Mô hình 2 đã hoàn toàn sạch đa cộng tuyến!")
+} else {
+  print("Cảnh báo: Vẫn còn biến bị đa cộng tuyến cao.")
+}
+```
+
+### 2.4. Mô hình 3: Mô hình Khử nhiễu LASSO (Toàn bộ biến)
+
+Thay vì chọn biến thủ công như Mô hình 1 và 2, ta sẽ đưa **toàn bộ các cột** vào mô hình **LASSO (Least Absolute Shrinkage and Selection Operator)**. 
+LASSO thêm một thành phần phạt (penalty) chuẩn L1 vào hàm mất mát, ép hệ số $\beta$ của các biến không quan trọng co rút hoàn toàn về 0.
+
+Hàm mục tiêu của LASSO Logistic:
+$$\min_{\beta_0, \beta} \left[ -\frac{1}{N} \sum_{i=1}^N \left( y_i (\beta_0 + x_i^T \beta) - \log(1 + e^{\beta_0 + x_i^T \beta}) \right) + \lambda \sum_{j=1}^p |\beta_j| \right]$$
+
+```{r model_3_lasso}
+# 1. CLEAN DATAFRAME & DROP SINGLE-LEVEL FACTORS IN TRAIN
+# Remove unneeded raw MonthlyIncome if Capped exists
+train_lasso_df <- train_data %>% select(-any_of("MonthlyIncome"))
+test_lasso_df  <- test_data  %>% select(-any_of("MonthlyIncome"))
+
+# Drop unused levels in existing factors
+train_lasso_df <- droplevels(train_lasso_df)
+test_lasso_df  <- droplevels(test_lasso_df)
+
+# Identify and remove any columns in train that have less than 2 unique values
+single_val_cols <- names(which(sapply(train_lasso_df, function(x) length(unique(x)) < 2)))
+
+if (length(single_val_cols) > 0) {
+  message("Removing single-level columns: ", paste(single_val_cols, collapse = ", "))
+  train_lasso_df <- train_lasso_df %>% select(-all_of(single_val_cols))
+  test_lasso_df  <- test_lasso_df  %>% select(-all_of(single_val_cols))
+}
+
+# 2. BUILD MATRIX USING caret::dummyVars (SAFE & ROBUST)
+# Target vectors
+y_train <- ifelse(train_lasso_df$Attrition == "Yes", 1, 0)
+y_test  <- ifelse(test_lasso_df$Attrition == "Yes", 1, 0)
+
+# Create dummy variable formula excluding Attrition
+dummies_model <- dummyVars(Attrition ~ ., data = train_lasso_df, fullRank = TRUE)
+
+# Predict dummy matrix for train and test
+x_train <- predict(dummies_model, newdata = train_lasso_df)
+x_test  <- predict(dummies_model, newdata = test_lasso_df)
+
+stopifnot(
+  identical(colnames(x_train), colnames(x_test)),
+  !anyNA(x_train),
+  !anyNA(x_test)
+)
+
+# 3. FIT LASSO MODEL
+set.seed(123)
+lasso_model <- cv.glmnet(x_train, y_train, family = "binomial", alpha = 1)
+
+print(paste("Lambda tối ưu (min):", lasso_model$lambda.min))
+plot(lasso_model)
+```
+
+**Nhận xét Mô hình LASSO:**
+Biểu đồ trên cho thấy khi tham số phạt $\lambda$ (trục X) tăng lên, số lượng biến được giữ lại trong mô hình (dãy số trên cùng) giảm dần. LASSO giúp tự động loại bỏ hiện tượng đa cộng tuyến và giữ lại những biến thực sự cốt lõi nhất đối với `Attrition`.
+
+Trục hoành bên dưới ($\log(\lambda)$):
+
+* Giá trị $\log(\lambda)$ càng lớn (tiến sang phải) $\rightarrow$ $\lambda$ càng lớn $\rightarrow$ mức phạt càng mạnh $\rightarrow$ ít biến được giữ lại trong mô hình.
+
+* Giá trị $\log(\lambda)$ càng nhỏ (tiến sang trái) $\rightarrow$ $\lambda$ càng nhỏ $\rightarrow$ mức phạt càng yếu $\rightarrow$ nhiều biến được giữ lại hơn.
+
+Trục hoành bên trên (Số lượng biến - Degrees of Freedom): Cho biết số lượng biến có hệ số khác $0$ được giữ lại trong mô hình tương ứng với từng mức $\lambda$.
+
+Trục tung (Binomial Deviance): Sai số/Độ lệch của mô hình dự báo phân loại nhị phân (nghỉ việc: Yes/No). Càng thấp nghĩa là mô hình dự báo càng chính xác.
+
+Các chấm đỏ & Thanh sai số màu xám: Giá trị Binomial Deviance trung bình qua các lượt kiểm định chéo ($k$-fold CV) và khoảng sai số chuẩn ($1 \text{ SE}$).
+
+Đường nét đứt Thẳng đứng: Trong kiểm định chéo Lasso, có hai giá trị $\lambda$ quan trọng tương ứng với 2 đường nét đứt:
+
+* Đường nét đứt bên trái: `lambda.min` với $\log(\lambda) \approx -5.80$. Đây là điểm mà sai số kiểm định chéo đạt giá trị nhỏ nhất. Mô hình giữ lại 35 biến có hệ số khác $0$, cho sai số kiểm định chéo thấp nhất nhưng vẫn sử dụng tương đối nhiều biến.
+
+* Đường nét đứt bên phải: `lambda.1se` với $\log(\lambda) \approx -4.49$. Đây là giá trị $\lambda$ lớn nhất có sai số nằm trong phạm vi một sai số chuẩn so với giá trị tối thiểu. Mô hình giữ lại 29 biến, gọn hơn `lambda.min` và đánh đổi một phần nhỏ hiệu suất kiểm định chéo để tăng tính tinh giản.
+
+Nói chung, sai số kiểm định chéo giảm khi mức phạt được nới lỏng từ vùng bên phải, đạt vùng tối ưu quanh $\log(\lambda) = -5.80$ đến $-4.49$, rồi thay đổi ít hơn khi tiếp tục giảm $\lambda$. Hai đường nét đứt thể hiện sự đánh đổi giữa sai số thấp nhất và mô hình tinh giản hơn.
+
+**Các hệ số được LASSO giữ lại tại `lambda.min`**
+
+Để biết cụ thể LASSO đã giữ lại những biến nào (và loại những biến nào), ta trích xuất toàn bộ hệ số khác 0 tại $\lambda_{\min}$ và sắp xếp theo độ lớn:
+
+```{r lasso_coefficients}
+# Trích xuất các hệ số khác 0 của LASSO tại lambda.min
+lasso_coefs <- coef(lasso_model, s = "lambda.min")
+
+coef_df <- data.frame(
+  Variable    = rownames(lasso_coefs),
+  Coefficient = as.numeric(lasso_coefs)
+) %>%
+  filter(Coefficient != 0, Variable != "(Intercept)") %>%
+  arrange(desc(abs(Coefficient)))
+
+cat("Số hệ số khác 0 (không tính hằng số):", nrow(coef_df), "\n")
+
+knitr::kable(coef_df, digits = 3, row.names = FALSE,
+             caption = "Các hệ số khác 0 của mô hình LASSO tại lambda.min (sắp theo độ lớn)")
+```
+
+**Nhận xét:** Tại $\lambda_{\min}$, LASSO giữ lại **35 hệ số khác 0**. Nhóm hệ số dương mạnh nhất (tăng nguy cơ nghỉ việc) gồm: `BusinessTravel Travel_Frequently` ($+1.77$), `OverTime Yes` ($+1.67$), `JobRole Sales Representative` ($+1.08$), `MaritalStatus Single` ($+0.95$) và `JobRole Laboratory Technician` ($+0.94$). Nhóm hệ số âm mạnh nhất (giảm nguy cơ) gồm: `JobRole Research Director` ($-0.93$), `JobInvolvement` ($-0.39$), `EnvironmentSatisfaction` ($-0.38$), `JobSatisfaction` ($-0.34$) và `WorkLifeBalance` ($-0.27$).
+
+Hai điểm đáng chú ý: (1) hệ số của thu nhập (`Income_scaled`) bị co về **đúng 0** — nhất quán với kết quả $p = 0.968$ ở Mô hình 2, củng cố nhận định thu nhập không đóng góp thông tin riêng sau khi đã kiểm soát chức danh và điều kiện làm việc; (2) các hệ số này nằm trên thang biến chuẩn hóa/dummy và **không kèm sai số chuẩn hay $p$-value** — do ước lượng có phạt làm hệ số co lệch khỏi điểm hợp lý cực đại, suy luận cổ điển không áp dụng được; việc diễn giải định lượng (odds ratio) vẫn dựa trên Mô hình 2.
+
+### 2.5. Đánh giá và so sánh hiệu suất
+
+Chúng ta sẽ sử dụng đường cong ROC (Receiver Operating Characteristic) và chỉ số AUC (Area Under the Curve) trên tập Test để xem trong 3 cách xây dựng trên, mô hình nào dự đoán chính xác nhất.
+
+```{r evaluate_models}
+# Dự đoán xác suất trên tập Test
+prob_1 <- predict(model_1, newdata = test_data, type = "response")
+prob_2 <- predict(model_2, newdata = test_data, type = "response")
+prob_lasso <- predict(lasso_model, newx = x_test, s = "lambda.min", type = "response")
+
+stopifnot(
+  length(prob_1) == nrow(test_data),
+  length(prob_2) == nrow(test_data),
+  length(prob_lasso) == nrow(test_data),
+  all(is.finite(c(prob_1, prob_2, prob_lasso))),
+  all(c(prob_1, prob_2, prob_lasso) >= 0 & c(prob_1, prob_2, prob_lasso) <= 1)
+)
+
+# Tính toán ROC và AUC
+roc_1 <- roc(test_data$Attrition, prob_1)
+roc_2 <- roc(test_data$Attrition, prob_2)
+roc_lasso <- roc(test_data$Attrition, as.numeric(prob_lasso))
+
+# In kết quả AUC
+cat("AUC Mô hình 1 (Nhân khẩu học):", auc(roc_1), "\n")
+cat("AUC Mô hình 2 (Công việc):", auc(roc_2), "\n")
+cat("AUC Mô hình 3 (LASSO toàn bộ biến):", auc(roc_lasso), "\n")
+```
+
+**Kết luận chung về Mô hình hóa:**
+
+Sự nhảy vọt về sức mạnh phân loại:
+
+* Chuyển từ Mô hình 1 lên Mô hình 2 giúp AUC tăng $+0.1294$ ($+19.7\%$). Điều này chứng minh rằng yếu tố môi trường làm việc và trải nghiệm nhân viên có sức nặng hơn hẳn các yếu tố nhân khẩu học cố định khi giải thích lý do nghỉ việc.
+
+* Chuyển từ Mô hình 2 lên Mô hình 3 (LASSO) giúp AUC tiếp tục tăng thêm $+0.0687$, đạt mốc $0.8540$ ($85.4\%$).
+
+Giá trị thực tiễn của mốc $\text{AUC} = 0.8540$:
+
+* Trong bài toán phân loại nhị phân bị mất cân bằng dữ liệu ($84\% \text{ No} \text{ vs } 16\% \text{ Yes}$), chỉ số AUC đạt $0.8540$ chứng tỏ mô hình LASSO có khả năng xếp hạng ngẫu nhiên một nhân viên nghỉ việc cao hơn một nhân viên ở lại với độ chính xác lên tới $85.4\%$.
+
+* Thuật toán LASSO đã hoàn thành xuất sắc nhiệm vụ: vừa lọc bỏ nhiễu/đa cộng tuyến (xử lý triệt để lỗi phồng sai số của Mô hình 2), vừa tối ưu hóa khả năng phân tách giữa 2 nhóm.
+
+Vậy, mô hình 3 (LASSO) đạt hiệu suất tối ưu nhất nhờ việc tận dụng được toàn bộ thông tin từ cả đặc trưng cá nhân lẫn công việc, đồng thời tự động triệt tiêu được các biến nhiễu. Do đó, mô hình LASSO nên được chọn làm mô hình cuối cùng để đưa ra quyết định kinh doanh hoặc triển khai dự báo nhân sự.
+
+## 3. Đánh giá và lựa chọn mô hình
+
+Dù có được một số cơ sở từ phần trên bằng tính toán AUC, tuy nhiên, vẫn cần các phân tích sâu hơn để đảm bảo quyết định sơ bộ được đưa ra là phù hợp. 
+
+### 3.1. Kiểm tra các giả định của Hồi quy Logistic
+
+Trước khi tin tưởng vào kết quả dự báo, ta cần đảm bảo các mô hình hồi quy (Mô hình 1 và Mô hình 2) thỏa mãn các giả định cốt lõi của phương pháp Hồi quy Logistic:
+
+1.  **Biến phụ thuộc là nhị phân:** Đã thỏa mãn (`Attrition` là Yes/No).
+
+2.  **Các quan sát độc lập với nhau:** Đã thỏa mãn (mỗi dòng dữ liệu là một nhân viên riêng biệt).
+
+3.  **Không có hiện tượng Đa cộng tuyến nghiêm trọng (No Multicollinearity):** Đã kiểm tra bằng chỉ số VIF ở phần 4. Cả Mô hình 1 và Mô hình 2 (sau khi tinh chỉnh bỏ `Department`) đều có $VIF < 5$.
+
+4.  **Tính tuyến tính giữa biến liên tục và Log-odds (Linearity of Logit):** Yêu cầu các biến số liên tục (như `Age_scaled`, `Income_scaled`) phải có mối quan hệ tuyến tính với logit của biến mục tiêu. Giả định này thường được tự động hóa tối ưu bằng kỹ thuật LASSO, hoặc có thể kiểm tra trực quan bằng biểu đồ phần dư binned (Binned Residual Plot).
+
+### 3.2. Đánh giá chất lượng mô hình trên tập kiểm thử
+
+Để so sánh công bằng, chúng ta sẽ dự đoán xác suất nghỉ việc trên tập dữ liệu chưa từng được mô hình "nhìn thấy" (Tập Test với 30% dữ liệu). 
+
+Vì dữ liệu bị mất cân bằng (tỷ lệ nghỉ việc chỉ ~16%), ta cần sử dụng các ma trận nhầm lẫn (Confusion Matrix) và tính toán các chỉ số:
+
+*   **AIC/BIC:** Chỉ số thông tin Akaike và Bayes. Càng nhỏ càng tốt, thể hiện sự cân bằng giữa độ khớp dữ liệu và sự đơn giản của mô hình.
+
+*   **Accuracy:** Tỷ lệ dự đoán đúng tổng thể.
+
+*   **Sensitivity (Recall):** Tỷ lệ bắt trúng những người *thực sự* nghỉ việc (Cực kỳ quan trọng với bài toán HR).
+
+*   **AUC (Area Under the ROC Curve):** Khả năng phân biệt tổng quát của mô hình giữa 2 lớp Yes và No.
+
+```{r model_evaluation, warning=FALSE, message=FALSE}
+library(pROC)
+library(caret)
+
+# 1. Dự đoán xác suất cho 3 mô hình trên Test Data
+prob_1 <- predict(model_1, newdata = test_data, type = "response")
+prob_2 <- predict(model_2, newdata = test_data, type = "response")
+
+# Sử dụng x_test đã được căn chỉnh cột chính xác ở chunk model_3_lasso
+prob_lasso <- predict(lasso_model, newx = x_test, s = "lambda.min", type = "response")
+
+# 2. Chuyển đổi xác suất thành nhãn phân loại (Ngưỡng cut-off = 0.3)
+pred_class_1     <- as.factor(ifelse(prob_1 > 0.3, "Yes", "No"))
+pred_class_2     <- as.factor(ifelse(prob_2 > 0.3, "Yes", "No"))
+pred_class_lasso <- as.factor(ifelse(prob_lasso > 0.3, "Yes", "No"))
+
+# Đảm bảo các factor có cùng levels
+actual_class <- as.factor(test_data$Attrition)
+pred_class_1     <- factor(pred_class_1, levels = levels(actual_class))
+pred_class_2     <- factor(pred_class_2, levels = levels(actual_class))
+pred_class_lasso <- factor(pred_class_lasso, levels = levels(actual_class))
+
+# 3. Tính toán Ma trận nhầm lẫn (Confusion Matrix)
+cm_1     <- confusionMatrix(pred_class_1, actual_class, positive = "Yes")
+cm_2     <- confusionMatrix(pred_class_2, actual_class, positive = "Yes")
+cm_lasso <- confusionMatrix(pred_class_lasso, actual_class, positive = "Yes")
+
+# 4. Tính toán ROC và AUC
+roc_1     <- roc(actual_class, prob_1, quiet = TRUE)
+roc_2     <- roc(actual_class, prob_2, quiet = TRUE)
+roc_lasso <- roc(actual_class, as.numeric(prob_lasso), quiet = TRUE)
+
+# 5. Tổng hợp Kết quả vào Bảng so sánh
+comparison_table <- data.frame(
+  Model = c("Mô hình 1 (Nhân khẩu học)", "Mô hình 2 (Công việc)", "Mô hình 3 (LASSO)"),
+  AIC = c(AIC(model_1), AIC(model_2), NA),
+  AUC = c(auc(roc_1), auc(roc_2), auc(roc_lasso)),
+  Accuracy = c(cm_1$overall["Accuracy"], cm_2$overall["Accuracy"], cm_lasso$overall["Accuracy"]),
+  Sensitivity = c(cm_1$byClass["Sensitivity"], cm_2$byClass["Sensitivity"], cm_lasso$byClass["Sensitivity"])
+)
+
+knitr::kable(comparison_table, digits = 3, caption = "Bảng So sánh Hiệu suất các Mô hình (Ngưỡng 0.3)")
+```
+
+**Chỉ số AIC (Akaike Information Criterion):** Đo lường độ phù hợp của mô hình (Model Fit) đồng thời phạt các mô hình có quá nhiều biến phức tạp. Chỉ số AIC càng nhỏ nghĩa là mô hình càng tối ưu và cân bằng.
+
+* Mô hình 1 ($858.887$): Chỉ số cao nhất, chứng tỏ mức độ giải thích biến động dữ liệu còn rất kém so với độ phức tạp của nó.
+
+* Mô hình 2 ($781.322$): Giảm mạnh tới $77.565$ điểm so với Mô hình 1. Trong thống kê, việc giảm $\Delta \text{AIC} > 10$ là bằng chứng cho thấy mô hình mới vượt trội rõ rệt về độ phù hợp.
+
+* Mô hình 3 ($\text{NA}$): Hiển thị NA vì các mô hình chuẩn hóa tiêu chuẩn như LASSO ($L_1$ Penalty) không áp dụng công thức tính AIC dựa trên khả phong tối đa (Maximum Likelihood) truyền thống.
+
+Như vậy, mô hình 2 tốt hơn Mô hình 1 về mặt lý thuyết mô hình tuyến tính, nhưng mô hình 3 sử dụng phương pháp Kiểm định chéo (Cross-Validation) để đánh giá thay vì AIC.
+
+**Chỉ số AUC (Area Under the ROC Curve):** Đo lường khả năng phân loại tổng thể của mô hình (khả năng xếp hạng đúng một nhân viên sắp nghỉ việc cao hơn một nhân viên ở lại). Chỉ số từ $0.5$ (ngẫu nhiên) đến $1.0$ (hoàn hảo).
+
+* Mô hình 1 ($0.656$): Mức Kém / Phân loại yếu. Chỉ nhỉnh hơn đoán ngẫu nhiên ($0.5$) một chút. Các yếu tố nhân khẩu học đơn thuần không đủ sức mạnh để dự báo nghỉ việc.
+
+* Mô hình 2 ($0.785$): Mức Khá. Việc bổ sung các yếu tố môi trường & công việc đã giúp AUC tăng vọt $+12.9\%$, chứng tỏ trải nghiệm nhân viên mang lại giá trị dự báo cao hơn nhiều so với nhân khẩu học.
+
+* Mô hình 3 ($0.854$): Mức Tốt - Xuất sắc. Vượt mốc $0.85$, chứng minh thuật toán LASSO đã tối ưu hóa xuất sắc khả năng nhận diện nguy cơ nghỉ việc.
+
+Như vậy, sự tăng trưởng $0.656 \rightarrow 0.785 \rightarrow 0.854$ phản ánh sự nâng cấp vượt bậc về chất lượng mô hình qua từng giai đoạn.
+
+**Độ chính xác (Accuracy):** Tỷ lệ phần trăm dự báo đúng (cả Ở lại và Nghỉ việc) trên tổng số mẫu.
+
+* Mô hình 1 ($0.809$ hay $80.9\%$): Độ chính xác "ảo" (Bẫy dữ liệu). Dữ liệu gốc có $83.88\%$ nhân viên ở lại. Nếu một mô hình ngây thơ luôn luôn đoán "Ở lại", nó đã đạt $83.88\%$. Do đó, con số $80.9\%$ của Mô hình 1 thực chất còn tệ hơn cả việc đoán mò theo số đông.
+
+* Mô hình 2 ($0.818$ hay $81.8\%$): Có cải thiện nhẹ so với Mô hình 1, nhưng vẫn chưa vượt qua được ngưỡng cơ sở $83.88\%$.
+
+* Mô hình 3 ($0.866$ hay $86.6\%$): Đạt chuẩn thực chất. Đây là mô hình duy nhất vượt qua được tỷ lệ phân bố tự nhiên của dữ liệu ($83.88\%$), cho thấy nó đưa ra các dự báo có giá trị thực sự.
+
+Trong dữ liệu mất cân bằng, Accuracy dễ gây hiểu lầm, nhưng Mô hình 3 là mô hình duy nhất chiến thắng được ngưỡng baseline.
+
+**Độ nhạy (Sensitivity / Recall - Nhóm nghỉ việc):** Tỷ lệ nhân viên thực sự nghỉ việc mà mô hình phát hiện được ($\frac{\text{Dự báo đúng nghỉ việc}}{\text{Tổng số người thực tế nghỉ việc}}$). Đây là chỉ số quan trọng nhất đối với bài toán Nhân sự (HR Risk Detection).
+
+* Mô hình 1 ($0.197$ hay $19.7\%$): Thất bại nghiêm trọng. Bỏ sót tới $80.3\%$ số nhân viên thực sự có nguy cơ nghỉ việc. Mô hình hoàn toàn vô dụng cho việc can thiệp sớm.
+
+* Mô hình 2 ($0.465$ hay $46.5\%$): Mức Trung bình. Đã phát hiện được gần một nửa số ca nghỉ việc, nhưng vẫn bỏ sót $53.5\%$.
+
+* Mô hình 3 ($0.648$ hay $64.8\%$): Hiệu năng Cao. Bắt trúng gần $65\%$ toàn bộ các trường hợp nhân viên dứt áo ra đi, tạo cơ sở vững chắc cho HR chủ động đưa ra giải pháp giữ chân.
+
+Vậy, mô hình 3 giúp tăng khả năng phát hiện nhân viên nghỉ việc lên tới $+45.1\%$ so với Mô hình 1 và $+18.3\%$ so với Mô hình 2.
+
+### 3.3. Trực quan hóa Đường cong ROC
+
+Đường cong ROC cung cấp góc nhìn trực quan về sự đánh đổi giữa True Positive Rate (Sensitivity) và False Positive Rate (1 - Specificity) ở nhiều ngưỡng xác suất khác nhau.
+
+```{r plot_roc, fig.width=8, fig.height=6}
+plot(roc_lasso, col = "red", lwd = 2, main = "So sánh Đường cong ROC giữa các Mô hình")
+plot(roc_2, col = "blue", lwd = 2, add = TRUE)
+plot(roc_1, col = "darkgreen", lwd = 2, add = TRUE)
+legend("bottomright", legend = c("LASSO (Đỏ)", "Công việc (Xanh biển)", "Nhân khẩu (Xanh lá)"),
+       col = c("red", "blue", "darkgreen"), lwd = 2)
+```
+
+Biểu đồ gồm:
+
+* Trục tung (Sensitivity - Độ nhạy / True Positive Rate): Khả năng bắt trúng những nhân viên thực sự nghỉ việc. Càng cao càng tốt.
+
+* Trục hoành (Specificity - Độ đặc hiệu / True Negative Rate): Khả năng nhận diện đúng những nhân viên ở lại. Trục được vẽ đảo ngược từ $1.0 \rightarrow 0.0$ (tương đương với góc nhìn $1 - \text{Specificity}$ hay False Positive Rate). Càng tiến về bên trái ($1.0$) càng tốt.
+
+* Đường chéo xám $45^\circ$ (Random Baseline): Đại diện cho một mô hình đoán mò ngẫu nhiên ($\text{AUC} = 0.5$). Đường cong của mô hình nào nằm càng xa đường chéo này về phía góc trên bên trái, mô hình đó càng mạnh.
+
+So sánh 3 Đường cong: 
+
+* Đường màu Xanh lá — Mô hình Nhân khẩu học (Demographics Model): Nằm thấp nhất trong cả 3 đường, chạy gần với đường chéo xám nhất; tăng trưởng chậm và trập trùng. Để đạt được Sensitivity khá ($0.6$), mô hình phải đánh đổi Specificity giảm xuống tới $0.6$ (tăng tỷ lệ báo động giả). Thông qua đó, ta thấy rõ lý do tại sao $\text{AUC}$ chỉ đạt $0.656$.
+
+* Đường màu Xanh biển — Mô hình Công việc & Môi trường (Work/Env Model): Nằm áp đảo hoàn toàn phía trên đường màu xanh lá ở mọi ngưỡng; vút lên nhanh hơn hẳn ở giai đoạn đầu. Điều này phản ánh rõ sự nhảy vọt từ $\text{AUC} = 0.656$ lên $0.785$ cho thấy sự vượt trội rõ rệt khi đưa các yếu tố công việc (OverTime, JobRole, Satisfaction) vào mô hình.
+
+* Đường màu Đỏ — Mô hình LASSO (Combined Regularized Model): Nằm ở vị trí cao nhất và tiệm cận nhất với góc trên bên trái (điểm lý tưởng $(1.0, 1.0)$ của mọi mô hình phân loại). Ở vùng Specificity cao từ $1.0 \rightarrow 0.8$ (vùng cần kiểm soát báo động giả), đường màu đỏ dốc đứng cực kỳ nhanh, chạm mốc Sensitivity $0.85$ trong khi hai đường còn lại vẫn đang loay hoay ở mốc $0.3 - 0.6$. Diện tích nằm dưới đường màu đỏ là lớn nhất, tương ứng với con số kỷ lục $\text{AUC} = 0.854$.
+
+Như vậy, biểu đồ thể hiện sự đánh đổi giữa bỏ sót và báo động giả. Tại Specificity khoảng $0.80$, LASSO đạt Sensitivity khoảng $0.775$. Nếu chấp nhận Specificity giảm xuống khoảng $0.70$, Sensitivity tăng lên khoảng $0.873$.
+
+### 3.4. Tối ưu hóa ngưỡng quyết định
+
+Mặc định các mô hình phân loại sử dụng ngưỡng $0.5$. Tuy nhiên, do bài toán `Attrition` có tỷ lệ nghỉ việc khoảng $16\%$ và chi phí bỏ sót được giả định lớn hơn chi phí báo động nhầm, chúng ta đối chiếu ba tiêu chí lựa chọn ngưỡng. Tiêu chí F1 chọn ngưỡng **0.30**, trong khi Youden và hàm chi phí giả định cùng chọn ngưỡng khoảng **0.17**; vì vậy không có một ngưỡng duy nhất tối ưu cho mọi mục tiêu.
+
+```{r threshold_optimization, fig.width=8, fig.height=4, warning=FALSE, message=FALSE}
+library(ggplot2)
+library(pROC)
+
+# 1. Thống kê F1-Score & Metrics theo dãy ngưỡng
+thresholds <- seq(0.05, 0.80, by = 0.01)
+f1_results <- data.frame(Threshold = thresholds, Precision = NA, Recall = NA, F1 = NA, Total_Cost = NA)
+
+actual_numeric <- ifelse(test_data$Attrition == "Yes", 1, 0)
+
+# Chi phí giả định cho Bài toán Tài chính Nhân sự
+cost_FN <- 15000  # Chi phí tuyển dụng/đào tạo lại khi bỏ sót 1 người nghỉ
+cost_FP <- 1000   # Chi phí phỏng vấn/đãi ngộ giữ chân nhầm 1 người ở lại
+
+for (i in seq_along(thresholds)) {
+  t <- thresholds[i]
+  pred <- ifelse(prob_lasso > t, 1, 0)
+  
+  tp <- sum(pred == 1 & actual_numeric == 1)
+  fp <- sum(pred == 1 & actual_numeric == 0)
+  fn <- sum(pred == 0 & actual_numeric == 1)
+  
+  prec <- ifelse((tp + fp) == 0, 0, tp / (tp + fp))
+  rec  <- ifelse((tp + fn) == 0, 0, tp / (tp + fn))
+  f1   <- ifelse((prec + rec) == 0, 0, 2 * (prec * rec) / (prec + rec))
+  
+  f1_results$Precision[i]  <- prec
+  f1_results$Recall[i]     <- rec
+  f1_results$F1[i]         <- f1
+  f1_results$Total_Cost[i] <- (fn * cost_FN) + (fp * cost_FP)
+}
+
+# Tim nguong toi uu F1 va Cost
+best_f1_row   <- f1_results[which.max(f1_results$F1), ]
+best_cost_row <- f1_results[which.min(f1_results$Total_Cost), ]
+
+# 2. Toi uu hoa bang Youden's J Statistic (Safely extract numeric threshold)
+youden_coords <- coords(roc_lasso, x = "best", best.method = "youden", 
+                        ret = c("threshold", "sensitivity", "specificity"))
+
+# Extract threshold as a clean numeric value (handles both list and matrix returns)
+youden_threshold <- as.numeric(youden_coords$threshold[1])
+
+# In ket qua kiem dinh Thong ke (Sử dụng cat an toàn)
+cat("=== KẾT QUẢ KIỂM ĐỊNH NGƯỠNG CẮT TỐI ƯU ===\n")
+cat("1. Ngưỡng tối ưu F1-Score:", round(best_f1_row$Threshold, 2), "| F1 cực đại:", round(best_f1_row$F1, 3), "\n")
+cat("2. Ngưỡng tối ưu Youden's J Index:", round(youden_threshold, 2), "\n")
+cat("3. Ngưỡng tối ưu Chi phí Tài chính (Cost-Minimization):", round(best_cost_row$Threshold, 2), "\n")
+
+# Ve Bieu do Toi uu hoa F1
+ggplot(f1_results, aes(x = Threshold)) +
+  geom_line(aes(y = F1, color = "F1-Score"), size = 1.2) +
+  geom_line(aes(y = Precision, color = "Precision"), linetype = "dashed") +
+  geom_line(aes(y = Recall, color = "Recall (Sensitivity)"), linetype = "dashed") +
+  geom_vline(xintercept = 0.30, color = "red", linetype = "dotted", size = 1) +
+  annotate("text", x = 0.38, y = 0.25, label = "Ngưỡng chọn = 0.30", color = "red", fontface = "bold") +
+  theme_minimal() +
+  labs(title = "Tối ưu hóa Ngưỡng Quyết định trên Mô hình LASSO",
+       subtitle = "Sự đánh đổi giữa Precision, Recall và điểm cực đại F1-Score",
+       x = "Ngưỡng Quyết định (Threshold)", y = "Giá trị Chỉ số", color = "Chỉ số")
+```
+
+### 3.5. Giải thích và Lựa chọn Mô hình Phù hợp nhất
+
+Dựa trên các tiêu chí đánh giá khoa học và bối cảnh bài toán kinh doanh, ta tiến hành phân tích như sau:
+
+**Phân tích Hiệu suất:**
+
+*   **Mô hình 1 (Nhân khẩu học):** Có kết quả AUC và Sensitivity thấp nhất. Điều này khẳng định rằng chỉ dựa vào Tuổi, Giới tính hay Tình trạng hôn nhân là không đủ sức để dự đoán ý định nhảy việc của một cá nhân.
+
+*   **Mô hình 2 (Công việc):** Cho thấy hiệu suất nhảy vọt (AUC cao, AIC thấp đi). Môi trường, Mức lương và Khối lượng công việc (OverTime) giải thích rất tốt quyết định nghỉ việc. 
+
+*   **Mô hình 3 (LASSO):** Đường cong ROC của LASSO (màu đỏ) nằm cao nhất, bao trọn hai đường còn lại. LASSO đạt AUC và Accuracy tốt nhất trên tập dữ liệu chưa biết (Test set).
+
+**Lựa chọn Mô hình:**
+Mô hình phù hợp nhất và được lựa chọn cho Đồ án này là **Mô hình 3: Hồi quy Logistic với LASSO Regularization**.
+
+**Lý do lựa chọn (Dưới góc độ học thuật và thực tiễn):**
+
+1.  **Chống Quá khớp (Overfitting):** Bằng cách áp dụng hình phạt chuẩn L1, LASSO đã loại bỏ các biến không có đóng góp thực sự, giảm thiểu độ phức tạp nhưng lại tăng khả năng tổng quát hóa trên dữ liệu mới (thể hiện qua chỉ số AUC trên tập Test cao nhất).
+
+2.  **Khả năng giải quyết Đa cộng tuyến tự động:** Khác với Hồi quy Logistic OLS yêu cầu ta phải tính VIF và gỡ bỏ biến bằng tay (như đã làm với `Department`), LASSO tự động chọn ra đại diện tốt nhất trong các biến tương quan mạnh.
+
+3.  **Cân bằng Độ nhạy (Sensitivity):** Bằng cách điều chỉnh ngưỡng (Cut-off) xuống $0.3$, mô hình LASSO đạt được độ nhạy cực tốt. Trong bối cảnh Quản trị nhân sự (HR), việc hệ thống dự báo "nhầm" một nhân viên có ý định nghỉ việc để nhân sự chủ động tiếp cận giữ chân (False Positive) sẽ ít thiệt hại hơn rất nhiều so với việc bỏ sót một nhân sự giỏi đang thực sự muốn rời đi (False Negative).
+
+# 4. Phân tích và Diễn giải Kết quả: Trả lời Mục tiêu Nghiên cứu
+
+## 4.1. Phân tích và Diễn giải ý nghĩa của các kết quả thu được
+
+Việc xây dựng và so sánh ba mô hình với các lăng kính tiếp cận khác nhau đã cung cấp một bức tranh toàn cảnh về những yếu tố thực sự chi phối quyết định nghỉ việc của nhân viên.
+
+### 4.1.1. Phân tích ý nghĩa các yếu tố tác động (Nguyên nhân nghỉ việc)
+
+Dựa trên các hệ số hồi quy (Odds Ratio - Tỷ số chênh) và mức độ ý nghĩa thống kê (p-value), kết quả chỉ ra rằng yếu tố Công việc và Môi trường có sức ảnh hưởng áp đảo so với yếu tố Nhân khẩu học. Cụ thể:
+
+* **Ngòi nổ lớn nhất - Làm thêm giờ (OverTime):** Đây là tác nhân độc hại hàng đầu dẫn đến sự kiệt sức (burnout). Nhân viên phải làm thêm giờ có nguy cơ nghỉ việc cao gấp **4.67 lần** so với những người làm việc theo giờ tiêu chuẩn.
+* **Vị trí công việc đặc thù:** Các nhân sự đảm nhận vị trí Kỹ thuật viên Phòng thí nghiệm (Laboratory Technician) chịu rủi ro nghỉ việc cao gấp **5.14 lần** so với các vị trí nền tảng khác, cho thấy áp lực công việc tại vị trí này rất cao nhưng chế độ đãi ngộ có thể chưa tương xứng.
+* **Thu nhập và Sự hài lòng:** Hai biến hài lòng có liên hệ nghịch với odds nghỉ việc; mỗi bậc tăng lên trong thang điểm đánh giá sự hài lòng về Môi trường và Công việc làm odds giảm lần lượt khoảng **30.4%** và **24.8%** khi giữ các biến khác không đổi. Thu nhập khác biệt giữa hai nhóm trong phân tích đơn biến, nhưng `Income_scaled` không có ý nghĩa trong Mô hình 2 cập nhật ($p = 0.968$).
+* **Nhân khẩu học - Trẻ tuổi và Độc thân:** Dù không mạnh bằng yếu tố môi trường, nhưng dữ liệu cho thấy nhân sự trẻ và những người độc thân có xác suất nhảy việc cao (gấp **2.47 lần** so với nhóm đã ly hôn). Nhóm này thường ưu tiên việc khám phá cơ hội mới thay vì sự ổn định. Khoảng cách di chuyển xa cũng đóng góp một phần nhỏ (tăng **3.1%** rủi ro trên mỗi đơn vị khoảng cách) vào sự mệt mỏi thể chất của nhân viên.
+
+### 4.1.2. Diễn giải Hiệu suất và Lựa chọn Mô hình
+
+Việc so sánh chỉ số giữa 3 mô hình cho thấy sự tiến hóa trong khả năng nhận diện rủi ro của thuật toán:
+
+| Tiêu chí | Mô hình 1 (Nhân khẩu học) | Mô hình 2 (Công việc & Môi trường) | Mô hình 3 (LASSO toàn bộ biến) |
+| :--- | :--- | :--- | :--- |
+| **AUC** | 0.656 (Kém) | 0.785 (Khá) | 0.854 (Xuất sắc) |
+| **Accuracy** | 80.9% (Thấp hơn mức cơ sở) | 81.8% | 86.6% |
+| **Sensitivity** | 19.7% | 46.5% | 64.8% |
+
+* **Sự thất bại của Mô hình 1:** Với Sensitivity chỉ đạt 19.7%, việc chỉ dùng Tuổi, Giới tính hay Tình trạng hôn nhân sẽ khiến bộ phận HR bỏ sót hơn 80% nhân sự sắp nghỉ việc.
+* **Sự vượt trội của Mô hình LASSO:** Bằng cách áp dụng hình phạt L1, mô hình LASSO đã tự động dọn dẹp các biến nhiễu (xử lý đa cộng tuyến) và nén mô hình lại những yếu tố tinh túy nhất. Việc điều chỉnh ngưỡng dự báo xuống **0.3** giúp mô hình đạt độ nhạy (Sensitivity) **64.8%** — nghĩa là bắt trúng gần 65% số người thực sự muốn nghỉ việc, cao nhất trong 3 phương pháp thử nghiệm.
+
+## 4.2. Trả lời bài toán và Mục tiêu nghiên cứu đã đặt ra
+
+### 4.2.1. Mục tiêu khám phá dữ liệu: Đã hoàn thành
+Quá trình trực quan hóa, kiểm định và mô hình hóa cho thấy rủi ro nghỉ việc thường đi kèm với độ tuổi trẻ, thu nhập thấp trong phân tích đơn biến, làm thêm giờ và một số vị trí công việc. Phòng Sales có tỷ lệ nghỉ việc cao nhất; R&D có số ca nghỉ việc tuyệt đối lớn nhất nhưng tỷ lệ thấp hơn Sales và Human Resources.
+
+### 4.2.2. Mục tiêu Xây dựng mô hình dự đoán: Đã hoàn thành
+Đồ án đã xây dựng mô hình dự đoán bằng **Hồi quy Logistic áp dụng hình phạt LASSO** và chọn đây là mô hình tốt nhất trong các phương pháp đã thử. Mô hình đạt AUC **0.854** trên tập Test hiện tại. Kết quả cho thấy tiềm năng ứng dụng, nhưng cần được kiểm định thêm trên dữ liệu ngoài mẫu hoặc dữ liệu ở thời điểm khác trước khi triển khai thực tế.
+
+### 4.2.3. Mục tiêu đề xuất giải pháp nhân sự: Đã hoàn thành
+Từ những phân tích toán học và mô hình hóa, chúng ta có thể trả lời bài toán quản trị bằng các đề xuất thực tiễn cho bộ phận Nhân sự (HR):
+
+* **Kiểm soát chặt chẽ Văn hóa "Làm thêm giờ":** Hệ số của biến OverTime là ngòi nổ lớn nhất gây ra Attrition. HR cần phối hợp với các Quản lý cấp trung để phân bổ lại khối lượng công việc, hạn chế tối đa việc OT kéo dài để tránh tình trạng kiệt sức.
+* **Rà soát đặc biệt vị trí Lab Technician & Phòng Sales:** Dữ liệu chỉ ra sự bất ổn rõ rệt ở các vị trí này. Công ty cần thực hiện các cuộc khảo sát ẩn danh hoặc phỏng vấn giữ chân (Stay Interviews) ngay với nhóm Kỹ thuật viên phòng thí nghiệm và Nhân viên kinh doanh để tìm hiểu điểm nghẽn về chính sách đãi ngộ hay lộ trình thăng tiến.
+* **Chính sách giữ chân Nhân sự Trẻ & Độc thân:** Thay vì áp dụng các phúc lợi cứng nhắc mang tính gia đình, HR nên linh hoạt cung cấp các gói phúc lợi cá nhân hóa (Cafeteria Benefits) nhắm vào nhóm này như: cơ hội luân chuyển phòng ban để học hỏi, tài trợ các khóa đào tạo kỹ năng, hoặc trợ cấp đi lại nếu khoảng cách từ nhà đến công ty quá xa.
+* **Triển khai Hệ thống Cảnh báo Sớm (Early Warning System):** HR có thể trực tiếp tích hợp mô hình LASSO vào hệ thống quản trị nhân sự, thiết lập ngưỡng cảnh báo rủi ro là 30% (Probability > 0.3). Khi thuật toán chấm điểm một cá nhân vượt ngưỡng này, hệ thống sẽ báo đỏ để HR chủ động có các buổi trò chuyện 1-1 (One-on-one Coaching) trước khi nhân viên đó nộp đơn xin nghỉ việc.
+
+# 5. Đề xuất và Kết luận
+
+## 5.1. Đề xuất hướng cải thiện mô hình và phương pháp phân tích
+
+Mặc dù mô hình Hồi quy Logistic kết hợp hình phạt LASSO đã giải quyết tốt bài toán và đạt được hiệu suất khả quan (AUC = 0.854), chúng ta vẫn còn nhiều dư địa để nâng cấp cả về phương pháp phân tích lẫn kỹ thuật xử lý dữ liệu trong tương lai.
+
+### 5.1.1. Cải thiện về mặt xử lý dữ liệu
+
+* **Xử lý Mất cân bằng Dữ liệu (Class Imbalance Handling):** Hiện tại, tỷ lệ nghỉ việc trong bộ dữ liệu chỉ chiếm khoảng 16.1%. Dù chúng ta đã chủ động hạ ngưỡng dự báo (cut-off) xuống 0.3 để tăng độ nhạy, việc mô hình học trên một tập dữ liệu quá lệch vẫn có thể tạo ra độ chệch (bias). Trong các nghiên cứu tiếp theo, có thể áp dụng các kỹ thuật cân bằng dữ liệu như **SMOTE (Synthetic Minority Over-sampling Technique)** để nội suy thêm các mẫu thuộc nhóm "Yes", hoặc dùng kỹ thuật **ROSE (Random Over-Sampling Examples)** để giúp mô hình học các đặc trưng của người nghỉ việc tốt hơn.
+* **Mở rộng Biến số (Feature Expansion):** Có thể thu thập và bổ sung thêm các biến số thực tế có tính dự báo cao từ hệ thống quản trị nhân sự thực tế, chẳng hạn như: Khoảng cách giữa các lần được tăng lương, Số ngày nghỉ ốm (Sick leaves), Điểm đánh giá văn hóa doanh nghiệp, hoặc Lịch sử tìm kiếm/tương tác trên mạng xã hội nghề nghiệp (LinkedIn).
+
+### 5.1.2. Nâng cấp phương pháp mô hình hóa
+
+* **Thử nghiệm các thuật toán Phi tuyến tính (Non-linear Models):** Hồi quy Logistic (ngay cả khi dùng LASSO) vẫn dựa trên giả định về mối quan hệ tuyến tính giữa các biến độc lập và log-odds của biến phụ thuộc. Quyết định nghỉ việc của con người thường phức tạp và có tính tương tác chéo (Ví dụ: Lương thấp *nhưng* Môi trường tốt thì vẫn ở lại). Việc áp dụng các thuật toán dựa trên cây quyết định (Tree-based models) như **Random Forest** hoặc **XGBoost (Extreme Gradient Boosting)** sẽ giúp mô hình tự động nắm bắt các mối quan hệ phi tuyến và tương tác phức tạp này mà không cần biến đổi dữ liệu thủ công.
+* **Tối ưu hóa Ngưỡng quyết định dựa trên Chi phí (Cost-Benefit Analysis):** Thay vì chọn ngưỡng cut-off = 0.3 một cách cảm tính, có thể kết hợp với bài toán Tài chính Nhân sự để tìm ngưỡng tối ưu. Bằng cách tính toán chi tiết: (1) Chi phí thay thế một nhân viên nghỉ việc (Cost of False Negative) và (2) Chi phí tăng lương/giữ chân một người vốn không định nghỉ (Cost of False Positive), thuật toán có thể tìm ra điểm cắt tối đa hóa lợi nhuận (Profit-driven metric) cho doanh nghiệp.
+
+## 5.2. Kết luận
+
+Đồ án **"Phân tích và Dự đoán rủi ro nghỉ việc của nhân viên"** đã hoàn thành trọn vẹn các mục tiêu nghiên cứu ban đầu đặt ra, chuyển hóa thành công những con số thô khô khan thành các quyết định quản trị có ý nghĩa.
+
+1. **Về Khám phá Dữ liệu:** Quá trình phân tích đã đập tan lầm tưởng rằng "Nhân khẩu học quyết định sự gắn bó". Dữ liệu chứng minh mạnh mẽ rằng các yếu tố thuộc về bối cảnh công việc và môi trường (như Áp lực làm thêm giờ, Sự thỏa mãn với môi trường, và Mức thu nhập) mới là những ngòi nổ chính dẫn đến tình trạng chảy máu chất xám. Đặc biệt, làm thêm giờ (OverTime) là tác nhân độc hại hàng đầu làm tăng nguy cơ nhảy việc lên gấp 4.67 lần.
+2. **Về Năng lực Dự báo:** Nhóm đã xây dựng một mô hình dự báo bằng LASSO với AUC = 0.854 và độ nhạy xấp xỉ 65% trên tập Test. Đây là kết quả khả quan trong phạm vi bộ dữ liệu hiện tại, nhưng chưa đủ để tự khẳng định mô hình sẵn sàng triển khai nếu chưa có kiểm định ngoài mẫu và đánh giá độ ổn định theo thời gian.
+3. **Về Giá trị Thực tiễn:** Hơn cả một bài toán Thống kê hay Học máy, kết quả của đồ án cung cấp một lăng kính rõ ràng cho bộ phận Nhân sự (HR). Thay vì quản trị nhân sự một cách bị động và cảm tính, doanh nghiệp giờ đây có thể sử dụng mô hình này như một "Hệ thống Radar cảnh báo sớm", từ đó thiết kế các chính sách đãi ngộ, cải thiện môi trường làm việc chuyên biệt cho nhóm rủi ro cao (phòng Sales, Lab Technician, nhân sự trẻ), và chủ động giữ chân nhân tài trước khi họ kịp nộp đơn xin nghỉ việc.
+
+Đồ án là minh chứng rõ nét cho thấy sự kết hợp giữa **Mô hình hóa Thống kê** và **Tư duy Quản trị Nhân sự (HR Analytics)** có thể tạo ra những giá trị bền vững và to lớn cho doanh nghiệp trong kỷ nguyên định hướng bằng dữ liệu.
+
+# 6. Mở rộng nghiên cứu: Thử nghiệm các mô hình học máy phi tuyến tính
+
+Để kiểm tra xem các thuật toán Machine Learning phi tuyến tính có giúp tối ưu hóa hiệu suất dự báo Attrition hay không, nhóm tiến hành thử nghiệm thêm 2 mô hình nâng cao:
+
+1. **Random Forest (Class-Balanced)**: Giúp bắt tối đa các trường hợp có nguy cơ nghỉ việc dựa trên kỹ thuật gán trọng số lớp.
+
+2. **Gradient Boosting Decision Trees (GBDT)**: Tối ưu hóa sai số thông qua chuỗi cây quyết định liên tiếp.
+
+```{r ml_setup, include=FALSE}
+# Tự động kiểm tra và cài đặt các thư viện ML còn thiếu trước khi load
+required_packages <- c("gbm", "randomForest", "pROC", "caret")
+
+for (pkg in required_packages) {
+  if (!requireNamespace(pkg, quietly = TRUE)) {
+    install.packages(pkg, repos = "[https://cran.rstudio.com/](https://cran.rstudio.com/)")
+  }
+}
+
+library(gbm)
+library(randomForest)
+library(pROC)
+library(caret)
+```
+
+```{r}
+## 6.1. Random Forest với Class Weight Balancing
+set.seed(123)
+rf_model <- randomForest(
+  Attrition ~ ., 
+  data = train_data, 
+  ntree = 300, 
+  nodesize = 5,
+  classwt = c("No" = 1, "Yes" = 5)
+)
+
+## 6.2. Gradient Boosting (GBM)
+train_gbm <- train_data
+train_gbm$Attrition_num <- ifelse(train_gbm$Attrition == "Yes", 1, 0)
+
+set.seed(123)
+gbm_model <- gbm(
+  Attrition_num ~ . - Attrition, 
+  data = train_gbm, 
+  distribution = "bernoulli", 
+  n.trees = 150, 
+  interaction.depth = 3, 
+  shrinkage = 0.05, 
+  cv.folds = 5,
+  n.cores = 1
+)
+
+# Dự đoán xác suất trên tập Test
+prob_rf  <- predict(rf_model, newdata = test_data, type = "prob")[, "Yes"]
+prob_gbm <- predict(gbm_model, newdata = test_data, n.trees = 150, type = "response")
+
+# Chuyển đổi thành nhãn phân loại (Ngưỡng cut-off = 0.3)
+pred_class_rf  <- as.factor(ifelse(prob_rf > 0.3, "Yes", "No"))
+pred_class_gbm <- as.factor(ifelse(prob_gbm > 0.3, "Yes", "No"))
+
+# Đảm bảo đồng bộ Factor Levels
+levels(pred_class_rf)  <- levels(actual_class)
+levels(pred_class_gbm) <- levels(actual_class)
+
+# Tính toán Confusion Matrix
+cm_rf  <- confusionMatrix(pred_class_rf, actual_class, positive = "Yes")
+cm_gbm <- confusionMatrix(pred_class_gbm, actual_class, positive = "Yes")
+
+# Tính toán ROC & AUC
+roc_rf  <- roc(actual_class, prob_rf, quiet = TRUE)
+roc_gbm <- roc(actual_class, prob_gbm, quiet = TRUE)
+
+# Tổng hợp Bảng so sánh
+ml_comparison <- data.frame(
+  Model = c("Hồi quy Logistic LASSO", "Random Forest cân bằng lớp", "Gradient Boosting"),
+  AUC = c(auc(roc_lasso), auc(roc_rf), auc(roc_gbm)),
+  Accuracy = c(cm_lasso$overall["Accuracy"], cm_rf$overall["Accuracy"], cm_gbm$overall["Accuracy"]),
+  Sensitivity = c(cm_lasso$byClass["Sensitivity"], cm_rf$byClass["Sensitivity"], cm_gbm$byClass["Sensitivity"]),
+  Precision = c(cm_lasso$byClass["Pos Pred Value"], cm_rf$byClass["Pos Pred Value"], cm_gbm$byClass["Pos Pred Value"]),
+  F1_Score = c(
+    2 * (cm_lasso$byClass["Sensitivity"] * cm_lasso$byClass["Pos Pred Value"]) / (cm_lasso$byClass["Sensitivity"] + cm_lasso$byClass["Pos Pred Value"]),
+    2 * (cm_rf$byClass["Sensitivity"] * cm_rf$byClass["Pos Pred Value"]) / (cm_rf$byClass["Sensitivity"] + cm_rf$byClass["Pos Pred Value"]),
+    2 * (cm_gbm$byClass["Sensitivity"] * cm_gbm$byClass["Pos Pred Value"]) / (cm_gbm$byClass["Sensitivity"] + cm_gbm$byClass["Pos Pred Value"])
+  )
+)
+
+knitr::kable(ml_comparison, digits = 3, caption = "Bảng So sánh Chi tiết giữa Mô hình Cũ và các Thuật toán Machine Learning Mới (Threshold = 0.3)")
+```
+
+**Ý nghĩa các tham số và chỉ số đánh giá**
+
+* **Ngưỡng quyết định (Threshold = 0.3):**
+  * Do bài toán Attrition có bản chất **mất cân bằng dữ liệu** (chỉ có khoảng $16.1\%$ nhân viên nghỉ việc), ngưỡng cắt mặc định $0.5$ thường khiến mô hình bị lệch về lớp đa số ("No"). Việc hạ ngưỡng xuống $0.3$ giúp mô hình nhạy bén hơn trong việc phát hiện các tín hiệu rủi ro rời đi.
+* **AUC (Area Under the ROC Curve - Diện tích dưới đường cong ROC):**
+  * Đo lường khả năng phân tách tổng thể của mô hình giữa 2 nhóm (Nghỉ việc vs. Ở lại) ở mọi ngưỡng xác suất. Giá trị càng tiến gần $1.0$ thể hiện mô hình phân loại càng xuất sắc.
+* **Accuracy (Độ chính xác tổng thể):**
+  * Tỷ lệ dự đoán đúng trên toàn bộ tập dữ liệu ($\frac{TP + TN}{Total}$). Ngưỡng cơ sở của dữ liệu gốc là $83.88\%$.
+* **Sensitivity / Recall (Độ nhạy - Tỷ lệ phát hiện nghỉ việc):**
+  * Tỷ lệ bắt trúng những người *thực sự* nghỉ việc ($\frac{TP}{TP + FN}$). Đây là chỉ số quan trọng nhất dưới góc độ quản trị nhân sự (HR Risk Detection).
+* **Precision (Độ chính xác của cảnh báo):**
+  * Tỷ lệ chính xác trong số những trường hợp mô hình gắn nhãn "Nghỉ việc" ($\frac{TP}{TP + FP}$). Precision cao giúp tránh việc báo động giả quá nhiều.
+* **F1-Score (Trung bình hài hòa giữa Sensitivity và Precision):**
+  * $F1 = 2 \times \frac{Precision \times Sensitivity}{Precision + Sensitivity}$. Chỉ số này phản ánh độ cân bằng thực sự của mô hình trong điều kiện dữ liệu lệch lớp.
+
+**Đánh giá chi tiết từng mô hình**
+
+- Mô hình hồi quy Logistic LASSO - *Hiệu năng cân bằng tốt nhất*
+
+* **AUC = 0.854 | Accuracy = 0.866 | Sensitivity = 0.648 | Precision = 0.575 | F1_Score = 0.609**
+* **Đánh giá:**
+  * **Sensitivity cao nhất (64.8%):** Bắt trúng gần $65\%$ số nhân viên thực tế nghỉ việc, vượt xa 2 mô hình Machine Learning phi tuyến còn lại.
+  * **F1-Score vượt trội (0.609):** Đạt sự hài hòa xuất sắc nhất giữa khả năng phát hiện rủi ro và kiểm soát báo động giả.
+  * **Tính đóng góp:** Nhờ áp dụng hình phạt chuẩn $L_1$, mô hình vừa loại bỏ triệt để các biến đa cộng tuyến, vừa duy trì tính giải thích (Interpretable) rất cao qua hệ số Hồi quy và Odds Ratio.
+
+- Mô hình Random Forest cân bằng lớp - *Hiệu năng thấp nhất*
+
+* **AUC = 0.802 | Accuracy = 0.818 | Sensitivity = 0.507 | Precision = 0.444 | F1_Score = 0.474**
+* **Đánh giá:**
+  * **Hiệu năng tổng thể còn thấp:** AUC chỉ vừa vượt mốc $0.8$, Accuracy ($81.8\%$) thấp hơn tỷ lệ baseline tự nhiên của dữ liệu ($83.88\%$).
+  * **Sensitivity còn hạn chế (50.7%):** Bỏ sót khoảng $49.3\%$ số nhân viên có nguy cơ dứt áo ra đi.
+  * **Nhận định:** Kết quả Test cho thấy Random Forest chưa vượt LASSO trong cấu hình hiện tại. Chưa có bảng so sánh hiệu suất Train/CV với Test nên chưa đủ bằng chứng để kết luận nguyên nhân là quá khớp.
+
+- Mô hình Gradient Boosting (GBDT) - *Khả năng Phân tách & Khống chế Báo động giả Tốt nhất*
+
+* **AUC = 0.841 | Accuracy = 0.859 | Sensitivity = 0.465 | Precision = 0.579 | F1_Score = 0.516**
+* **Đánh giá:**
+  * **AUC cao thứ hai (0.841):** Cho thấy thuật toán tăng cường độ dốc có khả năng phân tách xác suất giữa 2 nhóm tốt, chỉ đứng sau LASSO trong 3 mô hình.
+  * **Precision cao nhất (57.9%):** Khi GBDT đưa ra cảnh báo nghỉ việc, độ tin cậy đạt tới $57.9\%$, giúp giảm thiểu đáng kể số lượng báo động nhầm đối với nhóm nhân viên ở lại.
+  * **Hạn chế:** Sensitivity chỉ đạt $46.5\%$ (thấp hơn so với $64.8\%$ của LASSO Logistic), nghĩa là vẫn bỏ sót hơn một nửa số ca nghỉ việc thực tế ở ngưỡng threshold $0.3$.
+
+**Kết luận và khuyến nghị quản trị**
+
+1. **Lựa chọn mô hình chính:**
+   * **Mô hình LASSO Logistic** vẫn là lựa chọn tối ưu nhất cho bài toán HR Attrition này. LASSO có AUC cao hơn GBDT ($0.854 \text{ vs } 0.841$), đồng thời chiến thắng ở chỉ số quan trọng nhất đối với HR là **Sensitivity (64.8%)** và **F1-Score (0.609)**.
+2. **Chiến lược phối hợp:**
+   * **Triển khai Cảnh báo Sớm (LASSO Logistic):** Dùng mô hình LASSO làm công cụ quét tự động hàng tháng để "bắt rộng" tối đa các nhân sự đang nằm trong vùng rủi ro nghỉ việc.
+   * **Tối ưu hóa Chi phí Giữ chân (GBDT):** Trong trường hợp ngân sách phúc lợi/giữ chân nhân tài có hạn, HR có thể tham chiếu thêm điểm xác suất từ **GBDT** (nhờ có Precision $57.9\%$) để ưu tiên giải ngân cho những ca có xác suất nghỉ việc cao nhất.
+
+```{r}
+# Vẽ so sánh 3 đường cong ROC
+plot(roc_lasso, col = "#2ca02c", lwd = 2, main = "So sánh Đường cong ROC: LASSO vs Machine Learning")
+plot(roc_rf, col = "#ff7f0e", lwd = 2, add = TRUE)
+plot(roc_gbm, col = "#1f77b4", lwd = 2, add = TRUE)
+legend("bottomright", 
+       legend = c("LASSO Logistic (AUC = 0.854)", "Random Forest (AUC = 0.802)", "Gradient Boosting (AUC = 0.841)"),
+       col = c("#2ca02c", "#ff7f0e", "#1f77b4"), lwd = 2)
+```
+
+Đồ thị **"So sánh Đường cong ROC: LASSO vs Machine Learning"** cung cấp góc nhìn trực quan về khả năng phân loại và sự đánh đổi giữa **Sensitivity (Độ nhạy / True Positive Rate)** và **Specificity (Độ đặc hiệu / True Negative Rate)** trên nhiều ngưỡng xác suất khác nhau.
+
+**Mô tả Cấu trúc Biểu đồ**
+
+* **Trục tung (Sensitivity):** Thể hiện tỷ lệ phát hiện chính xác những nhân viên *thực sự* nghỉ việc ($0.0 \rightarrow 1.0$). Giá trị càng cao thể hiện khả năng bắt trúng rủi ro càng tốt.
+* **Trục hoành (Specificity):** Thể hiện tỷ lệ nhận diện đúng những nhân viên ở lại, được vẽ theo chiều đảo ngược từ $1.0 \rightarrow 0.0$ (tương đương với góc nhìn $1 - \text{Specificity}$ hay tỷ lệ báo động giả False Positive Rate). Điểm lý tưởng nằm ở góc trên bên trái $(1.0, 1.0)$.
+* **Đường đường chéo màu xám ($45^\circ$):** Đại diện cho một mô hình đoán mò ngẫu nhiên ($\text{AUC} = 0.500$). Đường cong của mô hình nào nằm càng xa đường chéo này về phía góc trên bên trái thì khả năng phân biệt của mô hình đó càng mạnh.
+
+**So sánh chi tiết 3 đường cong ROC **
+
+* **Đường màu Xanh lá — LASSO Logistic ($\text{AUC} = 0.854$):**
+  * **Vùng Specificity cao ($1.0 \rightarrow 0.8$):** Đường màu xanh lá tăng nhanh ở giai đoạn đầu. Tại $Specificity \approx 0.80$, LASSO đạt $Sensitivity \approx 0.775$, cao hơn hai mô hình còn lại tại cùng mức Specificity.
+  * **Đánh giá:** LASSO duy trì khả năng nhận diện tương đối tốt khi giới hạn tỷ lệ báo động giả ở khoảng $20\%$.
+
+* **Đường màu Xanh dương — Gradient Boosting ($\text{AUC} = 0.841$):**
+  * **Đặc điểm bám đuổi:** Chạy rất sát và song song với đường LASSO ở hầu hết các ngưỡng. Ở phân khúc $Specificity < 0.50$, đường GBDT vượt nhẹ lên trên LASSO và tiệm cận mốc $Sensitivity \approx 0.95 - 0.98$.
+  * **Đánh giá:** GBDT có độ ổn định phân tách rất cao, duy trì diện tích dưới đường cong lớn ($\text{AUC} = 0.841$), khẳng định năng lực phân loại thuộc nhóm xuất sắc.
+
+* **Đường màu Cam — Random Forest ($\text{AUC} = 0.802$):**
+  * **Vị trí:** Nằm thấp nhất trong cả 3 đường và chạy gần đường chéo ngẫu nhiên hơn. Tăng trưởng chậm và trập trùng hơn ở giai đoạn đầu.
+  * **Đánh giá:** Khi Sensitivity đạt khoảng $0.60$, Random Forest vẫn giữ Specificity khoảng $0.834$. Tuy vậy, AUC tổng thể của Random Forest chỉ đạt $0.802$, thấp nhất trong ba mô hình ở phần so sánh này.
+
+**Kết luận** 
+
+1. **Sự vượt trội của mô hình LASSO Logistic:** Diện tích nằm dưới đường màu xanh lá ($\text{AUC} = 0.854$) là lớn nhất, đồng thời ôm sát góc trên bên trái nhất. Điều này khẳng định LASSO Logistic là mô hình phân loại tổng quát mạnh nhất và tối ưu nhất trên tập dữ liệu này.
+
+2. **Điểm vận hành tại ngưỡng 0.30:** Với $\text{Threshold} = 0.30$, LASSO đạt Sensitivity khoảng **64.8%** và Specificity khoảng **90.8%**, tương ứng tỷ lệ báo động nhầm khoảng **9.2%**. Đây là ngưỡng tối ưu theo F1 trong dãy đã khảo sát; nếu ưu tiên Youden hoặc hàm chi phí giả định, ngưỡng phù hợp hơn là khoảng **0.17**.

@@ -1,0 +1,109 @@
+
+\documentclass[12pt]{article}
+
+\usepackage{my-template}
+
+% Disable indentation on new paragraphs
+\setlength{\parindent}{0pt}
+
+% Line spacing 1.5
+% \renewcommand{\baselinestretch}{1.5}
+
+% Optional: graphic path
+% \graphicspath{PATH_TO_GRAPHIC_FOLDER}
+
+% To use Times font family, uncomment this row
+% \usepackage{mathptmx}
+
+% To use roman section / subsection, uncomment these rows
+% \renewcommand{\thesection}{\Roman{section}}
+% \renewcommand{\thesubsection}{\thesection.\Roman{subsection}}
+
+% Define course name, report name and report title.
+\newcommand{\coursename}{Xử Lý Số Liệu Thống Kê}
+\newcommand{\reportname}{ĐỒ ÁN CUỐI KÌ}
+\newcommand{\reporttitle}{Phân tích và dự đoán xác suất kết thúc session từ dữ liệu clickstream}
+
+% TODO: điền mã số học viên và họ tên đầy đủ của Nghi vào dòng thứ ba.
+\newcommand{\studentname}
+{
+25C23002 & Nguyễn Nhật Quang\\
+25C23014 & Lê Hoàng Như\\
+25C230XX & Nghi\\
+
+}
+
+\newcommand{\teachername}{TS. Tô Đức Khánh}
+
+% Header
+% \lhead{\reporttitle}
+% \rhead{
+%   Trường Đại học Khoa học Tự nhiên - ĐHQG HCM\\
+%   \coursename
+% }
+
+\usepackage{tikz}
+
+% Bảng T5 của gói vietnam có thể thiếu dấu ogonek (ą) trong tên tác giả Ba Lan.
+% Nếu \k chưa được định nghĩa, in ra nguyên chữ cái thay vì báo lỗi biên dịch.
+\providecommand{\k}[1]{#1}
+
+% Bảng dài có thể ngắt trang và bảng rộng xoay ngang.
+\usepackage{longtable}
+\usepackage{multirow}
+\usepackage{pdflscape}
+\usepackage{caption}
+\captionsetup[table]{skip=4pt}
+\captionsetup[figure]{skip=4pt}
+
+% Footer
+% \newcommand{\leftfooter}{\LaTeX\ by \href{https://github.com/trhgquan}{Quan, Tran Hoang}}
+% \lfoot{\leftfooter}
+% ============ DOCUMENT ============
+\begin{document}
+\pagenumbering{roman}
+\input{content/title.tex}
+
+\tableofcontents
+\thispagestyle{empty}
+\pagebreak
+
+\listoftables
+\thispagestyle{empty}
+\pagebreak
+
+\listoffigures
+\thispagestyle{empty}
+\pagebreak
+
+\pagenumbering{arabic}
+\setcounter{page}{1}
+
+\input{content/section-1}
+%\newpage
+\input{content/section-2}
+%\newpage
+\input{content/section-3}
+%\newpage
+\input{content/section-4}
+%\newpage
+\input{content/section-5}
+%\newpage
+\input{content/section-6}
+% \input{content/hinhanh}
+% \input{content/bangbieu}
+% \input{content/congthuctoan}
+% \input{content/thuattoan}
+% \input{content/code}
+% \input{content/ngonngu}
+% \input{content/cite}
+
+% Appendix
+% \appendix
+% Add \cleardoublepage to move appendices to next page.
+% \input{appendix/appendix.tex}
+
+\bibliographystyle{plain}
+\bibliography{reference}
+
+\end{document}

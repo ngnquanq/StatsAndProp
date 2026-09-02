@@ -1,0 +1,122 @@
+%==============================================================================
+%  TEMPLATE CHUẨN CHO MỌI FILE .TEX TRONG REPO NÀY
+%  Phong cách: đề/lời giải kiểu Harvard-MIT Math Tournament (HMMT)
+%  - Chỉ trắng và đen: không màu, không khung, không tcolorbox, không đổ bóng.
+%  - Tiêu đề gọn ở giữa trang, không trang bìa, không \maketitle.
+%  - Đề bài chạy dòng ("1." / "Bài 2.1." in đậm), lời giải run-in "Lời giải:".
+%  - Đáp số cuối cùng đóng khung bằng \boxed{...}.
+%  Biên dịch: xelatex (bắt buộc, vì dùng fontspec + polyglossia + unicode-math)
+%==============================================================================
+\documentclass[11pt,a4paper]{article}
+
+% --- Ngôn ngữ và font: Latin Modern (Computer Modern) như bản HMMT gốc -------
+\usepackage{fontspec}
+\usepackage{polyglossia}
+\setdefaultlanguage{vietnamese}
+\setotherlanguage{english}
+\setmainfont{lmroman10-regular.otf}[
+  BoldFont       = lmroman10-bold.otf,
+  ItalicFont     = lmroman10-italic.otf,
+  BoldItalicFont = lmroman10-bolditalic.otf
+]
+
+% --- Toán học ---------------------------------------------------------------
+\usepackage{amsmath, amssymb, amsthm}
+\usepackage{unicode-math}
+\setmathfont{latinmodern-math.otf}
+\allowdisplaybreaks
+
+% --- Khổ trang: lề rộng, khối chữ gọn vào giữa ------------------------------
+\usepackage[a4paper, top=3.0cm, bottom=3.0cm, left=3.2cm, right=3.2cm]{geometry}
+\usepackage{enumitem}
+\setlist{itemsep=2pt, topsep=2pt, parsep=0pt, partopsep=0pt, leftmargin=1.6em}
+
+% Đoạn văn kiểu HMMT: thụt đầu dòng, KHÔNG dùng parskip (không chèn dòng trống)
+\setlength{\parindent}{1.5em}
+\setlength{\parskip}{0pt}
+\setlength{\abovedisplayskip}{5pt plus 1pt minus 2pt}
+\setlength{\belowdisplayskip}{5pt plus 1pt minus 2pt}
+\setlength{\abovedisplayshortskip}{2pt plus 1pt}
+\setlength{\belowdisplayshortskip}{2pt plus 1pt}
+
+% Chỉ số trang canh giữa chân trang, không running header
+\pagestyle{plain}
+
+% --- Thông tin tài liệu (sửa 4 dòng này cho mỗi bài) ------------------------
+\newcommand{\coursename}{High Dimensional Statistics}
+\newcommand{\docdate}{\today}
+\newcommand{\doctitle}{Exercise 1: Lời giải}
+\newcommand{\studentname}{Nguyễn Quang}
+
+% --- Đề bài / lời giải / định lý -------------------------------------------
+\newcounter{prob}
+\makeatletter
+% \begin{problem}            -> tự đánh số 1., 2., 3., ...
+% \begin{problem}[Bài 2.1.]  -> dùng nhãn tự đặt
+\newenvironment{problem}[1][]{%
+  \par\medskip\noindent
+  \def\@tempa{#1}%
+  \ifx\@tempa\@empty\refstepcounter{prob}\textbf{\theprob.}\else\textbf{#1}\fi
+  \ \ignorespaces
+}{\par}
+\makeatother
+
+% Lời giải: run-in ngay dưới đề bài, không xuống dòng thừa, không ký hiệu ∎
+\newenvironment{solution}{%
+  \par\noindent\textbf{Lời giải:}\ \ignorespaces
+}{\par}
+
+% Nhắc lại lý thuyết: kiểu amsthm run-in, chữ đứng, không khung
+\theoremstyle{definition}
+\newtheorem{thm}{Định lý}
+\newtheorem{dfn}{Định nghĩa}
+
+% Đáp số cuối cùng luôn đóng khung
+\newcommand{\answer}[1]{\boxed{#1}}
+
+\begin{document}
+
+%------------------------------ Tiêu đề gọn ---------------------------------
+\begin{center}
+  {\bfseries\coursename}\\
+  \docdate\\
+  \doctitle: \textbf{\studentname}
+\end{center}
+\vspace{0.5em}
+
+%------------------------------ Nội dung ------------------------------------
+\begin{problem}[Bài 2.1.]
+Cho $\mathbf{X} = (X_1, X_2, X_3)' \sim \mathcal{N}_3(\boldsymbol{\mu}, \boldsymbol{\Sigma})$ với
+\[
+\boldsymbol{\mu} = \begin{pmatrix} 1 \\ -1 \\ 2 \end{pmatrix}, \qquad
+\boldsymbol{\Sigma} = \begin{pmatrix} 4 & 0 & -1 \\ 0 & 5 & 0 \\ -1 & 0 & 2 \end{pmatrix}.
+\]
+Xác định phân phối của $(X_1, X_2)'$.
+\end{problem}
+
+\begin{solution}
+Đặt $\mathbf{A} = \begin{pmatrix} 1 & 0 & 0 \\ 0 & 1 & 0\end{pmatrix}$ thì
+$(X_1, X_2)' = \mathbf{A}\mathbf{X} \sim \mathcal{N}_2(\mathbf{A}\boldsymbol{\mu}, \mathbf{A}\boldsymbol{\Sigma}\mathbf{A}')$,
+do đó
+\[
+\begin{pmatrix} X_1 \\ X_2 \end{pmatrix} \sim
+\answer{\mathcal{N}_2\!\left(\begin{pmatrix} 1 \\ -1 \end{pmatrix},
+\begin{pmatrix} 4 & 0 \\ 0 & 5 \end{pmatrix}\right)}.
+\]
+Vì hiệp phương sai chéo bằng $0$ và hai biến chuẩn đồng thời nên $X_1 \perp X_2$.
+\end{solution}
+
+\begin{problem}
+Ví dụ đề bài tự đánh số: nêu điều kiện để $\mathbf{U}$ và $\mathbf{V}$ chuẩn đồng thời là độc lập.
+\end{problem}
+
+\begin{thm}[Tính độc lập trong phân phối chuẩn nhiều chiều]
+Nếu $\mathbf{U}$ và $\mathbf{V}$ có phân phối chuẩn đồng thời thì
+$\mathbf{U} \perp \mathbf{V} \iff \operatorname{Cov}(\mathbf{U}, \mathbf{V}) = \mathbf{O}$.
+\end{thm}
+
+\begin{solution}
+Hệ quả trực tiếp của định lý trên: chỉ cần kiểm tra khối hiệp phương sai chéo có bằng $\mathbf{O}$ hay không.
+\end{solution}
+
+\end{document}

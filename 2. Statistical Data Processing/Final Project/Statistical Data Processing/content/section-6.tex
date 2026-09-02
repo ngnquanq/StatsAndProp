@@ -1,0 +1,138 @@
+% Nội dung phần 6: Phụ lục.
+
+\section{Phụ lục}
+
+\subsection{Hiệu năng phân tầng của mô hình được chọn}
+
+Bảng~\ref{tab:subgroup} kiểm tra xem Logistic GLM có hoạt động đồng đều trên các
+phân nhóm hay không, tính trên temporal test 01--12/08.
+
+\begin{table}[H]
+\centering
+\caption{Hiệu năng phân tầng của Logistic GLM trên temporal test 01--12/08}
+\label{tab:subgroup}
+\small
+\begin{tabular}{llrrrrrr}
+\toprule
+\textbf{Phân tầng} & \textbf{Nhóm} & \textbf{N} & \textbf{Prevalence}
+& \textbf{ROC--AUC} & \textbf{AP} & \textbf{Log loss} & \textbf{Brier} \\
+\midrule
+\multirow{4}{*}{Category}
+ & Trousers & 4.067 & 12,59\% & 0,638 & 0,200 & 0,365 & 0,107 \\
+ & Skirts   & 2.769 & 15,57\% & 0,632 & 0,216 & 0,420 & 0,129 \\
+ & Blouses  & 3.205 & 13,92\% & 0,688 & 0,252 & 0,380 & 0,114 \\
+ & Sale     & 3.907 & 13,16\% & 0,693 & 0,252 & 0,364 & 0,108 \\
+\midrule
+\multirow{6}{*}{Order}
+ & 1--2   & 3.437 & 18,10\% & 0,612 & 0,241 & 0,465 & 0,146 \\
+ & 3--4   & 2.357 & 15,27\% & 0,616 & 0,233 & 0,418 & 0,127 \\
+ & 5--7   & 2.395 & 13,70\% & 0,631 & 0,213 & 0,388 & 0,116 \\
+ & 8--12  & 2.273 & 13,33\% & 0,664 & 0,261 & 0,370 & 0,110 \\
+ & 13--20 & 1.653 & 9,13\%  & 0,670 & 0,198 & 0,292 & 0,080 \\
+ & $>$20  & 1.833 & 7,58\%  & 0,723 & 0,187 & 0,245 & 0,066 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Hiệu năng \emph{không} đồng đều giữa các phân nhóm. Theo danh mục, ROC--AUC dao
+động từ 0,632 (Skirts) đến 0,693 (Sale). Theo tiến trình session, xu hướng rõ
+ràng hơn: AUC tăng đều từ 0,612 ở khoảng \texttt{Order} 1--2 lên 0,723 với các
+click sau vị trí 20. Nói cách khác, mô hình dự báo tốt hơn ở giai đoạn muộn của
+phiên -- đúng lúc thông tin lịch sử duyệt đã tích lũy đủ. Đây cũng là hạn chế
+thực tiễn: mô hình yếu nhất chính ở giai đoạn đầu, nơi rủi ro rời bỏ cao nhất.
+
+Lưu ý rằng Brier score giảm dần theo \texttt{Order} chủ yếu vì prevalence giảm
+(từ 18,10\% xuống 7,58\%), không phải vì mô hình tốt lên; hai chỉ số này phải đọc
+cùng nhau.
+
+\subsection{Phân công công việc}
+
+\begin{table}[H]
+\centering
+\caption{Phân công công việc trong nhóm}
+\label{tab:assignment}
+\small
+\begin{tabular}{>{\raggedright\arraybackslash}p{0.22\textwidth}
+                >{\raggedright\arraybackslash}p{0.14\textwidth}
+                >{\raggedright\arraybackslash}p{0.52\textwidth}}
+\toprule
+\textbf{Họ và tên} & \textbf{MSSV} & \textbf{Nội dung phụ trách} \\
+\midrule
+Nghi & 25C230XX &
+Phần 1: giới thiệu bộ dữ liệu, xác định mục tiêu phân tích và xây dựng bản đề
+xuất phương pháp; phối hợp viết Phần 4. \\[2pt]
+Lê Hoàng Như & 25C23014 &
+Phần 2: làm sạch dữ liệu, thống kê mô tả và trực quan hóa; phối hợp viết Phần 4;
+soạn slide thuyết trình. \\[2pt]
+Nguyễn Nhật Quang & 25C23002 &
+Phần 3: xây dựng và đánh giá mô hình, toàn bộ bảng kết quả và biểu đồ; tổng hợp
+nội dung hai file Rmd thành báo cáo nộp; phối hợp viết Phần 4. \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+% TODO: cập nhật MSSV và họ tên đầy đủ của thành viên Nghi ở bảng trên
+% và trong \studentname của file main.tex.
+
+\subsection{Ghi chú về tính tái lập}
+
+Toàn bộ kết quả trong báo cáo được sinh từ một lần render duy nhất của file
+\texttt{de\_xuat\_phan\_tich\_clickstream.Rmd} bằng R~\cite{rcore2026} trong một
+session sạch, không phụ thuộc vào object còn sót lại trong môi trường làm việc.
+
+\begin{table}[H]
+\centering
+\caption{Môi trường thực thi}
+\label{tab:environment}
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Thành phần} & \textbf{Phiên bản} \\
+\midrule
+R           & 4.6.0 (2026-04-24) \\
+rmarkdown   & 2.31 \\
+knitr       & 1.51 \\
+mgcv        & 1.9.4 \\
+sandwich    & 3.1.1 \\
+lmtest      & 0.9.40 \\
+car         & 3.1.5 \\
+dplyr       & 1.2.1 \\
+tidyr       & 1.3.2 \\
+ggplot2     & 4.0.3 \\
+patchwork   & 1.3.2 \\
+scales      & 1.4.0 \\
+emmeans     & 2.0.4 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Nguồn dữ liệu.} File \texttt{e-shop clothing 2008.csv} (phân tách bằng
+dấu chấm phẩy, 14 cột, 165.474 dòng), không chỉnh sửa thủ công.
+
+\textbf{Seed ngẫu nhiên.} Mọi thủ tục có yếu tố ngẫu nhiên đều dùng
+\texttt{set.seed(20260726)}: chia five-fold cross-validation theo session, 1.000
+lần cluster bootstrap cho risk difference thô, và 500 lần cluster bootstrap cho
+khoảng tin cậy của các metric trên temporal test. Nhờ vậy toàn bộ con số trong
+báo cáo tái lập được chính xác.
+
+\textbf{Kiểm tra tự động trong pipeline.} File Rmd chứa các khẳng định
+\texttt{stopifnot()} được kiểm tra ở mỗi lần chạy: đúng 165.474 dòng và 24.026
+session; không có giá trị khuyết thiếu hay dòng trùng lặp; \texttt{order} liên
+tục trong mọi session; mỗi session có đúng một click \texttt{Exit = 1}; và không
+có session nào xuất hiện đồng thời ở hai tập dữ liệu. Nếu bất kỳ điều kiện nào
+sai, quá trình render sẽ dừng với lỗi thay vì tạo ra báo cáo không hợp lệ.
+
+\textbf{Lệnh render.} Chạy từ thư mục chứa file Rmd và file CSV:
+
+\begin{lstlisting}[language=R]
+rmarkdown::render(
+  "de_xuat_phan_tich_clickstream.Rmd",
+  params = list(show_code = FALSE),
+  envir  = new.env()
+)
+\end{lstlisting}
+
+Tham số \texttt{show\_code = FALSE} tạo bản nộp không hiển thị mã nguồn; đặt
+\texttt{show\_code = TRUE} sẽ tạo bản kiểm tra có kèm mã R cho từng bảng và biểu
+đồ. Các hình trong báo cáo LaTeX này được xuất ở độ phân giải 200 dpi từ đúng lần
+chạy nói trên và lưu trong thư mục \texttt{img/} với tiền tố \texttt{fig-}.

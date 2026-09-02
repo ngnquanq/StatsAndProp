@@ -1,0 +1,1286 @@
+---
+title: "Dự đoán tỷ lệ tội phạm bạo lực trong các cộng đồng Hoa Kỳ"
+subtitle: "Hồi quy trên thành phần chính (PCR) và các mô hình đối chứng OLS, Ridge, LASSO"
+author: "Quang Nguyen - 25C23002"
+date: "`r Sys.Date()`"
+output:
+  html_document:
+    toc: true
+    toc_depth: 3
+    toc_float:
+      collapsed: false
+    number_sections: true
+    df_print: paged
+    code_folding: hide
+    theme: flatly
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  echo = !knitr::is_latex_output(),
+  message = FALSE,
+  warning = FALSE,
+  fig.align = "center",
+  fig.width = 8,
+  fig.height = 5
+)
+
+if (knitr::is_latex_output()) {
+  knitr::opts_chunk$set(
+    fig.path = "docs/img/crime-",
+    dev = "png",
+    dpi = 300
+  )
+}
+
+required_packages <- c(
+  "dplyr", "tidyr", "ggplot2", "knitr", "kableExtra", "patchwork",
+  "corrplot", "pls", "glmnet", "psych", "lmtest", "sandwich"
+)
+
+missing_packages <- required_packages[
+  !vapply(required_packages, requireNamespace, logical(1), quietly = TRUE)
+]
+
+if (length(missing_packages) > 0) {
+  stop(
+    "Cần cài thêm package trước khi knit: ",
+    paste(missing_packages, collapse = ", "),
+    ". Ví dụ: install.packages(c(",
+    paste(sprintf('"%s"', missing_packages), collapse = ", "),
+    "))",
+    call. = FALSE
+  )
+}
+
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+library(knitr)
+library(kableExtra)
+library(patchwork)
+
+theme_set(
+  theme_minimal(base_size = 12) +
+    theme(
+      plot.title = element_text(face = "bold"),
+      plot.subtitle = element_text(color = "grey35"),
+      legend.position = "bottom"
+    )
+)
+
+# Hàm tiện ích: bảng kable thống nhất định dạng cho toàn báo cáo
+kb <- function(df, caption = NULL, digits = 4, ...) {
+  kable(df, caption = caption, digits = digits, booktabs = TRUE, ...) |>
+    kable_styling(
+      bootstrap_options = c("striped", "hover", "condensed"),
+      full_width = FALSE
+    )
+}
+
+vif_manual <- function(df) {
+  vapply(names(df), function(v) {
+    others <- setdiff(names(df), v)
+    fit <- lm(reformulate(others, response = v), data = df)
+    r2 <- summary(fit)$r.squared
+    1 / max(1 - r2, .Machine$double.eps)
+  }, numeric(1))
+}
+
+SEED <- 2026
+```
+
+# Giới thiệu và đề bài
+
+## Bối cảnh và mục tiêu
+
+Bài toán là **dự đoán tỷ lệ tội phạm bạo lực trên đầu người** (`ViolentCrimesPerPop`) của các cộng đồng Hoa Kỳ từ 
+hơn 100 biến kinh tế, xã hội, nhà ở và cảnh sát. Dựa trên mô tả của bộ dữ liệu, nhiều biến đo gần cùng 
+một hiện tượng, nên đa cộng tuyến là vấn đề trung tâm cần xử lý.
+
+Báo cáo tập trung vào **hồi quy trên thành phần chính** và so sánh công bằng với 
+các mô hình hồi quy khác: **OLS**, **Ridge** và **LASSO**.
+
+## Quy trình phân tích
+
+Báo cáo được tổ chức theo đúng trình tự yêu cầu của đề bài:
+
+1. **Khám phá dữ liệu (EDA)**: Tìm hiểu phân phối biến phản hồi, cấu trúc dữ liệu khuyết, 
+chẩn đoán hiện tượng đa cộng tuyến và đưa ra các giả thuyết về quá trình sinh dữ liệu cũng như insight
+2. **Tiền xử lý**: đưa ra các quyết định xử lý dữ liệu dựa trên kết quả EDA, 
+mỗi quyết định đi kèm lý do thống kê cụ thể;
+3. **Chia dữ liệu**: Chia dữ liệu thành tập huấn luyện và tập kiểm định để đo lường tính hiệu quả của mô hình
+4. **Xây dựng mô hình PCR**: Kiểm tra mức độ phù hợp của dữ liệu với PCR, lựa chọn số thành phần chính, 
+xây dựng mô hình hồi quy trên thành phần chính;
+5. **Các mô hình đối chứng**: Kiểm tra mức độ phù hợp của các mô hình OLS, Ridge, LASSO. Xây dựng mô hình
+hồi quy và đánh giá kết quả của các mô  hình hồi quy này.
+6. **Đánh giá và so sánh**: Đánh giá và so sánh kết quả của các mô hình hồi quy trên tập kiểm định bằng 
+RMSE, MAE, $R^2$;
+7. **Phân tích ma trận tải (loadings)** và **chuyển hệ số PCR về không gian biến gốc**;
+8. **Thảo luận, lựa chọn mô hình và kết luận**.
+
+# Bộ dữ liệu
+
+## Nguồn gốc
+
+Bộ dữ liệu sử dụng trong báo cáo là tập tin `communities.data` do giảng viên cung cấp. Theo nội dung đề bài và tài liệu mô tả `communities.names` đi kèm, 
+đây là bộ dữ liệu **Communities and Crime** được công bố trên UCI Machine Learning Repository. Bộ dữ liệu được tổng hợp từ ba nguồn:
+
+- **Điều tra dân số Hoa Kỳ năm 1990** (*1990 U.S. Census*): Bao gồm các biến kinh tế — xã hội và nhân khẩu học;
+- **Khảo sát LEMAS 1990** (*Law Enforcement Management and Administrative Statistics*): Bao gồm các biến về tổ chức và nguồn lực cảnh sát;
+- **Báo cáo tội phạm FBI UCR 1995** (*Uniform Crime Reports*): Bao gồm biến phản hồi về tội phạm bạo lực.
+
+Mỗi quan sát tương ứng với một cộng đồng ở Mỹ. Theo tài liệu mô tả `communities.names`, bộ dữ liệu gồm **1994 quan sát và 128 biến**.
+Trong đó, `state`, `county`, `community` và `communityname` là **4 biến định danh**; `fold` là biến chỉ định phân hoạch
+kiểm chứng chéo do tác giả bộ dữ liệu tạo sẵn, không được sử dụng làm biến dự báo. Sau khi loại 4 biến định danh và
+biến `fold`, dữ liệu còn **122 biến dự báo** và **1 biến mục tiêu** `ViolentCrimesPerPop`.
+
+Một đặc điểm rất quan trọng của bộ dữ liệu, được ghi rõ trong tài liệu: **tất cả các biến dự báo dạng số và biến phản hồi đã được tác giả đưa về 
+thang $[0, 1]$ bằng phương pháp chia khoảng đều** với giá trị ngoài khoảng $\pm 3$ độ lệch chuẩn bị cắt về 0 hoặc 1. 
+
+## Đọc dữ liệu
+
+Thực hiện việc đọc data, ta được bảng như sau: 
+```{r doc-du-lieu}
+data_dir <- "data"
+
+names_lines <- readLines(file.path(data_dir, "communities.names"))
+attr_lines <- grep("^@attribute\\s", names_lines, value = TRUE)
+var_names <- sub("^@attribute\\s+(\\S+)\\s+.*$", "\\1", attr_lines)
+
+crime <- read.csv(file.path(data_dir, "communities.data"),
+  header = FALSE, na.strings = "?", col.names = var_names
+)
+
+stopifnot(length(var_names) == 128, ncol(crime) == 128, nrow(crime) == 1994)
+dim(crime)
+```
+
+```{r xem-du-lieu}
+head(crime[, c(1:8, 128)])
+```
+
+## Các nhóm biến
+
+122 biến dự báo có thể chia thành các nhóm nội dung sau (bảng này sẽ được dùng lại khi diễn giải các thành phần chính ở phần phân tích ma trận tải):
+
+```{r bang-nhom-bien, echo=FALSE}
+nhom_bien <- tibble::tribble(
+  ~`Nhóm biến`, ~`Số biến`, ~`Ví dụ tiêu biểu`, ~`Nội dung`,
+  "Nhân khẩu học & đô thị hóa", "12",
+  "population, racePctWhite, agePct12t21, pctUrban",
+  "Quy mô dân số, cơ cấu chủng tộc, cơ cấu tuổi, mức độ đô thị hóa",
+  "Thu nhập & nghèo đói", "17",
+  "medIncome, perCapInc, pctWPubAsst, PctPopUnderPov",
+  "Thu nhập hộ/đầu người, nguồn thu nhập, trợ cấp xã hội, tỷ lệ nghèo",
+  "Giáo dục & việc làm", "9",
+  "PctNotHSGrad, PctBSorMore, PctUnemployed, PctOccupMgmtProf",
+  "Trình độ học vấn, thất nghiệp, cơ cấu nghề nghiệp",
+  "Cấu trúc gia đình", "13",
+  "TotalPctDiv, PctFam2Par, PctKids2Par, PctIlleg",
+  "Ly hôn, gia đình đủ hai bố mẹ, con ngoài giá thú",
+  "Nhập cư & ngôn ngữ", "11",
+  "NumImmig, PctRecentImmig, PctNotSpeakEnglWell",
+  "Quy mô và mật độ nhập cư, khả năng tiếng Anh",
+  "Nhà ở", "27",
+  "PctPersDenseHous, HousVacant, OwnOccMedVal, MedRent",
+  "Mật độ ở, nhà trống, giá trị nhà, tiền thuê, chất lượng nhà ở",
+  "Vô gia cư & ổn định cư trú", "7",
+  "NumInShelters, NumStreet, PctSameHouse85, PctForeignBorn",
+  "Người vô gia cư, mức độ ổn định chỗ ở qua các năm",
+  "Cảnh sát (LEMAS)", "23",
+  "LemasSwFTPerPop, PolicPerPop, PolicBudgPerPop",
+  "Quân số, ngân sách, tổ chức lực lượng cảnh sát",
+  "Địa lý khác", "3",
+  "LandArea, PopDens, PctUsePubTrans",
+  "Diện tích, mật độ dân số, giao thông công cộng"
+)
+kb(nhom_bien, caption = "Các nhóm nội dung của 122 biến dự báo.")
+```
+
+# Thực hiện phân tích dữ liệu
+
+## Phân phối của biến mục tiêu 
+
+Trước hết ta khảo sát phân phối của `ViolentCrimesPerPop`. 
+
+```{r phan-phoi-y, fig.height=4}
+y <- crime$ViolentCrimesPerPop
+
+skew_y <- mean((y - mean(y))^3) / sd(y)^3
+tab_y <- tibble::tibble(
+  `Trung bình` = mean(y), `Trung vị` = median(y), `Độ lệch chuẩn` = sd(y),
+  `Skewness` = skew_y, `Số quan sát y = 0` = sum(y == 0), `Số quan sát y = 1` = sum(y == 1)
+)
+kb(tab_y, digits = 3, caption = "Thống kê mô tả của ViolentCrimesPerPop.")
+
+p_hist <- ggplot(data.frame(y), aes(y)) +
+  geom_histogram(aes(y = after_stat(density)),
+    bins = 40,
+    fill = "#4C72B0", color = "white", linewidth = 0.2
+  ) +
+  geom_density(color = "#C44E52", linewidth = 0.9) +
+  labs(
+    title = "Phân phối của ViolentCrimesPerPop",
+    x = "ViolentCrimesPerPop (thang chuẩn hóa [0,1])", y = "Mật độ"
+  )
+
+p_box <- ggplot(data.frame(y), aes(x = y, y = "")) +
+  geom_boxplot(fill = "#4C72B0", alpha = 0.6, outlier.alpha = 0.3) +
+  labs(title = "Boxplot", x = "ViolentCrimesPerPop", y = NULL)
+
+p_hist + p_box + plot_layout(widths = c(2, 1))
+```
+
+**Nhận xét.** Phân phối của biến phản hồi lệch phải: $g_1=1.52$, trung bình lớn hơn trung vị. 
+Có 44 quan sát (2.2%) tại trần 1 do quy trình chuẩn hóa trước khi đưa vào mô hình hồi quy
+như những gì tác giả claim trong tài liệu về việc thực hiện cap ở 2 đầu 0 và 1. Điều này làm mất thứ tự giữa các giá trị gốc vượt ngưỡng và 
+góp phần khiến mô hình khó khớp vùng biên do đó không thể từ đó suy ra một trần $R^2$ cụ thể.
+
+## Phân tích về dữ liệu khuyết
+
+Ta thống kê số giá trị khuyết theo từng biến và khảo sát xem chúng có cấu trúc gì đặc biệt hay không vì để hiểu được 
+**cơ chế sinh dữ liệu khuyết**. Từ đó giúp chúng ta đưa ra được chiến lược phù hợp hơn để giải quyết các biến này
+
+```{r missing-tab}
+miss <- colSums(is.na(crime))
+miss_tab <- tibble::tibble(
+  `Biến` = names(miss), `Số NA` = miss,
+  `Tỷ lệ (%)` = round(100 * miss / nrow(crime), 1)
+) |>
+  filter(`Số NA` > 0) |>
+  arrange(desc(`Số NA`))
+
+kb(head(miss_tab, 10), caption = "Top 10 biến có tỷ lệ khuyết cao nhất.")
+
+
+heavy_miss <- miss_tab$`Biến`[miss_tab$`Tỷ lệ (%)` > 50 &
+  !(miss_tab$`Biến` %in% c("county", "community"))]
+heavy_miss_na <- unname(unique(miss[heavy_miss]))
+stopifnot(length(heavy_miss_na) == 1)
+heavy_miss_pct <- round(100 * heavy_miss_na / nrow(crime), 1)
+heavy_obs_pct <- round(100 - heavy_miss_pct, 1)
+```
+
+```{r missing-plot, fig.height=5.5}
+miss_vars <- miss_tab$`Biến`
+row_order <- order(is.na(crime$LemasSwornFT), crime$population)
+
+miss_heat <- crime[row_order, miss_vars] |>
+  is.na() |>
+  as.data.frame() |>
+  mutate(`Dòng` = row_number()) |>
+  pivot_longer(-`Dòng`, names_to = "Biến", values_to = "Khuyết") |>
+  mutate(
+    `Biến` = factor(`Biến`, levels = rev(miss_vars)),
+    `Trạng thái` = ifelse(`Khuyết`, "Khuyết", "Có dữ liệu")
+  )
+
+ggplot(miss_heat, aes(x = `Dòng`, y = `Biến`, fill = `Trạng thái`)) +
+  geom_raster() +
+  scale_fill_manual(values = c("Có dữ liệu" = "black", "Khuyết" = "white")) +
+  labs(
+    title = "Heatmap cấu trúc dữ liệu khuyết",
+    subtitle = "Ô đen: có dữ liệu; ô trắng: khuyết. Dòng được sắp theo trạng thái khuyết LEMAS.",
+    x = "Quan sát", y = NULL, fill = NULL
+  ) +
+  theme(panel.grid = element_blank())
+```
+
+Toàn bộ 22 biến khuyết nặng đều thuộc nhóm **cảnh sát (LEMAS)** và cùng khuyết **đúng 1675 dòng như nhau**, 
+điều này gợi ý rằng missing data của ta có thể tuân theo một quy luật nhất định chứ không rải rác ngẫu nhiên, lấy ví dụ như một cộng đồng hoặc 
+có đầy đủ cả khối biến LEMAS, hoặc không có biến nào. 
+Để tìm nguyên nhân, ta so sánh quy mô dân số giữa hai nhóm:
+
+```{r missing-pattern}
+lemas_missing <- is.na(crime$LemasSwornFT)
+tab_mnar <- crime |>
+  mutate(`Nhóm` = ifelse(lemas_missing, "Khuyết khối LEMAS", "Có dữ liệu LEMAS")) |>
+  group_by(`Nhóm`) |>
+  summarise(
+    `Số cộng đồng` = n(),
+    `Trung vị population` = median(population),
+    `Trung bình population` = mean(population)
+  )
+kb(tab_mnar,
+  digits = 3,
+  caption = "So sánh quy mô dân số (thang chuẩn hóa) giữa nhóm có / khuyết dữ liệu LEMAS."
+)
+```
+
+**Nhận xét.** Xác suất khuyết LEMAS thay đổi rõ theo `population`, nên dữ liệu cung cấp bằng chứng chống lại giả định 
+**MCAR** (khuyết hoàn toàn ngẫu nhiên). Mẫu hình này phù hợp với cơ chế **MAR** có điều kiện theo quy mô cộng đồng.
+
+Do 22 biến LEMAS cùng khuyết theo khối ở 84% quan sát, do đó mà việc xóa bỏ các dòng có giá trị khuyết
+sẽ làm mất phần lớn mẫu, còn imputation sẽ phải ngoại suy từ 16% cộng đồng có dữ liệu, chủ yếu là cộng đồng lớn. 
+Vì vậy, trong phạm vi báo cáo này, ta loại cả khối LEMAS là lựa chọn đơn giản và thận trọng. Ngoài khối này, chỉ `OtherPerCap` khuyết một giá trị; 
+`county` và `community` là biến định danh nên không được đưa trực tiếp vào mô hình hồi quy.
+
+## Tương quan giữa các biến và với biến phản hồi
+
+Từ đây, để khảo sát cấu trúc tương quan, ta làm việc trên tập biến dự báo sẽ được chốt chính thức ở phần tiền xử lý 
+(bỏ 5 biến non-predictive và khối LEMAS khuyết 84%; giá trị khuyết duy nhất của `OtherPerCap` được 
+thay tạm bằng trung vị): ma trận $\mathbf{X}$ gồm $100$ biến, $n = 1994$ quan sát.
+
+```{r x-eda}
+non_pred <- c("state", "county", "community", "communityname", "fold")
+X_eda <- crime[, setdiff(names(crime), c(non_pred, heavy_miss, "ViolentCrimesPerPop"))]
+X_eda$OtherPerCap[is.na(X_eda$OtherPerCap)] <- median(X_eda$OtherPerCap, na.rm = TRUE)
+dim(X_eda)
+```
+
+```{r cor-voi-y}
+r_y <- cor(X_eda, y)[, 1]
+tab_ry <- tibble::tibble(`Biến` = names(r_y), `Tương quan với y` = r_y) |>
+  arrange(desc(abs(`Tương quan với y`))) |>
+  head(15)
+kb(tab_ry, digits = 3, caption = "15 biến tương quan mạnh nhất với ViolentCrimesPerPop.")
+```
+
+```{r cor-heatmap, fig.width=9, fig.height=8}
+vars_top <- tab_ry$`Biến`
+corrplot::corrplot(
+  cor(X_eda[, vars_top]),
+  method = "color", type = "upper", order = "hclust",
+  tl.col = "black", tl.cex = 0.75, addCoef.col = "grey30", number.cex = 0.55,
+  mar = c(0, 0, 1.5, 0),
+  title = "Ma trận tương quan của 15 biến liên hệ mạnh nhất với y"
+)
+
+R <- cor(X_eda)
+r_upper <- R[upper.tri(R)]
+tab_pairs <- tibble::tibble(
+  `Ngưỡng` = c("$\\lvert r \\rvert \\gt 0.8$", "$\\lvert r \\rvert \\gt 0.9$"),
+  `Số cặp biến` = c(sum(abs(r_upper) > 0.8), sum(abs(r_upper) > 0.9)),
+  `Trên tổng số cặp` = sprintf("%d", length(r_upper))
+)
+kb(tab_pairs, caption = "Số cặp biến dự báo có tương quan tuyệt đối vượt ngưỡng.", escape = FALSE)
+```
+
+**Nhận xét.** Hai điều nổi bật từ kết quả trên:
+
+- **Về liên hệ với biến phản hồi:** các biến tương quan mạnh nhất với tỷ lệ tội phạm đều thuộc nhóm **cấu trúc gia đình**: 
+`PctKids2Par` ($r = -0.738$), `PctIlleg` ($r = 0.738$), `PctFam2Par` ($r = -0.707$) 
+và cùng các biến cơ cấu chủng tộc và nghèo đói (`racePctWhite`, `pctWPubAsst`, `PctPopUnderPov`). 
+Dấu của ma trận tương quan nhất quán với trực giác của chúng ta đối với xã hội: 
+cộng đồng có tỷ lệ trẻ em sống cùng hai bố mẹ cao thì tỷ lệ tội phạm thấp, và ngược lại với tỷ lệ nghèo/trợ cấp.
+- **Về tương quan giữa các biến dự báo:** có tới 127 cặp biến với $|r| > 0.8$ và 
+49 cặp với $|r| > 0.9$ (tối đa $|r| = 0.996$). 
+Ngay trong hình trên cũng thấy các khối biến gần như trùng thông tin (`PctFam2Par`–`PctKids2Par`–`PctYoungKids2Par`–`PctTeen2Par`; `TotalPctDiv`–`FemalePctDiv`–`MalePctDivorce`). 
+Đây là biểu hiện trực tiếp của **đa cộng tuyến**, được định lượng chặt chẽ hơn ngay dưới đây.
+
+## Chẩn đoán đa cộng tuyến định lượng
+
+Mức độ đa cộng tuyến được đo bằng hai công cụ như sau:
+
+- **Chỉ số điều kiện (condition index)** của ma trận tương quan $\mathbf{R} = \frac{1}{n-1}\mathbf{X}_s^\top \mathbf{X}_s$ (với $\mathbf{X}_s$ đã chuẩn hóa): $\kappa = \sqrt{\lambda_{\max} / \lambda_{\min}}$, trong đó $\lambda_j$ là các trị riêng. 
+Theo tiêu chuẩn Belsley, Kuh & Welsch (1980), $\kappa > 30$ là dấu hiệu đa cộng tuyến nghiêm trọng. Nếu ta xét theo ý nghĩa hình học: $\lambda_{\min} \approx 0$ nghĩa là tồn tại một tổ hợp tuyến tính của các cột $\mathbf{X}$ có phương sai gần bằng 0. 
+Các cột gần phụ thuộc tuyến tính, khiến $(\mathbf{X}^\top\mathbf{X})^{-1}$ (và do đó phương sai của $\hat{\beta}_{OLS}$) bùng nổ.
+- **Hệ số phóng đại phương sai** $\mathrm{VIF}_j = 1/(1 - R_j^2)$, với $R_j^2$ là hệ số xác định khi hồi quy biến $X_j$ trên toàn bộ các biến còn lại. 
+$\mathrm{VIF}_j > 10$ (tức $R_j^2 > 0.9$) là ngưỡng cảnh báo thông dụng; $\mathrm{Var}(\hat\beta_j) $ tỷ lệ thuận với $\mathrm{VIF}_j$.
+
+```{r da-cong-tuyen}
+ev <- eigen(R, symmetric = TRUE, only.values = TRUE)$values
+cond_index <- sqrt(max(ev) / min(ev))
+
+vif_all <- vif_manual(X_eda)
+
+tab_mc <- tibble::tibble(
+  `Chỉ tiêu` = c(
+    "$\\lambda_{\\max}$", "$\\lambda_{\\min}$",
+    "Chỉ số điều kiện $\\kappa = \\sqrt{\\lambda_{\\max}/\\lambda_{\\min}}$",
+    "Số biến có VIF > 10", "Số biến có VIF > 100", "VIF lớn nhất"
+  ),
+  `Giá trị` = c(
+    round(max(ev), 2), signif(min(ev), 2), round(cond_index, 1),
+    sprintf("%d / %d", sum(vif_all > 10), length(vif_all)),
+    sum(vif_all > 100), round(max(vif_all))
+  ),
+  `Ngưỡng tham chiếu` = c(
+    "—", "—", "> 30: nghiêm trọng (Belsley)",
+    "VIF > 10: đáng lo ngại", "—", "—"
+  )
+)
+kb(tab_mc, caption = "Chẩn đoán đa cộng tuyến trên ma trận 100 biến dự báo.")
+
+kb(
+  tibble::tibble(
+    `Biến` = names(sort(vif_all, decreasing = TRUE)[1:5]),
+    `VIF` = round(sort(vif_all, decreasing = TRUE)[1:5])
+  ),
+  caption = "5 biến có VIF cao nhất."
+)
+```
+
+**Nhận xét.** Mọi chỉ tiêu đều vượt ngưỡng cảnh báo **rất xa**: chỉ số điều kiện $\kappa \approx 200$ 
+gấp gần 7 lần ngưỡng "nghiêm trọng" 30 của Belsley.
+65/100 biến có VIF > 10, trong đó 22 biến có VIF > 100, 
+cực đại là `TotalPctDiv` với VIF $\approx 1037$ 
+(nghĩa là phương sai ước lượng hệ số của biến này bị phóng đại hơn nghìn lần so với trường hợp trực giao). 
+Kết luận: **OLS trên toàn bộ biến sẽ cho các hệ số cực kỳ bất ổn định**, dù khả năng dự đoán tổng thể có thể vẫn chấp nhận được. 
+Đây chính là bối cảnh mà các phương pháp **PCR, Ridge và LASSO** được thiết kế để giải quyết bằng cách giảm chiều (PCR) 
+hoặc chuẩn hóa (Ridge/LASSO) nhằm đánh đổi một lượng chệch (bias) nhỏ lấy mức giảm phương sai lớn.
+
+## Giá trị ngoại lai
+
+Cuối cùng, ta khảo sát giá trị ngoại lai bằng **phương pháp IQR** của Tukey: giá trị bị xem là ngoại lai nếu nằm ngoài 
+$[Q_1 - 1.5\,\mathrm{IQR},\; Q_3 + 1.5\,\mathrm{IQR}]$. 
+Ta chọn quy tắc này để xác định các giá trị ngoại lai vì nó **không đặt giả định phân phối**: 
+hàng rào chỉ dựa trên các tứ phân vị do đó vẫn sẽ có ý nghĩa với phân phối lệch, 
+khác với quy tắc $\bar{x} \pm 3s$ vốn chỉ hợp lý dưới giả định dwx liệu tuân theo phân phối chuẩn.
+
+```{r outlier-iqr, fig.height=4.5}
+iqr_flag <- function(x) {
+  q <- quantile(x, c(0.25, 0.75))
+  fence <- 1.5 * diff(q)
+  x < q[1] - fence | x > q[2] + fence
+}
+flags <- sapply(X_eda, iqr_flag)
+
+tab_flag <- tibble::tibble(
+  `Chỉ tiêu` = c(
+    "Tỷ lệ ô giá trị bị gắn cờ (toàn bảng)",
+    "Số quan sát có ít nhất 1 biến bị gắn cờ",
+    "Số quan sát bị gắn cờ ở từ 10 biến trở lên"
+  ),
+  `Giá trị` = c(
+    sprintf("%.2f %%", 100 * mean(flags)),
+    sprintf(
+      "%d / %d (%.1f %%)", sum(rowSums(flags) > 0),
+      nrow(X_eda), 100 * mean(rowSums(flags) > 0)
+    ),
+    sum(rowSums(flags) >= 10)
+  )
+)
+kb(tab_flag, caption = "Kết quả gắn cờ ngoại lai theo quy tắc IQR trên 100 biến dự báo.")
+
+top_flag <- sort(colSums(flags), decreasing = TRUE)[1:8]
+X_eda |>
+  select(all_of(names(top_flag))) |>
+  pivot_longer(everything(), names_to = "Bien", values_to = "gia_tri") |>
+  ggplot(aes(x = reorder(Bien, gia_tri, FUN = median), y = gia_tri)) +
+  geom_boxplot(fill = "#4C72B0", alpha = 0.6, outlier.alpha = 0.25, outlier.size = 0.8) +
+  coord_flip() +
+  labs(
+    title = "8 biến bị gắn cờ IQR nhiều nhất",
+    subtitle = "Đều là các biến đếm/tỷ lệ hiếm, lệch phải tự nhiên",
+    x = NULL, y = "Giá trị (thang chuẩn hóa [0,1])"
+  )
+```
+
+**Nhận xét và quyết định.** Nếu loại mọi quan sát có ít nhất một giá trị bị gắn cờ, ta sẽ mất 77.1% dữ liệu và điều này tự nó cho thấy 
+"ngoại lai" ở đây không phải lỗi đo lường mà là **đặc điểm cấu trúc của dữ liệu**. Ta quyết định **không loại quan sát nào**, với ba lý do:
+
+1. Các biến bị gắn cờ nhiều nhất (`NumStreet`, `NumInShelters`, `NumIlleg`, `NumImmig`...) đều là **biến đếm các hiện tượng hiếm**, phân phối lệch phải tự nhiên; giá trị lớn của chúng là thông tin thực (các thành phố lớn), không phải nhiễu.
+2. Dữ liệu đã được tác giả **chuẩn hóa về thang $[0,1]$**, trong đó giá trị lớn hơn 3 độ lệch chuẩn trên trung bình được gán bằng 1 và giá trị nhỏ hơn 3 độ lệch chuẩn dưới trung bình được gán bằng 0.
+3. Các cộng đồng có tỷ lệ tội phạm cực cao chính là **đối tượng cần dự đoán**; loại chúng theo tiêu chí thống kê là tự cắt bỏ một phần miền giá trị của $y$ (truncation có hệ thống), 
+điều này làm chệch mô hình và giảm giá trị thực tiễn.
+
+# Tiền xử lý dữ liệu
+
+Từ các phát hiện của EDA, ta chốt các quyết định tiền xử lý sau.
+
+| # | Quyết định | Lý do thống kê |
+|---|-----------|----------------|
+| 1 | **Bỏ 5 biến non-predictive** `state`, `county`, `community`, `communityname`, `fold` | `state/county/community` là **mã danh nghĩa (nominal)**: khoảng cách số học giữa hai mã không mang ý nghĩa, đưa vào hồi quy như biến liên tục là sai bản chất thang đo; mã hóa one-hot sẽ tạo ~46 cột thưa, làm tăng chiều và nhiễu cấu trúc PCA. `communityname` là chuỗi ký tự. `fold` là chỉ số kỹ thuật do tác giả tạo, không phải đặc điểm của cộng đồng. |
+| 2 | **Bỏ 22 biến khối LEMAS khuyết 84%** | Khuyết theo khối và liên hệ rõ với quy mô cộng đồng. Imputation đòi hỏi ngoại suy cho phần lớn mẫu; complete-case làm mất 1675/1994 quan sát và chỉ giữ các cộng đồng lớn. |
+| 3 | **Điền khuyết `OtherPerCap` (1 giá trị) bằng trung vị tập huấn luyện** | Trung vị là ước lượng vị trí **bền vững (robust)**, không đặt giả định phân phối — phù hợp vì các biến thu nhập lệch phải. Với đúng 1/1994 giá trị khuyết, mọi phương pháp điền hợp lý đều cho kết quả thực tế như nhau; ta chọn phương án đơn giản và không rò rỉ thông tin. |
+| 4 | **Giữ nguyên tất cả quan sát** (không lọc ngoại lai) | Ba lý do đã trình bày ở phần ngoại lai: cờ IQR phủ 77% quan sát; dữ liệu nguồn đã gán các giá trị ngoài khoảng 3 độ lệch chuẩn về 0 hoặc 1; loại quan sát cực đoan của $y$ là truncation làm chệch mô hình. |
+| 5 | **Kiểm tra biến phương sai gần 0** | Biến gần như hằng số không mang thông tin nhưng có thể gây bất ổn số học khi chuẩn hóa (chia cho $s \approx 0$) và khi nghịch đảo ma trận tương quan. |
+
+```{r tien-xu-ly}
+X0 <- crime[, setdiff(names(crime), c(non_pred, heavy_miss, "ViolentCrimesPerPop"))]
+
+# Kiểm tra phương sai gần 0
+sd_all <- sapply(X0, sd, na.rm = TRUE)
+tab_nzv <- tibble::tibble(
+  `Chỉ tiêu` = c(
+    "Độ lệch chuẩn nhỏ nhất", "Biến tương ứng",
+    "Số biến có sd < 0.01", "Số giá trị duy nhất ít nhất"
+  ),
+  `Kết quả` = c(
+    round(min(sd_all), 3), names(which.min(sd_all)),
+    sum(sd_all < 0.01),
+    sprintf("%d (biến MedNumBR)", min(sapply(X0, function(x) length(unique(x)))))
+  )
+)
+kb(tab_nzv, caption = "Kiểm tra biến phương sai gần 0.")
+```
+
+**Nhận xét.** Không có biến nào phương sai gần 0 (độ lệch chuẩn nhỏ nhất 0.087 thuộc về `NumImmig` — vẫn đủ lớn) do đó nên không cần loại thêm biến nào ở bước này. 
+Biến `MedNumBR` chỉ nhận 3 giá trị phân biệt (do là trung vị số phòng ngủ đã chuẩn hóa) nhưng vẫn có phương sai đáng kể nên được giữ lại. 
+Sau tiền xử lý, ma trận biến dự báo gồm $n = 1994$ quan sát và $p = 100$ biến và biến khuyết duy nhất còn lại (`OtherPerCap`, 1 giá trị) sẽ được điền **sau khi chia dữ liệu** 
+để tuân thủ nguyên tắc chống rò rỉ thông tin.
+
+# Chia dữ liệu
+
+## Nguyên tắc chống rò rỉ thông tin (data leakage)
+
+Tập kiểm định (*validation set*) có nhiệm vụ mô phỏng dữ liệu **chưa từng thấy**. Vì vậy, mọi đại lượng ước lượng từ dữ liệu trong quá trình tiền xử lý và huấn luyện và những thứ như trung vị 
+điền khuyết, trung bình $\bar{x}_j$ và độ lệch chuẩn $s_j$ dùng để chuẩn hóa, các vector tải của PCA, tham số $\lambda$ của Ridge/LASSO sẽ đều chỉ được **ước lượng trên tập huấn luyện**, 
+sau đó **áp nguyên** sang tập kiểm định. Nếu vi phạm (ví dụ chuẩn hóa trên toàn bộ dữ liệu trước khi chia), thông tin của tập kiểm định sẽ "rò" vào mô hình, 
+khiến các chỉ số đánh giá lạc quan hơn thực tế một cách hệ thống và không có tính ứng dụng cao cho dữ liệu mới mà không có trong tập huấn luyện.
+
+## Thực hiện chia và kiểm tra phân phối
+
+Ta chia ngẫu nhiên dữ liệu thành **80% huấn luyện / 20% kiểm định**, tương ứng khoảng 1 595 quan sát huấn luyện và 399 quan sát kiểm định. 
+Kích thước tập huấn luyện lớn hơn nhiều so với số biến dự báo, nhưng hiện tượng đa cộng tuyến vẫn có thể làm OLS bất ổn. 
+So sánh thống kê mô tả dưới đây chỉ nhằm kiểm tra xem lần chia có mất cân bằng rõ rệt hay không, không phải bằng chứng chứng minh hai tập có phân phối hoàn toàn giống nhau.
+
+```{r chia-du-lieu}
+set.seed(SEED)
+n <- nrow(X0)
+idx_train <- sample(seq_len(n), size = round(0.8 * n))
+
+X_train <- X0[idx_train, ]
+X_val <- X0[-idx_train, ]
+y_train <- y[idx_train]
+y_val <- y[-idx_train]
+
+# Điền khuyết OtherPerCap bằng trung vị HỌC TRÊN TRAIN
+med_opc <- median(X_train$OtherPerCap, na.rm = TRUE)
+X_train$OtherPerCap[is.na(X_train$OtherPerCap)] <- med_opc
+X_val$OtherPerCap[is.na(X_val$OtherPerCap)] <- med_opc
+
+# Một phân hoạch CV duy nhất dùng cho mọi mô hình
+set.seed(SEED)
+foldid <- sample(rep(seq_len(10), length.out = nrow(X_train)))
+cv_segments <- split(seq_len(nrow(X_train)), foldid)
+
+c(n_train = nrow(X_train), n_val = nrow(X_val))
+```
+
+```{r kiem-tra-can-bang}
+tab_split <- tibble::tibble(
+  `Tập` = c("Huấn luyện", "Kiểm định"),
+  `n` = c(length(y_train), length(y_val)),
+  `Trung bình y` = c(mean(y_train), mean(y_val)),
+  `Trung vị y` = c(median(y_train), median(y_val)),
+  `Độ lệch chuẩn y` = c(sd(y_train), sd(y_val))
+)
+kb(tab_split, digits = 3, caption = "So sánh phân phối biến phản hồi giữa hai tập.")
+```
+
+**Nhận xét.** Phép chia tạo $n_{train} = 1595$ và $n_{val} = 399$. Trung bình, 
+trung vị và độ lệch chuẩn của $y$ gần nhau giữa hai tập, nên lần chia không cho thấy mất cân bằng đáng kể. 
+Giá trị khuyết duy nhất của `OtherPerCap` được điền bằng trung vị học trên tập huấn luyện ($0.26$).
+
+# Mô hình hồi quy trên thành phần chính (PCR)
+
+## Cơ sở toán học
+
+PCR xử lý đa cộng tuyến bằng cách thay 100 biến gốc bằng các **thành phần chính**: những tổ hợp tuyến tính trực giao, 
+được sắp theo lượng phương sai của $\mathbf X$ mà chúng giữ lại. 
+Sau khi chuẩn hóa dữ liệu huấn luyện, PCA phân rã ma trận tương quan thành
+
+$$
+\mathbf R = \mathbf V\boldsymbol{\Lambda}\mathbf V^\top,
+$$
+
+trong đó các cột của $\mathbf V$ là hướng thành phần chính và $\lambda_j$ cho biết phương sai của thành phần thứ $j$. 
+PCR giữ $k$ hướng đầu, tạo $\mathbf Z_k = \mathbf X_s\mathbf V_k$, rồi hồi quy $y$ trên $\mathbf Z_k$.
+
+Ý tưởng thống kê rất đơn giản: OLS dùng toàn bộ các hướng, kể cả những hướng có phương sai rất nhỏ và dễ khuếch đại nhiễu. 
+PCR bỏ các hướng sau $k$, chấp nhận mất một phần tín hiệu để giảm phương sai ước lượng. 
+Vì vậy, lựa chọn $k$ phải dựa trên kiểm chứng chéo, không chỉ dựa trên tỷ lệ phương sai của $\mathbf X$.
+
+Trong báo cáo này, PCA được thực hiện trên dữ liệu đã chuẩn hóa bằng trung bình và độ lệch chuẩn học từ tập huấn luyện; cùng tham số đó được áp sang tập kiểm định để tránh rò rỉ dữ liệu.
+
+## Kiểm tra mức độ phù hợp của dữ liệu với PCR
+
+Bartlett và KMO được dùng như chẩn đoán mô tả: chúng cho biết các biến dự báo có tương quan đủ mạnh để PCA có ý nghĩa hay không. Hai kiểm tra này chỉ nhìn vào $\mathbf X$, nên không thay thế cho đánh giá dự đoán bằng validation.
+
+```{r pcr-suitability}
+R_train <- cor(X_train)
+bart <- psych::cortest.bartlett(R_train, n = nrow(X_train))
+kmo <- psych::KMO(R_train)
+
+tab_suit <- tibble::tibble(
+  `Chỉ tiêu` = c(
+    "Bartlett $\\chi^2$", "Bậc tự do", "p-value",
+    "KMO tổng thể", "KMO nhỏ nhất theo biến", "Số biến có $MSA_i < 0.5$"
+  ),
+  `Giá trị` = c(
+    format(round(bart$chisq), big.mark = " "), bart$df,
+    format.pval(bart$p.value, eps = 1e-300),
+    round(kmo$MSA, 3),
+    sprintf("%.3f (%s)", min(kmo$MSAi), names(which.min(kmo$MSAi))),
+    sum(kmo$MSAi < 0.5)
+  ),
+  `Diễn giải` = c(
+    "Rất lớn so với df", "$p(p-1)/2 = 4950$", "Bác bỏ $H_0: R = I$",
+    "Mức “tuyệt vời” ($\\ge 0.9$)", "Vẫn trên mức chấp nhận 0.5", "—"
+  )
+)
+kb(tab_suit, caption = "Kiểm tra mức độ phù hợp của dữ liệu với PCA/PCR (trên tập huấn luyện).")
+```
+
+**Nhận xét.** Bartlett bác bỏ giả thuyết ma trận tương quan đơn vị ($p < 10^{-300}$), còn KMO tổng thể đạt $0.924$. Dữ liệu vì vậy phù hợp để giảm chiều bằng PCA, nhưng chất lượng dự đoán của PCR vẫn phải được quyết định bằng kiểm chứng chéo.
+
+## Phân tích thành phần chính trên tập huấn luyện
+
+```{r pca-train, fig.height=4.5}
+pca_train <- prcomp(X_train, center = TRUE, scale. = TRUE)
+lambda <- pca_train$sdev^2
+pve <- lambda / sum(lambda)
+
+df_scree <- tibble::tibble(PC = seq_along(pve), pve = pve, cum = cumsum(pve))
+
+p_scree <- ggplot(df_scree[1:30, ], aes(PC, pve)) +
+  geom_col(fill = "#4C72B0") +
+  geom_hline(yintercept = 1 / length(pve), linetype = 2, color = "#C44E52") +
+  labs(
+    title = "Scree plot (30 PC đầu)",
+    subtitle = "Đường đứt: mức 1/p (trị riêng λ = 1)",
+    x = "Thành phần chính", y = "Tỷ lệ phương sai giải thích"
+  )
+
+p_cum <- ggplot(df_scree, aes(PC, cum)) +
+  geom_line(color = "#4C72B0", linewidth = 0.9) +
+  geom_hline(yintercept = c(0.8, 0.9), linetype = 2, color = "grey50") +
+  annotate("text",
+    x = 90, y = c(0.8, 0.9), label = c("80%", "90%"),
+    vjust = -0.5, size = 3, color = "grey30"
+  ) +
+  labs(title = "Phương sai tích lũy", x = "Số thành phần chính", y = "Tỷ lệ tích lũy")
+
+p_scree + p_cum
+
+tab_pve <- tibble::tibble(
+  `Tiêu chí` = c(
+    "Kaiser: số PC có $\\lambda_j > 1$",
+    "Số PC đạt 80% phương sai tích lũy",
+    "Số PC đạt 90% phương sai tích lũy",
+    "PVE của PC1", "PVE của PC2"
+  ),
+  `Kết quả` = c(
+    sum(lambda > 1),
+    which(cumsum(pve) >= 0.8)[1],
+    which(cumsum(pve) >= 0.9)[1],
+    sprintf("%.1f %%", 100 * pve[1]),
+    sprintf("%.1f %%", 100 * pve[2])
+  )
+)
+kb(tab_pve, caption = "Các tiêu chí mô tả về số thành phần chính.")
+```
+
+**Nhận xét.** Cấu trúc nén thông tin rất rõ: chỉ riêng PC1 đã giải thích 25.2% tổng phương sai của 100 biến, hai thành phần đầu giải thích 41.7%, 
+và chỉ cần 12 thành phần để đạt 80% (so với 100 chiều gốc). Tiêu chí Kaiser ($\lambda_j > 1$: thành phần "mang nhiều thông tin hơn một biến gốc đơn lẻ") giữ 14 thành phần. 
+Tuy nhiên các tiêu chí này đều **chỉ nhìn vào $\mathbf{X}$** mà không nhìn vào $y$ bởi chúng đo lượng phương sai được giữ, không đo khả năng dự đoán. Quyết định cuối cùng vì vậy dựa trên kiểm chứng chéo dưới đây.
+
+## Lựa chọn số thành phần chính bằng kiểm chứng chéo
+
+Ta chạy PCR với đủ 100 thành phần và kiểm chứng chéo 10-fold trên tập huấn luyện. Quy tắc **one-sigma**  giúp chọn mô hình 
+đơn giản nhất có sai số CV còn nằm trong vùng một độ lệch chuẩn quanh mô hình tốt nhất.
+Ta đối chiếu thêm kiểm định hoán vị.
+
+```{r pcr-cv, fig.height=4.5}
+library(pls)
+set.seed(SEED)
+df_train <- data.frame(y = y_train, X_train)
+
+pcr_cv <- pcr(y ~ .,
+  data = df_train, scale = TRUE, center = TRUE,
+  validation = "CV", segments = cv_segments
+)
+
+rmsep_cv <- RMSEP(pcr_cv, estimate = "CV")$val[1, 1, ]
+k_min <- which.min(rmsep_cv) - 1 # trừ 1 vì phần tử đầu là mô hình 0 thành phần
+k_1se <- selectNcomp(pcr_cv, method = "onesigma", plot = FALSE)
+k_rand <- selectNcomp(pcr_cv, method = "randomization", plot = FALSE)
+
+df_rmsep <- tibble::tibble(k = 0:(length(rmsep_cv) - 1), RMSEP = as.numeric(rmsep_cv))
+ggplot(df_rmsep, aes(k, RMSEP)) +
+  geom_line(color = "#4C72B0") +
+  geom_point(size = 0.7, color = "#4C72B0") +
+  geom_vline(
+    xintercept = c(k_1se, k_min), linetype = 2,
+    color = c("#C44E52", "grey40")
+  ) +
+  annotate("text",
+    x = k_1se, y = max(df_rmsep$RMSEP) * 0.97,
+    label = paste0("k (one-sigma) = ", k_1se), hjust = -0.05,
+    color = "#C44E52", size = 3.4
+  ) +
+  annotate("text",
+    x = k_min, y = max(df_rmsep$RMSEP) * 0.90,
+    label = paste0("k (min) = ", k_min), hjust = -0.05,
+    color = "grey30", size = 3.4
+  ) +
+  labs(
+    title = "RMSEP kiểm chứng chéo 10-fold theo số thành phần chính",
+    x = "Số thành phần chính k", y = "RMSEP (CV)"
+  )
+
+tab_k <- tibble::tibble(
+  `Quy tắc` = c("Cực tiểu RMSEP", "One-sigma", "Randomization (van der Voet)"),
+  `k` = c(k_min, k_1se, k_rand),
+  `RMSEP (CV)` = round(c(min(rmsep_cv), rmsep_cv[k_1se + 1], rmsep_cv[k_rand + 1]), 4)
+)
+kb(tab_k, caption = "Số thành phần chính theo các quy tắc chọn trên CV.")
+```
+
+**Nhận xét và quyết định.** Cực tiểu RMSEP nằm tại $k = 92$, còn one-sigma chọn $k = 12$ với RMSEP 
+cao hơn 0.0025. Ta chọn mô hình one-sigma vì gọn hơn trong khi sai 
+số CV gần cực tiểu; lựa chọn này giữ 81.3% phương sai của $\mathbf X$ và 
+giảm số hệ số thành phần từ 100 xuống 12.
+
+```{r pcr-final}
+k_pcr <- k_1se
+pcr_fit <- pcr(y ~ ., data = df_train, scale = TRUE, center = TRUE, ncomp = k_pcr)
+pred_pcr_val <- as.numeric(predict(pcr_fit, newdata = X_val, ncomp = k_pcr))
+```
+
+Mô hình PCR cuối cùng được huấn luyện với $k = 12$ trên toàn bộ tập huấn luyện; 
+dự đoán trên tập kiểm định sẽ được đánh giá cùng các mô hình đối chứng ở phần đánh giá.
+
+# Các mô hình đối chứng
+
+## Hồi quy bình phương tối thiểu (OLS)
+
+Mô hình tuyến tính đặt $E(y_i\mid\mathbf x_i)=\beta_0+\mathbf x_i^\top\boldsymbol\beta$. Với ma trận thiết kế mở
+rộng $\widetilde{\mathbf X}=[\mathbf 1,\mathbf X]$ và giả sử ma trận này có hạng đầy đủ,
+
+$$
+\hat{\boldsymbol\theta}_{OLS}
+=\arg\min_{\boldsymbol\theta}\|\mathbf y-\widetilde{\mathbf X}\boldsymbol\theta\|_2^2
+=(\widetilde{\mathbf X}^{\top}\widetilde{\mathbf X})^{-1}
+\widetilde{\mathbf X}^{\top}\mathbf y,
+\qquad \boldsymbol\theta=(\beta_0,\boldsymbol\beta^\top)^\top.
+$$
+
+Điều kiện $E(\varepsilon\mid X)=0$ quyết định tính không chệch của OLS. Nếu thêm giả định phương sai đồng nhất và 
+không có tương quan giữa các sai số, OLS là BLUE và công thức sai số chuẩn cổ điển là hợp lệ. 
+Với hệ số dốc thứ $j$, ta có $\mathrm{Var}(\hat\beta_j)=\sigma^2\mathrm{VIF}_j/[(n-1)s_j^2]$, 
+nên đa cộng tuyến làm sai số chuẩn tăng và khiến suy diễn từng hệ số kém ổn định, dù dự đoán tổng hợp vẫn có thể tốt.
+
+```{r ols-fit}
+ols_fit <- lm(y ~ ., data = df_train)
+sm_ols <- summary(ols_fit)
+coef_ols <- sm_ols$coefficients[-1, , drop = FALSE]
+
+tab_ols <- tibble::tibble(
+  `Chỉ tiêu` = c(
+    "$R^2$ (huấn luyện)", "$R^2$ hiệu chỉnh",
+    "Số biến dự báo có $|t| > 2$", "Tổng số biến dự báo"
+  ),
+  `Giá trị` = c(
+    round(sm_ols$r.squared, 3), round(sm_ols$adj.r.squared, 3),
+    sum(abs(coef_ols[, 3]) > 2), nrow(coef_ols)
+  )
+)
+kb(tab_ols, caption = "Tóm tắt mô hình OLS đầy đủ trên tập huấn luyện.")
+```
+
+**Nhận xét.** Mô hình giải thích được $R^2 = 0.694$ phương sai trên tập huấn luyện, 
+nhưng chỉ 24/100 biến dự báo có $|t| > 2$. Nghịch lý "mô hình khớp 
+tốt nhưng hầu hết hệ số không có ý nghĩa" là **triệu chứng kinh điển của đa cộng tuyến**: thông tin chung bị chia 
+sẻ giữa các biến tương quan khiến từng hệ số riêng lẻ có sai số chuẩn khổng lồ, đúng như dự báo từ các VIF ở phần đa cộng tuyến.
+
+### Chẩn đoán mô hình OLS
+
+Các biểu đồ và kiểm định sau được dùng để xem xét dạng tuyến tính, phương sai phần dư, phân phối phần dư và các quan sát ảnh hưởng.
+Độc lập giữa các cộng đồng và $E(\varepsilon\mid X)=0$ là giả định thiết kế, không thể xác nhận chỉ bằng đồ thị phần dư;
+vì vậy diễn giải hệ số vẫn là liên hệ, không phải nhân quả. Khi phương sai không đồng nhất, ta dùng thêm sai số chuẩn HC3.
+
+```{r ols-assumptions, fig.height=7}
+par(mfrow = c(2, 2), mar = c(4, 4, 2, 1))
+plot(ols_fit, which = c(1, 2, 3, 4))
+par(mfrow = c(1, 1))
+
+bp <- lmtest::bptest(ols_fit)
+sw <- shapiro.test(residuals(ols_fit))
+cd <- cooks.distance(ols_fit)
+ols_hc3 <- lmtest::coeftest(ols_fit, vcov. = sandwich::vcovHC(ols_fit, type = "HC3"))
+
+tab_assump <- tibble::tibble(
+  `Kiểm định / chỉ tiêu` = c(
+    "Breusch–Pagan (phương sai đồng nhất)",
+    "Shapiro–Wilk (phần dư chuẩn)",
+    "Số hệ số p < 0.05 với HC3",
+    "Cook's D lớn nhất",
+    "Số quan sát $D_i > 4/n$",
+    "Số quan sát $D_i > 0.5$"
+  ),
+  `Kết quả` = c(
+    sprintf("BP = %.1f, p %s", bp$statistic, format.pval(bp$p.value, eps = 1e-16)),
+    sprintf("W = %.3f, p %s", sw$statistic, format.pval(sw$p.value, eps = 1e-16)),
+    sum(ols_hc3[, 4] < 0.05), round(max(cd), 3),
+    sum(cd > 4 / nrow(df_train)), sum(cd > 0.5)
+  )
+)
+kb(tab_assump, caption = "Chẩn đoán mô hình OLS.")
+```
+
+**Nhận xét.**
+
+- **Phương sai không đồng nhất**: Breusch–Pagan bác bỏ mạnh $H_0$ ($p < 10^{-16}$); đồ thị Scale–Location cho thấy phương sai phần 
+dư tăng theo giá trị dự đoán và điều này thường gặp khi biến phản hồi lệch phải và bị chặn dưới tại 0.
+- **Phần dư không chuẩn**: Shapiro–Wilk bác bỏ tính chuẩn ($p < 10^{-16}$), Q–Q plot lệch ở hai đuôi (một phần do 2.2% 
+quan sát bị dồn tại trần $y = 1$).
+- **Hệ quả**: không chuẩn chủ yếu ảnh hưởng suy diễn mẫu nhỏ; phương sai không đồng nhất làm sai số chuẩn cổ điển 
+không đáng tin. Bản thân hai hiện tượng này không làm OLS chệch nếu $E(\varepsilon\mid X)=0$, nhưng điều kiện 
+đó không thể được chứng minh từ dữ liệu. Vì vậy báo cáo dùng HC3 cho suy diễn và validation cho đánh giá dự đoán.
+- **Quan sát ảnh hưởng**: khoảng cách Cook lớn nhất chỉ 0.049 và thấp hơn ngưỡng nghiêm trọng 0.5 hơn một bậc;
+ 118 quan sát vượt ngưỡng thô $4/n$ nhưng không quan sát nào chi phối kết quả ước lượng. 
+ Điều này **củng cố quyết định giữ toàn bộ quan sát** ở phần ngoại lai: các giá trị "ngoại lai" phân tán đều, 
+ không có điểm đòn bẩy đơn lẻ nào bóp méo mô hình.
+
+## Ridge Regression
+
+Với $\mathbf X_s$ và $\mathbf y_c$ đã định nghĩa ở phần PCR, Ridge giải đúng hàm mục tiêu mà `glmnet` sử dụng:
+
+$$
+\hat{\boldsymbol\beta}^{ridge}_\lambda
+=\arg\min_{\boldsymbol\beta}\left\{
+\frac{1}{2n}\|\mathbf y_c-\mathbf X_s\boldsymbol\beta\|_2^2
++\frac{\lambda}{2}\|\boldsymbol\beta\|_2^2\right\}
+=(\mathbf X_s^\top\mathbf X_s+n\lambda\mathbf I)^{-1}\mathbf X_s^\top\mathbf y_c.
+$$
+
+Hệ số chặn $\hat\beta_0=\bar y$ không bị phạt. Phần $n\lambda\mathbf I$ làm mọi trị riêng dương và co liên tục các hệ số về 0.
+
+## LASSO
+
+LASSO thay phạt $\ell_2$ bằng $\ell_1$:
+
+$$
+\hat{\boldsymbol\beta}^{lasso}_\lambda
+=\arg\min_{\boldsymbol\beta}\left\{
+\frac{1}{2n}\|\mathbf y_c-\mathbf X_s\boldsymbol\beta\|_2^2
++\lambda\|\boldsymbol\beta\|_1\right\}.
+$$
+
+LASSO phạt tổng trị tuyệt đối của các hệ số. Cách phạt này có xu hướng kéo một số hệ số nhỏ về đúng 0, 
+nên các biến tương ứng bị loại khỏi mô hình. Vì vậy LASSO vừa làm hệ số nhỏ lại, vừa thực hiện chọn biến tự động.
+
+## Chọn tham số phạt bằng kiểm chứng chéo
+
+$\lambda$ của cả hai mô hình được chọn bằng kiểm chứng chéo 10-fold trên tập huấn luyện, dùng **cùng một phân hoạch fold** 
+(`foldid`) để hai đường cong CV so sánh được với nhau. Ta báo cáo cả $\lambda_{\min}$ (cực tiểu sai số CV) và 
+$\lambda_{1se}$ (quy tắc một sai số chuẩn).
+
+```{r glmnet-cv, fig.height=4.2}
+library(glmnet)
+Xm_train <- as.matrix(X_train)
+Xm_val <- as.matrix(X_val)
+
+cv_ridge <- cv.glmnet(Xm_train, y_train, alpha = 0, foldid = foldid, standardize = TRUE)
+cv_lasso <- cv.glmnet(Xm_train, y_train, alpha = 1, foldid = foldid, standardize = TRUE)
+
+par(mfrow = c(1, 2), mar = c(4, 4, 3, 1))
+plot(cv_ridge)
+title("Ridge", line = 2.5)
+plot(cv_lasso)
+title("LASSO", line = 2.5)
+par(mfrow = c(1, 1))
+
+nz_min <- sum(coef(cv_lasso, s = "lambda.min")[-1] != 0)
+nz_1se <- sum(coef(cv_lasso, s = "lambda.1se")[-1] != 0)
+
+tab_lambda <- tibble::tibble(
+  `Mô hình` = c("Ridge", "Ridge", "LASSO", "LASSO"),
+  `Quy tắc` = c("$\\lambda_{\\min}$", "$\\lambda_{1se}$", "$\\lambda_{\\min}$", "$\\lambda_{1se}$"),
+  `$\\lambda$` = signif(c(
+    cv_ridge$lambda.min, cv_ridge$lambda.1se,
+    cv_lasso$lambda.min, cv_lasso$lambda.1se
+  ), 3),
+  `MSE (CV)` = signif(c(
+    min(cv_ridge$cvm), cv_ridge$cvm[cv_ridge$lambda == cv_ridge$lambda.1se],
+    min(cv_lasso$cvm), cv_lasso$cvm[cv_lasso$lambda == cv_lasso$lambda.1se]
+  ), 4),
+  `Số hệ số khác 0` = c(ncol(Xm_train), ncol(Xm_train), nz_min, nz_1se)
+)
+kb(tab_lambda, caption = "Tham số phạt chọn bằng kiểm chứng chéo 10-fold (cùng foldid).")
+```
+
+**Nhận xét.** Với Ridge, $\lambda_{\min} = 0.0171$ khá nhỏ, bên cạnh đó dữ liệu 
+với $n = 1595 \gg p = 100$ không đòi hỏi co hệ số quá mạnh. 
+Với LASSO, $\lambda_{\min} = 0.000279$ giữ 76 biến, 
+còn $\lambda_{1se} = 0.00795$ chỉ giữ **14 biến** , một mô hình cực gọn sẽ rất
+hữu ích khi diễn giải. Để so sánh khả năng dự đoán thuần túy ở mục sau, ta dùng $\lambda_{\min}$ cho 
+cả hai mô hình (đây là giá trị tối ưu hóa sai số CV); các phương án $\lambda_{1se}$ được báo cáo kèm để tham khảo.
+
+# Đánh giá và so sánh mô hình trên tập kiểm định
+
+Ba chỉ số đánh giá trên tập kiểm định ($n_{val} = 399$), với $\hat y_i$ là giá trị dự đoán:
+
+$$
+\mathrm{RMSE} = \sqrt{\tfrac{1}{n}\textstyle\sum_i (y_i - \hat y_i)^2}, \qquad
+\mathrm{MAE} = \tfrac{1}{n}\textstyle\sum_i |y_i - \hat y_i|, \qquad
+R^2 = 1 - \frac{\sum_i (y_i - \hat y_i)^2}{\sum_i (y_i - \bar y_{val})^2}.
+$$
+
+RMSE phạt nặng sai số lớn, MAE bền vững hơn với sai số cực đoan; $R^2$ ở đây là tỷ lệ phương sai của $y$ 
+trên tập kiểm định được mô hình giải thích (quy ước $\bar y_{val}$ ở mẫu số).
+
+```{r danh-gia}
+rmse_f <- function(o, p) sqrt(mean((o - p)^2))
+mae_f <- function(o, p) mean(abs(o - p))
+r2_f <- function(o, p) 1 - sum((o - p)^2) / sum((o - mean(o))^2)
+mets <- function(o, p) c(RMSE = rmse_f(o, p), MAE = mae_f(o, p), R2 = r2_f(o, p))
+
+pred_ols <- predict(ols_fit, newdata = X_val)
+pred_ridge <- as.numeric(predict(cv_ridge, Xm_val, s = "lambda.min"))
+pred_lasso <- as.numeric(predict(cv_lasso, Xm_val, s = "lambda.min"))
+pred_ridge_1se <- as.numeric(predict(cv_ridge, Xm_val, s = "lambda.1se"))
+pred_lasso_1se <- as.numeric(predict(cv_lasso, Xm_val, s = "lambda.1se"))
+
+pcr_label <- sprintf("PCR (k = %d)", k_pcr)
+lasso_label <- "LASSO ($\\lambda_{\\min}$)"
+kq <- rbind(
+  mets(y_val, pred_pcr_val),
+  mets(y_val, pred_ols),
+  mets(y_val, pred_ridge),
+  mets(y_val, pred_lasso)
+)
+rownames(kq) <- c(pcr_label, "OLS", "Ridge ($\\lambda_{\\min}$)", lasso_label)
+kq_df <- tibble::tibble(`Mô hình` = rownames(kq)) |> bind_cols(as.data.frame(round(kq, 4)))
+
+best_rmse <- which.min(kq[, "RMSE"])
+kb(kq_df, caption = "So sánh bốn mô hình trên tập kiểm định.") |>
+  row_spec(best_rmse, bold = TRUE, background = "#EAF2E3")
+
+kq_1se <- rbind(
+  `Ridge ($\\lambda_{1se}$)` = mets(y_val, pred_ridge_1se),
+  `LASSO ($\\lambda_{1se}$)` = mets(y_val, pred_lasso_1se)
+)
+kb(
+  tibble::tibble(`Mô hình` = rownames(kq_1se)) |>
+    bind_cols(as.data.frame(round(kq_1se, 4))),
+  caption = "Tham khảo: các phương án $\\lambda_{1se}$ gọn hơn."
+)
+```
+
+```{r bootstrap-delta}
+# Bootstrap ghép cặp: độ bất định có điều kiện trên bốn mô hình đã khớp
+pred_core <- list(
+  PCR = pred_pcr_val, OLS = pred_ols,
+  Ridge = pred_ridge, LASSO = pred_lasso
+)
+set.seed(SEED)
+B <- 2000
+boot_id <- replicate(B, sample.int(length(y_val), replace = TRUE))
+
+boot_delta <- lapply(c("PCR", "OLS", "Ridge"), function(m) {
+  d_rmse <- apply(boot_id, 2, function(ii) {
+    rmse_f(y_val[ii], pred_core[[m]][ii]) -
+      rmse_f(y_val[ii], pred_core$LASSO[ii])
+  })
+  d_mae <- apply(boot_id, 2, function(ii) {
+    mae_f(y_val[ii], pred_core[[m]][ii]) -
+      mae_f(y_val[ii], pred_core$LASSO[ii])
+  })
+  tibble::tibble(
+    `So sánh với LASSO` = m,
+    `ΔRMSE` = rmse_f(y_val, pred_core[[m]]) - rmse_f(y_val, pred_core$LASSO),
+    `KTC 95% ΔRMSE` = sprintf("[%.4f; %.4f]", quantile(d_rmse, .025), quantile(d_rmse, .975)),
+    `ΔMAE` = mae_f(y_val, pred_core[[m]]) - mae_f(y_val, pred_core$LASSO),
+    `KTC 95% ΔMAE` = sprintf("[%.4f; %.4f]", quantile(d_mae, .025), quantile(d_mae, .975))
+  )
+}) |> bind_rows()
+kb(boot_delta,
+  digits = 4,
+  caption = "Chênh lệch sai số so với LASSO và khoảng tin cậy bootstrap ghép cặp."
+)
+```
+
+```{r pred-vs-obs, fig.height=7}
+tibble::tibble(
+  `Quan sát` = rep(y_val, 4),
+  `Dự đoán` = c(pred_pcr_val, pred_ols, pred_ridge, pred_lasso),
+  `Mô hình` = rep(c(pcr_label, "OLS", "Ridge", "LASSO"), each = length(y_val))
+) |>
+  mutate(`Mô hình` = factor(`Mô hình`, levels = c(pcr_label, "OLS", "Ridge", "LASSO"))) |>
+  ggplot(aes(`Quan sát`, `Dự đoán`)) +
+  geom_point(alpha = 0.35, size = 1, color = "#4C72B0") +
+  geom_abline(slope = 1, intercept = 0, color = "#C44E52", linetype = 2) +
+  facet_wrap(~`Mô hình`) +
+  coord_equal(xlim = c(-0.2, 1), ylim = c(-0.2, 1)) +
+  labs(
+    title = "Giá trị dự đoán so với quan sát trên tập kiểm định",
+    subtitle = "Đường đứt đỏ: dự đoán hoàn hảo y = x"
+  )
+```
+
+**Nhận xét.**
+
+- **LASSO ($\lambda_{\min}$) có sai số điểm thấp nhất** (RMSE $= 0.1379$, $R^2 = 0.6794$), 
+nhưng khoảng cách với OLS và Ridge nhỏ. Bảng bootstrap cho biết độ bất định của các chênh lệch này trên tập validation; 
+khoảng chứa 0 không cung cấp bằng chứng rõ về ưu thế của một mô hình.
+- **PCR ($k = 12$) có sai số lớn nhất** (RMSE $= 0.1479$, $R^2 = 0.6314$): 
+các thành phần có phương sai lớn của $\mathbf X$ không nhất thiết chứa toàn bộ tín hiệu dự đoán cho $y$.
+- Trên đồ thị dự đoán–quan sát, cả bốn mô hình co dự đoán về trung tâm và có thể dự đoán ngoài $[0,1]$, vì mô hình tuyến 
+tính không áp ràng buộc miền giá trị.
+- MAE (0.099 với LASSO) nhỏ hơn RMSE ở mọi mô hình, cho thấy một nhóm sai số lớn kéo RMSE lên.
+
+Khoảng bootstrap ở đây là **có điều kiện trên các mô hình đã khớp**; nó chưa phản ánh biến thiên do chia lại train/validation hoặc huấn luyện lại mô hình.
+
+# Phân tích các thành phần chính qua ma trận tải
+
+Vector tải $\mathbf{v}_j$ cho biết mỗi thành phần chính là tổ hợp tuyến tính nào của các biến gốc (đã chuẩn hóa); 
+vì $\lVert\mathbf{v}_j\rVert = 1$, độ lớn $|v_{ij}|$ đo mức đóng góp tương đối của biến $i$ vào thành phần $j$. 
+Ta xét 4 thành phần đầu (chiếm 58.7% phương sai) qua 10 biến có $|v_{ij}|$ lớn nhất 
+của mỗi thành phần, đồng thời tính **tương quan giữa điểm thành phần (scores) với $y$** để đo mức liên quan của từng 
+thành phần tới tội phạm.
+
+```{r loadings-tables}
+V <- unclass(pcr_fit$loadings)[, 1:k_pcr]
+
+top_load <- function(j, m = 10) {
+  lj <- sort(abs(V[, j]), decreasing = TRUE)[1:m]
+  tibble::tibble(`Biến` = names(lj), `Loading` = round(V[names(lj), j], 3))
+}
+
+bind_cols(
+  top_load(1) |> rename(`Biến (PC1)` = `Biến`, `v1` = Loading),
+  top_load(2) |> rename(`Biến (PC2)` = `Biến`, `v2` = Loading)
+) |>
+  kb(caption = sprintf(
+    "10 biến tải lớn nhất của PC1 (PVE %.1f%%) và PC2 (PVE %.1f%%).",
+    100 * pve[1], 100 * pve[2]
+  ))
+
+bind_cols(
+  top_load(3) |> rename(`Biến (PC3)` = `Biến`, `v3` = Loading),
+  top_load(4) |> rename(`Biến (PC4)` = `Biến`, `v4` = Loading)
+) |>
+  kb(caption = sprintf(
+    "10 biến tải lớn nhất của PC3 (PVE %.1f%%) và PC4 (PVE %.1f%%).",
+    100 * pve[3], 100 * pve[4]
+  ))
+```
+
+```{r pc-cor-y, fig.height=3.8}
+scores_train <- pcr_fit$scores[, 1:k_pcr]
+cor_pc_y <- as.numeric(cor(scores_train, y_train))
+
+tibble::tibble(PC = factor(1:k_pcr), r = cor_pc_y) |>
+  ggplot(aes(PC, r, fill = r > 0)) +
+  geom_col(show.legend = FALSE, width = 0.65) +
+  geom_hline(yintercept = 0) +
+  scale_fill_manual(values = c(`TRUE` = "#C44E52", `FALSE` = "#4C72B0")) +
+  geom_text(aes(label = sprintf("%.2f", r), vjust = ifelse(r > 0, -0.35, 1.3)), size = 3) +
+  labs(
+    title = "Tương quan giữa điểm thành phần chính và y (tập huấn luyện)",
+    x = "Thành phần chính", y = expression(cor(z[j], y))
+  )
+```
+
+**Diễn giải các thành phần** (dựa trên các bảng tải ở trên, đối chiếu với bảng nhóm biến):
+
+- **PC1 — trục "bất lợi kinh tế và cấu trúc gia đình"** (PVE 25.2%): tải **âm** với mọi biến thu nhập (`medFamInc`, `medIncome`, `pctWInvInc`, `perCapInc`) 
+và biến gia đình đủ hai bố mẹ (`PctKids2Par`, `PctFam2Par`); tải **dương** với nghèo đói và trợ cấp 
+(`PctPopUnderPov`, `pctWPubAsst`, `PctHousNoPhone`). Giá trị PC1 cao tương đương cộng đồng nghèo, 
+ít gia đình nguyên vẹn. Đây cũng là thành phần liên hệ mạnh nhất với tội phạm: $\mathrm{cor}(z_1, y) = 0.62$
+, có thể nói đây là **một trục tóm tắt phần lớn tín hiệu chính** mà EDA đã thấy ở phần tương quan.
+- **PC2 — trục "nhập cư và ngôn ngữ"** (PVE 16.5%): tải âm đồng loạt với các biến nhập cư gần đây 
+(`PctRecImmig5/8/10`, `PctForeignBorn`, `PctNotSpeakEnglWell`) và dương với `PctSpeakEnglOnly`; giá trị cao tương đương cộng 
+đồng "bản địa", ít dân nhập cư. Tương quan với $y$ ở mức vừa ($-0.28$).
+- **PC3 — trục "quy mô hộ và nhà ở đông người"** (PVE 9.4%): các biến người/hộ 
+(`PersPerOccupHous`, `PersPerFam`, `householdsize`, `PctLargHouseOccup`) tải dương mạnh.
+- **PC4 — trục "ổn định cư trú và cơ cấu tuổi"** (PVE 7.5%): dương với các biến ở lâu một chỗ 
+(`PctSameCity85`, `PctSameHouse85`) và dân số già (`agePct65up`, `pctWSocSec`), âm với các nhóm tuổi trẻ 
+(`agePct12t29`, `agePct16t24`).
+
+**Nhận xét quan trọng cho PCR.** Biểu đồ tương quan thành phần–$y$ bộc lộ đúng yếu điểm của PCR: 
+mức liên quan tới $y$ **không giảm dần theo thứ tự phương sai**. Chẳng hạn PC8 chỉ chiếm 2.9% 
+phương sai nhưng có $\mathrm{cor}(z_8, y) = 0.21$, vốn ngang với PC4 và cao hơn hẳn PC5, PC6 (gần như bằng 0). 
+PCA sắp xếp các thành phần theo lượng phương sai của $\mathbf{X}$, không theo giá trị dự đoán cho $y$; 
+vì vậy quy tắc "giữ $k$ thành phần đầu" có thể vừa giữ những thành phần ít liên quan tới $y$
+
+# Chuyển hệ số PCR về không gian biến gốc
+
+## Công thức chuyển đổi
+
+Mô hình PCR trên không gian thành phần là $\hat y = \bar y + \mathbf{z}^\top\hat{\boldsymbol\gamma}$ với $\mathbf{z} = \mathbf{V}_k^\top \mathbf{x}_s$. 
+Thay ngược, hệ số trên **biến chuẩn hóa** là $\hat{\boldsymbol\beta}^{std} = \mathbf{V}_k\hat{\boldsymbol\gamma}$, 
+và quy về **thang đo gốc** của biến $j$ (chia cho độ lệch chuẩn huấn luyện $s_j$, điều chỉnh hệ số chặn):
+
+$$
+\hat\beta_j = \frac{(\mathbf{V}_k\hat{\boldsymbol\gamma})_j}{s_j},
+\qquad
+\hat\beta_0 = \bar y_{train} - \sum_{j=1}^{p} \hat\beta_j\,\bar x_{j,train}.
+$$
+
+Do các cột điểm thành phần trực giao, $\hat\gamma_j = \mathbf{z}_j^\top\mathbf{y} / \mathbf{z}_j^\top\mathbf{z}_j$ 
+tính được từng thành phần độc lập. Ta thực hiện phép chuyển đổi thủ công rồi **kiểm chứng bằng số**: dự đoán từ 
+$(\hat\beta_0, \hat{\boldsymbol\beta})$ phải trùng dự đoán của mô hình `pls` đến sai số dấu phẩy động.
+
+```{r back-transform}
+gamma_hat <- drop(crossprod(scores_train, y_train) / colSums(scores_train^2))
+beta_std <- drop(V %*% gamma_hat)
+
+x_bar <- colMeans(X_train)
+s_x <- apply(X_train, 2, sd)
+beta_orig <- beta_std / s_x
+beta_0 <- mean(y_train) - sum(beta_orig * x_bar)
+
+pred_manual <- as.numeric(as.matrix(X_val) %*% beta_orig + beta_0)
+sai_so_khop <- max(abs(pred_manual - pred_pcr_val))
+```
+
+Sai số lớn nhất giữa hai cách tính là $2.52e-14$ với cỡ sai số làm tròn của số thực dấu phẩy động, xác nhận phép chuyển đổi chính xác.
+
+## Diễn giải hệ số trên các biến gốc
+
+Để so sánh hệ số **giữa các biến**, ta dùng $\hat\beta^{std}$. Trong mặt phẳng hồi quy đã khớp, 
+tăng $X_j$ một độ lệch chuẩn trong khi giữ các biến khác cố định làm dự đoán thay đổi $\hat\beta^{std}_j$. 
+Đây là liên hệ có điều kiện của mô hình, không phải tác động nhân quả.
+
+```{r beta-table}
+ord <- order(abs(beta_std), decreasing = TRUE)
+tab_beta <- tibble::tibble(
+  `Biến` = names(beta_std)[ord[1:15]],
+  `$\\hat\\beta^{std}$` = round(beta_std[ord[1:15]], 4),
+  `$\\hat\\beta$ (thang gốc)` = round(beta_orig[ord[1:15]], 4)
+)
+kb(tab_beta, caption = "15 biến có hệ số PCR (chuẩn hóa) lớn nhất về trị tuyệt đối.")
+```
+
+```{r beta-plot, fig.height=5}
+tibble::tibble(bien = names(beta_std)[ord[1:15]], beta = beta_std[ord[1:15]]) |>
+  ggplot(aes(x = reorder(bien, abs(beta)), y = beta, fill = beta > 0)) +
+  geom_col(show.legend = FALSE, width = 0.7) +
+  coord_flip() +
+  scale_fill_manual(values = c(`TRUE` = "#C44E52", `FALSE` = "#4C72B0")) +
+  labs(
+    title = "Hệ số PCR trên thang chuẩn hóa (top 15)",
+    subtitle = "Đỏ: làm tăng tỷ lệ tội phạm dự đoán; xanh: làm giảm",
+    x = NULL, y = expression(hat(beta)^{
+      std
+    })
+  )
+```
+
+**Diễn giải.** Các hệ số lớn nhất tập trung vào vài cụm nội dung, nhìn chung nhất quán với phân tích tương quan ở phần EDA:
+
+- **Cấu trúc gia đình** là cụm mạnh nhất: `PctIlleg` (con ngoài giá thú, $+$), bốn biến gia đình đủ hai bố mẹ 
+`PctKids2Par`, `PctTeen2Par`, `PctFam2Par`, `PctYoungKids2Par` (đều $-$), và cụm ly hôn `FemalePctDiv`, `TotalPctDiv`, `MalePctDivorce` 
+(đều $+$). Đáng chú ý, PCR phân bổ trọng số khá đều cho cả bốn biến "hai bố mẹ" vốn tương quan rất cao, hệ quả tự nhiên của việc ước lượng qua 
+các thành phần chung thay vì từng biến riêng.
+- **Cơ cấu chủng tộc**: `racepctblack` ($+$) và `racePctWhite` ($-$) đứng đầu bảng. Đây là liên hệ thống kê trong dữ liệu quan sát, 
+không phải quan hệ nhân quả; trong dữ liệu Hoa Kỳ 1990, biến chủng tộc gắn chặt với các bất lợi cấu trúc như nghèo đói, 
+nhà ở và cơ hội việc làm, nên mô hình không tách được các hiệu ứng này.
+- **Suy thoái nhà ở và bất lợi đô thị**: `PctVacantBoarded` (nhà bỏ hoang bịt ván, $+$), cùng với `pctWPubAsst` ($+$) và `pctUrban` ($+$), 
+cho thấy các dấu hiệu bất lợi kinh tế - đô thị vẫn nằm trong nhóm hệ số lớn. Diễn giải này là liên hệ thống kê trong dữ liệu quan 
+sát, không nên hiểu như tác động nhân quả.
+
+## Đối chiếu với tập biến LASSO chọn
+
+LASSO với $\lambda_{1se}$ giữ đúng 14 biến:
+
+```{r lasso-compare}
+coef_lasso_1se <- coef(cv_lasso, s = "lambda.1se")[-1, 1]
+sel_lasso <- names(coef_lasso_1se)[coef_lasso_1se != 0]
+
+tab_lasso <- tibble::tibble(
+  `Biến` = sel_lasso,
+  `Hệ số LASSO ($\\lambda_{1se}$)` = round(coef_lasso_1se[sel_lasso], 4),
+  `Thuộc top 15 |β| của PCR?` = ifelse(sel_lasso %in% names(beta_std)[ord[1:15]], "Có", "—")
+) |> arrange(desc(abs(`Hệ số LASSO ($\\lambda_{1se}$)`)))
+kb(tab_lasso, caption = sprintf("%d biến được LASSO (λ 1se) giữ lại và đối chiếu với PCR.", nz_1se))
+```
+
+**Nhận xét.** Hai phương pháp với triết lý đối lập. Trong khi PCR "gộp" các biến tương quan vào thành phần chung, 
+LASSO "tỉa" chỉ giữ một đại diện mỗi cụm. Tuy nhiên cả 2 phương háp **hội tụ về cùng một câu chuyện**: 
+7 biến trùng nhau giữa hai danh sách 
+(`racepctblack`, `racePctWhite`, `PctKids2Par`, `PctIlleg`, `MalePctDivorce`, `PctVacantBoarded`). 
+Khác biệt minh họa rõ tính chất từng phương pháp: thay vì rải trọng số cho cả bốn biến "hai bố mẹ" như PCR, 
+LASSO dồn toàn bộ vào một mình `PctKids2Par` (hệ số $-0.291$ vốn lớn nhất bảng) 
+và loại ba biến gần trùng còn lại. Đây chính là điểm cần lưu ý khi diễn giải LASSO dưới đa cộng tuyến: biến bị loại 
+**không có nghĩa là không quan trọng**, nó chỉ bị biến đại diện hút mất vai trò.
+
+# Thảo luận và lựa chọn mô hình
+
+Trước khi bàn sâu về PCR, ta tóm tắt lại các chỉ số đánh giá chính của bốn mô hình trên tập kiểm định. 
+Với RMSE và MAE, giá trị nhỏ hơn là tốt hơn; với $R^2$, giá trị lớn hơn là tốt hơn.
+
+```{r final-metrics-table}
+tab_model_metrics <- tibble::tibble(`Mô hình` = rownames(kq)) |>
+  bind_cols(as.data.frame(round(kq, 4))) |>
+  mutate(`Xếp hạng RMSE` = rank(RMSE, ties.method = "min")) |>
+  arrange(`Xếp hạng RMSE`)
+
+kb(tab_model_metrics, caption = "Tóm tắt chỉ số đánh giá của bốn mô hình trên tập kiểm định.")
+```
+
+
+## Vì sao PCR chưa phù hợp trên bộ dữ liệu này? Một phân tích độ nhạy
+
+Kết quả phần đánh giá cho thấy PCR với $k = 12$ kém các mô hình còn lại một khoảng rõ rệt. 
+Để xác định nguyên nhân, ta tính RMSE trên tập kiểm định của PCR theo nhiều mức $k$ (dùng lại mô hình 100 thành phần 
+đã khớp ở phần chọn số thành phần PCR):
+
+```{r pcr-sensitivity}
+tab_sens <- tibble::tibble(
+  k = unique(c(k_pcr, 25, 50, 75, ncol(X_train))),
+  RMSE = sapply(unique(c(k_pcr, 25, 50, 75, ncol(X_train))), function(k) {
+    p <- as.numeric(predict(pcr_cv, newdata = X_val, ncomp = k))
+    rmse_f(y_val, p)
+  })
+) |>
+  mutate(`So với OLS` = sprintf("%+.4f", RMSE - rmse_f(y_val, pred_ols)))
+kb(tab_sens, caption = "RMSE kiểm định của PCR theo số thành phần giữ lại.")
+```
+
+**Nhận xét.** Trong các mốc xét ở đây, RMSE giảm khi tăng $k$ và PCR với đủ $p=100$ thành phần trùng OLS, 
+vì phép quay trực giao không thay đổi không gian cột. Khoảng cách giữa PCR rút gọn và OLS cho thấy tín hiệu dự đoán 
+không chỉ nằm trong các hướng có phương sai lớn; giảm chiều theo phương sai của $\mathbf X$ phải trả giá về bias trên 
+bộ dữ liệu này.
+
+## Ưu điểm và hạn chế của từng phương pháp
+
+Trong bối cảnh cụ thể của bài toán — $p = 100$ biến, đa cộng tuyến nghiêm trọng ($\kappa \approx 200$, 65 biến VIF > 10) 
+nhưng $n = 1595 \gg p$:
+
+| Phương pháp | Ưu điểm | Hạn chế (thể hiện trong kết quả) |
+|---|---|---|
+| **OLS** | Đơn giản; với $n\gg p$ vẫn dự đoán cạnh tranh (RMSE 0.1386) | Hệ số riêng lẻ bất ổn dưới đa cộng tuyến; suy diễn cần HC3 |
+| **PCR** | PC trực giao; mô tả tốt cấu trúc chung của dữ liệu | Chọn hướng không nhìn $y$; PCR rút gọn có RMSE 0.1479 |
+| **Ridge** | Co ổn định cả cụm biến tương quan | Không chọn biến; lợi ích dự đoán so với OLS nhỏ |
+| **LASSO** | Vừa co vừa chọn biến; $\lambda_{\min}$ giữ 76 biến | Chọn biến bất định trong các cụm tương quan; hệ số bị chệch do phạt |
+
+## Đề xuất mô hình
+
+Từ toàn bộ kết quả, ta đề xuất **LASSO** là mô hình cuối cùng, với hai cấu hình theo mục đích sử dụng:
+
+- **Dự đoán**: LASSO với $\lambda_{\min} = 0.000279$ có sai số điểm thấp nhất 
+(RMSE 0.1379, MAE 0.099, $R^2=0.6794$) 
+và giữ 76/100 biến.
+- **Diễn giải**: LASSO với $\lambda_{1se}$ giữ 14 biến, phù hợp hơn khi ưu tiên mô hình gọn.
+
+Khoảng cách giữa LASSO, OLS và Ridge nhỏ, nên không nên hiểu thứ hạng điểm đơn thuần là bằng chứng LASSO vượt trội rõ ràng. 
+Bootstrap ghép cặp cho biết độ bất định của chênh lệch sai số trên tập validation hiện tại; 
+để đánh giá độ ổn định theo lần chia dữ liệu, cần repeated CV hoặc một tập test độc lập. Kết luận rõ hơn là 
+PCR rút gọn đánh đổi quá nhiều tín hiệu dự đoán, dù các PC vẫn hữu ích để mô tả cấu trúc dữ liệu.
+
+# Kết luận
+
+## Tóm tắt kết quả
+
+1. Sau khi bỏ các biến định danh và 22 biến LEMAS khuyết khoảng 84%, 
+mô hình sử dụng $p=100$ biến dự báo cho 1 994 cộng đồng.
+2. Đa cộng tuyến rất mạnh ($\kappa=199.9$; 65 biến có VIF > 10), 
+tạo cơ sở cho PCR và regularization.
+3. PCR one-sigma chọn $k=12$, giữ 81.3% phương sai của $\mathbf X$. 
+Trên validation, mô hình đạt RMSE 0.1479 và $R^2=0.6314$; 
+kết quả cho thấy phương sai lớn của $\mathbf X$ không đồng nghĩa với tín hiệu dự đoán lớn cho $y$.
+4. LASSO có sai số điểm thấp nhất trong bốn mô hình bắt buộc 
+(RMSE 0.1379, MAE 0.099, $R^2=0.6794$), 
+nhưng OLS và Ridge bám sát; khoảng bootstrap cần được xem cùng thứ hạng điểm.
+5. Loadings và hệ số quy đổi liên hệ tỷ lệ tội phạm với cấu trúc gia đình, cơ cấu chủng tộc ở cấp cộng đồng, 
+bất lợi kinh tế và suy thoái nhà ở. Đây là liên hệ ở cấp cộng đồng, không phải tác động nhân quả ở cấp cá nhân.
+
+## Hạn chế
+
+- **Biến phản hồi bị capping** trên $[0,1]$: mô hình tuyến tính không tự tôn trọng miền giá trị, còn thông tin ngoài hai biên 
+đã mất trong bước chuẩn hóa nguồn.
+- **Suy diễn sinh thái**: đơn vị phân tích là cộng đồng; diễn giải ở mức cá nhân, đặc biệt với biến chủng tộc, là không hợp lý.
+- Khối thông tin **LEMAS** bị loại do khuyết 84%, nên mô hình không bao quát một chiều nội dung quan trọng.
+
+## Hướng cải thiện
+
+Ưu tiên tiếp theo là dùng repeated nested CV hoặc một tập test độc lập để đo ổn định của kết quả. 
+Nếu mở rộng bài toán, có thể thử thêm biến đổi của biến phản hồi hoặc mô hình phi tuyến, 
+nhưng các hướng đó nằm ngoài phạm vi bản báo cáo chính.

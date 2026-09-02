@@ -1,0 +1,12 @@
+=== CHUNK 23 anova-oo ===
+--- header: ```{r anova-oo} 
+
+
+[BẢNG] Số quan sát trong từng ô (Habitat × Habitat.Density). 
+               Dày Trung bình Thưa
+Forest         187         62    2
+Grassland        0          3   11
+Human Modified   3         15    0
+Shrubland        3         57    2
+Woodland         0         17    3
+

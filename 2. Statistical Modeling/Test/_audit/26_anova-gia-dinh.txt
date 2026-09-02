@@ -1,0 +1,10 @@
+=== CHUNK 26 anova-gia-dinh ===
+--- header: ```{r anova-gia-dinh, fig.width=9, fig.height=4} 
+
+
+[BẢNG] Kiểm tra giả định và chẩn đoán ảnh hưởng của mô hình ANOVA cộng tính. 
+                  Giả định / chẩn đoán  Kết quả
+1        Đồng nhất phương sai (Levene)    0.692
+2         Phần dư chuẩn (Shapiro-Wilk)  < 0.001
+3 Quan sát ảnh hưởng mạnh (Cook > 4/n) 11 / 365
+

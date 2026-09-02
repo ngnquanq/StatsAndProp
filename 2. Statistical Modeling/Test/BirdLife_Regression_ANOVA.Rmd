@@ -1,0 +1,1236 @@
+---
+title: "Mô hình thống kê tuyến tính trên dữ liệu hình thái chim ruồi (BirdLife)"
+subtitle: "Dự đoán khối lượng cơ thể bằng OLS, Ridge, LASSO, PCR và phân tích phương sai nhiều nhân tố"
+author: "Quang Nguyen - 25C23002"
+date: "`r Sys.Date()`"
+output:
+  html_document:
+    toc: true
+    toc_depth: 3
+    toc_float:
+      collapsed: false
+    number_sections: true
+    df_print: paged
+    code_folding: hide
+    theme: flatly
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  echo = TRUE,
+  message = FALSE,
+  warning = FALSE,
+  fig.align = "center",
+  fig.width = 8,
+  fig.height = 5
+)
+
+required_packages <- c(
+  "dplyr", "tidyr", "tibble", "ggplot2", "knitr", "kableExtra",
+  "corrplot", "pls", "glmnet", "psych", "car", "patchwork", "lmtest", "sandwich",
+  "emmeans", "effectsize", "rmarkdown"
+)
+if (getRversion() < "4.1.0") {
+  stop("Báo cáo yêu cầu R >= 4.1.0 vì sử dụng native pipe và anonymous-function shorthand.",
+       call. = FALSE)
+}
+missing_packages <- required_packages[
+  !vapply(required_packages, requireNamespace, logical(1), quietly = TRUE)
+]
+if (length(missing_packages) > 0) {
+  stop("Cần cài thêm package trước khi knit: ",
+       paste(missing_packages, collapse = ", "),
+       '. Ví dụ: install.packages(c(',
+       paste(sprintf('"%s"', missing_packages), collapse = ", "), "))",
+       call. = FALSE)
+}
+
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+library(knitr)
+library(kableExtra)
+library(patchwork)
+
+theme_set(
+  theme_minimal(base_size = 12) +
+    theme(
+      plot.title = element_text(face = "bold"),
+      plot.subtitle = element_text(color = "grey35"),
+      legend.position = "bottom"
+    )
+)
+
+# Hàm tiện ích: bảng kable thống nhất định dạng cho toàn báo cáo
+kb <- function(df, caption = NULL, digits = 4, ...) {
+  kable(df, caption = caption, digits = digits, booktabs = TRUE, ...) |>
+    kable_styling(
+      bootstrap_options = c("striped", "hover", "condensed"),
+      full_width = FALSE
+    )
+}
+
+# Hàm tiện ích: bộ chỉ số đánh giá hồi quy trên một tập bất kỳ
+eval_metrics <- function(y_true, y_pred) {
+  resid <- y_true - y_pred
+  c(RMSE = sqrt(mean(resid^2)),
+    MAE  = mean(abs(resid)),
+    R2   = 1 - sum(resid^2) / sum((y_true - mean(y_true))^2))
+}
+
+# Quy tắc IQR của Tukey để gắn cờ ngoại lai
+iqr_flag <- function(x) {
+  q <- quantile(x, c(0.25, 0.75), na.rm = TRUE)
+  fence <- 1.5 * diff(q)
+  x < q[1] - fence | x > q[2] + fence
+}
+
+# Hàm tiện ích: định dạng p-value (tránh hiển thị "0.000")
+fmt_p <- function(p, digits = 3) {
+  ifelse(p < 10^(-digits),
+         paste0("< ", format(10^(-digits), scientific = FALSE)),
+         formatC(p, format = "f", digits = digits))
+}
+
+SEED <- 2026
+```
+
+# Giới thiệu và câu hỏi nghiên cứu
+
+## Bối cảnh dữ liệu
+
+Bộ dữ liệu `BirdLife.csv` gồm **366 quan sát và 37 biến**, mô tả 366 loài chim qua nhiều
+nhóm thông tin: định danh và phân loại loài (`Species1`, `Family1`, `Order1`,
+`Avibase.ID1`); cỡ mẫu và mức độ đầy đủ của phép đo (`Total.individuals`, `Female`, `Male`,
+`Unknown`, `Complete.measures`); nguồn và trạng thái suy luận dữ liệu (`Mass.Source`,
+`Mass.Refs.Other`, `Inference`, `Traits.inferred`, `Reference.species`); cũng như đặc điểm
+**hình thái học, sinh thái và phân bố địa lý**. Các biến địa lý gồm giới hạn và tâm phân bố
+(`Min.Latitude`, `Max.Latitude`, `Centroid.Latitude`, `Centroid.Longitude`) cùng kích thước
+vùng phân bố (`Range.Size`). `Sequence` là biến chỉ mục của bản ghi.
+
+Trong phạm vi hai câu hỏi nghiên cứu của báo cáo, phân tích tập trung vào các biến hình thái
+gồm chiều dài mỏ (`Beak.Length_Culmen`, `Beak.Length_Nares`), bề rộng và độ sâu mỏ
+(`Beak.Width`, `Beak.Depth`), chiều dài chân (`Tarsus.Length`), chiều dài cánh
+(`Wing.Length`), khoảng cách Kipp (`Kipps.Distance`), lông cánh thứ cấp (`Secondary1`),
+**chỉ số Hand-Wing** (`Hand.Wing.Index`, viết tắt HWI), chiều dài đuôi (`Tail.Length`) và
+**khối lượng cơ thể** (`Mass`); cùng các biến sinh thái gồm môi trường sống (`Habitat`), mật
+độ sinh cảnh (`Habitat.Density`), tập tính di cư (`Migration`), bậc và ngách dinh dưỡng
+(`Trophic.Level`, `Trophic.Niche`) và lối sống chính (`Primary.Lifestyle`). Các nhóm biến
+còn lại chủ yếu được dùng để nhận diện quan sát, mô tả nguồn và chất lượng dữ liệu hoặc cung
+cấp bối cảnh bổ sung, nên không được đưa vào các mô hình chính của báo cáo.
+
+## Câu hỏi nghiên cứu
+
+Dựa trên các nội dung phân tích được yêu cầu, báo cáo đề xuất 2 câu hỏi nghiên cứu với 1 cau được
+giải thích bằng các mô hình hồi quy và một câu còn lại được xem xét thông qua việc phân tích ANOVA
+nhiều nhân tố. 
+
+**Câu hỏi 1 (Hồi quy, Mục 3 và 5).**
+*Có thể dự đoán **khối lượng cơ thể** của một loài chim ruồi từ các **đặc điểm hình thái** đo
+được đến mức nào, và trong bối cảnh các biến hình thái tương quan rất mạnh với nhau (đa cộng
+tuyến), thì các phương pháp như OLS, Ridge, LASSO hay PCR sẽ cho dự báo và diễn giải tốt nhất?*
+
+- *Ý nghĩa thống kê:* đây là bài toán hồi quy tuyến tính với hiện tượng đa cộng tuyến nghiêm
+  trọng với bối cảnh điển hình để so sánh phương pháp hồi quy bình phương nhỏ nhất với các phương pháp chính
+  quy như (Ridge, LASSO) và hồi quy trên thành phần chính (PCR)
+- *Ý nghĩa sinh học:* quan hệ giữa kích thước cơ thể và các số đo hình thái là bài toán
+  **allometry** (dị hình sinh trưởng) kinh điển. Do khối lượng khó đo trực tiếp trên tiêu bản bảo
+  tàng, nên một mô hình dự đoán khối lượng từ số đo tuyến tính có giá trị thực tiễn để suy đoán
+  khối lượng cho các mẫu vật thiếu cân.
+
+**Câu hỏi 2 (ANOVA, Mục 4).**
+*Chỉ số Hand-Wing (HWI) là một chỉ báo cho **khả năng bay và phát tán** có khác biệt theo
+**môi trường sống** (`Habitat`) và **mật độ sinh cảnh** (`Habitat.Density`) hay không, và hai
+nhân tố này có **tương tác** không?*
+
+- *Ý nghĩa thống kê:* mô hình phân tích phương sai hai nhân tố (Factorial ANOVA) với một biến
+  phản hồi định lượng và hai nhân tố phân loại.
+- *Ý nghĩa sinh học:* HWI phản ánh hình dạng cánh (cánh nhọn sẽ dẫn đến độ phát tán xa). Giả thuyết sinh
+  thái là loài sống ở sinh cảnh thoáng/thưa cần bay xa hơn nên có HWI cao hơn loài sống trong
+  rừng rậm.
+
+# Tiền xử lý dữ liệu
+
+```{r doc-du-lieu}
+if (!file.exists("BirdLife.csv")) {
+  stop("Không tìm thấy BirdLife.csv trong working directory.", call. = FALSE)
+}
+raw <- read.csv("BirdLife.csv", stringsAsFactors = FALSE)
+required_columns <- c(
+  "Species1", "Avibase.ID1", "Family1", "Order1", "Mass", "Mass.Source",
+  "Inference", "Total.individuals", "Complete.measures", "Range.Size",
+  "Hand.Wing.Index", "Habitat", "Habitat.Density"
+)
+missing_columns <- setdiff(required_columns, names(raw))
+if (length(missing_columns) > 0) {
+  stop("Thiếu cột bắt buộc: ", paste(missing_columns, collapse = ", "), call. = FALSE)
+}
+if (anyDuplicated(raw$Species1) || anyDuplicated(raw$Avibase.ID1)) {
+  stop("Species1 hoặc Avibase.ID1 không duy nhất; cần xác định lại đơn vị quan sát.",
+       call. = FALSE)
+}
+dim_tab <- tibble::tibble(
+  `Chỉ tiêu` = c("Số quan sát", "Số biến", "Số họ (Family1)",
+                 "Số bộ (Order1)", "Số loài (Species1)"),
+  `Giá trị` = c(nrow(raw), ncol(raw), dplyr::n_distinct(raw$Family1),
+                dplyr::n_distinct(raw$Order1), dplyr::n_distinct(raw$Species1))
+)
+kb(dim_tab, caption = "Kích thước và cấu trúc cơ bản của bộ dữ liệu.")
+```
+
+**Nguồn dữ liệu.** Các tên biến và taxonomy cho thấy đây là tập con theo BirdLife của cơ sở
+dữ liệu [AVONET (Tobias và cộng sự, 2022)](https://doi.org/10.1111/ele.13898).
+
+**Nhận xét.** Dữ liệu có `r nrow(raw)` loài, mỗi loài là một quan sát duy nhất
+(`r dplyr::n_distinct(raw$Species1)` loài phân biệt). Biến `Family1` và `Order1` chỉ nhận
+**một giá trị duy nhất** nên không mang thông tin phân biệt và sẽ bị loại.
+
+## Tiêu chí lựa chọn biến
+
+Phần hồi quy dùng `log(Mass)` làm phản hồi, bảy số đo hình thái và `logRange` làm predictors.
+Các biến hằng số, định danh và metadata khuyết trên 90% bị loại. `Hand.Wing.Index` không được
+dùng làm predictor vì đây là chỉ số được tính từ Kipp's distance và chiều dài cánh theo công
+thức $\text{HWI}=100\times\text{Kipps.Distance}/\text{Wing.Length}$. Do mô hình đã chứa các
+số đo cánh liên quan, bổ sung HWI sẽ tạo ra thông tin gần như trùng lặp và làm đa cộng tuyến
+nghiêm trọng hơn. HWI được giữ làm phản hồi cho ANOVA với hai nhân tố `Habitat` và
+`Habitat.Density`.
+
+`Kipps.Distance` và `Secondary1` vẫn được mô tả trong EDA nhưng không cùng được đưa vào mô
+hình hồi quy chính với `Wing.Length`: ở mức trung bình loài, ba số đo này gần thỏa
+`Kipps.Distance = Wing.Length - Secondary1`. Giữ cả ba sẽ tạo đa cộng tuyến mang tính cấu
+trúc, không chỉ là tương quan sinh học.
+
+## Dữ liệu khuyết, trùng lặp và kiểu dữ liệu
+
+```{r khuyet-trung}
+na_counts <- colSums(is.na(raw))
+na_tab <- tibble::tibble(`Biến` = names(na_counts), `Số NA` = as.integer(na_counts)) |>
+  filter(`Số NA` > 0) |>
+  arrange(desc(`Số NA`)) |>
+  mutate(`Tỷ lệ (%)` = round(100 * `Số NA` / nrow(raw), 1))
+kb(na_tab, caption = "Các biến có giá trị khuyết.")
+
+n_dup <- sum(duplicated(raw))
+```
+
+**Nhận xét.** Ba biến metadata (`Mass.Refs.Other`, `Traits.inferred`, `Reference.species`)
+khuyết trên 90% nên bị loại hoàn toàn. Các biến còn lại chỉ khuyết lẻ tẻ: `Habitat` (1 giá trị)
+và nhóm biến địa lý (`Range.Size`, các vĩ độ) khuyết 2 giá trị. Số quan sát **trùng lặp hoàn
+toàn** là `r n_dup`. Vì số dòng bị mất dữ liệu rất nhỏ nên ta cũng có thể loại luôn những giá trị đó
+
+```{r xay-dung-tap}
+morph_vars <- c("Beak.Length_Culmen", "Beak.Length_Nares", "Beak.Width", "Beak.Depth",
+                "Tarsus.Length", "Wing.Length", "Kipps.Distance", "Secondary1",
+                "Tail.Length")
+analysis_morph_vars <- setdiff(morph_vars, c("Kipps.Distance", "Secondary1"))
+
+# Tập dữ liệu cho HỒI QUY: khối lượng + hình thái + vùng phân bố
+reg_raw <- raw[, c("Species1", "Mass.Source", "Inference", "Total.individuals",
+                   "Complete.measures", "Mass", morph_vars, "Range.Size")]
+numeric_reg_vars <- c("Mass", morph_vars, "Range.Size")
+if (any(!vapply(reg_raw[numeric_reg_vars], is.numeric, logical(1)))) {
+  stop("Các biến định lượng của hồi quy phải có kiểu numeric.", call. = FALSE)
+}
+if (any(vapply(reg_raw[numeric_reg_vars], \(x) any(x <= 0, na.rm = TRUE), logical(1)))) {
+  stop("Biến được log hoặc số đo hình thái có giá trị không dương.", call. = FALSE)
+}
+reg_complete <- reg_raw[complete.cases(reg_raw[numeric_reg_vars]), ]
+
+# Phân tích chính loại khối lượng/trait được suy diễn hoặc khối lượng do mô hình khác tạo ra.
+# Tập đầy đủ vẫn được giữ để báo cáo độ nhạy.
+reg <- reg_complete |>
+  filter(Inference == "NO",
+         !Mass.Source %in% c("Inferred", "EltonTraits_Model"))
+reg_sensitivity <- reg_complete
+
+reg$logMass  <- log(reg$Mass)
+reg$logRange <- log(reg$Range.Size)
+reg_sensitivity$logMass <- log(reg_sensitivity$Mass)
+reg_sensitivity$logRange <- log(reg_sensitivity$Range.Size)
+
+# Log-transform các số đo hình thái lệch phải nặng (|skew| > 1)
+skewed_morph_vars <- c("Beak.Length_Culmen", "Beak.Length_Nares", "Tail.Length")
+log_skewed_vars <- paste0("log_", skewed_morph_vars)
+reg[log_skewed_vars] <- lapply(reg[skewed_morph_vars], log)
+reg_sensitivity[log_skewed_vars] <- lapply(reg_sensitivity[skewed_morph_vars], log)
+model_morph_vars <- ifelse(analysis_morph_vars %in% skewed_morph_vars,
+                           paste0("log_", analysis_morph_vars), analysis_morph_vars)
+pred_vars <- c(model_morph_vars, "logRange")
+
+# Tập dữ liệu cho ANOVA: HWI + hai nhân tố phân loại
+anv <- raw[, c("Hand.Wing.Index", "Habitat", "Habitat.Density")]
+anv <- na.omit(anv)
+anv$Habitat        <- factor(anv$Habitat)
+anv$Habitat.Density <- factor(anv$Habitat.Density,
+                              levels = 1:3,
+                              labels = c("Dày", "Bán mở", "Mở"))
+if (anyNA(anv$Habitat.Density)) {
+  stop("Habitat.Density có mã ngoài tập {1, 2, 3}.", call. = FALSE)
+}
+
+c(n_hoi_quy_chinh = nrow(reg), n_hoi_quy_day_du = nrow(reg_sensitivity),
+  n_anova = nrow(anv))
+```
+
+**Nhận xét.** Sau khi loại dòng thiếu và các nguồn khối lượng/trait suy diễn, tập hồi quy chính
+còn `r nrow(reg)` loài; tập đầy đủ để kiểm tra độ nhạy có `r nrow(reg_sensitivity)` loài.
+Tập ANOVA còn `r nrow(anv)` loài (mất 1 dòng thiếu `Habitat`). Ba số đo có
+|skew| > 1 được log-transform; các số đo còn lại giữ đơn vị gốc. `Habitat` và
+`Habitat.Density` được ép thành **factor** (mật độ 1/2/3 được gán nhãn
+Dày/Bán mở/Mở).
+
+## Giá trị ngoại lai
+
+```{r ngoai-lai, fig.height=4.5}
+flags <- sapply(reg[, morph_vars], iqr_flag)
+outlier_tab <- tibble::tibble(
+  `Chỉ tiêu` = c("% các điểm outlier được xác định",
+                 "Số loài có ít nhất 1 biến bị gắn cờ",
+                 "Biến bị xem là outlier nhiều nhất"),
+  `Giá trị` = c(sprintf("%.2f %%", 100 * mean(flags)),
+                sprintf("%d / %d (%.1f %%)", sum(rowSums(flags) > 0), nrow(reg),
+                        100 * mean(rowSums(flags) > 0)),
+                names(which.max(colSums(flags))))
+)
+kb(outlier_tab, caption = "Kết quả gắn cờ ngoại lai theo quy tắc IQR trên các biến số đo.")
+```
+
+Chúng ta đang sử dụng quy tắc IQR để đánh dáu điểm ngoại lai, 
+điều này không chứng minh một giá trị là lỗi. Do đó chúng nên được **giữ lại tạm thời**. 
+Ảnh hưởng của chúng sẽ được đánh giá qua chẩn đoán mô hình ở phần sau.
+
+# Khám phá và trực quan hóa dữ liệu
+
+## Thống kê mô tả
+
+```{r mo-ta}
+desc <- psych::describe(reg[, c("Mass", morph_vars, "Range.Size")])[, c(
+  "mean", "sd", "median", "min", "max", "skew", "kurtosis")]
+kb(round(desc, 2), caption = "Thống kê mô tả các biến định lượng chính (đơn vị gốc).")
+```
+
+**Nhận xét.** Không chỉ `Mass` lệch phải mạnh (skew =
+`r round(desc["Mass", "skew"], 2)`). `Beak.Length_Culmen` và `Beak.Length_Nares` còn lệch phải
+mạnh hơn, với skewness lần lượt `r round(desc["Beak.Length_Culmen", "skew"], 2)` và
+`r round(desc["Beak.Length_Nares", "skew"], 2)`; kurtosis rất cao
+(`r round(desc["Beak.Length_Culmen", "kurtosis"], 2)` và
+`r round(desc["Beak.Length_Nares", "kurtosis"], 2)`) cho thấy đuôi phải dài. `Tail.Length`
+cũng lệch phải đáng kể (skew = `r round(desc["Tail.Length", "skew"], 2)`). Ở bước mô tả, đây
+chỉ là đặc điểm phân phối và là tín hiệu để **cân nhắc** log-transform; chưa phải quyết định
+chọn dạng mô hình hay loại quan sát.
+
+## Đánh giá phép biến đổi log cho các biến lệch phải
+
+```{r bien-doi-log}
+skew_vars <- c("Mass", skewed_morph_vars, "Range.Size")
+logged_vars <- c("logMass", log_skewed_vars, "logRange")
+skew_transform_tab <- tibble::tibble(
+  `Biến` = skew_vars,
+  `Skewness thang gốc` = vapply(skew_vars, \(v) desc[v, "skew"], numeric(1)),
+  `Skewness sau log` = vapply(logged_vars, \(v) psych::describe(reg[[v]])$skew,
+                              numeric(1))
+)
+kb(skew_transform_tab |> mutate(across(where(is.numeric), ~ round(.x, 2))),
+   caption = "Skewness trước và sau log-transform của các biến lệch phải.")
+```
+
+**Nhận xét.** Bảng này chỉ đánh giá tác dụng của log-transform lên **hình dạng phân phối**.
+Skewness giảm rõ đối với `Mass`, hai biến chiều dài mỏ, `Tail.Length` và `Range.Size`, nên các
+biến log tương ứng được xem là ứng viên. Riêng `Mass` là biến phản hồi; các biến còn lại là
+predictors, vốn không bắt buộc phải phân phối chuẩn. Vì vậy, quyết định predictors nào được
+log sẽ được kiểm tra bằng CV trên tập huấn luyện ở phần mô hình hóa, thay vì chỉ dựa vào
+skewness.
+
+## Tương quan giữa các biến hình thái và dấu hiệu đa cộng tuyến
+
+```{r corrplot, fig.width=7.5, fig.height=7}
+R <- cor(reg[, c(morph_vars, "logRange", "logMass")])
+corrplot::corrplot(R, method = "color", type = "upper", tl.col = "black",
+                   tl.cex = 0.8, addCoef.col = "grey30", number.cex = 0.6,
+                   title = "Ma trận tương quan các biến hình thái và log(Mass)",
+                   mar = c(0, 0, 2, 0))
+```
+
+**Nhận xét.** Có nhiều cặp biến tương quan **rất cao**: `Wing.Length`–`Kipps.Distance` và
+`Beak.Length_Culmen`–`Beak.Length_Nares` đều xấp xỉ 0.98. Đây là **dấu hiệu đa cộng tuyến
+rõ rệt** cần kiểm tra sau khi xây dựng OLS; ở đây chưa diễn giải hệ số hay kết luận về VIF.
+
+# Xây dựng và đánh giá mô hình hồi quy
+
+## Chia dữ liệu và quy trình đánh giá thống nhất
+
+Để **so sánh công bằng**, cả bốn mô hình sẽ được sử dụng **cùng một quy trình**: cùng phép chia
+80% huấn luyện / 20% kiểm định, cùng một phân hoạch 10-fold cho việc thực hiện cross validation, và cùng
+bộ chỉ số RMSE / MAE / $R^2$ trên **cùng tập kiểm định**. Mọi tham số (trung bình–độ lệch chuẩn
+để chuẩn hóa, $\lambda$, số thành phần chính) chỉ được ước lượng trên tập huấn luyện rồi áp
+sang tập kiểm định, điều này là để giúp chúng ta tránh khỏi trường hợp data leakage.
+
+**Data Leakage** là khi những thông tin có trong tập train bị lọt vào trong tập test, điều này sẽ
+giúp mô hình của chúng ta đưa ra các kết quả dự báo tốt hơn nhưng lại không áp dụng được ngoài đời thật
+bởi vì theo như quá trình sinh dữ liệu trong thực tế thì chúng ta sẽ không có được những thông tin bị 
+lộ lọt này. 
+
+```{r chia-du-lieu}
+set.seed(SEED)
+n <- nrow(reg)
+idx_train <- sample(seq_len(n), size = round(0.8 * n))
+
+X_train_raw <- reg[idx_train, c(analysis_morph_vars, "logRange")]
+X_train <- reg[idx_train, pred_vars]; X_val <- reg[-idx_train, pred_vars]
+y_train <- reg$logMass[idx_train];    y_val <- reg$logMass[-idx_train]
+
+set.seed(SEED)
+foldid <- sample(rep(seq_len(10), length.out = nrow(X_train)))
+
+xmat_train <- as.matrix(X_train); xmat_val <- as.matrix(X_val)
+
+split_tab <- tibble::tibble(
+  `Tập` = c("Huấn luyện", "Kiểm định"),
+  `n` = c(length(y_train), length(y_val)),
+  `Trung bình logMass` = c(mean(y_train), mean(y_val)),
+  `Độ lệch chuẩn` = c(sd(y_train), sd(y_val))
+)
+kb(split_tab, digits = 3, caption = "Phân phối biến phản hồi giữa hai tập.")
+```
+
+**Nhận xét.** Phép chia tạo $n_{train} = `r length(y_train)`$ và $n_{val} = `r length(y_val)`$.
+Trung bình và độ lệch chuẩn của `log(Mass)` gần nhau giữa hai tập, cho thấy lần chia không mất
+cân bằng. Lưu ý $n \gg p$ (`r length(y_train)` quan sát so với `r length(pred_vars)` biến), nên
+OLS vẫn ước lượng được. Vấn đề của đa cộng tuyến ở đây là **độ ổn định/diễn giải** hệ số chứ
+không phải khả năng khớp của mô hình hồi quy.
+
+### Kiểm tra độ nhạy đối với dạng biến đổi predictors
+
+Dạng biến đổi chính được **định trước**: log phản hồi, `Range.Size` và ba số đo lệch phải mạnh.
+Quyết định này không được thay đổi theo kết quả tập kiểm định. Bảng dưới dùng cùng 10 folds
+chỉ trên tập huấn luyện để kiểm tra xem kết quả có nhạy với ba đặc tả hợp lý hay không; đây
+không phải bước chọn đặc tả sau khi nhìn vào sai số nhỏ nhất.
+
+```{r chon-bien-doi}
+X_train_all_log <- as.data.frame(lapply(X_train_raw[, analysis_morph_vars], log))
+X_train_all_log$logRange <- X_train_raw$logRange
+cv_transform <- function(X) mean(vapply(seq_len(10), function(f) {
+  tr <- foldid != f
+  fit <- lm(y_train ~ ., data = data.frame(y_train, X)[tr, ])
+  sqrt(mean((y_train[!tr] - predict(fit, X[!tr, ]))^2))
+}, numeric(1)))
+rmse_transform <- c(`Thang gốc` = cv_transform(X_train_raw),
+                    `Log biến lệch nặng` = cv_transform(X_train),
+                    `Log toàn bộ hình thái` = cv_transform(X_train_all_log))
+kb(tibble::tibble(`Dạng mô hình` = names(rmse_transform),
+                  `CV-RMSE` = round(rmse_transform, 4)),
+   caption = "Chọn dạng biến đổi bằng CV trên tập huấn luyện.")
+```
+
+Báo cáo so sánh ba cách xử lý biến hình thái bằng RMSE từ cross-validation: giữ nguyên tất
+cả biến, chỉ lấy log các biến lệch phải mạnh và lấy log toàn bộ biến hình thái. Chênh lệch nhỏ
+giữa ba phương án được xem là độ nhạy của đặc tả, không phải bằng chứng chắc chắn rằng phương
+án có RMSE thấp nhất sẽ luôn tốt nhất. Mô hình chính giữ đặc tả đã định trước để tránh chọn
+preprocessing theo nhiễu của một lần chia folds.
+Do biến phản hồi là `log(Mass)`, hệ số của một predictor đã lấy log cho biết phần trăm thay
+đổi dự kiến của khối lượng khi predictor tăng 1%; còn với predictor chưa lấy log, hệ số cho
+biết khối lượng dự kiến thay đổi xấp xỉ $100\beta_j$% khi predictor tăng một đơn vị, trong
+điều kiện các biến khác không đổi.
+
+## Mô hình 1: Hồi quy tuyến tính OLS
+
+**Lựa chọn biến.** Mô hình sử dụng `r length(analysis_morph_vars)` số đo hình thái để dự đoán khối
+lượng cơ thể vì những đặc điểm như kích thước mỏ, chân, cánh và đuôi có thể phản ánh kích
+thước chung của loài. Biến `Range.Size` biểu thị kích thước vùng phân bố và được biến đổi
+thành `logRange` để giảm độ lệch phải. Biến này được đưa vào như một biến địa lý bổ sung nhằm
+kiểm tra liệu phạm vi phân bố có cung cấp thêm thông tin cho việc dự đoán khối lượng sau khi
+đã xét các đặc điểm hình thái hay không. Mô hình OLS được sử dụng làm mô hình cơ sở để so
+sánh với Ridge, LASSO và PCR.
+
+```{r ols}
+ols <- lm(y_train ~ ., data = data.frame(y_train, X_train))
+pred_ols <- predict(ols, newdata = X_val)
+m_ols <- eval_metrics(y_val, pred_ols)
+
+# Ablation: Range.Size có thực sự bổ sung khả năng dự báo ngoài hình thái?
+ols_morph <- lm(y_train ~ ., data = data.frame(y_train, X_train[model_morph_vars]))
+pred_ols_morph <- predict(ols_morph, newdata = X_val[model_morph_vars])
+m_ols_morph <- eval_metrics(y_val, pred_ols_morph)
+kb(tibble::tibble(
+  `Đặc tả OLS` = c("Chỉ hình thái", "Hình thái + logRange"),
+  RMSE = round(c(m_ols_morph["RMSE"], m_ols["RMSE"]), 4),
+  R2 = round(c(m_ols_morph["R2"], m_ols["R2"]), 3)),
+  caption = "Phân tích ablation cho đóng góp dự báo của logRange trên tập kiểm định.")
+
+# Độ nhạy đối với chính sách loại nguồn suy diễn/mô hình hóa, dùng 10-fold CV cố định.
+source_cv_rmse <- function(dat) {
+  set.seed(SEED)
+  fo <- sample(rep(seq_len(10), length.out = nrow(dat)))
+  err <- unlist(lapply(seq_len(10), function(f) {
+    tr <- fo != f
+    fit <- lm(logMass ~ ., data = dat[tr, c("logMass", pred_vars)])
+    dat$logMass[!tr] - predict(fit, newdata = dat[!tr, pred_vars])
+  }))
+  sqrt(mean(err^2))
+}
+source_sensitivity <- tibble::tibble(
+  `Chính sách nguồn dữ liệu` = c("Loại trait/khối lượng suy diễn (chính)",
+                                 "Giữ toàn bộ dòng đầy đủ"),
+  n = c(nrow(reg), nrow(reg_sensitivity)),
+  `CV-RMSE OLS` = round(c(source_cv_rmse(reg),
+                          source_cv_rmse(reg_sensitivity)), 4)
+)
+kb(source_sensitivity,
+   caption = "Độ nhạy của OLS với chính sách giữ/loại nguồn trait và khối lượng.")
+```
+
+`logRange` chỉ được xem là hữu ích cho bài toán triển khai nếu thông tin vùng phân bố thực sự
+có sẵn tại thời điểm cần dự đoán khối lượng. Bảng ablation tách đóng góp của biến địa lý khỏi
+khả năng dự báo bằng hình thái.
+
+### Đa cộng tuyến trong OLS
+
+```{r vif}
+vif_tab <- tibble::tibble(
+  `Biến` = names(car::vif(ols)),
+  `VIF` = round(as.numeric(car::vif(ols)), 1)
+) |> arrange(desc(VIF))
+kb(vif_tab, caption = "Hệ số phóng đại phương sai của OLS trên tập huấn luyện.")
+```
+
+VIF lớn nhất là `r round(max(car::vif(ols)), 0)`, thuộc nhóm hai cách đo chiều dài mỏ. Việc bỏ
+hai số đo cánh gần dẫn xuất đã loại nguồn cộng tuyến cấu trúc lớn nhất, nhưng tương quan còn lại
+vẫn làm hệ số OLS riêng lẻ kém ổn định và tạo cơ sở so sánh với Ridge, LASSO và PCR.
+
+### Kiểm tra giả định của OLS
+
+```{r ols-gia-dinh, fig.width=9, fig.height=4}
+par(mfrow = c(1, 2))
+plot(ols, which = 1, caption = "")
+title("Phần dư theo giá trị dự đoán")
+plot(ols, which = 2, caption = "")
+title("Q-Q chuẩn của phần dư")
+par(mfrow = c(1, 1))
+
+bp <- lmtest::bptest(ols)
+sw <- shapiro.test(residuals(ols))
+reset <- lmtest::resettest(ols, power = 2:3, type = "fitted")
+cook_ols <- cooks.distance(ols)
+influential_ols <- cook_ols > 4 / nobs(ols)
+ols_trim <- update(ols, subset = !influential_ols)
+pred_ols_trim <- predict(ols_trim, newdata = X_val)
+m_ols_trim <- eval_metrics(y_val, pred_ols_trim)
+assum_tab <- tibble::tibble(
+  `Giả định` = c("Phương sai đồng nhất (Breusch-Pagan)",
+                 "Phần dư chuẩn (Shapiro-Wilk)",
+                 "Đặc tả tuyến tính (RESET)"),
+  `p-value` = c(fmt_p(bp$p.value), fmt_p(sw$p.value), fmt_p(reset$p.value))
+)
+kb(assum_tab, caption = "Kiểm định giả định của mô hình OLS.")
+kb(tibble::tibble(
+  `Chẩn đoán độ nhạy` = c("Số điểm Cook > 4/n",
+                          "RMSE kiểm định — mô hình đầy đủ",
+                          "RMSE kiểm định — bỏ điểm Cook cao khỏi train"),
+  `Kết quả` = c(sum(influential_ols),
+                round(m_ols["RMSE"], 4), round(m_ols_trim["RMSE"], 4))),
+  caption = "Độ nhạy của OLS với các quan sát ảnh hưởng mạnh.")
+```
+
+**Nhận xét.**
+
+**Về tính tuyến tính:** Trên biểu đồ phần dư theo giá trị dự đoán, phần dư nhìn chung phân bố
+quanh đường 0 nhưng đường làm trơn cong xuống ở các giá trị dự đoán lớn. Kết hợp với RESET
+bên dưới, đây là dấu hiệu đặc tả tuyến tính hiện tại chưa nắm bắt hết cấu trúc, đặc biệt ở nhóm
+loài có khối lượng lớn.
+
+**Về phương sai:** Kiểm định Breusch-Pagan cho p =
+`r fmt_p(lmtest::bptest(ols)$p.value)`, nên chưa có bằng chứng để bác bỏ giả định phương sai
+đồng nhất.
+
+**Về phân phối phần dư:** Shapiro-Wilk bác bỏ mạnh giả định phần dư chuẩn
+(p `r fmt_p(shapiro.test(residuals(ols))$p.value)`). Một vài loài có khối lượng thực tế lệch
+khá xa dự đoán, làm phân phối phần dư có đuôi nặng. Phần diễn giải hệ số bên dưới báo cáo thêm
+**sai số chuẩn robust HC3** để giảm nhạy với phương sai không đồng nhất. HC3 không sửa được
+sai đặc tả, ngoại lai hay phụ thuộc phát sinh loài, nên p-value vẫn chỉ mang tính thăm dò.
+
+**Về đặc tả và điểm ảnh hưởng:** RESET có p = `r fmt_p(reset$p.value)`, nên mô hình tuyến tính
+hiện tại có dấu hiệu bỏ sót phi tuyến hoặc thành phần cấu trúc. Có `r sum(influential_ols)` điểm
+vượt Cook > 4/n. Phân tích bỏ các điểm này chỉ là kiểm tra độ nhạy, không phải quy tắc tự động
+xóa dữ liệu; sự thay đổi hệ số và RMSE cần được xem trước khi diễn giải.
+
+**Về tính độc lập:** Durbin-Watson không được dùng vì dữ liệu loài không có thứ tự thời gian.
+Điều đáng quan tâm là các loài có họ hàng gần có thể tương quan với nhau. Khi chưa có cây phát
+sinh loài, p-value của hệ số chỉ mang tính thăm dò; vấn đề này được nhắc lại ở phần hạn chế.
+
+### Diễn giải hệ số OLS (kèm sai số chuẩn robust HC3)
+
+```{r ols-he-so}
+# Chuẩn hóa để so sánh độ lớn ảnh hưởng.
+# Xếp hạng theo |hệ số| (không phải theo giá trị có dấu), vì câu hỏi ở đây là
+# "biến nào ảnh hưởng mạnh nhất", còn dấu được đọc riêng ở cột kế bên.
+std <- scale(X_train)
+ols_std <- lm(y_train ~ ., data = data.frame(y_train, as.data.frame(std)))
+cs <- coef(ols_std)[-1]
+coef_std <- cs[order(abs(cs), decreasing = TRUE)]
+
+# Sai số chuẩn robust HC3 trên hệ số thang gốc
+rob <- lmtest::coeftest(ols, vcov. = sandwich::vcovHC(ols, type = "HC3"))
+rob_tab <- tibble::tibble(
+  `Biến` = rownames(rob)[-1],
+  `Hệ số (thang gốc)` = round(rob[-1, "Estimate"], 4),
+  `SE robust (HC3)` = round(rob[-1, "Std. Error"], 4),
+  `p-value` = vapply(rob[-1, "Pr(>|t|)"], fmt_p, character(1)))
+kb(tibble::tibble(`Biến` = names(coef_std),
+                  `Hệ số chuẩn hóa` = round(coef_std, 3),
+                  `|Hệ số|` = round(abs(coef_std), 3)),
+   caption = "Hệ số OLS trên biến đã chuẩn hóa, xếp theo độ lớn ảnh hưởng.")
+kb(rob_tab, caption = "Hệ số OLS thang gốc với sai số chuẩn robust HC3.")
+```
+
+**Nhận xét.**
+
+**Khi so sánh các hệ số đã chuẩn hóa:** Ba hệ số có độ lớn cao nhất thuộc về
+`r names(coef_std)[1]` (|β| = `r round(abs(coef_std)[1], 3)`), `r names(coef_std)[2]`
+(`r round(abs(coef_std)[2], 3)`) và `r names(coef_std)[3]`
+(`r round(abs(coef_std)[3], 3)`). Tuy nhiên, cả ba đều thuộc những nhóm biến tương quan rất
+mạnh. Vì các biến này cung cấp thông tin gần giống nhau, OLS khó tách riêng đóng góp của từng
+biến. Do đó, hệ số lớn chưa đủ để kết luận một đặc điểm quan trọng hơn về mặt sinh học. Các
+hệ số của hai cách đo chiều dài mỏ vẫn có thể mang dấu hoặc độ lớn nhạy với mẫu huấn
+luyện, vì chúng cung cấp thông tin gần trùng nhau.
+
+**Diễn giải một hệ số cụ thể:** `Beak.Width` đứng thứ
+`r which(names(coef_std) == "Beak.Width")` trong `r length(coef_std)` biến về độ lớn hệ số,
+nhưng có bằng chứng thống kê rõ nhất sau khi dùng sai số chuẩn robust HC3
+(p = `r fmt_p(rob["Beak.Width", "Pr(>|t|)"])`). Hệ số ước lượng của biến này là
+`r round(coef(ols)["Beak.Width"], 3)`. Khi giữ các biến khác không đổi, bề rộng mỏ tăng thêm
+1 mm gắn với khối lượng cơ thể cao hơn khoảng
+`r round(100 * (exp(coef(ols)["Beak.Width"]) - 1), 1)`%. Đây là mối liên hệ thống kê trong
+dữ liệu, không phải bằng chứng về quan hệ nhân quả.
+
+**Ảnh hưởng của đa cộng tuyến:** Việc bỏ hai số đo cánh gần dẫn xuất làm giảm đa cộng tuyến
+mang tính cấu trúc, nhưng hai biến chiều dài mỏ vẫn tương quan mạnh. Vì vậy, mô hình có thể
+dự báo tốt trong khi hệ số riêng còn thiếu ổn định. Ridge, LASSO và PCR được sử dụng tiếp theo
+để xử lý hạn chế đó theo những cách khác nhau.
+
+## Mô hình 2: Ridge Regression
+
+**Cách mô hình hoạt động.** Ridge giữ lại toàn bộ biến nhưng kéo các hệ số về gần 0 để chúng
+bớt nhạy với những thay đổi nhỏ trong dữ liệu. Vì vậy, Ridge phù hợp khi các biến dự báo tương
+quan mạnh và ta không muốn loại biến nào. Về kỹ thuật, đây là dạng phạt $L_2$ với
+$\alpha = 0$.
+
+```{r ridge, fig.width=8, fig.height=4}
+set.seed(SEED)
+cv_ridge <- glmnet::cv.glmnet(xmat_train, y_train, alpha = 0, foldid = foldid)
+pred_ridge <- as.numeric(predict(cv_ridge, s = "lambda.min", newx = xmat_val))
+m_ridge <- eval_metrics(y_val, pred_ridge)
+plot(cv_ridge)
+title("Ridge: RMSE kiểm chứng chéo theo log(lambda)", line = 2.5)
+```
+
+**Lựa chọn mức phạt.** Tham số $\lambda$ quyết định mức độ kéo các hệ số về 0. Kiểm chứng
+chéo chọn $\lambda_{min} = `r round(cv_ridge$lambda.min, 4)`$, là giá trị cho RMSE trung bình
+nhỏ nhất trên tập huấn luyện.
+
+**Kết quả dự báo.** Trên tập kiểm định, Ridge đạt RMSE =
+`r round(m_ridge["RMSE"], 4)` và $R^2 = `r round(m_ridge["R2"], 3)`$. Kết quả này gần tương
+đương OLS, nên Ridge chưa cải thiện đáng kể độ chính xác dự báo trong dữ liệu này. Lợi ích
+chính của Ridge là làm các hệ số bớt nhạy khi nhiều biến cung cấp thông tin gần giống nhau.
+
+## Mô hình 3: LASSO Regression
+
+**Cách mô hình hoạt động.** LASSO có thể kéo một số hệ số về đúng 0. Những biến có hệ số bằng
+0 được loại khỏi mô hình, vì vậy LASSO vừa xây dựng mô hình dự báo vừa thực hiện chọn biến tự
+động. Về kỹ thuật, đây là dạng phạt $L_1$ với $\alpha = 1$.
+
+```{r lasso, fig.width=8, fig.height=4}
+set.seed(SEED)
+cv_lasso <- glmnet::cv.glmnet(xmat_train, y_train, alpha = 1, foldid = foldid)
+pred_lasso <- as.numeric(predict(cv_lasso, s = "lambda.1se", newx = xmat_val))
+m_lasso <- eval_metrics(y_val, pred_lasso)
+plot(cv_lasso)
+title("LASSO: RMSE kiểm chứng chéo theo log(lambda)", line = 2.5)
+
+co <- as.matrix(coef(cv_lasso, s = "lambda.1se"))
+kept <- co[co[, 1] != 0, , drop = FALSE]
+kb(tibble::tibble(`Biến giữ lại` = rownames(kept), `Hệ số` = round(kept[, 1], 4)),
+   caption = "Các biến được LASSO giữ lại tại lambda.1se.")
+```
+
+**Lựa chọn mức phạt.** Báo cáo dùng quy tắc one-sigma và chọn $\lambda_{1se}$. Quy tắc này
+chấp nhận sai số kiểm chứng chéo cao hơn mức thấp nhất một chút để ưu tiên mô hình đơn giản
+hơn.
+
+**Các biến được giữ lại.** LASSO giữ `r sum(co[, 1] != 0) - 1` biến:
+`r paste(setdiff(rownames(kept), "(Intercept)"), collapse = ", ")`. Hai biến chiều dài mỏ
+tương quan rất mạnh ($r \approx 0.98$), nên việc LASSO giữ một hoặc cả hai phụ thuộc vào mức
+phạt và mẫu huấn luyện. Tiền tố `log_` cho biết biến đã được lấy log.
+
+Danh sách này không có nghĩa rằng các biến bị loại không quan trọng về mặt sinh học. Khi hai
+biến cung cấp thông tin gần như giống nhau, biến được giữ lại có thể thay đổi theo cách chia
+dữ liệu và giá trị $\lambda$.
+
+**Kết quả dự báo.** LASSO có RMSE kiểm định =
+`r round(m_lasso["RMSE"], 4)` và $R^2 = `r round(m_lasso["R2"], 3)`$. So với OLS và Ridge,
+mô hình đơn giản hơn nhiều nhưng độ chính xác dự báo giảm nhẹ. Đây là sự đánh đổi giữa số
+lượng biến và khả năng dự báo.
+
+## Mô hình 4: Principal Component Regression (PCR)
+
+**Cách mô hình hoạt động.** PCR gộp các biến dự báo tương quan thành một số biến tổng hợp gọi
+là **thành phần chính**. Các thành phần này không tương quan với nhau, nên mô hình tránh được
+đa cộng tuyến. Sau đó, PCR dùng $k$ thành phần được chọn để dự đoán `log(Mass)`, thay vì dùng
+trực tiếp toàn bộ biến ban đầu.
+
+```{r pcr-cv, fig.width=8, fig.height=4.5}
+set.seed(SEED)
+df_train <- data.frame(y = y_train, X_train)
+pcr_fit <- pls::pcr(y ~ ., data = df_train, scale = TRUE, center = TRUE,
+                    validation = "CV",
+                    segments = split(seq_len(nrow(X_train)), foldid))
+rmsep_cv <- pls::RMSEP(pcr_fit, estimate = "CV")$val[1, 1, ]
+k_min <- which.min(rmsep_cv) - 1
+k_os  <- pls::selectNcomp(pcr_fit, method = "onesigma")
+pve <- cumsum(pls::explvar(pcr_fit)) / 100
+
+df_rmsep <- tibble::tibble(k = 0:(length(rmsep_cv) - 1), RMSEP = as.numeric(rmsep_cv))
+ggplot(df_rmsep, aes(k, RMSEP)) +
+  geom_line(color = "grey50") + geom_point() +
+  geom_vline(xintercept = k_os, linetype = "dashed", color = "#C44E52") +
+  geom_vline(xintercept = k_min, linetype = "dotted", color = "#4C72B0") +
+  annotate("text", x = k_os, y = max(df_rmsep$RMSEP) * 0.97,
+           label = paste("one-sigma: k =", k_os), color = "#C44E52", hjust = -0.1) +
+  scale_x_continuous(breaks = 0:length(rmsep_cv)) +
+  labs(title = "RMSEP kiểm chứng chéo 10-fold theo số thành phần chính",
+       x = "Số thành phần chính k", y = "RMSEP (CV)")
+```
+
+```{r pcr-eval}
+pred_pcr <- as.numeric(predict(pcr_fit, newdata = X_val, ncomp = k_os))
+m_pcr <- eval_metrics(y_val, pred_pcr)
+kb(tibble::tibble(
+  `Quy tắc chọn k` = c("Cực tiểu RMSEP", "One-sigma (đã chọn)"),
+  `k` = c(k_min, k_os),
+  `% phương sai X giữ lại` = round(100 * c(pve[k_min], pve[k_os]), 1),
+  `RMSEP (CV)` = round(c(rmsep_cv[k_min + 1], rmsep_cv[k_os + 1]), 4)),
+  caption = "Lựa chọn số thành phần chính cho PCR.")
+```
+
+**Lựa chọn số thành phần.** RMSEP kiểm chứng chéo nhỏ nhất tại $k = `r k_min`$. Tuy nhiên,
+phương án này giữ gần như toàn bộ thông tin và khiến PCR gần giống OLS.
+
+Quy tắc one-sigma chọn $k = `r k_os`$. Phương án này chỉ làm RMSEP tăng nhẹ nhưng giảm đáng
+kể số thành phần, đồng thời giữ lại `r round(100 * pve[k_os], 1)`% biến thiên của các biến dự
+báo. Vì vậy, báo cáo chọn $k = `r k_os`$. Mô hình cuối cùng đạt $R^2$ kiểm định =
+`r round(m_pcr["R2"], 3)`.
+
+```{r pcr-loadings}
+pca <- prcomp(X_train, center = TRUE, scale. = TRUE)
+kb(round(pca$rotation[, 1:2], 2),
+   caption = "Vector tải (loadings) của 2 thành phần chính đầu.")
+```
+
+**Diễn giải PC1.** Các số đo hình thái có tải cùng chiều và độ lớn khá tương đồng trên PC1.
+Điều này cho thấy PC1 chủ yếu phản ánh xu hướng kích thước hình thái chung: loài có giá trị
+cao ở một số đo thường cũng cao ở các số đo khác. Riêng PC1 giải thích
+`r round(100 * pve[1], 1)`% biến thiên của các biến dự báo, nên đây là xu hướng chung nổi bật
+nhất và cũng là một nguồn của đa cộng tuyến.
+
+**Diễn giải PC2.** PC2 chủ yếu thể hiện sự tương phản giữa nhóm biến về mỏ với nhóm biến về
+cánh và chân; `logRange` cũng đóng góp đáng kể vào thành phần này. Vì vậy, PC2 có thể được
+hiểu thận trọng như một trục kết hợp giữa hình dạng cơ thể và phạm vi phân bố, thay vì một
+đặc điểm sinh học đơn lẻ.
+
+Dấu của các tải có thể đảo ngược mà không làm thay đổi ý nghĩa của thành phần chính. Vì vậy,
+khi diễn giải PC1 và PC2, điều quan trọng là các biến thay đổi cùng chiều hay ngược chiều với
+nhau, không phải bản thân dấu âm hay dấu dương.
+
+## So sánh bốn mô hình hồi quy
+
+```{r bang-so-sanh, include=FALSE}
+compare <- rbind(OLS = m_ols, Ridge = m_ridge, LASSO = m_lasso, PCR = m_pcr)
+compare <- as.data.frame(round(compare, 4))
+compare$`Số biến/thành phần` <- c(length(pred_vars),
+                                  length(pred_vars),
+                                  sum(co[, 1] != 0) - 1,
+                                  k_os)
+compare$`Ghi chú` <- c("Toàn bộ biến", "Co ngót L2",
+                       "Chọn biến L1", paste0("PCR k=", k_os))
+```
+
+Phần này so sánh bốn mô hình theo ba khía cạnh: độ ổn định của kết quả đánh giá, sai số dự
+đoán theo gram và mức độ đơn giản của mô hình. Các chỉ số chính được gộp vào một bảng ở cuối
+mục để người đọc dễ đối chiếu.
+
+### Đánh giá bằng kiểm chứng chéo lặp lại (repeated CV)
+
+**Vì sao cần repeated CV?** Một lần chia dữ liệu theo tỷ lệ 80/20 chỉ có khoảng
+`r length(y_val)` quan sát trong tập kiểm định. Kết quả vì thế có thể thay đổi tùy vào những
+quan sát được đưa vào mỗi tập.
+
+Để đánh giá ổn định hơn, báo cáo thực hiện kiểm chứng chéo 10-fold và lặp lại 5 lần, tạo ra 50
+lần đánh giá. Trong mỗi lần, các tham số của Ridge, LASSO và PCR được chọn lại chỉ từ dữ liệu
+huấn luyện. Sau đó, báo cáo tính RMSE trung bình và độ lệch chuẩn của RMSE. RMSE càng thấp thì
+sai số dự báo càng nhỏ.
+
+```{r repeated-cv}
+set.seed(SEED)
+reps <- 5; K <- 10
+rep_res <- matrix(NA_real_, reps * K, 4,
+                  dimnames = list(NULL, c("OLS", "Ridge", "LASSO", "PCR")))
+row_i <- 0
+Xall <- reg[, pred_vars]; yall <- reg$logMass
+for (rp in seq_len(reps)) {
+  set.seed(100 + rp)
+  fo <- sample(rep(seq_len(K), length.out = nrow(Xall)))
+  for (k in seq_len(K)) {
+    row_i <- row_i + 1; tri <- fo != k
+    Xa <- Xall[tri, ]; Xb <- Xall[!tri, ]; ya <- yall[tri]; yb <- yall[!tri]
+    ma <- as.matrix(Xa); mb <- as.matrix(Xb)
+    o <- lm(ya ~ ., data = data.frame(ya, Xa))
+    rep_res[row_i, "OLS"] <- sqrt(mean((yb - predict(o, Xb))^2))
+    cr <- glmnet::cv.glmnet(ma, ya, alpha = 0)
+    rep_res[row_i, "Ridge"] <- sqrt(mean((yb - predict(cr, s = "lambda.min", newx = mb))^2))
+    cl <- glmnet::cv.glmnet(ma, ya, alpha = 1)
+    rep_res[row_i, "LASSO"] <- sqrt(mean((yb - predict(cl, s = "lambda.1se", newx = mb))^2))
+    pf <- pls::pcr(ya ~ ., data = data.frame(ya, Xa), scale = TRUE, validation = "CV")
+    ncp <- tryCatch(pls::selectNcomp(pf, method = "onesigma"), error = function(e) 1L)
+    if (ncp < 1) ncp <- 1L
+    rep_res[row_i, "PCR"] <- sqrt(mean((yb - as.numeric(predict(pf, newdata = Xb, ncomp = ncp)))^2))
+  }
+}
+kb(tibble::tibble(
+  `Mô hình` = colnames(rep_res),
+  `RMSE trung bình` = round(colMeans(rep_res), 4),
+  `Độ lệch chuẩn` = round(apply(rep_res, 2, sd), 4)),
+  caption = "Repeated 5×10-fold CV (RMSE thang log, tuning lồng trong mỗi fold).")
+```
+
+**Kết quả.** RMSE trung bình của OLS và Ridge gần như bằng nhau:
+`r round(colMeans(rep_res)["OLS"], 4)` và `r round(colMeans(rep_res)["Ridge"], 4)`. Mức chênh
+lệch này nhỏ hơn nhiều so với độ dao động của RMSE giữa các fold, khoảng
+`r round(mean(apply(rep_res, 2, sd)[c("OLS","Ridge")]), 3)`. Vì vậy, kết quả không cho thấy
+OLS hay Ridge có lợi thế dự báo rõ rệt so với nhau.
+
+LASSO và PCR có RMSE cao hơn một chút, nhưng đổi lại chúng tạo ra mô hình gọn hơn. Độ lệch
+chuẩn trong bảng chỉ mô tả mức dao động giữa các lần đánh giá, không phải khoảng tin cậy để
+kiểm định sự khác biệt giữa các mô hình.
+
+### Sai số quy đổi về gram
+
+**Vì sao cần quy đổi?** Các mô hình dự đoán `log(Mass)`, nên RMSE trên thang log khó diễn
+giải trực tiếp bằng đơn vị khối lượng. Báo cáo chuyển dự đoán về gram để cho biết mức sai số
+thực tế.
+
+Nếu chỉ dùng hàm `exp()` để chuyển ngược, khối lượng trung bình có thể bị ước lượng thấp hơn
+thực tế. Vì vậy, báo cáo nhân thêm **hệ số smearing của Duan**, được tính từ phần dư trên tập
+huấn luyện, để hiệu chỉnh sai lệch nhỏ này. Sau khi quy đổi, MAE cho biết sai số tuyệt đối
+trung bình theo gram; RMSE nhạy hơn với một số dự đoán bị lệch lớn.
+
+```{r gram-scale}
+gram_row <- function(pred_tr, pred_te, name) {
+  smear <- mean(exp(y_train - as.numeric(pred_tr)))
+  ghat <- exp(as.numeric(pred_te)) * smear
+  data.frame(`Mô hình` = name,
+             `RMSE (g)` = round(sqrt(mean((exp(y_val) - ghat)^2)), 3),
+             `MAE (g)` = round(mean(abs(exp(y_val) - ghat)), 3),
+             `Hệ số smearing` = round(smear, 3), check.names = FALSE)
+}
+gram_tab <- rbind(
+  gram_row(predict(ols, X_train), predict(ols, X_val), "OLS"),
+  gram_row(predict(cv_ridge, s = "lambda.min", newx = xmat_train),
+           predict(cv_ridge, s = "lambda.min", newx = xmat_val), "Ridge"),
+  gram_row(predict(cv_lasso, s = "lambda.1se", newx = xmat_train),
+           predict(cv_lasso, s = "lambda.1se", newx = xmat_val), "LASSO"),
+  gram_row(predict(pcr_fit, newdata = X_train, ncomp = k_os),
+           predict(pcr_fit, newdata = X_val, ncomp = k_os), "PCR"),
+  data.frame(`Mô hình` = "Baseline theo metric",
+             `RMSE (g)` = round(sqrt(mean((exp(y_val) - mean(exp(y_train)))^2)), 3),
+             `MAE (g)` = round(mean(abs(exp(y_val) - median(exp(y_train)))), 3),
+             `Hệ số smearing` = NA_real_, check.names = FALSE))
+kb(gram_tab, caption = paste(
+  "Sai số dự báo quy đổi về gram trên tập kiểm định.",
+  "Baseline dùng mean cho RMSE và median cho MAE."))
+```
+
+**Kết quả theo gram.** Hệ số smearing nằm trong khoảng
+`r round(min(gram_tab$"Hệ số smearing", na.rm = TRUE), 3)`–`r round(max(gram_tab$"Hệ số smearing", na.rm = TRUE), 3)`.
+Các giá trị này chỉ cao hơn 1 dưới 2%, nên phần hiệu chỉnh khi chuyển từ thang log về gram là
+rất nhỏ.
+
+OLS và Ridge có sai số tuyệt đối trung bình khoảng
+`r round(gram_tab$"MAE (g)"[1], 2)` g. Trong khi đó, baseline tối ưu hằng số cho MAE (trung
+vị khối lượng tập huấn luyện) có MAE khoảng `r round(gram_tab$"MAE (g)"[5], 2)` g. Như
+vậy, OLS và Ridge giảm khoảng
+`r round(100 * (1 - gram_tab$"MAE (g)"[1] / gram_tab$"MAE (g)"[5]), 0)`% sai số tuyệt đối so
+với cách dự đoán đơn giản này.
+
+Ở cả bốn mô hình, RMSE lớn hơn MAE khá nhiều. Điều đó cho thấy phần lớn dự đoán có sai số
+không quá lớn, nhưng một số ít loài nặng bị dự đoán lệch nhiều.
+
+### Bảng tổng hợp kết quả dự báo
+
+```{r regression-summary}
+baseline_log <- eval_metrics(y_val, rep(mean(y_train), length(y_val)))
+baseline_log["MAE"] <- mean(abs(y_val - median(y_train)))
+test_log <- rbind(compare[, c("RMSE", "MAE", "R2")],
+                  `Baseline theo metric` = baseline_log[c("RMSE", "MAE", "R2")])
+cv_mean <- c(colMeans(rep_res), `Baseline theo metric` = NA_real_)
+reg_summary <- tibble::tibble(
+  `Mô hình` = rownames(test_log),
+  `Test RMSE (log)` = round(as.numeric(test_log$RMSE), 4),
+  `Test R² (log)` = round(as.numeric(test_log$R2), 3),
+  `Repeated-CV RMSE` = round(cv_mean[rownames(test_log)], 4),
+  `Test MAE (g)` = gram_tab$`MAE (g)`[match(rownames(test_log), gram_tab$`Mô hình`)],
+  `Số biến/thành phần` = c(compare$`Số biến/thành phần`, 0)[
+    match(rownames(test_log), c(rownames(compare), "Baseline theo metric"))]
+)
+kb(reg_summary,
+   caption = "Tổng hợp hiệu năng dự báo; baseline luôn dự đoán bằng trung bình tập huấn luyện.")
+```
+
+**Kết luận chung.** Cả bốn mô hình đều dự báo tốt hơn rõ rệt so với baseline. OLS và Ridge có
+sai số thấp nhất và gần như tương đương trong cả lần chia 80/20 lẫn repeated CV. Vì vậy,
+không có đủ cơ sở để khẳng định một trong hai là mô hình dự báo tốt nhất tuyệt đối.
+
+**Nên chọn mô hình nào?**
+
+- Chọn **OLS** khi cần một mô hình cơ sở quen thuộc và muốn diễn giải trực tiếp các hệ số,
+  nhưng phải thận trọng vì đa cộng tuyến làm các hệ số riêng lẻ thiếu ổn định.
+- Chọn **Ridge** khi ưu tiên dự báo, muốn giữ toàn bộ biến và muốn giảm ảnh hưởng của đa cộng
+  tuyến lên các hệ số.
+- Chọn **LASSO** khi cần mô hình sử dụng ít biến. Trong kết quả này, LASSO chỉ giữ
+  `r sum(co[, 1] != 0) - 1` biến và đạt $R^2 = `r round(m_lasso["R2"], 3)`$, nhưng sai số cao
+  hơn OLS và Ridge một chút.
+- Chọn **PCR** khi muốn tóm tắt dữ liệu bằng ít thành phần không tương quan. PCR đạt
+  $R^2 = `r round(m_pcr["R2"], 3)`$ với `r k_os` thành phần, nhưng các thành phần khó diễn giải
+  trực tiếp hơn các biến ban đầu.
+
+`r k_os` thành phần của PCR vẫn được tạo từ toàn bộ các biến dự báo ban đầu; vì vậy, kết quả
+này không có nghĩa là PCR chỉ sử dụng `r k_os` biến. Nhìn chung, lựa chọn cuối cùng phụ thuộc vào việc
+ưu tiên độ chính xác dự báo, số lượng biến hay khả năng diễn giải.
+
+# Phân tích phương sai nhiều nhân tố (Factorial ANOVA)
+
+**Câu hỏi phân tích.** Phần này xem xét liệu chỉ số Hand-Wing (`Hand.Wing.Index`, viết tắt
+HWI) có khác nhau theo môi trường sống (`Habitat`) và mật độ sinh cảnh (`Habitat.Density`)
+hay không. `Habitat` có 5 nhóm, còn `Habitat.Density` có 3 mức: Dày, Bán mở và Mở.
+
+Mô hình đầy đủ cần xem xét cả **ảnh hưởng riêng** của từng nhân tố và **tương tác** giữa hai
+nhân tố. Tương tác ở đây có nghĩa là mối liên hệ giữa môi trường sống và HWI có thể thay đổi
+tùy theo mật độ sinh cảnh.
+
+```{r anova-oo}
+cell <- table(anv$Habitat, anv$Habitat.Density)
+kb(as.data.frame.matrix(cell),
+   caption = "Số quan sát trong từng ô (Habitat × Habitat.Density).")
+```
+
+**Vấn đề của dữ liệu.** Số loài giữa các nhóm rất không đều và một số tổ hợp không có quan
+sát. Chẳng hạn, không có loài Grassland hoặc Woodland nào thuộc mật độ “Dày”. Những tổ hợp
+không có quan sát được gọi là **ô rỗng**.
+
+Điều này xảy ra vì `Habitat` và `Habitat.Density` có liên hệ chặt chẽ: sinh cảnh dày trong dữ
+liệu hầu hết là rừng. Vì thiếu một số tổ hợp, mô hình không có đủ thông tin để tách riêng và
+ước lượng tất cả hiệu ứng tương tác. Về kỹ thuật, đây là tình trạng **thiếu hạng** (*rank
+deficiency*).
+
+```{r anova-rank}
+aov_full <- lm(Hand.Wing.Index ~ Habitat * Habitat.Density, data = anv)
+Xmm <- model.matrix(aov_full)
+rank_tab <- tibble::tibble(
+  `Chỉ tiêu` = c("Số cột ma trận thiết kế", "Hạng thực tế (rank)",
+                 "Số hệ số bị aliased (NA)"),
+  `Giá trị` = c(ncol(Xmm), qr(Xmm)$rank, sum(is.na(coef(aov_full))))
+)
+kb(rank_tab, caption = "Kiểm tra khả năng ước lượng của mô hình tương tác đầy đủ.")
+```
+
+**Mô hình được chọn.** Ma trận thiết kế có `r ncol(Xmm)` cột nhưng chỉ có
+`r qr(Xmm)$rank` cột mang thông tin độc lập. Vì vậy, `r sum(is.na(coef(aov_full)))` hệ số
+tương tác không thể ước lượng riêng từ dữ liệu hiện có.
+
+ANOVA Type II có thể xử lý số lượng quan sát không đều giữa các nhóm, nhưng không thể tạo ra
+thông tin cho những tổ hợp hoàn toàn không có quan sát. Do đó, báo cáo dùng mô hình cộng tính
+`HWI ~ Habitat + Habitat.Density` làm mô hình chính. Mô hình này ước lượng ảnh hưởng riêng của
+hai nhân tố nhưng không gồm tương tác.
+
+Mô hình đầy đủ vẫn được dùng để kiểm tra phần tương tác còn ước lượng được. Đây chỉ là kiểm
+tra một phần. Việc chọn mô hình cộng tính là giải pháp cần thiết do giới hạn dữ liệu, không
+phải bằng chứng rằng tương tác thực sự bằng 0.
+
+```{r anova-fit}
+aov_add <- lm(Hand.Wing.Index ~ Habitat + Habitat.Density, data = anv)
+anova_classic <- car::Anova(aov_add, type = 2)
+anova_hc3 <- car::Anova(aov_add, type = 2, white.adjust = "hc3")
+kb(as.data.frame(round(anova_classic, 4)),
+   caption = "Mô hình cộng tính thăm dò: ANOVA Type II cổ điển.")
+kb(as.data.frame(round(anova_hc3, 4)),
+   caption = "Mô hình cộng tính thăm dò: kiểm định Type II với covariance robust HC3.")
+
+inter_row <- car::Anova(aov_full, type = 2)["Habitat:Habitat.Density", ]
+kb(as.data.frame(round(inter_row, 4)),
+   caption = "Kiểm định một phần hiệu ứng tương tác (chỉ trên các contrast ước lượng được).")
+```
+
+**Kết quả chính.**
+
+- `Habitat` có p cổ điển =
+  `r round(anova_classic["Habitat", "Pr(>F)"], 3)` và p robust HC3 =
+  `r round(anova_hc3["Habitat", "Pr(>F)"], 3)`. Cả hai cho thấy liên hệ giữa HWI và môi trường
+  sống, nhưng đây vẫn là liên hệ thăm dò do mất cân bằng và phụ thuộc phát sinh loài chưa được
+  xử lý.
+- `Habitat.Density` có p robust HC3 =
+  `r round(anova_hc3["Habitat.Density", "Pr(>F)"], 3)`. Dữ liệu chưa cho
+  thấy ảnh hưởng riêng rõ ràng của mật độ sinh cảnh sau khi đã xét môi trường sống.
+- Phần tương tác còn kiểm tra được có p = `r round(inter_row[["Pr(>F)"]], 3)`, nên chưa có
+  bằng chứng rõ ràng về tương tác trong phần này. Kết quả đó không chứng minh rằng hoàn toàn
+  không có tương tác, vì một số thành phần tương tác không thể ước lượng do các ô rỗng.
+
+## Kiểm tra giả định ANOVA
+
+```{r anova-gia-dinh, fig.width=9, fig.height=4}
+par(mfrow = c(1, 2))
+plot(aov_add, which = 1, caption = ""); title("Phần dư theo giá trị dự đoán")
+plot(aov_add, which = 2, caption = ""); title("Q-Q chuẩn của phần dư")
+par(mfrow = c(1, 1))
+
+lev <- car::leveneTest(Hand.Wing.Index ~ Habitat * Habitat.Density, data = anv)
+sw_a <- shapiro.test(residuals(aov_add))
+cook_a <- cooks.distance(aov_add)
+n_cook <- sum(cook_a > 4 / nrow(anv))
+kb(tibble::tibble(
+  `Giả định / chẩn đoán` = c("Đồng nhất phương sai (Levene)", "Phần dư chuẩn (Shapiro-Wilk)",
+                             "Quan sát ảnh hưởng mạnh (Cook > 4/n)"),
+  `Kết quả` = c(fmt_p(lev$`Pr(>F)`[1]), fmt_p(sw_a$p.value),
+                sprintf("%d / %d", n_cook, nrow(anv)))),
+  caption = "Kiểm tra giả định và chẩn đoán ảnh hưởng của mô hình ANOVA cộng tính.")
+```
+
+**Kiểm tra giả định.**
+
+- Kiểm định Levene có p = `r fmt_p(lev$"Pr(>F)"[1])`. Giá trị này không cung cấp bằng chứng
+  về khác biệt phương sai, nhưng không chứng minh phương sai bằng nhau: nhiều ô chỉ có 2–3
+  loài nên kiểm định có công suất thấp. Vì vậy, bảng HC3 ở trên được dùng như kiểm tra robust.
+- Kiểm định Shapiro-Wilk cho thấy phần dư không có phân phối chuẩn. HWI lệch trái mạnh
+  (skew = `r round(psych::describe(anv$Hand.Wing.Index)$skew, 1)`), chủ yếu do một số loài có
+  HWI thấp bất thường.
+- Có `r n_cook` quan sát vượt ngưỡng Cook > 4/n. Đây là những quan sát có khả năng ảnh hưởng
+  đáng kể đến kết quả mô hình và cần được lưu ý khi diễn giải.
+
+Do giả định phân phối chuẩn không được đáp ứng tốt, báo cáo thực hiện thêm Kruskal-Wallis.
+Đây là kiểm tra bổ sung không yêu cầu phân phối chuẩn, nhưng chỉ xét được từng nhân tố riêng
+lẻ.
+
+```{r kruskal}
+kw_h <- kruskal.test(Hand.Wing.Index ~ Habitat, data = anv)
+kw_d <- kruskal.test(Hand.Wing.Index ~ Habitat.Density, data = anv)
+kb(tibble::tibble(
+  `Kiểm định phi tham số` = c("HWI ~ Habitat", "HWI ~ Habitat.Density"),
+  `chi-squared` = round(c(kw_h$statistic, kw_d$statistic), 2),
+  `p-value` = c(fmt_p(kw_h$p.value), fmt_p(kw_d$p.value))),
+  caption = "Kiểm định Kruskal-Wallis (kiểm chứng phi tham số, MỘT nhân tố).")
+```
+
+**Kết quả kiểm tra bổ sung.** Kruskal-Wallis cũng cho thấy HWI có khác biệt theo `Habitat`
+khi không giả định phân phối chuẩn.
+
+Tuy nhiên, Kruskal-Wallis chỉ xem xét một nhân tố tại một thời điểm. Kiểm định này không điều
+chỉnh cho nhân tố còn lại và không đánh giá tương tác, nên không thay thế hoàn toàn cho ANOVA
+hai nhân tố. Đặc biệt, kết quả của `Habitat.Density`
+(p = `r fmt_p(kw_d$p.value)`) có thể phản ánh sự liên hệ chặt giữa mật độ và môi trường sống,
+chứ chưa đủ để kết luận mật độ có ảnh hưởng độc lập.
+
+## Ảnh hưởng riêng, tương tác và hậu nghiệm
+
+**Độ lớn của ảnh hưởng.** P-value cho biết dữ liệu có cung cấp bằng chứng về khác biệt hay
+không, nhưng không cho biết khác biệt đó lớn đến mức nào. Vì vậy, báo cáo tính thêm kích thước
+hiệu ứng (*effect size*).
+
+```{r anova-effsize}
+eta <- effectsize::eta_squared(car::Anova(aov_add, type = 2), partial = TRUE)
+omega <- effectsize::omega_squared(car::Anova(aov_add, type = 2), partial = TRUE)
+kb(tibble::tibble(
+  `Nhân tố` = eta$Parameter,
+  `Partial η²` = round(eta$Eta2_partial, 3),
+  `Partial ω²` = round(omega$Omega2_partial, 3)),
+  caption = "Độ lớn hiệu ứng của mô hình ANOVA cộng tính.")
+```
+
+**So sánh từng môi trường sống.** Do tỷ lệ các mức mật độ không giống nhau giữa các môi
+trường, việc so sánh trực tiếp trung bình thô có thể không công bằng. Báo cáo sử dụng trung
+bình biên ước lượng (*estimated marginal means*, EMM) để so sánh `Habitat` sau khi đã điều
+chỉnh cho `Habitat.Density`.
+
+Sau đó, các môi trường được so sánh từng cặp và p-value được hiệu chỉnh Tukey. Bước hiệu chỉnh
+này hạn chế việc tìm thấy khác biệt chỉ do thực hiện nhiều phép so sánh cùng lúc.
+
+Tuy nhiên, vì một số tổ hợp `Habitat`–`Habitat.Density` không có quan sát, EMM phải dựa vào
+giả định cộng tính để ước lượng cho những tổ hợp còn thiếu. Do đó, EMM là trung bình được điều
+chỉnh theo mô hình, không phải trung bình quan sát trực tiếp.
+
+```{r emmeans}
+emm <- emmeans::emmeans(aov_add, ~ Habitat)
+emm_df <- as.data.frame(emm)
+kb(tibble::tibble(
+  `Habitat` = emm_df$Habitat,
+  `EMM (HWI)` = round(emm_df$emmean, 1),
+  `SE` = round(emm_df$SE, 2),
+  `KTC 95% dưới` = round(emm_df$lower.CL, 1),
+  `KTC 95% trên` = round(emm_df$upper.CL, 1)),
+  caption = "Trung bình biên HWI theo Habitat (đã hiệu chỉnh Habitat.Density).")
+
+pw <- as.data.frame(emmeans::contrast(emm, "pairwise", adjust = "tukey"))
+kb(tibble::tibble(
+  `Cặp` = pw$contrast,
+  `Chênh lệch` = round(pw$estimate, 2),
+  `SE` = round(pw$SE, 2),
+  `p (Tukey)` = round(pw$p.value, 3)) |> arrange(`p (Tukey)`),
+  caption = "So sánh cặp Habitat (emmeans, hiệu chỉnh Tukey).")
+
+# Phân tích độ nhạy: EMM trọng số bằng nhau, trọng số theo tần suất và trung bình thô
+emm_prop <- as.data.frame(emmeans::emmeans(aov_add, ~ Habitat,
+                                           weights = "proportional"))
+raw_hab <- anv |>
+  group_by(Habitat) |>
+  summarise(`Trung bình thô` = mean(Hand.Wing.Index), .groups = "drop")
+sensitivity_emm <- tibble::tibble(
+  Habitat = emm_df$Habitat,
+  `EMM (trọng số bằng nhau)` = emm_df$emmean,
+  `EMM (trọng số tỷ lệ)` = emm_prop$emmean
+) |>
+  left_join(raw_hab, by = "Habitat") |>
+  mutate(across(where(is.numeric), ~ round(.x, 2)))
+kb(sensitivity_emm,
+   caption = "Phân tích độ nhạy của trung bình HWI theo cách đặt trọng số/điều chỉnh.")
+```
+
+**Phân tích độ nhạy.** Báo cáo đặt EMM tính theo hai cách bên cạnh trung bình thô để xem kết
+quả phụ thuộc bao nhiêu vào cách điều chỉnh. Chênh lệch lớn nhất giữa EMM trọng số bằng nhau
+và trung bình thô chỉ khoảng
+`r round(max(abs(sensitivity_emm[[2]] - sensitivity_emm[[4]])), 2)` điểm HWI. Vì vậy, xu
+hướng mô tả chung không thay đổi nhiều theo cách tính trung bình.
+
+Kết quả này không xóa được hạn chế của dữ liệu. Do một số môi trường gần như không có đủ các
+mức mật độ, các giá trị điều chỉnh vẫn có phần dựa trên ngoại suy.
+
+**Diễn giải kết quả.**
+
+- `Habitat` có partial η² ≈
+  `r round(eta$Eta2_partial[eta$Parameter == "Habitat"], 3)` và partial ω² ≈
+  `r round(omega$Omega2_partial[omega$Parameter == "Habitat"], 3)`. Các giá trị này cho thấy
+  môi trường sống chỉ giải thích một phần rất nhỏ biến thiên của HWI sau khi đã xét mật độ
+  sinh cảnh.
+- Sau khi điều chỉnh cho `Habitat.Density` và hiệu chỉnh Tukey, không cặp môi trường sống nào
+  khác biệt có ý nghĩa thống kê; p-value nhỏ nhất là `r round(min(pw$p.value), 3)`.
+- Trung bình thô cho thấy Grassland có HWI thấp nhất, còn Woodland và Human Modified cao
+  nhất. Đây chỉ là xu hướng mô tả, chưa phải bằng chứng chắc chắn về khác biệt giữa các cặp.
+
+Việc kiểm định tổng thể của `Habitat` có p-value dưới 0,05 nhưng không cặp riêng nào đạt ý
+nghĩa sau Tukey không phải là mâu thuẫn. Kiểm định tổng thể hỏi liệu năm nhóm có khác nhau nói
+chung hay không, còn kiểm định Tukey xét từng cặp và áp dụng ngưỡng chặt hơn vì có nhiều phép
+so sánh.
+
+**Kết luận.** Dữ liệu gợi ý HWI có khác biệt theo môi trường sống, nhưng bằng chứng chưa mạnh
+và độ lớn ảnh hưởng nhỏ. Chưa thể xác định chắc chắn cặp môi trường nào khác nhau, cũng chưa
+thể đánh giá đầy đủ tương tác giữa môi trường sống và mật độ sinh cảnh. Vì dữ liệu mất cân
+bằng, có ô rỗng và một số nhóm có ít loài, kết quả cần được diễn giải thận trọng.
+
+# So sánh và thảo luận
+
+## So sánh các phương pháp hồi quy
+
+```{r bang-thao-luan}
+kb(tibble::tibble(
+  `Tiêu chí` = c("Khả năng dự báo", "Lựa chọn biến", "Xử lý đa cộng tuyến",
+                 "Khả năng diễn giải", "Điều kiện áp dụng"),
+  `OLS` = c(sprintf("R²≈%.2f; gần Ridge", m_ols["R2"]), "Không; giữ toàn bộ biến",
+            "Không xử lý trực tiếp", "Hệ số trực tiếp nhưng thiếu ổn định",
+            "Mô hình cơ sở; cần thận trọng khi cộng tuyến cao"),
+  `Ridge` = c(sprintf("R²≈%.2f; gần OLS", m_ridge["R2"]), "Không; giữ toàn bộ biến",
+              "Co hệ số để giảm ảnh hưởng của cộng tuyến",
+              "Hệ số bớt nhạy nhưng bị co về 0", "Phù hợp khi nhiều biến tương quan"),
+  `LASSO` = c(sprintf("R²≈%.2f; sai số cao hơn nhẹ", m_lasso["R2"]),
+              sprintf("Có; còn %d biến", sum(co[, 1] != 0) - 1),
+              "Giảm biến dư thừa nhưng lựa chọn có thể thay đổi",
+              "Mô hình gọn, dễ trình bày hơn", "Phù hợp khi cần ít biến"),
+  `PCR` = c(sprintf("R²≈%.2f", m_pcr["R2"]),
+            sprintf("Giảm còn %d thành phần", k_os),
+            "Các thành phần không tương quan", "Diễn giải gián tiếp qua thành phần",
+            "Phù hợp khi cần giảm số chiều")),
+  caption = "So sánh tổng hợp bốn phương pháp hồi quy.")
+```
+
+## Kết luận thống kê và ý nghĩa sinh học
+
+### Câu hỏi 1: Dự đoán khối lượng cơ thể
+
+**Kết quả dự báo.** Các số đo hình thái, cùng biến địa lý bổ sung `logRange`, dự đoán khá tốt
+khối lượng cơ thể chim ruồi. OLS và Ridge lần lượt đạt $R^2$ =
+`r round(m_ols["R2"], 3)` và `r round(m_ridge["R2"], 3)`, với sai số tuyệt đối trung
+bình khoảng `r round(gram_tab$"MAE (g)"[1], 2)` g trên tập kiểm định. Khối lượng điển hình
+trong tập này vào khoảng `r round(median(exp(y_val)), 1)` g.
+
+Trong lần chia hiện tại, OLS chỉ dùng hình thái có RMSE =
+`r round(m_ols_morph["RMSE"], 4)`, so với `r round(m_ols["RMSE"], 4)` khi thêm `logRange`.
+Vì vậy, dữ liệu chưa cho thấy `logRange` cải thiện dự báo ngoài các số đo hình thái.
+
+Repeated CV cũng cho thấy OLS và Ridge có sai số gần như bằng nhau. Vì chênh lệch giữa hai mô
+hình nhỏ hơn nhiều so với mức dao động giữa các lần đánh giá, không có đủ cơ sở để gọi một mô
+hình là tốt nhất tuyệt đối.
+
+**Ảnh hưởng của đa cộng tuyến.** Nhiều số đo hình thái tương quan rất mạnh, làm hệ số OLS của
+từng biến thiếu ổn định và khó diễn giải riêng. Tuy nhiên, kết quả trên tập kiểm định và
+repeated CV cho thấy khả năng dự báo chung của mô hình vẫn tốt. Đây là hai vấn đề khác nhau:
+mô hình có thể dự báo tốt nhưng chưa chắc xác định chính xác đóng góp riêng của từng biến.
+
+**Chọn mô hình theo mục tiêu.**
+
+- OLS phù hợp làm mô hình cơ sở và cho hệ số trực tiếp, nhưng các hệ số cần được diễn giải
+  thận trọng.
+- Ridge phù hợp khi ưu tiên dự báo, muốn giữ toàn bộ biến và giảm ảnh hưởng của đa cộng tuyến.
+- LASSO phù hợp khi cần mô hình gọn với `r sum(co[, 1] != 0) - 1` biến, chấp nhận sai số cao
+  hơn một chút.
+- PCR phù hợp khi muốn tóm tắt dữ liệu bằng `r k_os` thành phần không tương quan, nhưng ý
+  nghĩa của từng thành phần gián tiếp hơn.
+
+**Ý nghĩa sinh học.** PC1 phản ánh xu hướng kích thước hình thái chung và giải thích
+`r round(100 * pve[1], 1)`% biến thiên của các biến dự báo. Điều này cho thấy các số đo cơ thể
+thường thay đổi cùng nhau, đồng thời giải thích vì sao đa cộng tuyến xuất hiện mạnh. Kết quả
+chỉ phản ánh mối liên hệ thống kê, chưa chứng minh đặc điểm hình thái hoặc phạm vi phân bố gây
+ra thay đổi khối lượng.
+
+### Câu hỏi 2: HWI và môi trường sống
+
+**Kết quả ANOVA.** `Habitat` có p cổ điển =
+`r round(anova_classic["Habitat", "Pr(>F)"], 3)` và p robust HC3 =
+`r round(anova_hc3["Habitat", "Pr(>F)"], 3)`, cho thấy có liên hệ thăm dò giữa HWI và môi
+trường sống. Tuy nhiên, thiết kế mất cân bằng và độ lớn ảnh hưởng rất nhỏ
+(partial η² ≈ `r round(eta$Eta2_partial[eta$Parameter == "Habitat"], 3)`).
+
+Sau khi điều chỉnh cho `Habitat.Density` và hiệu chỉnh Tukey, không cặp môi trường sống nào
+khác biệt có ý nghĩa; p-value nhỏ nhất là `r round(min(pw$p.value), 3)`. Dữ liệu cũng chưa cho
+thấy ảnh hưởng riêng rõ ràng của mật độ sinh cảnh. Tương tác giữa môi trường và mật độ không
+thể kiểm tra đầy đủ vì một số tổ hợp không có quan sát.
+
+Grassland có xu hướng HWI thấp hơn trong thống kê mô tả, nhưng dữ liệu hiện tại chưa đủ để
+khẳng định khác biệt này. Cần thêm quan sát ở các tổ hợp môi trường–mật độ còn thiếu trước khi
+đưa ra kết luận sinh học chắc chắn hơn.
+
+## Hạn chế và hướng cải tiến
+
+- **Đa cộng tuyến và chọn biến:** Có thể thử Elastic Net, phương pháp kết hợp Ridge và LASSO,
+  để chọn biến mà ít phụ thuộc hơn vào việc biến nào được chọn trong một nhóm tương quan.
+- **Quan hệ phi tuyến:** Quan hệ giữa các kích thước cơ thể có thể không hoàn toàn là đường
+  thẳng. GAM hoặc mô hình cây như Random Forest và XGBoost có thể được đánh giá thêm bằng cùng
+  quy trình kiểm chứng chéo.
+- **Phần dư không chuẩn:** Hồi quy robust hoặc bootstrap có thể giúp việc suy luận hệ số ít
+  nhạy hơn với một số quan sát bất thường.
+- **Nguồn trait và khối lượng:** Phân tích chính đã loại các dòng có trait suy diễn hoặc
+  `Mass.Source` là `Inferred`/`EltonTraits_Model`. Khi có thêm dữ liệu đo trực tiếp, cần kiểm
+  tra lại xem kết quả có thay đổi theo nguồn và cỡ mẫu đo hay không.
+- **Quan hệ phát sinh loài:** Các loài có họ hàng gần có thể có đặc điểm giống nhau, nên giả
+  định các quan sát độc lập có thể không đúng. Nếu có cây phát sinh loài, PGLS sẽ phù hợp hơn
+  để xử lý cấu trúc này; đánh giá dự báo sang dòng tiến hóa mới cũng nên dùng phylogenetic
+  block cross-validation thay cho chia loài hoàn toàn ngẫu nhiên.
+- **Dữ liệu ANOVA còn thiếu tổ hợp:** Giải pháp quan trọng nhất là thu thập thêm loài ở các tổ
+  hợp `Habitat`–`Habitat.Density` đang trống hoặc có rất ít quan sát. Mô hình hỗn hợp chỉ hữu
+  ích khi dữ liệu có thêm cấu trúc nhóm hoặc phân cấp phù hợp; nó không tự khắc phục các ô
+  rỗng.
+- **Giới hạn diễn giải:** Đây là dữ liệu quan sát, nên các kết quả mô tả mối liên hệ chứ không
+  chứng minh quan hệ nhân quả.

@@ -1,0 +1,13 @@
+=== CHUNK 15 lasso ===
+--- header: ```{r lasso, fig.width=8, fig.height=4} 
+
+
+[BẢNG] Các biến được LASSO giữ lại tại lambda.1se. 
+        Biến giữ lại  Hệ số
+1        (Intercept) 0.1914
+2 Beak.Length_Culmen 0.0018
+3         Beak.Width 0.0674
+4         Beak.Depth 0.0346
+5        Wing.Length 0.0146
+6         Secondary1 0.0128
+

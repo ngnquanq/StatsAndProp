@@ -1,0 +1,22 @@
+=== CHUNK 1 setup ===
+--- header: ```{r setup, include=FALSE} 
+
+[MESSAGE] 
+Attaching package: ‘dplyr’
+
+[MESSAGE] The following objects are masked from ‘package:stats’:
+
+    filter, lag
+
+[MESSAGE] The following objects are masked from ‘package:base’:
+
+    intersect, setdiff, setequal, union
+
+[WARNING] package ‘kableExtra’ was built under R version 4.6.1 
+[MESSAGE] 
+Attaching package: ‘kableExtra’
+
+[MESSAGE] The following object is masked from ‘package:dplyr’:
+
+    group_rows
+

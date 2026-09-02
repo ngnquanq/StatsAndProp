@@ -1,0 +1,35 @@
+=== CHUNK 29 emmeans ===
+--- header: ```{r emmeans} 
+
+
+[BẢNG] Trung bình biên HWI theo Habitat (đã hiệu chỉnh Habitat.Density). 
+         Habitat EMM (HWI)   SE KTC 95% dưới KTC 95% trên
+1         Forest      63.2 0.43         62.3         64.0
+2      Grassland      61.6 0.99         59.6         63.5
+3 Human Modified      64.4 0.84         62.8         66.1
+4      Shrubland      62.5 0.54         61.5         63.6
+5       Woodland      64.5 0.76         63.0         66.0
+
+
+[BẢNG] So sánh cặp Habitat (emmeans, hiệu chỉnh Tukey). 
+                          Cặp Chênh lệch   SE p (Tukey)
+1        Shrubland - Woodland      -1.92 0.84     0.149
+2  Human Modified - Shrubland       1.90 0.86     0.180
+3        Grassland - Woodland      -2.88 1.31     0.185
+4  Grassland - Human Modified      -2.86 1.42     0.263
+5           Forest - Woodland      -1.30 0.83     0.516
+6     Forest - Human Modified      -1.28 0.82     0.527
+7          Forest - Grassland       1.58 1.25     0.711
+8          Forest - Shrubland       0.62 0.55     0.793
+9       Grassland - Shrubland      -0.96 1.25     0.939
+10  Human Modified - Woodland      -0.02 1.06     1.000
+
+
+[BẢNG] Phân tích độ nhạy của trung bình HWI theo cách đặt trọng số/điều chỉnh. 
+         Habitat EMM — trọng số bằng nhau EMM — trọng số tỷ lệ Trung bình thô
+1         Forest                    63.16                63.46          63.41
+2      Grassland                    61.58                61.88          61.11
+3 Human Modified                    64.45                64.75          65.01
+4      Shrubland                    62.54                62.85          63.12
+5       Woodland                    64.46                64.76          64.89
+

@@ -1,0 +1,134 @@
+% Nội dung phần 5: Hạn chế và hướng phát triển.
+
+\section{Hạn chế và hướng phát triển}
+
+\subsection{Hạn chế của phân tích}
+
+\subsubsection{Hạn chế về thiết kế nghiên cứu}
+
+\begin{itemize}
+  \item \textbf{Không có treatment/control ngẫu nhiên.} So sánh hai nhóm giá là
+  phân tích quan sát. Balance diagnostics (Hình~\ref{fig:ab-balance}) cho thấy
+  nhiều covariate có $|\text{SMD}| > 0{,}1$, tức hai nhóm khác nhau một cách hệ
+  thống ngay từ đầu. Việc điều chỉnh bằng mô hình chỉ xử lý được các yếu tố đã
+  quan sát; residual confounding bởi đặc điểm sản phẩm, danh mục và thói quen
+  duyệt vẫn có thể tồn tại.
+
+  \item \textbf{Giả thuyết được định hướng từ EDA.} Nhóm giá trở thành đối tượng
+  kiểm định sau khi quan sát dữ liệu, không phải trước đó. Vì vậy p-value trong
+  báo cáo cần được đọc cùng effect size, balance diagnostics, kiểm tra ổn định
+  theo thời gian và hiệu chỉnh Holm, chứ không đứng một mình.
+
+  \item \textbf{Quan hệ theo \texttt{Order} chịu cấu trúc chọn lọc.} Tại mỗi vị
+  trí $t$, chỉ những session còn tồn tại đến $t$ được quan sát. Xu hướng giảm của
+  xác suất kết thúc theo tiến trình vì vậy trộn lẫn hai cơ chế: thay đổi hành vi
+  thực sự và việc các session có xu hướng dừng sớm đã bị loại khỏi mẫu.
+\end{itemize}
+
+\subsubsection{Hạn chế về dữ liệu}
+
+\begin{itemize}
+  \item \textbf{Không có thông tin chuyển đổi.} Dữ liệu không ghi giao dịch, giỏ
+  hàng hay thanh toán. Vì vậy \texttt{Exit} chỉ có nghĩa ``click cuối của
+  session'', hoàn toàn không phân biệt được một phiên kết thúc vì mua hàng thành
+  công với một phiên kết thúc vì thất vọng bỏ đi. Đây là hạn chế nghiêm trọng
+  nhất đối với giá trị kinh doanh của mô hình.
+
+  \item \textbf{Không có chiều thời gian trong phiên.} Không có giờ click và
+  không có thời lượng giữa hai click liên tiếp -- những tín hiệu thường mạnh nhất
+  trong bài toán dự báo rời bỏ. Mô hình vì vậy buộc phải thay thế bằng các đại
+  lượng đếm (số sản phẩm, số danh mục đã xem).
+
+  \item \textbf{Không có định danh người dùng xuyên phiên.} Không thể phân biệt
+  khách quay lại với khách mới, cũng không thể xây dựng đặc trưng lịch sử dài hạn.
+
+  \item \textbf{Phụ thuộc trong cụm.} Các click trong cùng một session không độc
+  lập. Nhóm đã dùng cluster-robust covariance và cluster bootstrap theo session,
+  nhưng đây chỉ là hiệu chỉnh cho suy luận, không mô hình hóa tường minh cấu trúc
+  phụ thuộc; một mô hình hiệu ứng hỗn hợp hoặc survival có thể phù hợp hơn.
+
+  \item \textbf{Tháng 8 không đầy đủ.} Dữ liệu dừng ở ngày 13/08 và riêng ngày
+  này chỉ có 200 click nên đã bị loại. Temporal test vì vậy chỉ gồm 12 ngày với
+  13.948 click, khiến khoảng tin cậy bootstrap khá rộng
+  (Bảng~\ref{tab:final-metrics}).
+
+  \item \textbf{Tính đại diện.} Dữ liệu từ năm 2008 và của một cửa hàng cụ thể ở
+  Ba Lan. Giao diện thương mại điện tử, thiết bị truy cập và hành vi người dùng
+  đã thay đổi rất nhiều; cần đánh giá lại toàn bộ trước khi áp dụng cho môi
+  trường hiện tại.
+\end{itemize}
+
+\subsubsection{Hạn chế về mô hình}
+
+\begin{itemize}
+  \item \textbf{Concurvity cao trong GAM.} Mức concurvity lớn nhất giữa các term
+  đạt 0,994 (Bảng~\ref{tab:collinearity}). Đây là lý do các partial-effect plot ở
+  Hình~\ref{fig:gam-smooths} chỉ được dùng để mô tả dạng hàm, không được diễn
+  giải như hiệu ứng riêng của từng biến.
+
+  \item \textbf{Biến \texttt{product\_model} bị bỏ qua.} Với 217 mức, biến này
+  không được đưa vào mô hình chính vì chưa có quy tắc gộp mức hiếm được kiểm
+  chứng. Có thể vì vậy mà một phần thông tin về sản phẩm bị bỏ sót.
+
+  \item \textbf{Khả năng phân biệt còn khiêm tốn.} ROC--AUC 0,666 và Brier Skill
+  Score 0,039 chưa đủ để coi mô hình là một hệ thống sẵn sàng triển khai.
+\end{itemize}
+
+\subsection{Đề xuất một thí nghiệm A/B ngẫu nhiên thực sự}
+\label{subsec:future-ab}
+
+Để chuyển từ kết luận liên hệ sang kết luận nhân quả, cần một thí nghiệm được
+thiết kế đúng. Nhóm đề xuất thiết kế sau.
+
+\textbf{Đơn vị ngẫu nhiên hóa.} Randomize ở \emph{cấp session}, lưu
+\texttt{experiment\_id} cho từng phiên và đảm bảo mỗi session chỉ thuộc đúng một
+nhánh trong suốt vòng đời của nó. Ngẫu nhiên hóa ở cấp click sẽ vi phạm giả định
+độc lập vì các click trong cùng phiên phụ thuộc nhau.
+
+\textbf{Treatment.} Thay vì tùy tiện thay đổi giá sản phẩm -- điều vừa rủi ro về
+doanh thu vừa khó hoàn tác -- treatment khả thi hơn là cách \emph{trình bày}
+thông tin giá:
+
+\begin{itemize}
+  \item \textbf{Control:} giao diện hiển thị giá hiện tại.
+  \item \textbf{Treatment:} bổ sung thông điệp giá trị hoặc ưu đãi vận chuyển,
+  giữ nguyên giá sản phẩm.
+\end{itemize}
+
+\textbf{Outcome.} Primary outcome là tỷ lệ session kết thúc trong một cửa sổ
+click được xác định trước (ví dụ trong vòng 3 click kể từ khi nhìn thấy
+treatment). Secondary outcomes gồm độ dài session và số sản phẩm duy nhất đã xem.
+Cửa sổ outcome phải được khóa \emph{trước} khi thu thập dữ liệu.
+
+\textbf{Phân tích.} Intention-to-treat, kiểm định hai phía tại
+$\alpha = 0{,}05$, không dừng sớm dựa trên p-value chưa điều chỉnh. Nếu cần theo
+dõi giữa chừng, phải dùng thiết kế sequential có kiểm soát sai lầm loại I.
+
+\textbf{Về cỡ mẫu.} Nhóm cố ý \emph{không} báo cáo một con số cỡ mẫu tính từ hai
+tỷ lệ click quan sát ở Bảng~\ref{tab:ab-rate}. Lý do là thí nghiệm tương lai
+randomize theo session và có estimand hoàn toàn khác (tỷ lệ ở cấp session, không
+phải cấp click), nên đưa ra con số như vậy sẽ gây hiểu nhầm. Trước khi tính
+power cần khóa bốn tham số: cửa sổ outcome, tỷ lệ nền ở cấp session, minimum
+detectable effect có ý nghĩa kinh doanh, và mức hao hụt dự kiến. Cỡ mẫu sau đó
+được tính trực tiếp theo số session mỗi nhánh.
+
+\subsection{Hướng phát triển khác}
+
+\begin{itemize}
+  \item \textbf{Mô hình sinh tồn thời gian rời rạc.} Bài toán hiện tại về bản
+  chất là ước lượng hazard rời rạc. Một mô hình survival có thể xử lý tường minh
+  cấu trúc chọn lọc theo \texttt{Order} thay vì chỉ điều chỉnh gián tiếp.
+
+  \item \textbf{Mô hình hiệu ứng hỗn hợp.} Thêm random intercept theo session sẽ
+  mô hình hóa trực tiếp phần phụ thuộc trong cụm thay vì chỉ hiệu chỉnh sai số
+  chuẩn.
+
+  \item \textbf{Đối chứng bằng mô hình phi tham số.} Gradient boosting hoặc
+  random forest có thể cho biết trần hiệu năng thực sự của bộ đặc trưng hiện tại;
+  nếu chúng cũng chỉ đạt ROC--AUC quanh 0,67 thì giới hạn nằm ở dữ liệu chứ không
+  ở dạng mô hình.
+
+  \item \textbf{Gộp mức của \texttt{product\_model}.} Xây dựng quy tắc gộp 217 mã
+  sản phẩm dựa trên tần suất trong tập train, rồi đánh giá phần thông tin bổ sung
+  bằng đúng pipeline hiện tại.
+\end{itemize}

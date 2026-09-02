@@ -1,0 +1,206 @@
+% Nội dung phần 1: Giới thiệu chung và bản đề xuất phân tích.
+
+\section{Giới thiệu chung và bản đề xuất phân tích}
+
+\subsection{Giới thiệu bộ dữ liệu}
+
+Bộ dữ liệu \textbf{e-shop clothing 2008} ghi nhận toàn bộ hành vi click trên một
+cửa hàng quần áo trực tuyến của Ba Lan trong năm 2008. Mỗi dòng dữ liệu là một
+lượt click; các click có cùng \texttt{session\_id} tạo thành một phiên duyệt web
+và biến \texttt{order} cho biết vị trí của click trong phiên đó. Dữ liệu được
+công bố kèm nghiên cứu của {\L}apczy\'nski và Bia{\l}ow{\k a}s
+(2013)~\cite{lapczynski2013} về hành vi người dùng trong cửa hàng trực tuyến, và
+hiện được lưu trữ tại UCI Machine Learning Repository~\cite{uci_clickstream}.
+
+Nhóm chọn bộ dữ liệu này vì ba lý do. Thứ nhất, quy mô đủ lớn (165.474 click của
+24.026 session) để tách tập huấn luyện và tập kiểm tra theo thời gian mà vẫn còn
+đủ quan sát. Thứ hai, dữ liệu có cấu trúc tuần tự theo session, cho phép đặt một
+câu hỏi thống kê phi tầm thường thay vì chỉ mô tả. Thứ ba, dữ liệu kết hợp cả
+biến liên tục (giá) lẫn nhiều biến phân loại (danh mục, màu sắc, vị trí ảnh,
+trang hiển thị), phù hợp để so sánh hồi quy tuyến tính, GLM và GAM trên cùng một
+bài toán.
+
+\begin{table}[H]
+\centering
+\caption{Tổng quan bộ dữ liệu}
+\label{tab:overview}
+\begin{tabular}{ll}
+\toprule
+\textbf{Chỉ tiêu} & \textbf{Giá trị} \\
+\midrule
+Số click              & 165.474 \\
+Số session            & 24.026 \\
+Số quốc gia / mã miền & 47 \\
+Số sản phẩm           & 217 \\
+Số danh mục           & 4 \\
+Khoảng thời gian      & 01/04/2008 -- 13/08/2008 \\
+Tỷ lệ Continue        & 85,48\% \\
+Tỷ lệ Exit            & 14,52\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Bên cạnh các ưu điểm trên, dữ liệu cũng có giới hạn cần nêu ngay từ đầu vì nó
+quyết định phạm vi kết luận: không có thông tin giao dịch, giỏ hàng hay thanh
+toán; không có giờ click và thời lượng giữa hai click; và tháng 8 chỉ được thu
+thập đến ngày 13, trong đó riêng ngày 13/08 chỉ có 200 click. Vì vậy không thể so
+sánh tổng lưu lượng tháng 8 trực tiếp với các tháng đầy đủ.
+
+\subsection{Ý nghĩa các biến và biến mục tiêu}
+
+Bảng~\ref{tab:vardict} tóm tắt ý nghĩa và vai trò của từng biến trong phân tích.
+Có ba điểm dễ hiểu sai cần lưu ý: \texttt{location} là vị trí của \emph{bức ảnh}
+trong sáu vùng của trang web chứ không phải vị trí địa lý của khách hàng;
+\texttt{category} tương ứng cột \texttt{PAGE 1} (danh mục chính) còn
+\texttt{page} tương ứng cột \texttt{PAGE} (số trang hiển thị 1--5); biến
+\texttt{year} bị loại vì chỉ nhận một giá trị duy nhất nên không có biến thiên.
+
+\begin{table}[H]
+\centering
+\caption{Từ điển biến và vai trò trong phân tích}
+\label{tab:vardict}
+\footnotesize
+\begin{tabular}{>{\raggedright\arraybackslash}p{0.15\textwidth}
+                >{\raggedright\arraybackslash}p{0.35\textwidth}
+                >{\raggedright\arraybackslash}p{0.40\textwidth}}
+\toprule
+\textbf{Biến} & \textbf{Ý nghĩa} & \textbf{Vai trò} \\
+\midrule
+year, month, day & Ngày lịch; không có giờ hoặc thời lượng & Tạo \texttt{time\_30}; \texttt{year} bị loại vì không biến thiên \\[2pt]
+order & Thứ tự click trong session & Predictor, dùng $\log_2(\text{order})$ hoặc hàm trơn \\[2pt]
+country & Quốc gia hoặc loại tên miền của IP & Predictor factor; mức hiếm được gộp trên train \\[2pt]
+session\_id & Mã session & Nhóm dữ liệu và tính robust SE; không làm predictor \\[2pt]
+category & PAGE 1: trousers, skirts, blouses hoặc sale & Predictor factor \\[2pt]
+product\_model & PAGE 2: mã của 217 sản phẩm & Không đưa vào mô hình chính do có 217 mức \\[2pt]
+colour & Màu sản phẩm & Predictor factor \\[2pt]
+location & Vị trí ảnh trong sáu vùng của trang; không phải địa lý & Predictor factor \\[2pt]
+photography & Kiểu ảnh en face hoặc profile & Predictor factor \\[2pt]
+price & Giá sản phẩm, USD & Predictor liên tục \\[2pt]
+price\_above\_avg & 1 = cao hơn trung bình danh mục; 2 = không & Tạo hai nhóm cho kiểm định; không dùng cùng \texttt{price} trong mô hình A/B \\[2pt]
+page & Trang hiển thị trong website, từ 1 đến 5 & Predictor factor \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Bộ dữ liệu gốc không có sẵn biến mục tiêu. Nhóm định nghĩa target thống nhất cho
+mọi mô hình xác suất trong báo cáo là biến nhị phân \texttt{Exit}:
+
+\[
+Exit_{it} =
+\begin{cases}
+1, & \text{click hiện tại là click cuối của session;}\\
+0, & \text{session còn click tiếp theo.}
+\end{cases}
+\]
+
+Biến \texttt{session\_length} chỉ được dùng để \emph{tạo} target và tuyệt đối
+không được đưa vào tập predictor, vì tại thời điểm click thứ $t$ độ dài cuối cùng
+của session là thông tin tương lai. Đại lượng được nghiên cứu vì vậy là một xác
+suất nguy cơ rời rạc (discrete-time hazard):
+
+\[
+P\{Exit_{it}=1\mid \text{session đã tiếp tục đến click }t\}.
+\]
+
+Tại \texttt{order} $=t$, mẫu số chỉ gồm các session còn tồn tại đến click $t$.
+Do đó mọi kết quả theo \texttt{order} là quan hệ \emph{có điều kiện} trên nhóm
+session còn sống sót, không phải bằng chứng rằng việc tăng số click gây ra thay
+đổi nguy cơ kết thúc.
+
+\subsection{Các mục tiêu phân tích}
+
+\begin{enumerate}
+  \item \textbf{So sánh hai nhóm dạng A/B.} Kiểm định xem xác suất \texttt{Exit}
+  có khác nhau giữa click vào sản phẩm có giá cao hơn trung bình danh mục
+  (nhóm B) và click vào sản phẩm không cao hơn trung bình (nhóm A) hay không.
+
+  \item \textbf{Phân tích các yếu tố liên quan đến \texttt{Exit}.} Mô tả quan hệ
+  giữa xác suất kết thúc và tiến trình session; đánh giá xem đặc điểm của click
+  hiện tại và lịch sử duyệt đã quan sát có bổ sung thông tin dự báo hay không.
+
+  \item \textbf{Xây dựng và so sánh mô hình.} So sánh Linear Probability Model
+  (LPM), Logistic GLM và Binomial GAM về khả năng phân biệt, chất lượng xác suất
+  dự đoán, calibration và khả năng diễn giải.
+\end{enumerate}
+
+Cần nhấn mạnh một điểm về thiết kế: nhóm giá \emph{không} được gán ngẫu nhiên cho
+người dùng mà là một thuộc tính sẵn có của sản phẩm. Vì vậy Mục tiêu 1 là một so
+sánh hai nhóm \textbf{dạng A/B trên dữ liệu quan sát}, không phải một thí nghiệm
+A/B có treatment và control. Mọi kết luận rút ra chỉ phản ánh mối liên hệ, không
+phải quan hệ nhân quả.
+
+\subsection{Phương pháp và chiến lược phân tích}
+
+\subsubsection{Chiến lược cho Mục tiêu 1}
+
+Giả thuyết được phát biểu hai phía tại mức ý nghĩa $\alpha = 0{,}05$:
+\[
+H_0: P(Exit=1\mid A)=P(Exit=1\mid B),
+\qquad
+H_1: P(Exit=1\mid A)\ne P(Exit=1\mid B).
+\]
+Các bước thực hiện gồm: (i) tính tỷ lệ \texttt{Exit} thô và khoảng tin cậy
+Wilson~\cite{wilson1927} cho từng nhóm; (ii) ước lượng risk difference thô kèm
+khoảng tin cậy cluster-bootstrap theo session; (iii) ước lượng adjusted odds
+ratio và adjusted risk difference từ mô hình logistic có kiểm soát tiến trình
+session, thời gian, country và đặc điểm sản phẩm, với sai số chuẩn
+cluster-robust theo \texttt{session\_id}~\cite{zeileis2004, cameron2015};
+(iv) kiểm tra balance giữa hai nhóm bằng standardized mean difference;
+(v) kiểm tra dị biệt hiệu ứng theo \texttt{category} với hiệu chỉnh đa kiểm định
+Holm~\cite{holm1979}; (vi) lặp lại phân tích trên ba giai đoạn thời gian để đánh
+giá độ ổn định.
+
+\subsubsection{Chiến lược cho Mục tiêu 2 và Mục tiêu 3}
+
+Ba tầng predictor được so sánh trên cùng một pipeline:
+
+\begin{itemize}
+  \item \textbf{Baseline:} $\log_2(\texttt{order}) + \texttt{time\_30} + \texttt{country}$.
+  \item \textbf{Current-click:} thêm \texttt{price}, \texttt{category},
+  \texttt{colour}, \texttt{location}, \texttt{photography} và \texttt{page}.
+  \item \textbf{History-enhanced:} thêm số sản phẩm và số danh mục duy nhất đã
+  xem, cờ quay lại sản phẩm cũ, cờ chuyển danh mục và chuyển trang, chênh lệch
+  giá so với click trước và so với trung bình lịch sử, tỷ lệ quay lại sản phẩm và
+  tỷ lệ chuyển danh mục.
+\end{itemize}
+
+Mọi đặc trưng lịch sử tại click $t$ chỉ sử dụng dữ liệu từ click 1 đến $t$, nên
+không rò rỉ thông tin tương lai. Biến \texttt{order} được đưa vào dưới dạng
+$\log_2$ trong LPM và Logistic GLM, và dưới dạng hàm trơn $s(\cdot)$ trong
+GAM~\cite{wood2017}, thay vì loại bỏ các session dài nằm ngoài râu boxplot. LPM
+và Logistic GLM dùng cluster-robust covariance theo \texttt{session\_id}; GAM
+dùng link logit với ước lượng fREML.
+
+Việc chia dữ liệu được thực hiện theo thời gian chứ không ngẫu nhiên, để mô phỏng
+đúng tình huống dự báo trong thực tế (Bảng~\ref{tab:split}).
+
+\begin{table}[H]
+\centering
+\caption{Chia dữ liệu theo thời gian}
+\label{tab:split}
+\begin{tabular}{llrr}
+\toprule
+\textbf{Tập} & \textbf{Thời gian} & \textbf{Số click} & \textbf{Số session} \\
+\midrule
+Train              & Tháng 4--6 & 116.095 & 17.031 \\
+Validation         & Tháng 7    & 35.231  & 5.071 \\
+Temporal test      & 01--12/08  & 13.948  & 1.903 \\
+Loại khỏi đánh giá & 13/08      & 200     & 21 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Ngày 13/08 bị loại khỏi mọi đánh giá vì chỉ có 200 click, nhiều khả năng là ngày
+thu thập chưa hoàn tất. Toàn bộ quy tắc tiền xử lý được học trên tập train: các
+country có dưới 100 click trong train được gộp thành mức \texttt{Other}, rồi áp
+dụng nguyên quy tắc đó cho validation và temporal test. Không có session nào xuất
+hiện đồng thời trong hai tập bất kỳ, nên không có rò rỉ dữ liệu theo cụm.
+
+Về đánh giá, do lớp \texttt{Exit} chiếm thiểu số (14,52\%), Accuracy không được
+dùng làm tiêu chí chọn mô hình. Thay vào đó nhóm dùng ROC--AUC, Average
+Precision, log loss, Brier score, Brier Skill Score và hai chỉ số calibration
+(intercept và slope)~\cite{steyerberg2010}. Threshold tối đa hóa $F_1$ được chọn
+từ prediction out-of-fold của five-fold cross-validation \emph{theo session} trên
+tập train, và bị khóa lại trước khi chạm vào validation hay temporal test.
+Tháng 7 được dùng để so sánh đặc tả và chọn mô hình; các ngày 01--12/08 chỉ được
+mở đúng một lần ở cuối để báo cáo khả năng khái quát hóa.

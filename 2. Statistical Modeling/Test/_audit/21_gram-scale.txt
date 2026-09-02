@@ -1,0 +1,12 @@
+=== CHUNK 21 gram-scale ===
+--- header: ```{r gram-scale} 
+
+
+[BẢNG] Sai số dự báo quy đổi về gram trên tập kiểm định (đã hiệu chỉnh smearing Duan). 
+                Mô hình RMSE (g) MAE (g) Hệ số smearing
+1                   OLS    0.857   0.661          1.015
+2                 Ridge    0.854   0.667          1.016
+3                 LASSO    1.002   0.727          1.018
+4                   PCR    0.900   0.698          1.018
+5 Baseline (mean train)    2.183   1.801             NA
+

@@ -1,0 +1,9 @@
+=== CHUNK 17 pcr-eval ===
+--- header: ```{r pcr-eval} 
+
+
+[BẢNG] Lựa chọn số thành phần chính cho PCR. 
+       Quy tắc chọn k  k % phương sai X giữ lại RMSEP (CV)
+1      Cực tiểu RMSEP 10                  100.0     0.1784
+2 One-sigma (đã chọn)  2                   71.9     0.1861
+

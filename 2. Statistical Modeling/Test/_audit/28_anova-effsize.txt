@@ -1,0 +1,9 @@
+=== CHUNK 28 anova-effsize ===
+--- header: ```{r anova-effsize} 
+
+
+[BẢNG] Độ lớn hiệu ứng của mô hình ANOVA cộng tính. 
+          Nhân tố Partial η² Partial ω²
+1         Habitat      0.029      0.018
+2 Habitat.Density      0.008      0.002
+

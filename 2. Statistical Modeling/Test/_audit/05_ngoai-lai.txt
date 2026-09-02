@@ -1,0 +1,10 @@
+=== CHUNK 5 ngoai-lai ===
+--- header: ```{r ngoai-lai, fig.height=4.5} 
+
+
+[BẢNG] Kết quả gắn cờ ngoại lai theo quy tắc IQR trên các biến số đo. 
+                             Chỉ tiêu           Giá trị
+1 Tỷ lệ ô bị gắn cờ (toàn bảng số đo)            1.98 %
+2 Số loài có ít nhất 1 biến bị gắn cờ 42 / 364 (11.5 %)
+3           Biến bị gắn cờ nhiều nhất Beak.Length_Nares
+

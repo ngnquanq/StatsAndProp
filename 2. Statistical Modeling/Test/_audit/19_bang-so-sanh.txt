@@ -1,0 +1,3 @@
+=== CHUNK 19 bang-so-sanh ===
+--- header: ```{r bang-so-sanh, include=FALSE} 
+

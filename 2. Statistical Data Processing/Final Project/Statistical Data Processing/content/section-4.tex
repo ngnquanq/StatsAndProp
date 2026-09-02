@@ -1,0 +1,164 @@
+% Nội dung phần 4: Nhận xét và kết luận.
+
+\section{Nhận xét và kết luận}
+
+\subsection{Nhận xét về kết quả phân tích}
+
+\subsubsection{Mô hình nào hoạt động tốt nhất và tại sao}
+
+Theo quy tắc lựa chọn được chốt trước khi mở dữ liệu đánh giá,
+\textbf{Logistic GLM với tầng predictor history-enhanced} là mô hình được chọn.
+Lý do không nằm ở khả năng phân biệt -- về mặt này ba mô hình gần như không phân
+biệt được, với ROC--AUC trên temporal test lần lượt là 0,662 (LPM), 0,666
+(Logistic GLM) và 0,666 (Binomial GAM), các khoảng tin cậy bootstrap chồng lấn
+gần hoàn toàn (Bảng~\ref{tab:final-metrics}).
+
+Sự khác biệt thực chất nằm ở ba tiêu chí còn lại:
+
+\begin{itemize}
+  \item \textbf{Tính hợp lệ của xác suất.} LPM tạo ra 1,706\% dự đoán nằm ngoài
+  khoảng $[0,1]$ trên temporal test -- những giá trị không thể diễn giải như xác
+  suất. Logistic GLM và Binomial GAM theo cấu trúc không bao giờ mắc lỗi này.
+
+  \item \textbf{Calibration.} Calibration slope của LPM chỉ đạt 0,868, trong khi
+  Logistic GLM đạt 0,934 và GAM đạt 0,942 (lý tưởng là 1). Xác suất do LPM sinh
+  ra cực đoan hơn mức dữ liệu thực sự cho phép.
+
+  \item \textbf{Khả năng diễn giải và độ phức tạp.} Logistic GLM và Binomial GAM
+  cho log loss (0,379) và Brier (0,113) giống nhau đến ba chữ số thập phân, tức
+  GAM \emph{không} mua thêm được gì bằng độ phức tạp của nó. Thêm vào đó,
+  concurvity giữa các term của GAM lên tới 0,994 (Bảng~\ref{tab:collinearity}),
+  khiến các hàm trơn của nó không thể diễn giải riêng lẻ. Ngược lại, GVIF điều
+  chỉnh lớn nhất của Logistic GLM chỉ 2,424, nên các hệ số của nó đọc được.
+\end{itemize}
+
+Sự tương đương giữa GAM và mô hình tuyến tính có một lý giải rõ ràng từ dữ liệu:
+sau phép biến đổi $\log_2(\texttt{order})$, quan hệ giữa tiến trình session và
+xác suất kết thúc đã gần như tuyến tính. Hình~\ref{fig:order-probability} cho
+thấy ba đường dự đoán trùng nhau trong khoảng \texttt{order} từ 1 đến 20, và
+Bảng~\ref{tab:kcheck} cho thấy các hàm trơn của biến giá chỉ có
+$\text{edf} \approx 1$--$2$, tức gần như là đường thẳng. Nói cách khác, phần phi
+tuyến mà GAM có thể khai thác trong bộ dữ liệu này là rất nhỏ.
+
+\subsubsection{Các biến có ảnh hưởng lớn nhất}
+
+Dựa trên kiểm định Wald robust theo cụm session (Bảng~\ref{tab:terms}), năm nhóm
+biến có bằng chứng liên hệ mạnh nhất với \texttt{Exit} là
+$\log_2(\text{Order})$, số danh mục duy nhất đã xem, hành vi quay lại sản phẩm
+cũ, \texttt{Page} và \texttt{Country}. Ba hiệu ứng đáng chú ý nhất về độ lớn:
+
+\begin{itemize}
+  \item Click vào một sản phẩm \emph{đã xem trước đó} trong cùng session làm odds
+  kết thúc tăng gấp 2,218 lần (CI 95\%: 2,064--2,384) -- hiệu ứng đơn biến mạnh
+  nhất trong mô hình.
+  \item Mỗi danh mục mới được xem thêm làm odds kết thúc nhân với 1,562
+  (CI 95\%: 1,509--1,617).
+  \item Ngược chiều, mỗi lần \texttt{order} tăng gấp đôi làm odds kết thúc nhân
+  với 0,640 (CI 95\%: 0,623--0,657): session càng đi sâu thì càng ít khả năng
+  dừng ở click kế tiếp.
+\end{itemize}
+
+Một phát hiện có giá trị phương pháp luận là \textbf{nhóm biến lịch sử duyệt quan
+trọng hơn hẳn đặc điểm sản phẩm}. Thêm toàn bộ giá, danh mục, màu sắc, vị trí
+ảnh, kiểu ảnh và trang hiển thị chỉ nâng ROC--AUC từ 0,589 lên 0,611; trong khi
+nhóm biến lịch sử nâng tiếp lên 0,662 -- đóng góp hơn gấp đôi về ROC--AUC và gấp
+ba lần về log loss. Cả hai bước
+đều có robust joint $p < 0{,}001$, nhưng ý nghĩa thống kê và độ lớn thực tế là
+hai chuyện khác nhau, và ở đây độ lớn nghiêng hẳn về nhóm biến hành vi.
+
+Riêng \texttt{Price} tuy đạt ý nghĩa thống kê ($p = 0{,}008$) nhưng hiệu ứng rất
+nhỏ (OR 1,032 cho mỗi 10 USD). Với cỡ mẫu 116.095 click của tập train, ngay cả
+những liên hệ rất yếu cũng dễ đạt $p < 0{,}05$; vì vậy nhóm nhất quán đọc p-value
+cùng với độ lớn hiệu ứng và khoảng tin cậy.
+
+\subsubsection{Kết luận về kiểm định hai nhóm giá}
+
+Ở mức ý nghĩa $\alpha = 0{,}05$, nhóm \textbf{bác bỏ giả thuyết $H_0$}: xác suất
+\texttt{Exit} của hai nhóm giá không bằng nhau. Bằng chứng đến từ nhiều nguồn
+nhất quán:
+
+\begin{itemize}
+  \item Kiểm định hai tỷ lệ thô: $\chi^2 = 10{,}08$, $p = 0{,}002$.
+  \item Adjusted odds ratio với sai số chuẩn cluster-robust theo session:
+  1,071 (CI 95\%: 1,002--1,144), $p = 0{,}043$.
+  \item Chênh lệch thô 1,19 điểm phần trăm với cluster-bootstrap CI 95\% từ 0,46
+  đến 1,93 điểm phần trăm -- không chứa 0.
+  \item Cùng dấu và độ lớn tương đương trên cả ba giai đoạn thời gian
+  (Bảng~\ref{tab:ab-temporal}).
+\end{itemize}
+
+Tuy nhiên, kết luận này cần ba dè dặt quan trọng. \emph{Thứ nhất}, độ lớn hiệu
+ứng rất nhỏ: adjusted risk difference chỉ 0,82 điểm phần trăm với cận dưới khoảng
+tin cậy là 0,03 -- gần như chạm 0. \emph{Thứ hai}, hiệu ứng không đồng đều giữa
+các danh mục: sau hiệu chỉnh Holm chỉ riêng Trousers còn có ý nghĩa (2,32 điểm
+phần trăm, $p = 0{,}008$), còn Skirts, Blouses và Sale đều có khoảng tin cậy chứa
+0, với kiểm định tương tác nằm ngay ranh giới ($p = 0{,}051$). \emph{Thứ ba} và
+quan trọng nhất, balance diagnostics (Hình~\ref{fig:ab-balance}) xác nhận hai
+nhóm không tương đương như trong một thí nghiệm ngẫu nhiên. Đây là dữ liệu quan
+sát, nên kết quả chỉ chứng minh một \textbf{mối liên hệ}, hoàn toàn không chứng
+minh rằng việc tăng giá \emph{gây ra} việc kết thúc session.
+
+\subsection{Kết luận tổng thể và khuyến nghị}
+
+\subsubsection{Những hiểu biết rút ra}
+
+\textbf{1. Rủi ro rời bỏ tập trung ở đầu session.} Xác suất kết thúc giảm từ
+20,47\% tại click đầu tiên xuống 7,64\% sau click thứ 20 -- giảm hơn một nửa
+(Bảng~\ref{tab:hazard}). Người dùng vượt qua được vài click đầu có xu hướng ở lại
+lâu hơn nhiều.
+
+\textbf{2. Hành vi trong phiên nói nhiều hơn thuộc tính sản phẩm.} Biết người
+dùng \emph{đã làm gì} trong session (đã xem bao nhiêu danh mục, có quay lại sản
+phẩm cũ không, có nhảy trang không) dự báo tốt hơn hẳn việc biết họ \emph{đang
+xem sản phẩm nào}.
+
+\textbf{3. Quay lại sản phẩm cũ là tín hiệu cảnh báo mạnh nhất.} Odds kết thúc
+tăng gấp 2,218 lần. Cần lưu ý đây là quan hệ hai chiều về mặt diễn giải: hành vi
+này vừa có thể là dấu hiệu người dùng đã tìm được thứ cần và sắp rời đi, vừa có
+thể là dấu hiệu họ đang loanh quanh không tìm thấy gì mới. Dữ liệu hiện có không
+phân biệt được hai kịch bản này vì thiếu thông tin giao dịch.
+
+\textbf{4. Nhưng khả năng dự báo tổng thể còn hạn chế.} Đây là kết luận trung
+thực cần nêu rõ: ROC--AUC 0,666 chỉ ở mức trung bình, Brier Skill Score 0,039
+nghĩa là mô hình chỉ tốt hơn dự báo hằng khoảng 4\%, và tại threshold tối ưu
+$F_1$ thì Precision chỉ 20,94\% -- cứ 5 cảnh báo thì khoảng 1 cảnh báo đúng.
+Nguyên nhân chính là dữ liệu thiếu những tín hiệu quan trọng nhất: thời lượng
+dừng lại trên mỗi trang, thao tác thêm vào giỏ hàng, và lịch sử người dùng qua
+nhiều phiên.
+
+\subsubsection{Khuyến nghị hành động}
+
+\textbf{Về mặt vận hành:}
+
+\begin{enumerate}
+  \item \textbf{Ưu tiên can thiệp ở vài click đầu tiên.} Vì gần một phần năm
+  session kết thúc ngay sau click đầu, các nỗ lực cải thiện trải nghiệm nên tập
+  trung vào trang đầu tiên người dùng nhìn thấy. Lưu ý \texttt{Order} là một chỉ
+  báo về giai đoạn session, không phải một biến có thể can thiệp trực tiếp.
+
+  \item \textbf{Tính các đặc trưng hành vi theo thời gian thực.} Số sản phẩm và
+  danh mục đã xem, cờ quay lại sản phẩm cũ, cờ chuyển danh mục -- toàn bộ đều
+  tính được ngay tại click hiện tại mà không cần biết tương lai của session, nên
+  triển khai được trong hệ thống trực tuyến.
+
+  \item \textbf{Không tự động hóa quyết định dựa trên mô hình hiện tại.} Với
+  Precision khoảng 21\%, việc tự động kích hoạt ưu đãi cho mọi phiên bị dự báo
+  ``sắp rời'' sẽ lãng phí phần lớn ngân sách. Nếu dùng, chỉ nên dùng như một tín
+  hiệu xếp hạng ưu tiên trong một hệ thống có chi phí can thiệp thấp.
+
+  \item \textbf{Theo dõi calibration khi triển khai, không chỉ AUC.} Calibration
+  intercept trên temporal test là $-0{,}127$, âm hơn so với mức $-0{,}059$ trên
+  validation, cho thấy chất lượng xác suất suy giảm theo thời gian ngay cả khi
+  AUC giữ nguyên. Mô hình cần được hiệu chỉnh lại định kỳ.
+\end{enumerate}
+
+\textbf{Về mặt thu thập dữ liệu:} giá trị gia tăng lớn nhất không đến từ mô hình
+phức tạp hơn mà đến từ dữ liệu tốt hơn. Ba trường cần bổ sung, theo thứ tự ưu
+tiên, là: dấu thời gian đầy đủ của từng click (để tính thời lượng dừng), sự kiện
+thêm vào giỏ hàng và mua hàng (để chuyển từ dự báo ``rời phiên'' sang dự báo
+``chuyển đổi''), và định danh người dùng xuyên phiên.
+
+\textbf{Về nhóm giá:} không nên thay đổi chính sách giá dựa trên kết quả của báo
+cáo này. Bằng chứng thu được là liên hệ trên dữ liệu quan sát, với độ lớn nhỏ và
+không đồng đều giữa các danh mục. Bước đi đúng đắn là chạy một thí nghiệm ngẫu
+nhiên thực sự theo thiết kế được trình bày ở Mục~\ref{subsec:future-ab}.

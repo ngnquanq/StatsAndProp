@@ -1,0 +1,105 @@
+% \begin{titlepage}
+% \thispagestyle{empty}
+% \newcommand{\HRule}{\rule{\linewidth}{0.5mm}}
+% \centering
+% \renewcommand{\baselinestretch}{1}\selectfont
+
+% \textsc{\bf\LARGE ĐẠI HỌC QUỐC GIA TPHCM}\\[0.3cm]
+% \textsc{\bf\Large TRƯỜNG ĐẠI HỌC KHOA HỌC TỰ NHIÊN}\\[0.3cm]
+% \textsc{\bf\large KHOA TOÁN - TIN HỌC}\\[0.3cm]
+
+% \includegraphics[scale=.3]{img/hcmus-logo.png}
+
+
+% { 
+% \huge{\bfseries{ĐỒ ÁN MÔN HỌC}}\\[0.5cm]
+% \large{\bfseries{Đề tài: \reporttitle}}
+% }\\[0.4cm]
+
+
+% \textbf{\large Môn học: \coursename}\\[0.5cm]
+
+% {\large
+% \textbf{Giáo viên hướng dẫn}\\[0.15cm]
+% \teachername
+% }\\[0.5cm]
+
+% {\large\textbf{Danh sách thành viên}}\\[0.2cm]
+% {\small
+% \renewcommand{\arraystretch}{1.2}
+% \begin{tabular}{|>{\raggedright\arraybackslash}p{0.23\textwidth}
+%                 |>{\centering\arraybackslash}p{0.16\textwidth}
+%                 |>{\raggedright\arraybackslash}p{0.31\textwidth}
+%                 |>{\centering\arraybackslash}p{0.15\textwidth}|}
+% \hline
+% \centering\textbf{Họ và tên} &
+% \textbf{Mã số sinh viên} &
+% \centering\textbf{Phân công công việc} &
+% \textbf{Đánh giá} \\
+% \hline
+% \studentname \\
+% \hline
+% \end{tabular}
+% }\\[0.4cm]
+
+% {\large Tháng 7 năm 2026}\\[0.3cm]
+
+
+
+% \vfill
+% \end{titlepage}
+
+
+\begin{titlepage}
+\begin{tikzpicture}[remember picture, overlay]
+    \draw[line width=1.5pt]
+        ([xshift=1.2cm,yshift=-1.2cm]current page.north west)
+        rectangle
+        ([xshift=-1.2cm,yshift=1.2cm]current page.south east);
+\end{tikzpicture}
+
+    \begin{center}
+
+        \textbf{
+        ĐẠI HỌC QUỐC GIA THÀNH PHỐ HỒ CHÍ MINH\\
+        TRƯỜNG ĐẠI HỌC KHOA HỌC TỰ NHIÊN
+        }
+
+        % \vspace{1cm}
+
+        % ===== LOGO =====
+        \includegraphics[width=7cm]{img/hcmus-logo.png}
+
+        \vspace{1.5cm}
+
+        \textbf{\Large \reporttitle}
+
+        \vspace{0.5cm}
+
+        {\fontsize{15pt}{20pt}\selectfont \textbf{Môn học:} \coursename}
+
+        \vspace{2.5cm}
+
+    \end{center}
+
+
+\begin{minipage}[t]{0.6\textwidth}
+\setlength{\leftskip}{2cm}
+\textbf{Giáo Viên Hướng Dẫn:}\\
+\teachername
+\end{minipage}
+\hfill
+\begin{minipage}[t]{0.48\textwidth}
+\textbf{Học viên thực hiện:}\\
+\begin{tabular}{@{}ll@{}}
+\studentname
+\end{tabular}
+\end{minipage}
+
+    \vfill
+
+    \begin{center}
+        Thành Phố Hồ Chí Minh, 2026
+    \end{center}
+
+\end{titlepage}

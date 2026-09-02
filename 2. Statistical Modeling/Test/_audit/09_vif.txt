@@ -1,0 +1,17 @@
+=== CHUNK 9 vif ===
+--- header: ```{r vif} 
+
+
+[BẢNG] Hệ số phóng đại phương sai (VIF) của mô hình OLS đầy đủ. 
+                 Biến   VIF
+1         Wing.Length 400.5
+2      Kipps.Distance 156.6
+3          Secondary1  73.8
+4  Beak.Length_Culmen  43.7
+5   Beak.Length_Nares  39.6
+6          Beak.Depth   3.1
+7          Beak.Width   2.7
+8       Tarsus.Length   2.0
+9         Tail.Length   1.6
+10           logRange   1.2
+

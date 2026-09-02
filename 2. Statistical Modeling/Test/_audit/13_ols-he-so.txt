@@ -1,0 +1,31 @@
+=== CHUNK 13 ols-he-so ===
+--- header: ```{r ols-he-so} 
+
+
+[BẢNG] Hệ số OLS trên biến đã chuẩn hóa, xếp theo độ lớn ảnh hưởng. 
+                 Biến Hệ số chuẩn hóa |Hệ số|
+1          Secondary1           0.208   0.208
+2      Kipps.Distance           0.193   0.193
+3  Beak.Length_Culmen           0.180   0.180
+4   Beak.Length_Nares          -0.142   0.142
+5         Wing.Length          -0.118   0.118
+6          Beak.Width           0.058   0.058
+7          Beak.Depth           0.031   0.031
+8       Tarsus.Length           0.009   0.009
+9         Tail.Length          -0.006   0.006
+10           logRange           0.000   0.000
+
+
+[BẢNG] Hệ số OLS thang gốc với sai số chuẩn robust HC3. 
+                 Biến Hệ số (thang gốc) SE robust (HC3) p-value
+1  Beak.Length_Culmen            0.0209          0.0098   0.033
+2   Beak.Length_Nares           -0.0181          0.0100   0.073
+3          Beak.Width            0.1023          0.0330   0.002
+4          Beak.Depth            0.0558          0.0327   0.089
+5       Tarsus.Length            0.0078          0.0131   0.554
+6         Wing.Length           -0.0090          0.0198   0.648
+7      Kipps.Distance            0.0241          0.0188   0.202
+8          Secondary1            0.0384          0.0204   0.061
+9         Tail.Length           -0.0004          0.0009   0.656
+10           logRange           -0.0001          0.0054   0.987
+

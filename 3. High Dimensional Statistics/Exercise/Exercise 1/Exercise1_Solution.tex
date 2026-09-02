@@ -1,0 +1,603 @@
+%==============================================================================
+%  Exercise 1 --- Thống kê nhiều chiều & cao chiều (Chương 2)
+%  Theo templates/hmmt-solution-template.tex (phong cách Harvard-MIT Math Tournament)
+%  - Chỉ trắng và đen: không màu, không khung, không tcolorbox, không đổ bóng.
+%  - Tiêu đề gọn ở giữa trang, không trang bìa, không \maketitle.
+%  - Đề bài chạy dòng ("1." / "Bài 2.1." in đậm), lời giải run-in "Lời giải:".
+%  - Đáp số cuối cùng đóng khung bằng \boxed{...}.
+%  Biên dịch: xelatex (bắt buộc, vì dùng fontspec + polyglossia + unicode-math)
+%==============================================================================
+\documentclass[11pt,a4paper]{article}
+
+% --- Ngôn ngữ và font: Latin Modern (Computer Modern) như bản HMMT gốc -------
+\usepackage{fontspec}
+\usepackage{polyglossia}
+\setdefaultlanguage{vietnamese}
+\setotherlanguage{english}
+\setmainfont{lmroman10-regular.otf}[
+  BoldFont       = lmroman10-bold.otf,
+  ItalicFont     = lmroman10-italic.otf,
+  BoldItalicFont = lmroman10-bolditalic.otf
+]
+
+% --- Toán học ---------------------------------------------------------------
+\usepackage{amsmath, amssymb, amsthm}
+\usepackage{unicode-math}
+\setmathfont{latinmodern-math.otf}
+\allowdisplaybreaks
+
+% --- Khổ trang: lề rộng, khối chữ gọn vào giữa ------------------------------
+\usepackage[a4paper, top=3.0cm, bottom=3.0cm, left=3.2cm, right=3.2cm]{geometry}
+\usepackage{enumitem}
+\setlist{itemsep=2pt, topsep=2pt, parsep=0pt, partopsep=0pt, leftmargin=1.6em}
+
+% Đoạn văn kiểu HMMT: thụt đầu dòng, KHÔNG dùng parskip (không chèn dòng trống)
+\setlength{\parindent}{1.5em}
+\setlength{\parskip}{0pt}
+\setlength{\abovedisplayskip}{5pt plus 1pt minus 2pt}
+\setlength{\belowdisplayskip}{5pt plus 1pt minus 2pt}
+\setlength{\abovedisplayshortskip}{2pt plus 1pt}
+\setlength{\belowdisplayshortskip}{2pt plus 1pt}
+
+% Chỉ số trang canh giữa chân trang, không running header
+\pagestyle{plain}
+
+% --- Thông tin tài liệu (sửa 4 dòng này cho mỗi bài) ------------------------
+\newcommand{\coursename}{High Dimensional Statistics}
+\newcommand{\docdate}{\today}
+\newcommand{\doctitle}{Lời giải Exercise 1 --- Chương 2}
+\newcommand{\studentname}{Nguyễn Quang}
+
+% --- Đề bài / lời giải / định lý -------------------------------------------
+\newcounter{prob}
+\makeatletter
+% \begin{problem}            -> tự đánh số 1., 2., 3., ...
+% \begin{problem}[Bài 2.1.]  -> dùng nhãn tự đặt
+\newenvironment{problem}[1][]{%
+  \par\medskip\noindent
+  \def\@tempa{#1}%
+  \ifx\@tempa\@empty\refstepcounter{prob}\textbf{\theprob.}\else\textbf{#1}\fi
+  \ \ignorespaces
+}{\par}
+\makeatother
+
+% Lời giải: run-in ngay dưới đề bài, không xuống dòng thừa, không ký hiệu ∎
+\newenvironment{solution}{%
+  \par\noindent\textbf{Lời giải:}\ \ignorespaces
+}{\par}
+
+% Nhắc lại lý thuyết: kiểu amsthm run-in, chữ đứng, không khung
+\theoremstyle{definition}
+\newtheorem{thm}{Định lý}
+\newtheorem{dfn}{Định nghĩa}
+
+% Đáp số cuối cùng luôn đóng khung
+\newcommand{\answer}[1]{\boxed{#1}}
+
+\begin{document}
+
+%------------------------------ Tiêu đề gọn ---------------------------------
+\begin{center}
+  {\bfseries\coursename}\\
+  \docdate\\
+  \doctitle: \textbf{\studentname}
+\end{center}
+\vspace{0.5em}
+
+%=============================================================================
+% BÀI 2.1
+%=============================================================================
+\begin{problem}[Bài 2.1 (Phân phối biên của vectơ ngẫu nhiên con).]
+Cho vectơ ngẫu nhiên $\mathbf{X} = (X_1, X_2, X_3)'$ có phân phối chuẩn 3 chiều $\mathcal{N}_3(\boldsymbol{\mu}, \boldsymbol{\Sigma})$, với vectơ kỳ vọng và ma trận hiệp phương sai lần lượt là:
+\[
+\boldsymbol{\mu} = \begin{pmatrix} 1 \\ -1 \\ 2 \end{pmatrix}, \qquad
+\boldsymbol{\Sigma} = \begin{pmatrix} 4 & 0 & -1 \\ 0 & 5 & 0 \\ -1 & 0 & 2 \end{pmatrix}.
+\]
+Xác định phân phối của vectơ $(X_1, X_2)'$.
+\end{problem}
+
+\begin{thm}[Phân phối biên của phân phối chuẩn nhiều chiều]
+Giả sử $\mathbf{X} \sim \mathcal{N}_p(\boldsymbol{\mu}, \boldsymbol{\Sigma})$ được phân hoạch thành hai khối:
+\[
+\mathbf{X} = \begin{pmatrix} \mathbf{X}_1 \\ \mathbf{X}_2 \end{pmatrix}, \qquad
+\boldsymbol{\mu} = \begin{pmatrix} \boldsymbol{\mu}_1 \\ \boldsymbol{\mu}_2 \end{pmatrix}, \qquad
+\boldsymbol{\Sigma} = \begin{pmatrix} \boldsymbol{\Sigma}_{11} & \boldsymbol{\Sigma}_{12} \\ \boldsymbol{\Sigma}_{21} & \boldsymbol{\Sigma}_{22} \end{pmatrix},
+\]
+trong đó $\mathbf{X}_1$ có số chiều $q < p$. Khi đó, phân phối biên (marginal distribution) của $\mathbf{X}_1$ là phân phối chuẩn $q$-chiều:
+\[
+\mathbf{X}_1 \sim \mathcal{N}_q(\boldsymbol{\mu}_1, \boldsymbol{\Sigma}_{11}).
+\]
+\end{thm}
+
+\begin{solution}
+Đặt $\mathbf{Y} = \begin{pmatrix} X_1 \\ X_2 \end{pmatrix}$. Ta có thể biểu diễn $\mathbf{Y}$ qua phép biến đổi tuyến tính:
+\[
+\mathbf{Y} = \mathbf{A}\mathbf{X}, \quad \text{với } \mathbf{A} = \begin{pmatrix} 1 & 0 & 0 \\ 0 & 1 & 0 \end{pmatrix}.
+\]
+Theo tính chất của phép biến đổi affine đối với vectơ ngẫu nhiên chuẩn đa biến:
+\[
+\mathbf{Y} = \mathbf{A}\mathbf{X} \sim \mathcal{N}_2\left(\mathbf{A}\boldsymbol{\mu}, \, \mathbf{A}\boldsymbol{\Sigma}\mathbf{A}'\right).
+\]
+Ta tính toán trực tiếp:
+\begin{enumerate}[label=\alph*)]
+  \item \textbf{Vectơ kỳ vọng}:
+  \[
+  \mathbb{E}[\mathbf{Y}] = \mathbf{A}\boldsymbol{\mu} = \begin{pmatrix} 1 & 0 & 0 \\ 0 & 1 & 0 \end{pmatrix} \begin{pmatrix} 1 \\ -1 \\ 2 \end{pmatrix} = \begin{pmatrix} 1 \\ -1 \end{pmatrix}.
+  \]
+  
+  \item \textbf{Ma trận hiệp phương sai}:
+  \[
+  \operatorname{Cov}(\mathbf{Y}) = \mathbf{A}\boldsymbol{\Sigma}\mathbf{A}' = \begin{pmatrix} 1 & 0 & 0 \\ 0 & 1 & 0 \end{pmatrix} \begin{pmatrix} 4 & 0 & -1 \\ 0 & 5 & 0 \\ -1 & 0 & 2 \end{pmatrix} \begin{pmatrix} 1 & 0 \\ 0 & 1 \\ 0 & 0 \end{pmatrix} = \begin{pmatrix} 4 & 0 \\ 0 & 5 \end{pmatrix}.
+  \]
+\end{enumerate}
+
+\textbf{Kết luận}:
+Vectơ ngẫu nhiên $(X_1, X_2)'$ có phân phối chuẩn 2 chiều:
+\[
+\begin{pmatrix} X_1 \\ X_2 \end{pmatrix} \sim \answer{\mathcal{N}_2\left( \begin{pmatrix} 1 \\ -1 \end{pmatrix}, \, \begin{pmatrix} 4 & 0 \\ 0 & 5 \end{pmatrix} \right)}.
+\]
+
+\textbf{Nhận xét bổ sung}: Vì ma trận hiệp phương sai $\operatorname{Cov}(X_1, X_2) = \begin{pmatrix} 4 & 0 \\ 0 & 5 \end{pmatrix}$ là ma trận đường chéo ($\operatorname{Cov}(X_1, X_2) = 0$), và $(X_1, X_2)$ có phân phối chuẩn đồng thời, ta suy ra $X_1$ và $X_2$ độc lập với nhau, trong đó $X_1 \sim \mathcal{N}(1, 4)$ và $X_2 \sim \mathcal{N}(-1, 5)$.
+\end{solution}
+
+%=============================================================================
+% BÀI 2.2
+%=============================================================================
+\begin{problem}[Bài 2.2 (Khảo sát tính độc lập).]
+Tiếp theo dữ kiện của Bài 2.1, khảo sát tính độc lập của các cặp/nhóm biến ngẫu nhiên sau:
+\begin{enumerate}[label=\alph*)]
+  \item $X_1$ và $X_2$
+  \item $X_1$ và $X_3$
+  \item $(X_1, X_3)$ và $X_2$
+  \item $X_1$ và $X_1 + 3X_2 - 2X_3$
+\end{enumerate}
+\end{problem}
+
+\begin{thm}[Tính độc lập trong phân phối chuẩn nhiều chiều]
+Nếu hai biến ngẫu nhiên (hoặc hai vectơ ngẫu nhiên) $\mathbf{U}$ và $\mathbf{V}$ có \textbf{phân phối chuẩn đồng thời} (jointly normal), thì:
+\[
+\mathbf{U} \text{ và } \mathbf{V} \text{ độc lập} \iff \operatorname{Cov}(\mathbf{U}, \mathbf{V}) = \mathbf{O}.
+\]
+\textit{Lưu ý quan trọng}: Mệnh đề này chỉ tương đương hai chiều khi các biến có phân phối chuẩn đồng thời; với các phân phối thông thường nói chung, không tương quan ($\operatorname{Cov} = 0$) chưa đủ để suy ra độc lập.
+\end{thm}
+
+\begin{solution}
+Dữ kiện từ bài 2.1 cho ma trận hiệp phương sai của $\mathbf{X} = (X_1, X_2, X_3)'$:
+\[
+\boldsymbol{\Sigma} = \begin{pmatrix} 
+\sigma_{11} & \sigma_{12} & \sigma_{13} \\ 
+\sigma_{21} & \sigma_{22} & \sigma_{23} \\ 
+\sigma_{31} & \sigma_{32} & \sigma_{33} 
+\end{pmatrix} = \begin{pmatrix} 
+4 & 0 & -1 \\ 
+0 & 5 & 0 \\ 
+-1 & 0 & 2 
+\end{pmatrix}.
+\]
+
+\begin{enumerate}[label=\textbf{\alph*)}]
+  \item \textbf{Khảo sát tính độc lập của $X_1$ và $X_2$}:
+  \begin{itemize}
+    \item Vì $(X_1, X_2)'$ có phân phối chuẩn đồng thời 2 chiều (theo Bài 2.1).
+    \item Hiệp phương sai giữa $X_1$ và $X_2$ là phần tử ở hàng 1, cột 2 của $\boldsymbol{\Sigma}$:
+    \[
+    \operatorname{Cov}(X_1, X_2) = \sigma_{12} = 0.
+    \]
+    \item Vì hiệp phương sai bằng 0 và hai biến chuẩn đồng thời, ta kết luận: \textbf{$X_1$ và $X_2$ độc lập với nhau}.
+  \end{itemize}
+
+  \item \textbf{Khảo sát tính độc lập của $X_1$ và $X_3$}:
+  \begin{itemize}
+    \item Cặp biến $(X_1, X_3)'$ có phân phối chuẩn 2 chiều với hiệp phương sai:
+    \[
+    \operatorname{Cov}(X_1, X_3) = \sigma_{13} = -1 \neq 0.
+    \]
+    \item Vì $\operatorname{Cov}(X_1, X_3) \neq 0$, ta kết luận: \textbf{$X_1$ và $X_3$ không độc lập}.
+  \end{itemize}
+
+  \item \textbf{Khảo sát tính độc lập của $(X_1, X_3)$ và $X_2$}:
+  \begin{itemize}
+    \item Đặt $\mathbf{Y}_1 = \begin{pmatrix} X_1 \\ X_3 \end{pmatrix}$ và $Y_2 = X_2$.
+    \item Vectơ ghép $(\mathbf{Y}_1', Y_2)' = (X_1, X_3, X_2)'$ nhận được từ việc hoán vị các thành phần của vectơ chuẩn $\mathbf{X} \sim \mathcal{N}_3(\boldsymbol{\mu}, \boldsymbol{\Sigma})$, do đó có phân phối chuẩn đồng thời 3 chiều.
+    \item Ma trận hiệp phương sai chéo giữa $\mathbf{Y}_1$ và $Y_2$ là:
+    \[
+    \operatorname{Cov}(\mathbf{Y}_1, Y_2) = \begin{pmatrix} \operatorname{Cov}(X_1, X_2) \\ \operatorname{Cov}(X_3, X_2) \end{pmatrix} = \begin{pmatrix} \sigma_{12} \\ \sigma_{32} \end{pmatrix} = \begin{pmatrix} 0 \\ 0 \end{pmatrix} = \mathbf{0}_{2 \times 1}.
+    \]
+    \item Vì ma trận hiệp phương sai chéo bằng vectơ $\mathbf{0}$, kết luận: \textbf{Vectơ $(X_1, X_3)$ và biến $X_2$ độc lập với nhau}.
+  \end{itemize}
+
+  \item \textbf{Khảo sát tính độc lập của $X_1$ và $X_1 + 3X_2 - 2X_3$}:
+  \begin{itemize}
+    \item Đặt $U = X_1$ và $V = X_1 + 3X_2 - 2X_3$.
+    \item Ta thấy $\begin{pmatrix} U \\ V \end{pmatrix} = \begin{pmatrix} 1 & 0 & 0 \\ 1 & 3 & -2 \end{pmatrix} \begin{pmatrix} X_1 \\ X_2 \\ X_3 \end{pmatrix}$, là một phép biến đổi tuyến tính của $\mathbf{X}$, do đó $(U, V)'$ có phân phối chuẩn 2 chiều đồng thời.
+    \item Ta tính hiệp phương sai $\operatorname{Cov}(U, V)$ bằng tính chất song tuyến tính (bilinearity):
+    \begin{align*}
+      \operatorname{Cov}(U, V) &= \operatorname{Cov}\left(X_1, \, X_1 + 3X_2 - 2X_3\right) \\
+      &= \operatorname{Cov}(X_1, X_1) + 3\operatorname{Cov}(X_1, X_2) - 2\operatorname{Cov}(X_1, X_3) \\
+      &= \operatorname{Var}(X_1) + 3\sigma_{12} - 2\sigma_{13}.
+    \end{align*}
+    \item Thay các giá trị tương ứng từ ma trận $\boldsymbol{\Sigma}$:
+    \[
+    \operatorname{Var}(X_1) = \sigma_{11} = 4, \quad \sigma_{12} = 0, \quad \sigma_{13} = -1.
+    \]
+    Do đó:
+    \[
+    \operatorname{Cov}(U, V) = 4 + 3(0) - 2(-1) = 4 + 2 = 6.
+    \]
+    \item Vì $\operatorname{Cov}(U, V) = 6 \neq 0$, ta kết luận: \textbf{$X_1$ và $X_1 + 3X_2 - 2X_3$ không độc lập}.
+  \end{itemize}
+\end{enumerate}
+\end{solution}
+
+%=============================================================================
+% BÀI 2.3
+%=============================================================================
+\begin{problem}[Bài 2.3 (Phân phối có điều kiện của phân phối chuẩn).]
+Tiếp theo dữ kiện của Bài 2.1, xác định:
+\begin{enumerate}[label=\alph*)]
+  \item Phân phối có điều kiện của $X_1$ khi biết $X_3 = x_3$.
+  \item Phân phối có điều kiện của $X_1$ khi biết $X_2 = x_2$ và $X_3 = x_3$.
+  \item Phân phối có điều kiện của $X_2$ khi biết $X_1 = x_1$ và $X_3 = x_3$.
+\end{enumerate}
+\end{problem}
+
+\begin{thm}[Phân phối có điều kiện (Conditional Distribution)]
+Giả sử $\mathbf{X} = \begin{pmatrix} \mathbf{X}_1 \\ \mathbf{X}_2 \end{pmatrix} \sim \mathcal{N}_p\left( \begin{pmatrix} \boldsymbol{\mu}_1 \\ \boldsymbol{\mu}_2 \end{pmatrix}, \, \begin{pmatrix} \boldsymbol{\Sigma}_{11} & \boldsymbol{\Sigma}_{12} \\ \boldsymbol{\Sigma}_{21} & \boldsymbol{\Sigma}_{22} \end{pmatrix} \right)$ với $\boldsymbol{\Sigma}_{22} > 0$ (khả nghịch). Khi đó:
+Phân phối có điều kiện của $\mathbf{X}_1$ khi biết $\mathbf{X}_2 = \mathbf{x}_2$ cũng là một phân phối chuẩn:
+\[
+\mathbf{X}_1 \mid \mathbf{X}_2 = \mathbf{x}_2 \sim \mathcal{N}\left(\boldsymbol{\mu}_{1 \mid 2}, \, \boldsymbol{\Sigma}_{1 \mid 2}\right),
+\]
+với kỳ vọng có điều kiện và ma trận hiệp phương sai có điều kiện được tính theo công thức:
+\begin{align*}
+  \boldsymbol{\mu}_{1 \mid 2} &= \mathbb{E}[\mathbf{X}_1 \mid \mathbf{X}_2 = \mathbf{x}_2] = \boldsymbol{\mu}_1 + \boldsymbol{\Sigma}_{12} \boldsymbol{\Sigma}_{22}^{-1} (\mathbf{x}_2 - \boldsymbol{\mu}_2), \\
+  \boldsymbol{\Sigma}_{1 \mid 2} &= \operatorname{Cov}(\mathbf{X}_1 \mid \mathbf{X}_2 = \mathbf{x}_2) = \boldsymbol{\Sigma}_{11} - \boldsymbol{\Sigma}_{12} \boldsymbol{\Sigma}_{22}^{-1} \boldsymbol{\Sigma}_{21}.
+\end{align*}
+Đặc biệt, ma trận hiệp phương sai có điều kiện $\boldsymbol{\Sigma}_{1 \mid 2}$ hoàn toàn \textbf{không phụ thuộc} vào giá trị cụ thể của điều kiện $\mathbf{x}_2$.
+\end{thm}
+
+\begin{solution}
+Ta có $\boldsymbol{\mu} = (\mu_1, \mu_2, \mu_3)' = (1, -1, 2)'$ và $\boldsymbol{\Sigma} = \begin{pmatrix} 4 & 0 & -1 \\ 0 & 5 & 0 \\ -1 & 0 & 2 \end{pmatrix}$.
+
+\begin{enumerate}[label=\textbf{\alph*)}]
+  \item \textbf{Phân phối có điều kiện của $X_1$ khi biết $X_3 = x_3$}:
+  \begin{itemize}
+    \item Xét vectơ 2 chiều $(X_1, X_3)'$. Phân phối biên của cặp này là:
+    \[
+    \begin{pmatrix} X_1 \\ X_3 \end{pmatrix} \sim \mathcal{N}_2\left( \begin{pmatrix} \mu_1 \\ \mu_3 \end{pmatrix}, \, \begin{pmatrix} \sigma_{11} & \sigma_{13} \\ \sigma_{31} & \sigma_{33} \end{pmatrix} \right) = \mathcal{N}_2\left( \begin{pmatrix} 1 \\ 2 \end{pmatrix}, \, \begin{pmatrix} 4 & -1 \\ -1 & 2 \end{pmatrix} \right).
+    \]
+    \item Ta xác định các thành phần tương ứng:
+    \[
+    \mu_1 = 1, \quad \mu_3 = 2, \quad \sigma_{11} = 4, \quad \sigma_{33} = 2, \quad \sigma_{13} = \sigma_{31} = -1.
+    \]
+    \item Kỳ vọng có điều kiện:
+    \[
+    \mathbb{E}[X_1 \mid X_3 = x_3] = \mu_1 + \frac{\sigma_{13}}{\sigma_{33}}(x_3 - \mu_3) = 1 + \frac{-1}{2}(x_3 - 2) = 1 - \frac{1}{2}x_3 + 1 = 2 - \frac{1}{2}x_3.
+    \]
+    \item Phương sai có điều kiện:
+    \[
+    \operatorname{Var}(X_1 \mid X_3 = x_3) = \sigma_{11} - \frac{\sigma_{13}^2}{\sigma_{33}} = 4 - \frac{(-1)^2}{2} = 4 - \frac{1}{2} = \frac{7}{2} = 3.5.
+    \]
+    \item \textbf{Kết luận}:
+    \[
+    X_1 \mid X_3 = x_3 \sim \answer{\mathcal{N}\left( 2 - \tfrac{1}{2}x_3, \, \tfrac{7}{2} \right)}.
+    \]
+  \end{itemize}
+
+  \item \textbf{Phân phối có điều kiện của $X_1$ khi biết $X_2 = x_2$ và $X_3 = x_3$}:
+  \begin{itemize}
+    \item Ta phân hoạch vectơ $\mathbf{X}$ thành $\mathbf{X}_1 = X_1$ (1 chiều) và $\mathbf{X}_2 = \begin{pmatrix} X_2 \\ X_3 \end{pmatrix}$ (2 chiều).
+    \item Các vector kỳ vọng và ma trận hiệp phương sai khối tương ứng:
+    \[
+    \boldsymbol{\mu}_1 = 1, \qquad \boldsymbol{\mu}_2 = \begin{pmatrix} -1 \\ 2 \end{pmatrix},
+    \]
+    \[
+    \boldsymbol{\Sigma}_{11} = 4, \qquad \boldsymbol{\Sigma}_{12} = \begin{pmatrix} \sigma_{12} & \sigma_{13} \end{pmatrix} = \begin{pmatrix} 0 & -1 \end{pmatrix}, \qquad \boldsymbol{\Sigma}_{21} = \boldsymbol{\Sigma}_{12}' = \begin{pmatrix} 0 \\ -1 \end{pmatrix},
+    \]
+    \[
+    \boldsymbol{\Sigma}_{22} = \begin{pmatrix} \sigma_{22} & \sigma_{23} \\ \sigma_{32} & \sigma_{33} \end{pmatrix} = \begin{pmatrix} 5 & 0 \\ 0 & 2 \end{pmatrix}.
+    \]
+    \item Vì $\boldsymbol{\Sigma}_{22}$ là ma trận đường chéo, ma trận nghịch đảo rất đơn giản:
+    \[
+    \boldsymbol{\Sigma}_{22}^{-1} = \begin{pmatrix} \frac{1}{5} & 0 \\ 0 & \frac{1}{2} \end{pmatrix}.
+    \]
+    \item Tích ma trận hệ số hồi quy:
+    \[
+    \boldsymbol{\Sigma}_{12}\boldsymbol{\Sigma}_{22}^{-1} = \begin{pmatrix} 0 & -1 \end{pmatrix} \begin{pmatrix} \frac{1}{5} & 0 \\ 0 & \frac{1}{2} \end{pmatrix} = \begin{pmatrix} 0 & -\frac{1}{2} \end{pmatrix}.
+    \]
+    \item Kỳ vọng có điều kiện:
+    \begin{align*}
+      \mathbb{E}[X_1 \mid X_2 = x_2, X_3 = x_3] &= \boldsymbol{\mu}_1 + \boldsymbol{\Sigma}_{12}\boldsymbol{\Sigma}_{22}^{-1} \left( \begin{pmatrix} x_2 \\ x_3 \end{pmatrix} - \boldsymbol{\mu}_2 \right) \\
+      &= 1 + \begin{pmatrix} 0 & -\frac{1}{2} \end{pmatrix} \begin{pmatrix} x_2 - (-1) \\ x_3 - 2 \end{pmatrix} \\
+      &= 1 + 0 \cdot (x_2 + 1) - \frac{1}{2}(x_3 - 2) = 2 - \frac{1}{2}x_3.
+    \end{align*}
+    \item Phương sai có điều kiện:
+    \begin{align*}
+      \operatorname{Var}(X_1 \mid X_2 = x_2, X_3 = x_3) &= \boldsymbol{\Sigma}_{11} - \boldsymbol{\Sigma}_{12}\boldsymbol{\Sigma}_{22}^{-1}\boldsymbol{\Sigma}_{21} \\
+      &= 4 - \begin{pmatrix} 0 & -\frac{1}{2} \end{pmatrix} \begin{pmatrix} 0 \\ -1 \end{pmatrix} = 4 - \frac{1}{2} = \frac{7}{2}.
+    \end{align*}
+    \item \textbf{Kết luận}:
+    \[
+    X_1 \mid (X_2 = x_2, X_3 = x_3) \sim \answer{\mathcal{N}\left( 2 - \tfrac{1}{2}x_3, \, \tfrac{7}{2} \right)}.
+    \]
+    \item \textit{Bình luận sâu sắc}: Kết quả ở câu b hoàn toàn trùng khớp với câu a. Điều này hoàn toàn tự nhiên vì ở Bài 2.2c, ta đã chứng minh $X_2$ độc lập với $(X_1, X_3)$. Khi $X_2$ độc lập với $(X_1, X_3)$, việc bổ sung thông tin $X_2 = x_2$ không mang lại bất kỳ thông tin nào về $X_1$, tức là:
+    \[
+    f(x_1 \mid x_2, x_3) = f(x_1 \mid x_3).
+    \]
+  \end{itemize}
+
+  \item \textbf{Phân phối có điều kiện của $X_2$ khi biết $X_1 = x_1$ và $X_3 = x_3$}:
+  \begin{itemize}
+    \item \textbf{Cách 1 (Sử dụng tính độc lập)}:
+    Theo Bài 2.2c, biến ngẫu nhiên $X_2$ hoàn toàn độc lập với vectơ ngẫu nhiên $(X_1, X_3)'$.
+    Do đó, phân phối có điều kiện của $X_2$ khi biết $(X_1, X_3) = (x_1, x_3)$ chính bằng phân phối lề (vô điều kiện) của $X_2$:
+    \[
+    X_2 \mid (X_1 = x_1, X_3 = x_3) \stackrel{d}{=} X_2 \sim \mathcal{N}(\mu_2, \sigma_{22}) = \mathcal{N}(-1, 5).
+    \]
+
+    \item \textbf{Cách 2 (Tính toán trực tiếp theo công thức)}:
+    Phân hoạch với $\mathbf{X}_1 = X_2$ và $\mathbf{X}_2 = \begin{pmatrix} X_1 \\ X_3 \end{pmatrix}$:
+    \[
+    \boldsymbol{\Sigma}_{12} = \begin{pmatrix} \sigma_{21} & \sigma_{23} \end{pmatrix} = \begin{pmatrix} 0 & 0 \end{pmatrix}.
+    \]
+    Vì ma trận hiệp phương sai chéo $\boldsymbol{\Sigma}_{12} = \mathbf{0}$, ta có ngay:
+    \[
+    \mathbb{E}[X_2 \mid X_1 = x_1, X_3 = x_3] = \mu_2 + \boldsymbol{\Sigma}_{12} \boldsymbol{\Sigma}_{22}^{-1} \begin{pmatrix} x_1 - \mu_1 \\ x_3 - \mu_3 \end{pmatrix} = -1 + \mathbf{0} = -1,
+    \]
+    \[
+    \operatorname{Var}(X_2 \mid X_1 = x_1, X_3 = x_3) = \boldsymbol{\Sigma}_{11} - \boldsymbol{\Sigma}_{12}\boldsymbol{\Sigma}_{22}^{-1}\boldsymbol{\Sigma}_{21} = 5 - \mathbf{0} = 5.
+    \]
+    \item \textbf{Kết luận}:
+    \[
+    X_2 \mid (X_1 = x_1, X_3 = x_3) \sim \answer{\mathcal{N}(-1, 5)}.
+    \]
+  \end{itemize}
+\end{enumerate}
+\end{solution}
+
+%=============================================================================
+% BÀI 2.4
+%=============================================================================
+\begin{problem}[Bài 2.4 (Tổ hợp tuyến tính và bài toán độc lập hoá (Trực giao)).]
+Cho vectơ ngẫu nhiên $\mathbf{X} = (X_1, X_2, X_3)' \sim \mathcal{N}_3(\boldsymbol{\mu}, \boldsymbol{\Sigma})$ với:
+\[
+\boldsymbol{\mu} = \begin{pmatrix} 2 \\ -3 \\ 1 \end{pmatrix}, \qquad
+\boldsymbol{\Sigma} = \begin{pmatrix} 1 & 1 & 1 \\ 1 & 3 & 2 \\ 1 & 2 & 2 \end{pmatrix}.
+\]
+\begin{enumerate}[label=\alph*)]
+  \item Xác định phân phối của biến ngẫu nhiên $Y = 3X_1 - 2X_2 + X_3$.
+  \item Đánh số lại các biến, nếu cần, và tìm vectơ $\mathbf{a} \in \mathbb{R}^2$ sao cho $X_2$ và $X_2 - \mathbf{a}' \begin{pmatrix} X_1 \\ X_3 \end{pmatrix}$ độc lập.
+\end{enumerate}
+\end{problem}
+
+\begin{thm}[Tổ hợp tuyến tính của phân phối chuẩn nhiều chiều]
+Nếu $\mathbf{X} \sim \mathcal{N}_p(\boldsymbol{\mu}, \boldsymbol{\Sigma})$ và $\mathbf{c} \in \mathbb{R}^p$ ($\mathbf{c} \neq \mathbf{0}$), thì biến ngẫu nhiên $Y = \mathbf{c}'\mathbf{X}$ có phân phối chuẩn 1 chiều:
+\[
+Y = \mathbf{c}'\mathbf{X} \sim \mathcal{N}\left(\mathbf{c}'\boldsymbol{\mu}, \, \mathbf{c}'\boldsymbol{\Sigma}\mathbf{c}\right).
+\]
+\end{thm}
+
+\begin{solution}
+\begin{enumerate}[label=\textbf{\alph*)}]
+  \item \textbf{Xác định phân phối của $Y = 3X_1 - 2X_2 + X_3$}:
+  Biểu diễn $Y$ dưới dạng tích vô hướng $Y = \mathbf{c}'\mathbf{X}$ với vectơ hệ số:
+  \[
+  \mathbf{c} = \begin{pmatrix} 3 \\ -2 \\ 1 \end{pmatrix}.
+  \]
+  Vì $\mathbf{X} \sim \mathcal{N}_3(\boldsymbol{\mu}, \boldsymbol{\Sigma})$, $Y$ có phân phối chuẩn 1 chiều $\mathcal{N}(\mu_Y, \sigma_Y^2)$. Ta tính các tham số:
+  \begin{itemize}
+    \item Kỳ vọng của $Y$:
+    \[
+    \mu_Y = \mathbb{E}[Y] = \mathbf{c}'\boldsymbol{\mu} = \begin{pmatrix} 3 & -2 & 1 \end{pmatrix} \begin{pmatrix} 2 \\ -3 \\ 1 \end{pmatrix} = 3(2) + (-2)(-3) + 1(1) = 6 + 6 + 1 = 13.
+    \]
+    \item Phương sai của $Y$:
+    \[
+    \sigma_Y^2 = \operatorname{Var}(Y) = \mathbf{c}'\boldsymbol{\Sigma}\mathbf{c}.
+    \]
+    Tính trước vectơ tích $\boldsymbol{\Sigma}\mathbf{c}$:
+    \[
+    \boldsymbol{\Sigma}\mathbf{c} = \begin{pmatrix} 1 & 1 & 1 \\ 1 & 3 & 2 \\ 1 & 2 & 2 \end{pmatrix} \begin{pmatrix} 3 \\ -2 \\ 1 \end{pmatrix} = \begin{pmatrix} 1(3) + 1(-2) + 1(1) \\ 1(3) + 3(-2) + 2(1) \\ 1(3) + 2(-2) + 2(1) \end{pmatrix} = \begin{pmatrix} 2 \\ -1 \\ 1 \end{pmatrix}.
+    \]
+    Nhân tiếp với $\mathbf{c}'$:
+    \[
+    \mathbf{c}'(\boldsymbol{\Sigma}\mathbf{c}) = \begin{pmatrix} 3 & -2 & 1 \end{pmatrix} \begin{pmatrix} 2 \\ -1 \\ 1 \end{pmatrix} = 3(2) + (-2)(-1) + 1(1) = 6 + 2 + 1 = 9.
+    \]
+  \end{itemize}
+  \textbf{Kết luận}:
+  \[
+  3X_1 - 2X_2 + X_3 \sim \answer{\mathcal{N}(13, 9)}.
+  \]
+
+  \item \textbf{Tìm vectơ $\mathbf{a} \in \mathbb{R}^2$ để $X_2$ và $X_2 - \mathbf{a}' \begin{pmatrix} X_1 \\ X_3 \end{pmatrix}$ độc lập}:
+  \begin{itemize}
+    \item Đặt $\mathbf{Z} = \begin{pmatrix} X_1 \\ X_3 \end{pmatrix}$ và vectơ cần tìm $\mathbf{a} = \begin{pmatrix} a_1 \\ a_2 \end{pmatrix} \in \mathbb{R}^2$.
+    \item Biến ngẫu nhiên mới là $W = X_2 - \mathbf{a}'\mathbf{Z} = X_2 - a_1 X_1 - a_2 X_3$.
+    \item Vì $(X_2, W)'$ nhận được qua biến đổi tuyến tính từ $\mathbf{X} \sim \mathcal{N}_3(\boldsymbol{\mu}, \boldsymbol{\Sigma})$, nên cặp $(X_2, W)'$ có phân phối chuẩn 2 chiều.
+    \item Theo định lý về tính độc lập, $X_2$ và $W$ độc lập khi và chỉ khi:
+    \[
+    \operatorname{Cov}(X_2, W) = 0.
+    \]
+    \item Khai triển hiệp phương sai:
+    \begin{align*}
+      \operatorname{Cov}(X_2, W) &= \operatorname{Cov}\left(X_2, \, X_2 - \mathbf{a}'\mathbf{Z}\right) \\
+      &= \operatorname{Var}(X_2) - \operatorname{Cov}(X_2, \mathbf{a}'\mathbf{Z}) \\
+      &= \operatorname{Var}(X_2) - \operatorname{Cov}(X_2, a_1 X_1 + a_2 X_3) \\
+      &= \operatorname{Var}(X_2) - a_1 \operatorname{Cov}(X_2, X_1) - a_2 \operatorname{Cov}(X_2, X_3) \\
+      &= \sigma_{22} - a_1 \sigma_{21} - a_2 \sigma_{23}.
+    \end{align*}
+    \item Tra cứu các phần tử từ ma trận $\boldsymbol{\Sigma}$:
+    \[
+    \sigma_{22} = 3, \qquad \sigma_{21} = 1, \qquad \sigma_{23} = 2.
+    \]
+    \item Điều kiện $\operatorname{Cov}(X_2, W) = 0$ trở thành:
+    \[
+    3 - (a_1 \cdot 1 + a_2 \cdot 2) = 0 \iff a_1 + 2a_2 = 3.
+    \]
+    \item \textbf{Kết luận}:
+    Mọi vectơ $\mathbf{a} = \begin{pmatrix} a_1 \\ a_2 \end{pmatrix} \in \mathbb{R}^2$ thoả mãn phương trình tuyến tính:
+    \[
+    \answer{a_1 + 2a_2 = 3}
+    \]
+    đều làm cho $X_2$ và $X_2 - \mathbf{a}'\begin{pmatrix} X_1 \\ X_3 \end{pmatrix}$ độc lập. \\
+    Biểu diễn dưới dạng tham số ($t \in \mathbb{R}$):
+    \[
+    \mathbf{a} = \begin{pmatrix} 3 - 2t \\ t \end{pmatrix}, \quad t \in \mathbb{R}.
+    \]
+    Chẳng hạn, chọn $t = 1 \implies \mathbf{a} = \begin{pmatrix} 1 \\ 1 \end{pmatrix}$; hoặc chọn $t = 0 \implies \mathbf{a} = \begin{pmatrix} 3 \\ 0 \end{pmatrix}$.
+  \end{itemize}
+
+  \item \textit{Phân tích mở rộng (Về ý nghĩa hình học và hồi quy)}:
+  Trong lý thuyết hồi quy và hình học không gian Hilbert của các biến ngẫu nhiên, ta thường tìm hình chiếu trực giao của biến phụ thuộc $X_2$ lên không gian sinh bởi các biến giải thích $\mathbf{Z} = (X_1, X_3)'$:
+  \[
+  \hat{X}_2 = \mathbb{E}[X_2 \mid \mathbf{Z}] - \mu_2 + \boldsymbol{\Sigma}_{2\mathbf{Z}} \boldsymbol{\Sigma}_{\mathbf{Z}\mathbf{Z}}^{-1} (\mathbf{Z} - \boldsymbol{\mu}_{\mathbf{Z}}).
+  \]
+  Khi đó vectơ hệ số hồi quy chuẩn tắc là $\boldsymbol{\beta}' = \boldsymbol{\Sigma}_{2\mathbf{Z}}\boldsymbol{\Sigma}_{\mathbf{Z}\mathbf{Z}}^{-1}$:
+  \[
+  \boldsymbol{\Sigma}_{\mathbf{Z}\mathbf{Z}} = \begin{pmatrix} 1 & 1 \\ 1 & 2 \end{pmatrix} \implies \boldsymbol{\Sigma}_{\mathbf{Z}\mathbf{Z}}^{-1} = \begin{pmatrix} 2 & -1 \\ -1 & 1 \end{pmatrix} \implies \boldsymbol{\beta}' = \begin{pmatrix} 1 & 2 \end{pmatrix} \begin{pmatrix} 2 & -1 \\ -1 & 1 \end{pmatrix} = \begin{pmatrix} 0 & 1 \end{pmatrix}.
+  \]
+  Với $\boldsymbol{\beta} = \begin{pmatrix} 0 \\ 1 \end{pmatrix}$, ta có $a_1 + 2a_2 = 0 + 2(1) = 2 \neq 3$. Nhưng lưu ý rằng $\boldsymbol{\beta}$ này làm cho phần dư $X_2 - \boldsymbol{\beta}'\mathbf{Z}$ trực giao với $\mathbf{Z}$ (chứ không phải trực giao với $X_2$). Đề bài ở đây yêu cầu trực giao với chính $X_2$, do đó điều kiện $a_1 + 2a_2 = 3$ là hoàn toàn chính xác theo yêu cầu đề bài.
+\end{enumerate}
+\end{solution}
+
+%=============================================================================
+% BÀI 2.9
+%=============================================================================
+\begin{problem}[Bài 2.9 (Lý thuyết mẫu từ phân phối chuẩn nhiều chiều).]
+Cho $\mathbf{X}_1, \mathbf{X}_2, \dots, \mathbf{X}_{60}$ là một mẫu ngẫu nhiên độc lập cùng phân phối (i.i.d.) kích thước $n = 60$ lấy từ phân phối chuẩn 4-chiều $\mathcal{N}_4(\boldsymbol{\mu}, \boldsymbol{\Sigma})$ với $\boldsymbol{\Sigma} > 0$. Xác định:
+\begin{enumerate}[label=\alph*)]
+  \item Phân phối của vectơ trung bình mẫu $\bar{\mathbf{X}}$.
+  \item Phân phối của đại lượng $(\mathbf{X}_1 - \boldsymbol{\mu})' \boldsymbol{\Sigma}^{-1} (\mathbf{X}_1 - \boldsymbol{\mu})$.
+  \item Phân phối của đại lượng $n(\bar{\mathbf{X}} - \boldsymbol{\mu})' \boldsymbol{\Sigma}^{-1} (\bar{\mathbf{X}} - \boldsymbol{\mu})$.
+  \item Phân phối xấp xỉ của đại lượng $n(\bar{\mathbf{X}} - \boldsymbol{\mu})' \mathbf{S}^{-1} (\bar{\mathbf{X}} - \boldsymbol{\mu})$.
+\end{enumerate}
+\end{problem}
+
+\begin{thm}[Các phân phối mẫu cơ bản trong thống kê nhiều chiều]
+Cho $\mathbf{X}_1, \dots, \mathbf{X}_n \stackrel{\text{iid}}{\sim} \mathcal{N}_p(\boldsymbol{\mu}, \boldsymbol{\Sigma})$, định nghĩa trung bình mẫu và ma trận hiệp phương sai mẫu:
+\[
+\bar{\mathbf{X}} = \frac{1}{n}\sum_{i=1}^n \mathbf{X}_i, \qquad \mathbf{S} = \frac{1}{n-1}\sum_{i=1}^n (\mathbf{X}_i - \bar{\mathbf{X}})(\mathbf{X}_i - \bar{\mathbf{X}})'.
+\]
+\begin{enumerate}
+  \item $\bar{\mathbf{X}} \sim \mathcal{N}_p\left(\boldsymbol{\mu}, \, \frac{1}{n}\boldsymbol{\Sigma}\right)$.
+  \item $(n-1)\mathbf{S} \sim \mathcal{W}_p(n-1, \boldsymbol{\Sigma})$ (phân phối Wishart với $n-1$ bậc tự do), và $\bar{\mathbf{X}}$ độc lập với $\mathbf{S}$.
+  \item Nếu $\mathbf{Z} \sim \mathcal{N}_p(\mathbf{0}, \boldsymbol{\Sigma})$, thì dạng toàn phương $\mathbf{Z}'\boldsymbol{\Sigma}^{-1}\mathbf{Z} \sim \chi^2(p)$.
+  \item Thống kê Hotelling's $T^2$: $T^2 = n(\bar{\mathbf{X}} - \boldsymbol{\mu})'\mathbf{S}^{-1}(\bar{\mathbf{X}} - \boldsymbol{\mu})$ có phân phối chính xác thỏa mãn:
+  \[
+  \frac{n-p}{p(n-1)} T^2 \sim \mathcal{F}(p, \, n-p).
+  \]
+  Khi $n \to \infty$, theo luật số lớn $\mathbf{S} \xrightarrow{P} \boldsymbol{\Sigma}$, ta có phân phối tiệm cận: $T^2 \xrightarrow{d} \chi^2(p)$.
+\end{enumerate}
+\end{thm}
+
+\begin{solution}
+Ở bài toán này, các tham số cụ thể là: số chiều $p = 4$, cỡ mẫu $n = 60$.
+
+\begin{enumerate}[label=\textbf{\alph*)}]
+  \item \textbf{Phân phối của vectơ trung bình mẫu $\bar{\mathbf{X}}$}:
+  \begin{itemize}
+    \item Trung bình mẫu được định nghĩa là:
+    \[
+    \bar{\mathbf{X}} = \frac{1}{n}\sum_{i=1}^{n} \mathbf{X}_i = \frac{1}{60}\sum_{i=1}^{60} \mathbf{X}_i.
+    \]
+    \item Vì $\mathbf{X}_1, \dots, \mathbf{X}_{60}$ độc lập và cùng tuân theo phân phối chuẩn $\mathcal{N}_4(\boldsymbol{\mu}, \boldsymbol{\Sigma})$, nên tổ hợp tuyến tính của chúng cũng tuân theo phân phối chuẩn 4 chiều:
+    \[
+    \mathbb{E}[\bar{\mathbf{X}}] = \frac{1}{n}\sum_{i=1}^{n}\mathbb{E}[\mathbf{X}_i] = \frac{1}{n}(n\boldsymbol{\mu}) = \boldsymbol{\mu},
+    \]
+    \[
+    \operatorname{Cov}(\bar{\mathbf{X}}) = \frac{1}{n^2}\sum_{i=1}^{n}\operatorname{Cov}(\mathbf{X}_i) = \frac{1}{n^2}(n\boldsymbol{\Sigma}) = \frac{1}{n}\boldsymbol{\Sigma} = \frac{1}{60}\boldsymbol{\Sigma}.
+    \]
+    \item \textbf{Kết luận}:
+    \[
+    \bar{\mathbf{X}} \sim \answer{\mathcal{N}_4\left(\boldsymbol{\mu}, \, \tfrac{1}{60}\boldsymbol{\Sigma}\right)}.
+    \]
+  \end{itemize}
+
+  \item \textbf{Phân phối của $(\mathbf{X}_1 - \boldsymbol{\mu})' \boldsymbol{\Sigma}^{-1} (\mathbf{X}_1 - \boldsymbol{\mu})$}:
+  \begin{itemize}
+    \item Xét vectơ sai lệch $\mathbf{U} = \mathbf{X}_1 - \boldsymbol{\mu}$. Vì $\mathbf{X}_1 \sim \mathcal{N}_4(\boldsymbol{\mu}, \boldsymbol{\Sigma})$, ta có:
+    \[
+    \mathbf{U} \sim \mathcal{N}_4(\mathbf{0}, \boldsymbol{\Sigma}).
+    \]
+    \item Do ma trận hiệp phương sai $\boldsymbol{\Sigma}$ đối xứng và xác định dương ($\boldsymbol{\Sigma} > 0$), tồn tại căn bậc hai đối xứng khả nghịch $\boldsymbol{\Sigma}^{1/2}$ sao cho $\boldsymbol{\Sigma} = \boldsymbol{\Sigma}^{1/2}\boldsymbol{\Sigma}^{1/2}$ và $\boldsymbol{\Sigma}^{-1} = \boldsymbol{\Sigma}^{-1/2}\boldsymbol{\Sigma}^{-1/2}$.
+    \item Đặt vectơ chuẩn hoá $\mathbf{Z} = \boldsymbol{\Sigma}^{-1/2}\mathbf{U} = \boldsymbol{\Sigma}^{-1/2}(\mathbf{X}_1 - \boldsymbol{\mu})$. Khi đó:
+    \[
+    \mathbb{E}[\mathbf{Z}] = \mathbf{0}, \qquad \operatorname{Cov}(\mathbf{Z}) = \boldsymbol{\Sigma}^{-1/2}\boldsymbol{\Sigma}\boldsymbol{\Sigma}^{-1/2} = \mathbf{I}_4.
+    \]
+    Suy ra $\mathbf{Z} = (Z_1, Z_2, Z_3, Z_4)' \sim \mathcal{N}_4(\mathbf{0}, \mathbf{I}_4)$, nghĩa là các $Z_j$ i.i.d $\sim \mathcal{N}(0, 1)$.
+    \item Khi đó, dạng toàn phương trở thành:
+    \[
+    (\mathbf{X}_1 - \boldsymbol{\mu})' \boldsymbol{\Sigma}^{-1} (\mathbf{X}_1 - \boldsymbol{\mu}) = \mathbf{U}' \boldsymbol{\Sigma}^{-1/2} \boldsymbol{\Sigma}^{-1/2} \mathbf{U} = \mathbf{Z}'\mathbf{Z} = \sum_{j=1}^4 Z_j^2.
+    \]
+    \item Tổng bình phương của $4$ biến chuẩn tắc độc lập có phân phối Chi-bình phương với 4 bậc tự do.
+    \item \textbf{Kết luận}:
+    \[
+    (\mathbf{X}_1 - \boldsymbol{\mu})' \boldsymbol{\Sigma}^{-1} (\mathbf{X}_1 - \boldsymbol{\mu}) \sim \answer{\chi^2(4)}.
+    \]
+  \end{itemize}
+
+  \item \textbf{Phân phối của $n(\bar{\mathbf{X}} - \boldsymbol{\mu})' \boldsymbol{\Sigma}^{-1} (\bar{\mathbf{X}} - \boldsymbol{\mu})$}:
+  \begin{itemize}
+    \item Từ kết quả câu a, ta có $\bar{\mathbf{X}} \sim \mathcal{N}_4\left(\boldsymbol{\mu}, \, \frac{1}{n}\boldsymbol{\Sigma}\right)$.
+    \item Nhân với $\sqrt{n}$, ta được:
+    \[
+    \sqrt{n}(\bar{\mathbf{X}} - \boldsymbol{\mu}) \sim \mathcal{N}_4(\mathbf{0}, \, \boldsymbol{\Sigma}).
+    \]
+    \item Đặt $\mathbf{V} = \sqrt{n}(\bar{\mathbf{X}} - \boldsymbol{\mu})$. Biểu thức cần xác định chính là:
+    \[
+    n(\bar{\mathbf{X}} - \boldsymbol{\mu})' \boldsymbol{\Sigma}^{-1} (\bar{\mathbf{X}} - \boldsymbol{\mu}) = \left(\sqrt{n}(\bar{\mathbf{X}} - \boldsymbol{\mu})\right)' \boldsymbol{\Sigma}^{-1} \left(\sqrt{n}(\bar{\mathbf{X}} - \boldsymbol{\mu})\right) = \mathbf{V}'\boldsymbol{\Sigma}^{-1}\mathbf{V}.
+    \]
+    \item Hoàn toàn tương tự như chứng minh ở câu b, vì $\mathbf{V} \sim \mathcal{N}_4(\mathbf{0}, \boldsymbol{\Sigma})$, dạng toàn phương $\mathbf{V}'\boldsymbol{\Sigma}^{-1}\mathbf{V}$ có phân phối Chi-bình phương với số bậc tự do bằng số chiều của không gian ($p = 4$).
+    \item \textbf{Kết luận}:
+    \[
+    n(\bar{\mathbf{X}} - \boldsymbol{\mu})' \boldsymbol{\Sigma}^{-1} (\bar{\mathbf{X}} - \boldsymbol{\mu}) \sim \answer{\chi^2(4)} \quad (\text{với } n = 60).
+    \]
+  \end{itemize}
+
+  \item \textbf{Phân phối xấp xỉ của đại lượng $n(\bar{\mathbf{X}} - \boldsymbol{\mu})' \mathbf{S}^{-1} (\bar{\mathbf{X}} - \boldsymbol{\mu})$}:
+  \begin{itemize}
+    \item Đại lượng $T^2 = n(\bar{\mathbf{X}} - \boldsymbol{\mu})' \mathbf{S}^{-1} (\bar{\mathbf{X}} - \boldsymbol{\mu})$ được gọi là \textbf{thống kê $T^2$ của Hotelling} (Hotelling's $T^2$ statistic), đóng vai trò tương tự như bình phương thống kê Student $t^2$ trong trường hợp một chiều.
+    \item \textbf{Phân phối chính xác (Exact Distribution)}:
+    Theo lý thuyết mẫu chuẩn đa biến, thống kê $T^2$ liên hệ trực tiếp với phân phối Fisher--Snedecor ($F$):
+    \[
+    \frac{n - p}{p(n - 1)} T^2 \sim \mathcal{F}(p, \, n - p).
+    \]
+    Thay $n = 60$ và $p = 4$:
+    \[
+    \frac{60 - 4}{4(60 - 1)} T^2 = \frac{56}{4 \times 59} T^2 = \frac{14}{59} T^2 \sim \mathcal{F}(4, \, 56),
+    \]
+    hay:
+    \[
+    T^2 \sim \frac{59 \times 4}{56} \mathcal{F}(4, \, 56) = \frac{59}{14} \mathcal{F}(4, \, 56) \approx 4.214 \cdot \mathcal{F}(4, \, 56).
+    \]
+
+    \item \textbf{Phân phối xấp xỉ mẫu lớn (Large-sample Asymptotic Approximation)}:
+    \begin{itemize}
+      \item Khi cỡ mẫu $n$ đủ lớn (ở đây $n = 60$ được coi là kích thước mẫu khá lớn so với $p = 4$), theo luật số lớn (Khinchin's WLLN):
+      \[
+      \mathbf{S} \xrightarrow{P} \boldsymbol{\Sigma} \quad \text{khi } n \to \infty.
+      \]
+      \item Do phép lấy nghịch đảo ma trận là một ánh xạ liên tục tại $\boldsymbol{\Sigma} > 0$, theo định lý ánh xạ liên tục:
+      \[
+      \mathbf{S}^{-1} \xrightarrow{P} \boldsymbol{\Sigma}^{-1}.
+      \]
+      \item Theo kết quả ở câu c, ta đã có $n(\bar{\mathbf{X}} - \boldsymbol{\mu})' \boldsymbol{\Sigma}^{-1} (\bar{\mathbf{X}} - \boldsymbol{\mu}) \sim \chi^2(4)$.
+      \item Áp dụng \textbf{Định lý Slutsky}, khi thay ma trận hiệp phương sai lý thuyết $\boldsymbol{\Sigma}^{-1}$ bằng ước lượng vững $\mathbf{S}^{-1}$, phân phối giới hạn của thống kê không đổi:
+      \[
+      n(\bar{\mathbf{X}} - \boldsymbol{\mu})' \mathbf{S}^{-1} (\bar{\mathbf{X}} - \boldsymbol{\mu}) \xrightarrow{d} \chi^2(p) = \chi^2(4) \quad \text{khi } n \to \infty.
+      \]
+    \end{itemize}
+    \item \textbf{Kết luận}:
+    Với cỡ mẫu $n = 60$, phân phối xấp xỉ của đại lượng $n(\bar{\mathbf{X}} - \boldsymbol{\mu})' \mathbf{S}^{-1} (\bar{\mathbf{X}} - \boldsymbol{\mu})$ là phân phối Chi-bình phương với 4 bậc tự do:
+    \[
+    n(\bar{\mathbf{X}} - \boldsymbol{\mu})' \mathbf{S}^{-1} (\bar{\mathbf{X}} - \boldsymbol{\mu}) \approx \answer{\chi^2(4)}.
+    \]
+    (Hoặc tính theo phân phối $F$ hiệu chỉnh chính xác: $\frac{59}{14} \mathcal{F}_{4, 56}$).
+  \end{itemize}
+\end{enumerate}
+\end{solution}
+
+\vfill
+\begin{center}
+{\small\itshape --- HẾT EXERCISE 1 ---}
+\end{center}
+
+\end{document}

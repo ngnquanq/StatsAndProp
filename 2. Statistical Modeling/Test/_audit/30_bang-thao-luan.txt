@@ -1,0 +1,24 @@
+=== CHUNK 30 bang-thao-luan ===
+--- header: ```{r bang-thao-luan} 
+
+
+[BẢNG] So sánh tổng hợp bốn phương pháp hồi quy. 
+             Tiêu chí                              OLS
+1     Khả năng dự báo Tốt, tương đương Ridge (R²≈0.87)
+2       Lựa chọn biến                            Không
+3 Xử lý đa cộng tuyến          Kém (VIF tới hàng trăm)
+4  Khả năng diễn giải       Hệ số dễ hiểu nhưng bất ổn
+5   Điều kiện áp dụng             n > p, ít cộng tuyến
+                            Ridge                     LASSO
+1            Tốt, tương đương OLS             Khá (R²≈0.83)
+2            Không (giữ mọi biến)           Có (còn 5 biến)
+3                Tốt (co ngót L2) Tốt (chọn 1 đại diện/cụm)
+4 Hệ số được co ngót, ổn định hơn     Rất dễ (mô hình thưa)
+5           Nhiều biến tương quan           Cần mô hình gọn
+                              PCR
+1                   Khá (R²≈0.86)
+2                 Không trực tiếp
+3  Rất tốt (thành phần trực giao)
+4       Qua thành phần, gián tiếp
+5 Cộng tuyến nặng, cần giảm chiều
+

@@ -1,0 +1,5 @@
+=== CHUNK 4 xay-dung-tap ===
+--- header: ```{r xay-dung-tap} 
+
+n_hoi_quy   n_anova 
+      364       365 

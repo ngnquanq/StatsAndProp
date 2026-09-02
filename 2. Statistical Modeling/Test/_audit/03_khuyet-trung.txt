@@ -1,0 +1,16 @@
+=== CHUNK 3 khuyet-trung ===
+--- header: ```{r khuyet-trung} 
+
+
+[BẢNG] Các biến có giá trị khuyết. 
+                Biến Số NA Tỷ lệ (%)
+1    Traits.inferred   360      98.4
+2  Reference.species   360      98.4
+3    Mass.Refs.Other   337      92.1
+4       Min.Latitude     2       0.5
+5       Max.Latitude     2       0.5
+6  Centroid.Latitude     2       0.5
+7 Centroid.Longitude     2       0.5
+8         Range.Size     2       0.5
+9            Habitat     1       0.3
+

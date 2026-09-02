@@ -1,0 +1,3 @@
+=== CHUNK 7 bien-doi-log ===
+--- header: ```{r bien-doi-log, fig.width=9, fig.height=4} 
+

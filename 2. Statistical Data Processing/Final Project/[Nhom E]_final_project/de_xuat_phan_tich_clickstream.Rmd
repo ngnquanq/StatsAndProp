@@ -1,0 +1,2300 @@
+---
+title: "Phân tích và dự đoán xác suất kết thúc session từ dữ liệu clickstream"
+author: "Nghi, Như và Quang"
+date: "26/07/2026"
+output:
+  html_document:
+    toc: true
+    toc_float: true
+    number_sections: true
+    self_contained: true
+    code_folding: hide
+    code_download: false
+    df_print: paged
+params:
+  data_path: "e-shop clothing 2008.csv"
+  show_code: false
+---
+
+```{r setup, include=FALSE}
+required_packages <- c(
+  "knitr", "ggplot2", "dplyr", "tidyr", "sandwich", "lmtest",
+  "car", "mgcv", "emmeans", "patchwork", "scales"
+)
+missing_packages <- required_packages[
+  !vapply(required_packages, requireNamespace, logical(1), quietly = TRUE)
+]
+if (length(missing_packages) > 0) {
+  stop("Thiếu package: ", paste(missing_packages, collapse = ", "))
+}
+
+library(ggplot2)
+library(dplyr)
+library(tidyr)
+library(sandwich)
+library(lmtest)
+library(car)
+library(mgcv)
+library(emmeans)
+library(patchwork)
+
+knitr::opts_chunk$set(
+  echo = isTRUE(params$show_code),
+  warning = FALSE,
+  message = FALSE,
+  fig.width = 8.5,
+  fig.height = 5,
+  dpi = 120,
+  out.width = "100%"
+)
+
+theme_set(
+  theme_minimal(base_size = 12) +
+    theme(
+      plot.title = element_text(face = "bold"),
+      plot.subtitle = element_text(color = "#555555"),
+      legend.position = "bottom",
+      panel.grid.minor = element_blank()
+    )
+)
+
+fmt_int <- function(x) {
+  formatC(as.integer(round(x)), format = "d", big.mark = ".", decimal.mark = ",")
+}
+fmt_num <- function(x, digits = 3) {
+  formatC(x, format = "f", digits = digits, decimal.mark = ",")
+}
+fmt_pct <- function(x, digits = 2) {
+  paste0(fmt_num(100 * x, digits), "%")
+}
+fmt_p <- function(x) {
+  ifelse(x < 0.001, "< 0,001", sub("\\.", ",", formatC(x, format = "f", digits = 3)))
+}
+
+country_labels <- c(
+  "Australia", "Austria", "Belgium", "British Virgin Islands",
+  "Cayman Islands", "Christmas Island", "Croatia", "Cyprus",
+  "Czech Republic", "Denmark", "Estonia", "Unidentified",
+  "Faroe Islands", "Finland", "France", "Germany", "Greece",
+  "Hungary", "Iceland", "India", "Ireland", "Italy", "Latvia",
+  "Lithuania", "Luxembourg", "Mexico", "Netherlands", "Norway",
+  "Poland", "Portugal", "Romania", "Russia", "San Marino",
+  "Slovakia", "Slovenia", "Spain", "Sweden", "Switzerland",
+  "Ukraine", "United Arab Emirates", "United Kingdom", "USA",
+  "biz", "com", "int", "net", "org"
+)
+category_labels <- c("Trousers", "Skirts", "Blouses", "Sale")
+colour_labels <- c(
+  "Beige", "Black", "Blue", "Brown", "Burgundy", "Gray", "Green",
+  "Navy blue", "Multicolour", "Olive", "Pink", "Red", "Violet", "White"
+)
+location_labels <- c(
+  "Top left", "Top middle", "Top right",
+  "Bottom left", "Bottom middle", "Bottom right"
+)
+
+data_path <- normalizePath(params$data_path, mustWork = TRUE)
+raw <- read.csv(
+  data_path,
+  sep = ";",
+  header = TRUE,
+  check.names = FALSE,
+  stringsAsFactors = FALSE
+)
+stopifnot(ncol(raw) == 14)
+names(raw) <- c(
+  "year", "month", "day", "order", "country", "session_id",
+  "category_code", "product_model", "colour_code", "location_code",
+  "photography_code", "price", "price_above_avg_code", "page_code"
+)
+
+raw$date <- as.Date(sprintf("%04d-%02d-%02d", raw$year, raw$month, raw$day))
+raw <- raw[order(raw$session_id, raw$order), ]
+raw$session_length <- ave(raw$order, raw$session_id, FUN = length)
+raw$exit <- as.integer(raw$order == raw$session_length)
+raw$log2_order <- log2(raw$order)
+raw$time_30 <- as.numeric(raw$date - min(raw$date)) / 30
+raw$price_10 <- raw$price / 10
+raw$high_price <- as.integer(raw$price_above_avg_code == 1)
+
+# Các feature dưới đây chỉ sử dụng click hiện tại và phần lịch sử đã quan sát.
+raw <- raw |>
+  group_by(session_id) |>
+  mutate(
+    unique_products = cumsum(!duplicated(product_model)),
+    unique_categories = cumsum(!duplicated(category_code)),
+    repeat_current = as.integer(duplicated(product_model)),
+    category_switch = as.integer(
+      category_code != lag(category_code, default = first(category_code))
+    ),
+    page_switch = as.integer(
+      page_code != lag(page_code, default = first(page_code))
+    ),
+    price_delta_10 = (
+      price - lag(price, default = first(price))
+    ) / 10,
+    abs_price_delta_10 = abs(price_delta_10),
+    prior_mean_price = lag(cummean(price), default = first(price)),
+    price_vs_prior_mean_10 = (price - prior_mean_price) / 10,
+    repeat_rate = (order - unique_products) / order,
+    category_switch_rate =
+      cumsum(category_switch) / pmax(order - 1, 1)
+  ) |>
+  ungroup()
+
+raw$country_name <- factor(
+  raw$country,
+  levels = 1:47,
+  labels = country_labels
+)
+raw$category <- factor(
+  raw$category_code,
+  levels = 1:4,
+  labels = category_labels
+)
+raw$colour <- factor(
+  raw$colour_code,
+  levels = 1:14,
+  labels = colour_labels
+)
+raw$location <- factor(
+  raw$location_code,
+  levels = 1:6,
+  labels = location_labels
+)
+raw$photography <- factor(
+  raw$photography_code,
+  levels = 1:2,
+  labels = c("En face", "Profile")
+)
+raw$price_group <- factor(
+  raw$price_above_avg_code,
+  levels = c(2, 1),
+  labels = c("A: Không cao hơn TB", "B: Cao hơn TB")
+)
+raw$page <- factor(
+  raw$page_code,
+  levels = 1:5,
+  labels = paste("Page", 1:5)
+)
+
+session_df <- raw[!duplicated(raw$session_id), c(
+  "session_id", "date", "month", "day", "country_name", "session_length"
+)]
+
+expected_order <- ave(raw$order, raw$session_id, FUN = seq_along)
+stopifnot(
+  nrow(raw) == 165474,
+  length(unique(raw$session_id)) == 24026,
+  !anyNA(raw),
+  sum(duplicated(raw[, 1:14])) == 0,
+  all(raw$order == expected_order),
+  all(tapply(raw$exit, raw$session_id, sum) == 1),
+  nrow(session_df) == 24026,
+  all(raw$unique_products <= raw$order),
+  all(raw$unique_categories <= raw$order),
+  all(raw$repeat_rate >= 0 & raw$repeat_rate < 1),
+  all(raw$price_delta_10[raw$order == 1] == 0),
+  all(raw$category_switch[raw$order == 1] == 0)
+)
+
+train_flag <- raw$month %in% 4:6
+test_flag <- raw$month == 7
+sens_flag <- raw$month == 8 & raw$day <= 12
+excluded_flag <- raw$month == 8 & raw$day == 13
+
+country_train_counts <- table(raw$country_name[train_flag])
+country_keep <- names(country_train_counts[country_train_counts >= 100])
+country_levels_model <- c(
+  "Poland",
+  sort(setdiff(country_keep, "Poland")),
+  "Other"
+)
+raw$country_group <- ifelse(
+  as.character(raw$country_name) %in% country_keep,
+  as.character(raw$country_name),
+  "Other"
+)
+raw$country_group <- factor(raw$country_group, levels = country_levels_model)
+
+train <- droplevels(raw[train_flag, ])
+# Tên object giữ ngắn gọn; vai trò thống kê là validation và temporal test.
+test <- raw[test_flag, ]
+sensitivity <- raw[sens_flag, ]
+excluded_aug13 <- raw[excluded_flag, ]
+
+stopifnot(
+  length(intersect(unique(train$session_id), unique(test$session_id))) == 0,
+  length(intersect(unique(train$session_id), unique(sensitivity$session_id))) == 0,
+  length(intersect(unique(test$session_id), unique(sensitivity$session_id))) == 0,
+  !anyNA(test$country_group),
+  !anyNA(sensitivity$country_group)
+)
+
+wilson_ci <- function(events, n, z = 1.96) {
+  p <- events / n
+  denom <- 1 + z^2 / n
+  centre <- (p + z^2 / (2 * n)) / denom
+  half <- z * sqrt(p * (1 - p) / n + z^2 / (4 * n^2)) / denom
+  cbind(lower = pmax(0, centre - half), upper = pmin(1, centre + half))
+}
+
+clip_prob <- function(p, eps = 1e-6) {
+  pmin(pmax(p, eps), 1 - eps)
+}
+
+auc_rank <- function(y, p) {
+  n1 <- sum(y == 1)
+  n0 <- sum(y == 0)
+  (sum(rank(p, ties.method = "average")[y == 1]) - n1 * (n1 + 1) / 2) /
+    (n1 * n0)
+}
+
+average_precision <- function(y, p) {
+  idx <- order(p, decreasing = TRUE)
+  y_sorted <- y[idx]
+  precision <- cumsum(y_sorted == 1) / seq_along(y_sorted)
+  mean(precision[y_sorted == 1])
+}
+
+prob_metrics <- function(y, p, reference_prevalence = mean(y)) {
+  p_valid <- clip_prob(p)
+  brier <- mean((p_valid - y)^2)
+  reference_brier <- mean((reference_prevalence - y)^2)
+  c(
+    ROC_AUC = auc_rank(y, p_valid),
+    Average_precision = average_precision(y, p_valid),
+    Log_loss = -mean(y * log(p_valid) + (1 - y) * log(1 - p_valid)),
+    Brier = brier,
+    Brier_skill = 1 - brier / reference_brier
+  )
+}
+
+calibration_metrics <- function(y, p) {
+  lp <- qlogis(clip_prob(p))
+  intercept_fit <- glm(y ~ 1 + offset(lp), family = binomial())
+  slope_fit <- glm(y ~ lp, family = binomial())
+  c(
+    Calibration_intercept = unname(coef(intercept_fit)[1]),
+    Calibration_slope = unname(coef(slope_fit)["lp"])
+  )
+}
+
+select_f1_threshold <- function(y, p) {
+  p <- clip_prob(p)
+  idx <- order(p, decreasing = TRUE)
+  y_sorted <- y[idx]
+  p_sorted <- p[idx]
+  tp <- cumsum(y_sorted == 1)
+  fp <- cumsum(y_sorted == 0)
+  fn <- sum(y == 1) - tp
+  precision <- tp / pmax(tp + fp, 1)
+  recall <- tp / pmax(tp + fn, 1)
+  f1 <- 2 * precision * recall / pmax(precision + recall, .Machine$double.eps)
+  tie_end <- !duplicated(p_sorted, fromLast = TRUE)
+  candidates <- which(tie_end)
+  p_sorted[candidates[which.max(f1[candidates])]]
+}
+
+classification_metrics <- function(y, p, threshold) {
+  pred <- as.integer(clip_prob(p) >= threshold)
+  tp <- sum(pred == 1 & y == 1)
+  tn <- sum(pred == 0 & y == 0)
+  fp <- sum(pred == 1 & y == 0)
+  fn <- sum(pred == 0 & y == 1)
+  c(
+    Threshold = threshold,
+    TP = tp, TN = tn, FP = fp, FN = fn,
+    Accuracy = (tp + tn) / length(y),
+    Precision = tp / pmax(tp + fp, 1),
+    Recall = tp / pmax(tp + fn, 1),
+    Specificity = tn / pmax(tn + fp, 1),
+    F1 = 2 * tp / pmax(2 * tp + fp + fn, 1)
+  )
+}
+
+roc_points <- function(y, p, model_name) {
+  idx <- order(p, decreasing = TRUE)
+  y_sorted <- y[idx]
+  p_sorted <- p[idx]
+  tp <- cumsum(y_sorted == 1)
+  fp <- cumsum(y_sorted == 0)
+  tie_end <- !duplicated(p_sorted, fromLast = TRUE)
+  data.frame(
+    FPR = c(0, fp[tie_end] / sum(y == 0)),
+    TPR = c(0, tp[tie_end] / sum(y == 1)),
+    Model = model_name
+  )
+}
+
+pr_points <- function(y, p, model_name) {
+  idx <- order(p, decreasing = TRUE)
+  y_sorted <- y[idx]
+  p_sorted <- p[idx]
+  tp <- cumsum(y_sorted == 1)
+  fp <- cumsum(y_sorted == 0)
+  tie_end <- !duplicated(p_sorted, fromLast = TRUE)
+  data.frame(
+    Recall = c(0, tp[tie_end] / sum(y == 1)),
+    Precision = c(mean(y), tp[tie_end] / pmax(tp[tie_end] + fp[tie_end], 1)),
+    Model = model_name
+  )
+}
+
+calibration_points <- function(y, p, model_name, groups = 10) {
+  data.frame(y = y, p = clip_prob(p)) |>
+    mutate(bin = ntile(p, groups)) |>
+    group_by(bin) |>
+    summarise(
+      predicted = mean(p),
+      observed = mean(y),
+      n = n(),
+      .groups = "drop"
+    ) |>
+    mutate(Model = model_name)
+}
+
+model_metric_table <- function(
+  models,
+  data,
+  reference_prevalence = mean(train$exit)
+) {
+  bind_rows(lapply(names(models), function(model_name) {
+    prediction <- as.numeric(predict(
+      models[[model_name]],
+      newdata = data,
+      type = if (inherits(models[[model_name]], "lm") &&
+        !inherits(models[[model_name]], "glm")) {
+        "response"
+      } else {
+        "response"
+      }
+    ))
+    metrics <- c(
+      prob_metrics(data$exit, prediction, reference_prevalence),
+      calibration_metrics(data$exit, prediction)
+    )
+    data.frame(
+      Model = model_name,
+      t(metrics),
+      Out_of_bounds = mean(prediction < 0 | prediction > 1),
+      check.names = FALSE
+    )
+  }))
+}
+```
+
+# Giới thiệu chung và đề xuất phân tích
+
+## Bộ dữ liệu
+
+Bộ dữ liệu **e-shop clothing 2008** ghi nhận hành vi click trên một cửa hàng
+quần áo trực tuyến. Mỗi dòng là một click; các click có cùng `session_id` tạo
+thành một phiên và `order` là vị trí click trong phiên. Dữ liệu kéo dài từ
+`r format(min(raw$date), "%d/%m/%Y")` đến
+`r format(max(raw$date), "%d/%m/%Y")`.
+
+Theo tài liệu mô tả đi kèm, dữ liệu được sử dụng trong nghiên cứu của
+Łapczyński và Białowąs (2013) về hành vi người dùng trong cửa hàng trực tuyến.
+
+```{r overview-table}
+overview <- data.frame(
+  Chỉ_tiêu = c(
+    "Số click", "Số session", "Số quốc gia/mã miền",
+    "Số sản phẩm", "Số danh mục", "Khoảng thời gian",
+    "Tỷ lệ Continue", "Tỷ lệ Exit"
+  ),
+  Giá_trị = c(
+    fmt_int(nrow(raw)),
+    fmt_int(n_distinct(raw$session_id)),
+    fmt_int(n_distinct(raw$country_name)),
+    fmt_int(n_distinct(raw$product_model)),
+    fmt_int(n_distinct(raw$category)),
+    paste(
+      format(min(raw$date), "%d/%m/%Y"),
+      "–",
+      format(max(raw$date), "%d/%m/%Y")
+    ),
+    fmt_pct(mean(raw$exit == 0)),
+    fmt_pct(mean(raw$exit == 1))
+  )
+)
+knitr::kable(
+  overview,
+  col.names = c("Chỉ tiêu", "Giá trị"),
+  caption = "Tổng quan bộ dữ liệu"
+)
+```
+
+Dữ liệu có quy mô lớn, có cấu trúc tuần tự theo session và kết hợp biến liên
+tục với biến phân loại. Tuy nhiên, dữ liệu không chứa giao dịch, giỏ hàng, giờ
+click hoặc thời lượng giữa hai click. Tháng 8 chỉ có dữ liệu đến ngày 13 và
+ngày 13 chỉ có `r fmt_int(nrow(excluded_aug13))` click, nên không thể so sánh
+tổng lưu lượng tháng 8 trực tiếp với các tháng đầy đủ.
+
+## Từ điển biến và target
+
+```{r variable-dictionary}
+variable_dictionary <- data.frame(
+  Biến = c(
+    "year, month, day", "order", "country", "session_id",
+    "category", "product_model", "colour", "location",
+    "photography", "price", "price_above_avg", "page"
+  ),
+  Ý_nghĩa = c(
+    "Ngày lịch; không có giờ hoặc thời lượng",
+    "Thứ tự click trong session",
+    "Quốc gia hoặc loại tên miền của IP",
+    "Mã session",
+    "PAGE 1: trousers, skirts, blouses hoặc sale",
+    "PAGE 2: mã của 217 sản phẩm",
+    "Màu sản phẩm",
+    "Vị trí ảnh trong sáu vùng của trang; không phải địa lý",
+    "Kiểu ảnh en face hoặc profile",
+    "Giá sản phẩm, USD",
+    "1 = cao hơn trung bình danh mục; 2 = không",
+    "Trang hiển thị trong website, từ 1 đến 5"
+  ),
+  Vai_trò = c(
+    "Tạo time_30; year bị loại vì không biến thiên",
+    "Predictor, dùng log2(order) hoặc hàm trơn",
+    "Predictor factor; mức hiếm được gộp trên train",
+    "Nhóm dữ liệu và tính robust SE; không làm predictor",
+    "Predictor factor",
+    "Không đưa vào mô hình chính do có 217 mức",
+    "Predictor factor",
+    "Predictor factor",
+    "Predictor factor",
+    "Predictor liên tục",
+    "Tạo hai nhóm cho kiểm định; không dùng cùng price trong mô hình A/B",
+    "Predictor factor"
+  )
+)
+knitr::kable(
+  variable_dictionary,
+  col.names = c("Biến", "Ý nghĩa", "Vai trò"),
+  caption = "Từ điển biến và vai trò trong phân tích"
+)
+```
+
+Target thống nhất cho các mô hình xác suất là:
+
+\[
+Exit_{it} =
+\begin{cases}
+1, & \text{click hiện tại là click cuối session;}\\
+0, & \text{session còn click tiếp theo.}
+\end{cases}
+\]
+
+`session_length` chỉ được dùng để tạo target và không được đưa vào predictor vì
+đây là thông tin tương lai. Xác suất được nghiên cứu là xác suất nguy cơ rời
+rạc:
+
+\[
+P\{Exit_{it}=1\mid \text{session đã tiếp tục đến click }t\}.
+\]
+
+Tại `order = t`, mẫu số chỉ gồm các session đã tồn tại đến click \(t\). Vì vậy,
+kết quả theo `order` là quan hệ có điều kiện, không phải bằng chứng rằng tăng
+số click gây ra thay đổi nguy cơ kết thúc.
+
+## Mục tiêu phân tích
+
+1. **So sánh hai nhóm dạng A/B:** kiểm tra xác suất `Exit` có khác giữa sản
+   phẩm có giá cao hơn trung bình danh mục và sản phẩm không cao hơn trung
+   bình hay không.
+2. **Phân tích yếu tố liên quan đến `Exit`:** mô tả quan hệ với tiến trình
+   session; đánh giá thông tin bổ sung của đặc điểm click hiện tại và lịch sử
+   duyệt đã quan sát.
+3. **Xây dựng và so sánh mô hình:** so sánh Linear Probability Model (LPM),
+   Logistic GLM và Binomial GAM về phân biệt, chất lượng xác suất, calibration
+   và khả năng diễn giải.
+
+Phân nhóm giá không được gán ngẫu nhiên. Do đó, Mục tiêu 1 là một so sánh hai
+nhóm **dạng A/B trên dữ liệu quan sát**, không phải thí nghiệm A/B có
+treatment/control. Kết luận chỉ phản ánh mối liên hệ.
+
+## Chiến lược phân tích
+
+```{r split-summary}
+split_summary <- data.frame(
+  Tập = c("Train", "Validation", "Temporal test", "Loại khỏi đánh giá"),
+  Thời_gian = c("Tháng 4–6", "Tháng 7", "01–12/08", "13/08"),
+  Số_click = c(nrow(train), nrow(test), nrow(sensitivity), nrow(excluded_aug13)),
+  Số_session = c(
+    n_distinct(train$session_id),
+    n_distinct(test$session_id),
+    n_distinct(sensitivity$session_id),
+    n_distinct(excluded_aug13$session_id)
+  )
+)
+split_summary$Số_click <- vapply(split_summary$Số_click, fmt_int, character(1))
+split_summary$Số_session <- vapply(split_summary$Số_session, fmt_int, character(1))
+knitr::kable(
+  split_summary,
+  col.names = c("Tập", "Thời gian", "Số click", "Số session"),
+  caption = "Chia dữ liệu theo thời gian"
+)
+```
+
+Mọi quy tắc tiền xử lý được học trên train. Các country có dưới 100 click train
+được gộp thành `Other`; cùng quy tắc được áp dụng cho validation và temporal
+test. Không có session nào xuất hiện đồng thời trong hai tập bất kỳ.
+
+Ba tầng predictor được so sánh: baseline dùng
+`log2(order) + time_30 + country`; current-click thêm đặc điểm sản phẩm hiện
+tại; history-enhanced thêm số sản phẩm/danh mục đã xem, chuyển trang/danh mục,
+quay lại sản phẩm và thay đổi giá so với lịch sử. Mọi history feature tại click
+\(t\) chỉ dùng dữ liệu từ click 1 đến \(t\). LPM và Logistic GLM dùng
+cluster-robust covariance theo `session_id`; GAM dùng link logit và các hàm
+trơn.
+
+Đánh giá xác suất dựa trên ROC–AUC, Average Precision, log loss, Brier score,
+Brier Skill Score và calibration. Threshold tối đa F1 được chọn từ prediction
+out-of-fold của five-fold CV theo session. Tháng 7 dùng để so sánh đặc tả và
+chọn mô hình; ngày 01–12/08 là temporal test cuối cùng, không tham gia chọn mô
+hình hoặc threshold.
+
+# Khám phá và tổng hợp dữ liệu
+
+## Kiểm tra chất lượng dữ liệu
+
+```{r quality-table}
+quality_table <- data.frame(
+  Kiểm_tra = c(
+    "Giá trị khuyết thiếu",
+    "Dòng trùng hoàn toàn",
+    "Session có order không liên tục",
+    "Session không có đúng một Exit",
+    "Session xuất hiện ở cả train và test"
+  ),
+  Kết_quả = c(
+    sum(is.na(raw)),
+    sum(duplicated(raw[, 1:14])),
+    sum(tapply(
+      seq_len(nrow(raw)),
+      raw$session_id,
+      function(i) !all(raw$order[i] == seq_along(i))
+    )),
+    sum(tapply(raw$exit, raw$session_id, sum) != 1),
+    length(intersect(unique(train$session_id), unique(test$session_id)))
+  )
+)
+knitr::kable(
+  quality_table,
+  col.names = c("Kiểm tra", "Số trường hợp vi phạm"),
+  caption = "Kết quả kiểm tra chất lượng dữ liệu"
+)
+```
+
+Không phát hiện missing value, dòng trùng hoặc lỗi trình tự. Các session dài
+không bị xóa chỉ vì nằm ngoài râu boxplot: chúng có trình tự hợp lệ và có thể
+phản ánh hành vi duyệt dài. `log2(order)` và GAM được dùng để giảm ảnh hưởng
+của đuôi phải mà không loại dữ liệu hợp lệ.
+
+## Thống kê mô tả
+
+Phân phối `order` trên toàn bộ click và phân phối độ dài ở cấp session trả lời
+hai câu hỏi khác nhau. Vì session dài đóng góp nhiều click hơn, không được dùng
+trung vị `order` trên click để kết luận trực tiếp về một session điển hình.
+
+```{r continuous-summary}
+summary_row <- function(x, variable, unit) {
+  data.frame(
+    Biến = variable,
+    Đơn_vị = unit,
+    N = length(x),
+    Trung_bình = mean(x),
+    Trung_vị = median(x),
+    Q1 = unname(quantile(x, 0.25)),
+    Q3 = unname(quantile(x, 0.75)),
+    Min = min(x),
+    Max = max(x),
+    SD = sd(x)
+  )
+}
+
+continuous_summary <- bind_rows(
+  summary_row(raw$price, "Price", "Click"),
+  summary_row(raw$order, "Order", "Click"),
+  summary_row(session_df$session_length, "Session length", "Session")
+)
+continuous_summary$N <- vapply(continuous_summary$N, fmt_int, character(1))
+knitr::kable(
+  continuous_summary,
+  digits = 2,
+  col.names = c(
+    "Biến", "Đơn vị phân tích", "N", "Mean", "Median",
+    "Q1", "Q3", "Min", "Max", "SD"
+  ),
+  caption = "Thống kê mô tả biến định lượng"
+)
+```
+
+Giá chỉ nhận `r n_distinct(raw$price)` mức từ
+`r min(raw$price)` đến `r max(raw$price)` USD nên có dạng rời rạc và nhiều
+đỉnh; mean gần median không đủ để kết luận phân phối chuẩn. Độ dài session có
+trung vị `r median(session_df$session_length)` click, trong khi
+`r fmt_pct(mean(session_df$session_length > 30))` session dài hơn 30 click và
+`r fmt_pct(mean(session_df$session_length > 100), 3)` dài hơn 100 click.
+
+```{r categorical-summary}
+factor_summary <- bind_rows(
+  raw |> count(Nhóm = category, name = "N") |> mutate(Biến = "Category"),
+  raw |> count(Nhóm = location, name = "N") |> mutate(Biến = "Location"),
+  raw |> count(Nhóm = photography, name = "N") |> mutate(Biến = "Photography"),
+  raw |> count(Nhóm = price_group, name = "N") |> mutate(Biến = "Price group"),
+  raw |> count(Nhóm = page, name = "N") |> mutate(Biến = "Page")
+) |>
+  group_by(Biến) |>
+  mutate(Tỷ_lệ = N / sum(N)) |>
+  ungroup()
+
+factor_table <- factor_summary |>
+  mutate(
+    N = vapply(N, fmt_int, character(1)),
+    Tỷ_lệ = vapply(Tỷ_lệ, fmt_pct, character(1))
+  )
+knitr::kable(
+  factor_table,
+  col.names = c("Nhóm", "Số click", "Biến", "Tỷ lệ"),
+  caption = "Phân phối các biến phân loại chính"
+)
+```
+
+Hai nhóm giá gần cân bằng, thuận lợi cho việc ước lượng chênh lệch với độ chính
+xác tốt. Tuy nhiên, cân bằng về số lượng không biến dữ liệu quan sát thành một
+thí nghiệm ngẫu nhiên.
+
+## Trực quan hóa dữ liệu
+
+```{r eda-distributions, fig.height=7}
+p_price <- ggplot(raw, aes(price)) +
+  geom_histogram(binwidth = 2, boundary = 0, fill = "#4E79A7", color = "white") +
+  labs(
+    title = "Phân phối giá sản phẩm",
+    x = "Giá (USD)",
+    y = "Số click"
+  )
+
+p_session <- ggplot(session_df, aes(session_length)) +
+  geom_histogram(
+    bins = 35,
+    fill = "#F28E2B",
+    color = "white"
+  ) +
+  scale_x_log10(
+    breaks = c(1, 2, 5, 10, 20, 50, 100, 200),
+    labels = c("1", "2", "5", "10", "20", "50", "100", "200")
+  ) +
+  labs(
+    title = "Phân phối độ dài session",
+    subtitle = "Trục hoành dùng thang log10 để thể hiện phần đuôi",
+    x = "Số click trong session",
+    y = "Số session"
+  )
+
+p_price / p_session
+```
+
+Phân phối giá phản ánh các mức giá rời rạc của danh mục sản phẩm. Phân phối độ
+dài session lệch phải mạnh: phần lớn session ngắn, nhưng một tỷ lệ nhỏ tiếp tục
+rất lâu. Đây là lý do sử dụng `log2(order)` trong LPM/Logistic và hàm trơn trong
+GAM thay vì xóa phần đuôi.
+
+```{r eda-categories, fig.height=7}
+p_category <- raw |>
+  count(category) |>
+  ggplot(aes(category, n, fill = category)) +
+  geom_col(show.legend = FALSE) +
+  geom_text(aes(label = fmt_int(n)), vjust = -0.3, size = 3.5) +
+  scale_y_continuous(expand = expansion(mult = c(0, 0.1))) +
+  labs(
+    title = "Lượt xem theo danh mục",
+    x = NULL,
+    y = "Số click"
+  )
+
+p_location <- raw |>
+  count(location) |>
+  ggplot(aes(reorder(location, n), n, fill = location)) +
+  geom_col(show.legend = FALSE) +
+  coord_flip() +
+  labs(
+    title = "Lượt xem theo vị trí ảnh",
+    subtitle = "Location là vị trí trên trang, không phải vị trí địa lý",
+    x = NULL,
+    y = "Số click"
+  )
+
+p_category / p_location
+```
+
+Trousers có số click cao hơn ba danh mục còn lại; đây là mô tả lưu lượng xem,
+không đủ để kết luận danh mục này gây thu hút hoặc tạo chuyển đổi. Các vị trí
+ảnh cũng có tần số khác nhau nhưng từng mã sản phẩm chỉ xuất hiện tại một vị
+trí, nên khác biệt vị trí có thể bị confounding bởi sản phẩm.
+
+```{r eda-price-category}
+ggplot(raw, aes(category, price, fill = category)) +
+  geom_boxplot(outlier.alpha = 0.25, show.legend = FALSE) +
+  labs(
+    title = "Phân phối giá theo danh mục",
+    x = NULL,
+    y = "Giá (USD)"
+  )
+```
+
+Mức giá khác rõ giữa các danh mục. Vì `price_above_avg` được xác định theo
+trung bình của chính danh mục, phân tích hai nhóm giá cần kiểm soát `category`
+và không được xem nhóm giá là một treatment được random hóa.
+
+```{r eda-time}
+daily_summary <- raw |>
+  group_by(date) |>
+  summarise(
+    Click = n(),
+    Session = n_distinct(session_id),
+    .groups = "drop"
+  ) |>
+  pivot_longer(c(Click, Session), names_to = "Đại_lượng", values_to = "Số_lượng")
+
+ggplot(daily_summary, aes(date, Số_lượng, color = Đại_lượng)) +
+  geom_line(linewidth = 0.7) +
+  facet_wrap(~Đại_lượng, scales = "free_y", ncol = 1) +
+  guides(color = "none") +
+  labs(
+    title = "Lưu lượng theo ngày",
+    subtitle = "Ngày 13/08 có dấu hiệu là ngày thu thập chưa đầy đủ",
+    x = NULL,
+    y = NULL
+  )
+```
+
+Biến động ngày cho thấy cần chia dữ liệu theo thời gian. Tổng tháng 8 thấp chủ
+yếu vì dữ liệu chỉ kéo dài đến ngày 13, không phải bằng chứng về suy giảm lưu
+lượng của cả tháng.
+
+# Kết quả phân tích và mô hình hóa
+
+## Kiểm định hai nhóm giá dạng A/B
+
+Giả thuyết hai phía tại mức ý nghĩa \(\alpha=0{,}05\):
+
+\[
+H_0: P(Exit=1\mid A)=P(Exit=1\mid B),
+\qquad
+H_1: P(Exit=1\mid A)\ne P(Exit=1\mid B).
+\]
+
+Trong đó A là click vào sản phẩm không có giá cao hơn trung bình danh mục và B
+là click vào sản phẩm có giá cao hơn trung bình danh mục.
+
+### Các đại lượng báo cáo
+
+Với \(x_g\) lượt `Exit` trong \(n_g\) click của nhóm \(g\), tỷ lệ quan sát là
+\(\hat p_g=x_g/n_g\). Hai thước đo hiệu ứng chính gồm:
+
+\[
+RD=\hat p_B-\hat p_A,\qquad
+OR=\frac{\hat p_B/(1-\hat p_B)}{\hat p_A/(1-\hat p_A)}.
+\]
+
+`RD` được diễn giải trực tiếp theo điểm phần trăm; \(OR>1\) nghĩa là odds
+`Exit` ở B cao hơn A. Để kiểm soát khác biệt sẵn có giữa hai nhóm, báo cáo còn
+ước lượng mô hình
+\[
+\operatorname{logit}\{P(Exit_i=1)\}
+=\beta_0+\beta_1B_i+\boldsymbol{\gamma}^{T}X_i,
+\]
+trong đó \(\exp(\beta_1)\) là adjusted OR; adjusted RD là trung bình chênh lệch
+xác suất dự đoán khi lần lượt đặt mọi quan sát vào B và A. Suy luận chính cho
+adjusted OR/RD dùng sai số chuẩn cluster-robust theo session vì các click cùng
+session không độc lập; Wilson CI và kiểm định hai tỷ lệ thô chỉ có vai trò mô
+tả theo click. CI của RD chứa 0 hoặc CI của OR chứa 1 cho thấy chưa đủ bằng
+chứng về khác biệt ở mức 5%; p-value không phản ánh độ lớn thực tế của hiệu
+ứng.
+
+```{r ab-analysis, results='hide'}
+ab_group_summary <- test |>
+  group_by(price_group) |>
+  summarise(
+    Click = n(),
+    Session = n_distinct(session_id),
+    Exit = sum(exit),
+    Exit_rate = mean(exit),
+    .groups = "drop"
+  )
+ab_ci <- wilson_ci(ab_group_summary$Exit, ab_group_summary$Click)
+ab_group_summary$CI_lower <- ab_ci[, "lower"]
+ab_group_summary$CI_upper <- ab_ci[, "upper"]
+
+ab_counts <- ab_group_summary$Exit
+ab_ns <- ab_group_summary$Click
+ab_prop_test <- prop.test(ab_counts, ab_ns, correct = FALSE)
+
+ab_formula <- exit ~ high_price + log2_order + time_30 + country_group +
+  category + colour + location + photography + page
+ab_model <- glm(ab_formula, data = test, family = binomial())
+ab_vcov <- vcovCL(ab_model, cluster = test$session_id, type = "HC1")
+ab_coef <- coeftest(ab_model, vcov. = ab_vcov)["high_price", ]
+ab_or <- exp(unname(ab_coef["Estimate"]))
+ab_or_ci <- exp(
+  unname(ab_coef["Estimate"]) +
+    c(-1, 1) * qnorm(0.975) * unname(ab_coef["Std. Error"])
+)
+
+# Standardized adjusted risk difference và robust delta-method CI.
+ab_data_A <- test
+ab_data_B <- test
+ab_data_A$high_price <- 0
+ab_data_B$high_price <- 1
+ab_terms <- delete.response(terms(ab_model))
+ab_X_A <- model.matrix(ab_terms, ab_data_A)
+ab_X_B <- model.matrix(ab_terms, ab_data_B)
+ab_p_A <- as.numeric(predict(ab_model, ab_data_A, type = "response"))
+ab_p_B <- as.numeric(predict(ab_model, ab_data_B, type = "response"))
+ab_adjusted_rd <- mean(ab_p_B - ab_p_A)
+ab_rd_gradient <- colMeans(
+  ab_p_B * (1 - ab_p_B) * ab_X_B -
+    ab_p_A * (1 - ab_p_A) * ab_X_A
+)
+ab_rd_gradient <- ab_rd_gradient[colnames(ab_vcov)]
+ab_adjusted_rd_se <- sqrt(
+  drop(t(ab_rd_gradient) %*% ab_vcov %*% ab_rd_gradient)
+)
+ab_adjusted_rd_ci <- ab_adjusted_rd +
+  c(-1, 1) * qnorm(0.975) * ab_adjusted_rd_se
+
+# Balance diagnostics: SMD của toàn bộ cột trong model matrix.
+balance_formula <- ~ log2_order + time_30 + country_group + category +
+  colour + location + photography + page - 1
+balance_matrix <- model.matrix(balance_formula, test)
+balance_table <- bind_rows(lapply(seq_len(ncol(balance_matrix)), function(j) {
+  values <- balance_matrix[, j]
+  value_A <- values[test$high_price == 0]
+  value_B <- values[test$high_price == 1]
+  pooled_sd <- sqrt((var(value_A) + var(value_B)) / 2)
+  data.frame(
+    Covariate = colnames(balance_matrix)[j],
+    Mean_A = mean(value_A),
+    Mean_B = mean(value_B),
+    SMD = ifelse(pooled_sd > 0, (mean(value_B) - mean(value_A)) / pooled_sd, 0)
+  )
+}))
+balance_table <- balance_table |>
+  arrange(desc(abs(SMD)))
+
+# Dị biệt hiệu ứng theo Category.
+ab_interaction_formula <- exit ~ high_price * category + log2_order +
+  time_30 + country_group + colour + location + photography + page
+ab_interaction_model <- glm(
+  ab_interaction_formula,
+  data = test,
+  family = binomial()
+)
+ab_interaction_vcov <- vcovCL(
+  ab_interaction_model,
+  cluster = test$session_id,
+  type = "HC1"
+)
+interaction_names <- grep(
+  "high_price:category|category.*:high_price",
+  names(coef(ab_interaction_model)),
+  value = TRUE
+)
+ab_interaction_test <- linearHypothesis(
+  ab_interaction_model,
+  interaction_names,
+  vcov. = ab_interaction_vcov,
+  test = "Chisq"
+)
+ab_interaction_p <- tail(ab_interaction_test[["Pr(>Chisq)"]], 1)
+
+category_effects <- bind_rows(lapply(levels(test$category), function(category_i) {
+  category_data <- test[test$category == category_i, ]
+  data_A <- category_data
+  data_B <- category_data
+  data_A$high_price <- 0
+  data_B$high_price <- 1
+  interaction_terms <- delete.response(terms(ab_interaction_model))
+  X_A <- model.matrix(interaction_terms, data_A)
+  X_B <- model.matrix(interaction_terms, data_B)
+  p_A <- as.numeric(predict(ab_interaction_model, data_A, type = "response"))
+  p_B <- as.numeric(predict(ab_interaction_model, data_B, type = "response"))
+  gradient <- colMeans(
+    p_B * (1 - p_B) * X_B - p_A * (1 - p_A) * X_A
+  )
+  gradient <- gradient[colnames(ab_interaction_vcov)]
+  rd <- mean(p_B - p_A)
+  rd_se <- sqrt(drop(t(gradient) %*% ab_interaction_vcov %*% gradient))
+  z_value <- rd / rd_se
+  data.frame(
+    Category = category_i,
+    N = nrow(category_data),
+    Adjusted_RD = rd,
+    CI_lower = rd - 1.96 * rd_se,
+    CI_upper = rd + 1.96 * rd_se,
+    P_value = 2 * pnorm(-abs(z_value))
+  )
+}))
+category_effects$P_Holm <- p.adjust(category_effects$P_value, method = "holm")
+
+set.seed(20260726)
+ab_session_rows <- split(seq_len(nrow(test)), test$session_id)
+ab_boot_diff <- replicate(1000, {
+  sampled_sessions <- sample(
+    names(ab_session_rows),
+    length(ab_session_rows),
+    replace = TRUE
+  )
+  idx <- unlist(ab_session_rows[sampled_sessions], use.names = FALSE)
+  mean(test$exit[idx][test$high_price[idx] == 1]) -
+    mean(test$exit[idx][test$high_price[idx] == 0])
+})
+ab_diff <- diff(ab_group_summary$Exit_rate)
+ab_diff_ci <- unname(quantile(ab_boot_diff, c(0.025, 0.975)))
+
+ab_period_result <- function(data, label) {
+  fit <- glm(
+    exit ~ high_price + log2_order + time_30 + country_group,
+    data = data,
+    family = binomial()
+  )
+  robust_vcov <- vcovCL(fit, cluster = data$session_id, type = "HC1")
+  result <- coeftest(fit, vcov. = robust_vcov)["high_price", ]
+  group_rates <- tapply(data$exit, data$high_price, mean)
+  data.frame(
+    Giai_đoạn = label,
+    Chênh_lệch_điểm_phần_trăm = 100 * (group_rates["1"] - group_rates["0"]),
+    OR_điều_chỉnh = exp(result["Estimate"]),
+    CI_dưới = exp(result["Estimate"] - 1.96 * result["Std. Error"]),
+    CI_trên = exp(result["Estimate"] + 1.96 * result["Std. Error"]),
+    P_value = result["Pr(>|z|)"],
+    row.names = NULL
+  )
+}
+
+ab_temporal <- bind_rows(
+  ab_period_result(train, "Train: tháng 4–6"),
+  ab_period_result(test, "Phân tích chính: tháng 7"),
+  ab_period_result(sensitivity, "Kiểm tra thời gian: 01–12/08")
+)
+```
+
+```{r ab-table}
+ab_table <- ab_group_summary |>
+  transmute(
+    Nhóm = price_group,
+    Click = vapply(Click, fmt_int, character(1)),
+    Session = vapply(Session, fmt_int, character(1)),
+    Exit = vapply(Exit, fmt_int, character(1)),
+    `Tỷ lệ Exit` = vapply(Exit_rate, fmt_pct, character(1)),
+    `CI 95%` = paste0(
+      vapply(CI_lower, fmt_pct, character(1)),
+      " – ",
+      vapply(CI_upper, fmt_pct, character(1))
+    )
+  )
+knitr::kable(
+  ab_table,
+  caption = "Tỷ lệ Exit theo nhóm giá trên tập test tháng 7"
+)
+```
+
+Chênh lệch thô B–A trên tháng 7 là `r fmt_num(100 * ab_diff, 2)` điểm phần
+trăm, với cluster-bootstrap CI 95% từ
+`r fmt_num(100 * ab_diff_ci[1], 2)` đến
+`r fmt_num(100 * ab_diff_ci[2], 2)` điểm phần trăm. Kiểm định hai tỷ lệ cho
+\(\chi^2=\) `r fmt_num(unname(ab_prop_test$statistic), 2)` và
+\(p\) `r fmt_p(ab_prop_test$p.value)`.
+
+Sau khi điều chỉnh tiến trình session, thời gian, country và các đặc điểm sản
+phẩm, odds ratio của nhóm B so với A là `r fmt_num(ab_or, 3)` (robust CI 95%:
+`r fmt_num(ab_or_ci[1], 3)`–`r fmt_num(ab_or_ci[2], 3)`,
+\(p\) `r fmt_p(unname(ab_coef["Pr(>|z|)"]))`).
+Chênh lệch xác suất đã chuẩn hóa là
+`r fmt_num(100 * ab_adjusted_rd, 2)` điểm phần trăm (robust CI 95%:
+`r fmt_num(100 * ab_adjusted_rd_ci[1], 2)`–
+`r fmt_num(100 * ab_adjusted_rd_ci[2], 2)`).
+
+Một session có thể xem sản phẩm thuộc cả hai nhóm giá, nên số session ở hai
+hàng không cộng thành tổng số session. Kiểm định hai tỷ lệ thô chỉ có vai trò
+mô tả; kết luận suy luận chính dựa trên Logistic GLM với covariance theo cụm
+session và cluster bootstrap.
+
+### Balance và dị biệt hiệu ứng
+
+```{r ab-balance-plot}
+balance_plot_data <- balance_table |>
+  slice_head(n = 20) |>
+  mutate(Covariate = reorder(Covariate, abs(SMD)))
+
+ggplot(balance_plot_data, aes(SMD, Covariate)) +
+  geom_vline(xintercept = c(-0.1, 0.1), linetype = 2, color = "#999999") +
+  geom_point(aes(color = abs(SMD) > 0.1), size = 2.5) +
+  scale_color_manual(values = c("#4E79A7", "#E15759"), guide = "none") +
+  labs(
+    title = "Hai mươi mất cân bằng covariate lớn nhất",
+    subtitle = "|SMD| > 0,1 cho thấy khác biệt đáng lưu ý giữa hai nhóm giá",
+    x = "Standardized mean difference: B − A",
+    y = NULL
+  )
+```
+
+Balance diagnostics xác nhận hai nhóm không tương đương như trong một thí
+nghiệm random hóa. Vì vậy adjusted risk difference và robust inference được
+ưu tiên hơn chênh lệch thô, nhưng residual confounding vẫn có thể tồn tại.
+
+Joint robust Wald test cho tương tác `price group × Category` có
+\(p\) `r fmt_p(ab_interaction_p)`.
+
+```{r ab-category-table}
+category_effect_display <- category_effects |>
+  transmute(
+    Category,
+    N = vapply(N, fmt_int, character(1)),
+    `Adjusted RD (điểm %)` =
+      vapply(100 * Adjusted_RD, fmt_num, character(1), digits = 2),
+    `CI 95%` = paste0(
+      vapply(100 * CI_lower, fmt_num, character(1), digits = 2),
+      " – ",
+      vapply(100 * CI_upper, fmt_num, character(1), digits = 2)
+    ),
+    `p-value Holm` = vapply(P_Holm, fmt_p, character(1))
+  )
+knitr::kable(
+  category_effect_display,
+  caption = "Adjusted risk difference của nhóm giá theo Category"
+)
+```
+
+```{r ab-category-forest}
+ggplot(
+  category_effects,
+  aes(100 * Adjusted_RD, reorder(Category, Adjusted_RD))
+) +
+  geom_vline(xintercept = 0, linetype = 2, color = "#777777") +
+  geom_errorbarh(
+    aes(xmin = 100 * CI_lower, xmax = 100 * CI_upper),
+    height = 0.2
+  ) +
+  geom_point(size = 2.5, color = "#4E79A7") +
+  labs(
+    title = "Dị biệt adjusted risk difference theo Category",
+    subtitle = "Khoảng tin cậy dùng robust delta method",
+    x = "Chênh lệch B − A (điểm phần trăm)",
+    y = NULL
+  )
+```
+
+```{r ab-plot}
+ggplot(
+  ab_group_summary,
+  aes(price_group, Exit_rate, fill = price_group)
+) +
+  geom_col(width = 0.62, show.legend = FALSE) +
+  geom_errorbar(
+    aes(ymin = CI_lower, ymax = CI_upper),
+    width = 0.12,
+    linewidth = 0.7
+  ) +
+  geom_text(
+    aes(label = fmt_pct(Exit_rate)),
+    vjust = -1,
+    size = 4
+  ) +
+  scale_y_continuous(
+    labels = scales::percent_format(accuracy = 1),
+    limits = c(0, max(ab_group_summary$CI_upper) * 1.15)
+  ) +
+  labs(
+    title = "Tỷ lệ Exit theo nhóm giá trên tháng 7",
+    subtitle = "Thanh sai số là Wilson CI 95%; đơn vị phân tích là click",
+    x = NULL,
+    y = "Tỷ lệ Exit"
+  )
+```
+
+```{r ab-temporal-table}
+ab_temporal_display <- ab_temporal |>
+  transmute(
+    Giai_đoạn,
+    `Chênh lệch B–A (điểm %)` =
+      vapply(Chênh_lệch_điểm_phần_trăm, fmt_num, character(1), digits = 2),
+    `OR điều chỉnh` = vapply(OR_điều_chỉnh, fmt_num, character(1), digits = 3),
+    `CI 95%` = paste0(
+      vapply(CI_dưới, fmt_num, character(1), digits = 3),
+      " – ",
+      vapply(CI_trên, fmt_num, character(1), digits = 3)
+    ),
+    `p-value` = vapply(P_value, fmt_p, character(1))
+  )
+knitr::kable(
+  ab_temporal_display,
+  caption = "Độ ổn định theo thời gian của khác biệt giữa hai nhóm giá"
+)
+```
+
+Để so sánh nhất quán giữa các giai đoạn, OR trong bảng độ ổn định chỉ điều
+chỉnh `log2(Order)`, thời gian và country. Mô hình A/B chính ở tháng 7 còn điều
+chỉnh thêm các đặc điểm sản phẩm và vì vậy cho OR thận trọng hơn.
+
+Khác biệt có cùng chiều trong train, tháng 7 và đầu tháng 8. Tuy nhiên,
+`price_above_avg` là thuộc tính sản phẩm chứ không phải treatment được gán ngẫu
+nhiên. Kết quả cho thấy mối liên hệ ổn định theo thời gian, nhưng không chứng
+minh việc tăng giá gây ra `Exit`.
+
+### Đề xuất một A/B test ngẫu nhiên thực sự
+
+Một thí nghiệm tiếp theo nên randomize ở cấp session, lưu `experiment_id` và
+giữ mỗi session trong đúng một treatment. Thay vì tự ý thay đổi giá sản phẩm,
+treatment khả thi hơn là cách trình bày thông tin giá hoặc thông điệp giá trị:
+
+- **Control:** giao diện giá hiện tại.
+- **Treatment:** bổ sung thông điệp giá trị/ưu đãi vận chuyển, với giá sản phẩm
+  không đổi.
+- **Primary outcome:** tỷ lệ session kết thúc trong một cửa sổ click được xác
+  định trước; secondary outcomes gồm session length và số sản phẩm duy nhất.
+- **Phân tích:** intention-to-treat, hai phía, \(\alpha=0{,}05\), không dừng
+  sớm dựa trên p-value chưa điều chỉnh.
+
+Không báo cáo một cỡ mẫu giả chính xác từ hai tỷ lệ click quan sát ở trên vì
+thí nghiệm tương lai randomize theo session và có estimand khác. Trước khi tính
+power cần khóa cửa sổ outcome, tỷ lệ nền ở cấp session, minimum detectable
+effect và mức hao hụt; cỡ mẫu sau đó được tính trực tiếp theo số session mỗi
+nhóm.
+
+## LPM, Logistic GLM và Binomial GAM
+
+```{r fit-models, results='hide'}
+formula_base <- exit ~ log2_order + time_30 + country_group
+formula_full <- exit ~ log2_order + time_30 + country_group +
+  price_10 + category + colour + location + photography + page
+formula_history <- update(
+  formula_full,
+  . ~ . + unique_products + unique_categories + repeat_current +
+    category_switch + page_switch + price_delta_10 +
+    abs_price_delta_10 + price_vs_prior_mean_10 + repeat_rate +
+    category_switch_rate
+)
+formula_gam_base <- exit ~ s(log2_order, k = 10) + time_30 + country_group
+formula_gam_full <- exit ~ s(log2_order, k = 10) + s(price, k = 8) +
+  time_30 + country_group + category + colour + location + photography + page
+formula_gam_history <- update(
+  formula_gam_full,
+  . ~ . + s(repeat_rate, k = 8) + s(abs_price_delta_10, k = 8) +
+    unique_categories + repeat_current + category_switch + page_switch +
+    price_delta_10 + price_vs_prior_mean_10 + category_switch_rate
+)
+
+lpm_base <- lm(formula_base, data = train)
+lpm_full <- lm(formula_full, data = train)
+lpm_history <- lm(formula_history, data = train)
+logit_base <- glm(formula_base, data = train, family = binomial())
+logit_full <- glm(formula_full, data = train, family = binomial())
+logit_history <- glm(formula_history, data = train, family = binomial())
+gam_base <- bam(
+  formula_gam_base,
+  data = train,
+  family = binomial(),
+  method = "fREML",
+  discrete = TRUE
+)
+gam_full <- bam(
+  formula_gam_full,
+  data = train,
+  family = binomial(),
+  method = "fREML",
+  discrete = TRUE
+)
+gam_history <- bam(
+  formula_gam_history,
+  data = train,
+  family = binomial(),
+  method = "fREML",
+  discrete = TRUE
+)
+
+lpm_vcov <- vcovCL(lpm_full, cluster = train$session_id, type = "HC1")
+logit_vcov <- vcovCL(logit_full, cluster = train$session_id, type = "HC1")
+logit_history_vcov <- vcovCL(
+  logit_history,
+  cluster = train$session_id,
+  type = "HC1"
+)
+
+logit_term_test <- car::Anova(
+  logit_history,
+  type = 2,
+  test.statistic = "Wald",
+  vcov. = logit_history_vcov
+)
+logit_term_table <- data.frame(
+  Term = rownames(logit_term_test),
+  Statistic = logit_term_test[, "Chisq"],
+  Df = logit_term_test[, "Df"],
+  P_value = logit_term_test[, "Pr(>Chisq)"],
+  row.names = NULL
+)
+
+extra_pattern <- "^(price_10|category|colour|location|photography|page)"
+lpm_extra_names <- grep(extra_pattern, names(coef(lpm_full)), value = TRUE)
+logit_extra_names <- grep(extra_pattern, names(coef(logit_full)), value = TRUE)
+lpm_joint <- linearHypothesis(
+  lpm_full,
+  lpm_extra_names,
+  vcov. = lpm_vcov,
+  test = "F"
+)
+logit_joint <- linearHypothesis(
+  logit_full,
+  logit_extra_names,
+  vcov. = logit_vcov,
+  test = "Chisq"
+)
+lpm_joint_p <- tail(lpm_joint[["Pr(>F)"]], 1)
+logit_joint_p <- tail(logit_joint[["Pr(>Chisq)"]], 1)
+
+history_pattern <- paste0(
+  "^(",
+  paste(
+    c(
+      "unique_products", "unique_categories", "repeat_current",
+      "category_switch", "page_switch", "price_delta_10",
+      "abs_price_delta_10", "price_vs_prior_mean_10", "repeat_rate",
+      "category_switch_rate"
+    ),
+    collapse = "|"
+  ),
+  ")"
+)
+history_names <- grep(
+  history_pattern,
+  names(coef(logit_history)),
+  value = TRUE
+)
+history_joint <- linearHypothesis(
+  logit_history,
+  history_names,
+  vcov. = logit_history_vcov,
+  test = "Chisq"
+)
+history_joint_p <- tail(history_joint[["Pr(>Chisq)"]], 1)
+
+all_models <- list(
+  "LPM cơ sở" = lpm_base,
+  "LPM current-click" = lpm_full,
+  "LPM history" = lpm_history,
+  "Logistic cơ sở" = logit_base,
+  "Logistic current-click" = logit_full,
+  "Logistic history" = logit_history,
+  "GAM cơ sở" = gam_base,
+  "GAM current-click" = gam_full,
+  "GAM history" = gam_history
+)
+all_test_metrics <- model_metric_table(all_models, test)
+
+full_models <- list(
+  "LPM" = lpm_history,
+  "Logistic GLM" = logit_history,
+  "Binomial GAM" = gam_history
+)
+full_test_predictions <- lapply(
+  full_models,
+  predict,
+  newdata = test,
+  type = "response"
+)
+full_test_metrics <- model_metric_table(full_models, test)
+
+# Chọn mô hình chỉ từ validation tháng 7, trước khi tính temporal test.
+best_logloss <- min(full_test_metrics$Log_loss)
+winner_candidates <- full_test_metrics |>
+  filter(Log_loss <= best_logloss * 1.01)
+if (nrow(winner_candidates) > 1) {
+  best_brier <- min(winner_candidates$Brier)
+  winner_candidates <- winner_candidates |>
+    filter(Brier <= best_brier * 1.01)
+}
+model_preference <- c("Logistic GLM", "Binomial GAM", "LPM")
+if (nrow(winner_candidates) > 1) {
+  winner_candidates$preference <- match(
+    winner_candidates$Model,
+    model_preference
+  )
+  winner_candidates <- winner_candidates |> arrange(preference)
+}
+winner <- winner_candidates$Model[1]
+
+# Năm fold theo session để tạo prediction ngoài fold và chọn threshold.
+set.seed(20260726)
+cv_sessions <- sample(unique(train$session_id))
+cv_fold_map <- data.frame(
+  session_id = cv_sessions,
+  fold = rep(1:5, length.out = length(cv_sessions))
+)
+train$cv_fold <- cv_fold_map$fold[
+  match(train$session_id, cv_fold_map$session_id)
+]
+stopifnot(!anyNA(train$cv_fold))
+
+oof_predictions <- matrix(
+  NA_real_,
+  nrow = nrow(train),
+  ncol = length(full_models),
+  dimnames = list(NULL, names(full_models))
+)
+for (fold_i in 1:5) {
+  fold_train <- train[train$cv_fold != fold_i, ]
+  fold_valid <- train[train$cv_fold == fold_i, ]
+  fold_models <- list(
+    "LPM" = lm(formula_history, data = fold_train),
+    "Logistic GLM" = glm(
+      formula_history,
+      data = fold_train,
+      family = binomial()
+    ),
+    "Binomial GAM" = bam(
+      formula_gam_history,
+      data = fold_train,
+      family = binomial(),
+      method = "fREML",
+      discrete = TRUE
+    )
+  )
+  for (model_name in names(fold_models)) {
+    oof_predictions[train$cv_fold == fold_i, model_name] <- predict(
+      fold_models[[model_name]],
+      newdata = fold_valid,
+      type = "response"
+    )
+  }
+}
+stopifnot(all(is.finite(oof_predictions)))
+
+thresholds <- vapply(
+  seq_along(full_models),
+  function(j) select_f1_threshold(train$exit, oof_predictions[, j]),
+  numeric(1)
+)
+names(thresholds) <- names(full_models)
+
+# Chỉ đánh giá temporal test sau khi model và threshold đã được khóa.
+full_sensitivity_predictions <- lapply(
+  full_models,
+  predict,
+  newdata = sensitivity,
+  type = "response"
+)
+full_sensitivity_metrics <- model_metric_table(full_models, sensitivity)
+
+classification_table <- bind_rows(lapply(names(full_models), function(model_name) {
+  result <- classification_metrics(
+    sensitivity$exit,
+    as.numeric(full_sensitivity_predictions[[model_name]]),
+    thresholds[[model_name]]
+  )
+  data.frame(Model = model_name, t(result), check.names = FALSE)
+}))
+
+model_aic <- vapply(all_models, function(model) {
+  if (inherits(model, "lm") && !inherits(model, "glm")) {
+    NA_real_
+  } else {
+    AIC(model)
+  }
+}, numeric(1))
+model_compare <- all_test_metrics |>
+  mutate(
+    Tầng_predictor = case_when(
+      grepl("cơ sở", Model) ~ "Baseline",
+      grepl("current-click", Model) ~ "Current-click",
+      TRUE ~ "History-enhanced"
+    ),
+    Phương_pháp = sub(" (cơ sở|current-click|history)$", "", Model),
+    AIC = unname(model_aic[Model])
+  )
+
+logit_current_metrics <- all_test_metrics |>
+  filter(Model == "Logistic current-click")
+logit_history_metrics <- all_test_metrics |>
+  filter(Model == "Logistic history")
+logit_auc_gain <- logit_history_metrics$ROC_AUC -
+  logit_current_metrics$ROC_AUC
+logit_logloss_reduction <- logit_current_metrics$Log_loss -
+  logit_history_metrics$Log_loss
+```
+
+### Xác suất Exit theo tiến trình session
+
+```{r hazard-analysis, results='hide'}
+hazard_exact <- test |>
+  group_by(order) |>
+  summarise(
+    At_risk = n(),
+    Exit = sum(exit),
+    Exit_rate = mean(exit),
+    .groups = "drop"
+  )
+hazard_exact_ci <- wilson_ci(hazard_exact$Exit, hazard_exact$At_risk)
+hazard_exact$CI_lower <- hazard_exact_ci[, 1]
+hazard_exact$CI_upper <- hazard_exact_ci[, 2]
+
+test$order_bin <- cut(
+  test$order,
+  breaks = c(0, 1, 2, 4, 7, 12, 20, Inf),
+  labels = c("1", "2", "3–4", "5–7", "8–12", "13–20", ">20"),
+  right = TRUE
+)
+hazard_bins <- test |>
+  group_by(order_bin) |>
+  summarise(
+    Click_có_nguy_cơ = n(),
+    Click_kết_thúc = sum(exit),
+    Xác_suất_Exit_gộp = mean(exit),
+    .groups = "drop"
+  ) |>
+  rename(Khoảng_order = order_bin)
+hazard_bin_ci <- wilson_ci(
+  hazard_bins$Click_kết_thúc,
+  hazard_bins$Click_có_nguy_cơ
+)
+hazard_bins$CI_lower <- hazard_bin_ci[, 1]
+hazard_bins$CI_upper <- hazard_bin_ci[, 2]
+
+order_grid <- 1:30
+standardized_order_curve <- bind_rows(lapply(order_grid, function(order_value) {
+  newdata <- test
+  newdata$order <- order_value
+  newdata$log2_order <- log2(order_value)
+  data.frame(
+    order = order_value,
+    LPM = mean(predict(lpm_base, newdata = newdata)),
+    `Logistic GLM` = mean(predict(logit_base, newdata = newdata, type = "response")),
+    `Binomial GAM` = mean(predict(gam_base, newdata = newdata, type = "response")),
+    check.names = FALSE
+  )
+})) |>
+  pivot_longer(
+    c("LPM", "Logistic GLM", "Binomial GAM"),
+    names_to = "Model",
+    values_to = "Predicted"
+  )
+```
+
+```{r hazard-bin-table}
+hazard_bin_display <- hazard_bins |>
+  transmute(
+    `Khoảng Order` = Khoảng_order,
+    `Click có nguy cơ` = vapply(Click_có_nguy_cơ, fmt_int, character(1)),
+    `Click kết thúc` = vapply(Click_kết_thúc, fmt_int, character(1)),
+    `Tỷ lệ Exit gộp` = vapply(Xác_suất_Exit_gộp, fmt_pct, character(1)),
+    `CI 95%` = paste0(
+      vapply(CI_lower, fmt_pct, character(1)),
+      " – ",
+      vapply(CI_upper, fmt_pct, character(1))
+    )
+  )
+knitr::kable(
+  hazard_bin_display,
+  caption = "Tỷ lệ Exit gộp theo khoảng Order trên tháng 7"
+)
+```
+
+Với khoảng gồm nhiều vị trí, mẫu số là số click có nguy cơ trong khoảng, không
+phải số session ở đầu khoảng. Vì vậy bảng mô tả trung bình nguy cơ rời rạc theo
+click và tránh diễn giải sai rằng mọi session còn tồn tại sau click 20 có cùng
+xác suất kết thúc ngay lập tức.
+
+```{r order-probability-plot}
+ggplot() +
+  geom_point(
+    data = hazard_exact |> filter(order <= 30),
+    aes(order, Exit_rate, color = "Quan sát"),
+    size = 2
+  ) +
+  geom_line(
+    data = standardized_order_curve,
+    aes(order, Predicted, color = Model),
+    linewidth = 0.9
+  ) +
+  scale_y_continuous(labels = scales::percent_format(accuracy = 1)) +
+  labs(
+    title = "Xác suất Exit theo tiến trình session",
+    subtitle = "Đường dự đoán được chuẩn hóa trên phân phối covariate tháng 7",
+    x = "Order",
+    y = "Xác suất Exit",
+    color = NULL
+  )
+```
+
+Các điểm quan sát ở phần đuôi dao động mạnh hơn vì số session còn tồn tại giảm.
+Sự khác biệt giữa đường GAM và hai dạng tuyến tính cho biết mức độ cần thiết của
+một quan hệ phi tuyến; không được diễn giải đường này như hiệu ứng nhân quả của
+việc tăng `order`.
+
+### Giá trị bổ sung của đặc điểm sản phẩm
+
+```{r base-full-table}
+model_compare_display <- model_compare |>
+  transmute(
+    `Phương pháp` = Phương_pháp,
+    `Tầng predictor` = Tầng_predictor,
+    `ROC–AUC` = fmt_num(ROC_AUC, 3),
+    `Average precision` = fmt_num(Average_precision, 3),
+    `Log loss` = fmt_num(Log_loss, 3),
+    `Brier` = fmt_num(Brier, 3),
+    `Brier skill` = fmt_num(Brier_skill, 3),
+    `Calibration intercept` = fmt_num(Calibration_intercept, 3),
+    `Calibration slope` = fmt_num(Calibration_slope, 3),
+    AIC = ifelse(is.na(AIC), "Không so sánh", fmt_num(AIC, 1))
+  )
+knitr::kable(
+  model_compare_display,
+  caption = "Incremental gain từ baseline đến history-enhanced trên tháng 7"
+)
+```
+
+Kiểm định chung nhóm `Price + Category + Colour + Location + Photography +
+Page` cho \(p\) `r fmt_p(lpm_joint_p)` trong LPM và
+\(p\) `r fmt_p(logit_joint_p)` trong Logistic GLM. AIC chỉ được đọc trong cùng
+họ likelihood; không so sánh AIC của LPM với hai mô hình nhị phân.
+Sau khi đã có current-click predictors, nhóm history features bổ sung có
+robust joint \(p\) `r fmt_p(history_joint_p)` trong Logistic GLM.
+
+```{r robust-term-table}
+term_labels <- c(
+  log2_order = "log2(Order)",
+  time_30 = "Thời gian (30 ngày)",
+  country_group = "Country",
+  price_10 = "Price (mỗi 10 USD)",
+  category = "Category",
+  colour = "Colour",
+  location = "Location",
+  photography = "Photography",
+  page = "Page",
+  unique_products = "Số sản phẩm duy nhất đến hiện tại",
+  unique_categories = "Số danh mục duy nhất đến hiện tại",
+  repeat_current = "Quay lại sản phẩm cũ",
+  category_switch = "Chuyển Category ở click hiện tại",
+  page_switch = "Chuyển Page ở click hiện tại",
+  price_delta_10 = "Chênh giá với click trước",
+  abs_price_delta_10 = "|Chênh giá| với click trước",
+  price_vs_prior_mean_10 = "Giá so với trung bình lịch sử",
+  repeat_rate = "Tỷ lệ quay lại sản phẩm",
+  category_switch_rate = "Tỷ lệ chuyển Category"
+)
+logit_robust_coef <- coeftest(logit_history, vcov. = logit_history_vcov)
+term_effect <- function(term_name) {
+  coefficient_names <- grep(
+    paste0("^", term_name, "($|[^A-Za-z0-9_])"),
+    rownames(logit_robust_coef),
+    value = TRUE
+  )
+  if (length(coefficient_names) != 1) {
+    return("Joint test")
+  }
+  estimate <- logit_robust_coef[coefficient_names, "Estimate"]
+  se <- logit_robust_coef[coefficient_names, "Std. Error"]
+  paste0(
+    "OR ", fmt_num(exp(estimate), 3), " (",
+    fmt_num(exp(estimate - 1.96 * se), 3), "–",
+    fmt_num(exp(estimate + 1.96 * se), 3), ")"
+  )
+}
+logit_term_ranked <- logit_term_table |>
+  arrange(P_value, desc(Statistic / Df))
+top_term_names <- logit_term_ranked |>
+  slice_head(n = 5) |>
+  pull(Term)
+top_term_text <- paste(unname(term_labels[top_term_names]), collapse = ", ")
+
+logit_term_display <- logit_term_ranked |>
+  slice_head(n = 12) |>
+  mutate(
+    Effect = vapply(Term, term_effect, character(1)),
+    Term = unname(term_labels[Term]),
+    Statistic = vapply(Statistic, fmt_num, character(1), digits = 2),
+    P_value = vapply(P_value, fmt_p, character(1))
+  )
+knitr::kable(
+  logit_term_display |>
+    select(Term, Statistic, Df, P_value, Effect),
+  col.names = c("Nhóm biến", "Wald χ²", "df", "p-value", "Hiệu ứng/CI 95%"),
+  caption = paste(
+    "Mười hai nhóm biến có bằng chứng liên hệ mạnh nhất trong Logistic GLM"
+  )
+)
+```
+
+Năm nhóm biến đứng đầu theo robust p-value và Wald statistic trên mỗi bậc tự
+do là: **`r top_term_text`**. OR chỉ được trình bày khi term tương ứng đúng một
+hệ số; với factor nhiều mức, `Joint test` kiểm tra toàn bộ factor. Thứ hạng này
+phản ánh bằng chứng liên hệ, không phải mức độ quan trọng nhân quả và không nên
+so sánh trực tiếp độ lớn OR giữa các biến có đơn vị khác nhau.
+
+```{r gam-smooth-data, results='hide'}
+reference_row <- train[1, ]
+reference_row$time_30 <- median(train$time_30)
+reference_row$country_group <- factor("Poland", levels = levels(train$country_group))
+reference_row$category <- factor("Trousers", levels = levels(train$category))
+reference_row$colour <- factor("Black", levels = levels(train$colour))
+reference_row$location <- factor("Top left", levels = levels(train$location))
+reference_row$photography <- factor("En face", levels = levels(train$photography))
+reference_row$page <- factor("Page 1", levels = levels(train$page))
+
+order_effect_data <- reference_row[rep(1, 200), ]
+order_effect_data$order <- seq(1, 40, length.out = 200)
+order_effect_data$log2_order <- log2(order_effect_data$order)
+order_terms <- predict(
+  gam_history,
+  newdata = order_effect_data,
+  type = "terms",
+  se.fit = TRUE
+)
+order_term_name <- grep("s\\(log2_order\\)", colnames(order_terms$fit), value = TRUE)
+order_effect <- data.frame(
+  order = order_effect_data$order,
+  effect = order_terms$fit[, order_term_name],
+  se = order_terms$se.fit[, order_term_name]
+)
+
+price_effect_data <- reference_row[rep(1, 200), ]
+price_effect_data$price <- seq(min(train$price), max(train$price), length.out = 200)
+price_effect_data$price_10 <- price_effect_data$price / 10
+price_terms <- predict(
+  gam_history,
+  newdata = price_effect_data,
+  type = "terms",
+  se.fit = TRUE
+)
+price_term_name <- grep("s\\(price\\)", colnames(price_terms$fit), value = TRUE)
+price_effect <- data.frame(
+  price = price_effect_data$price,
+  effect = price_terms$fit[, price_term_name],
+  se = price_terms$se.fit[, price_term_name]
+)
+
+history_effect_data <- reference_row[rep(1, 200), ]
+history_effect_data$repeat_rate <- seq(0, 0.8, length.out = 200)
+history_effect_data$abs_price_delta_10 <- seq(
+  0,
+  unname(quantile(train$abs_price_delta_10, 0.99)),
+  length.out = 200
+)
+history_terms <- predict(
+  gam_history,
+  newdata = history_effect_data,
+  type = "terms",
+  se.fit = TRUE
+)
+delta_term_name <- grep(
+  "s\\(abs_price_delta_10\\)",
+  colnames(history_terms$fit),
+  value = TRUE
+)
+repeat_term_name <- grep(
+  "s\\(repeat_rate\\)",
+  colnames(history_terms$fit),
+  value = TRUE
+)
+delta_effect <- data.frame(
+  abs_price_delta_10 = history_effect_data$abs_price_delta_10,
+  effect = history_terms$fit[, delta_term_name],
+  se = history_terms$se.fit[, delta_term_name]
+)
+repeat_effect <- data.frame(
+  repeat_rate = history_effect_data$repeat_rate,
+  effect = history_terms$fit[, repeat_term_name],
+  se = history_terms$se.fit[, repeat_term_name]
+)
+```
+
+```{r gam-smooth-plots, fig.height=7}
+p_order_smooth <- ggplot(order_effect, aes(order, effect)) +
+  geom_ribbon(
+    aes(ymin = effect - 1.96 * se, ymax = effect + 1.96 * se),
+    fill = "#4E79A7",
+    alpha = 0.2
+  ) +
+  geom_line(color = "#4E79A7", linewidth = 1) +
+  geom_hline(yintercept = 0, linetype = 2, color = "#666666") +
+  labs(
+    title = "GAM partial effect của Order",
+    x = "Order",
+    y = "Hiệu ứng trên log-odds"
+  )
+
+p_price_smooth <- ggplot(price_effect, aes(price, effect)) +
+  geom_ribbon(
+    aes(ymin = effect - 1.96 * se, ymax = effect + 1.96 * se),
+    fill = "#E15759",
+    alpha = 0.2
+  ) +
+  geom_line(color = "#E15759", linewidth = 1) +
+  geom_hline(yintercept = 0, linetype = 2, color = "#666666") +
+  labs(
+    title = "GAM partial effect của Price",
+    x = "Giá (USD)",
+    y = "Hiệu ứng trên log-odds"
+  )
+
+p_delta_smooth <- ggplot(delta_effect, aes(10 * abs_price_delta_10, effect)) +
+  geom_ribbon(
+    aes(ymin = effect - 1.96 * se, ymax = effect + 1.96 * se),
+    fill = "#59A14F",
+    alpha = 0.2
+  ) +
+  geom_line(color = "#59A14F", linewidth = 1) +
+  geom_hline(yintercept = 0, linetype = 2, color = "#666666") +
+  labs(
+    title = "GAM effect của độ lớn thay đổi giá",
+    x = "|Giá hiện tại − giá click trước| (USD)",
+    y = "Hiệu ứng trên log-odds"
+  )
+
+p_repeat_smooth <- ggplot(repeat_effect, aes(repeat_rate, effect)) +
+  geom_ribbon(
+    aes(ymin = effect - 1.96 * se, ymax = effect + 1.96 * se),
+    fill = "#B07AA1",
+    alpha = 0.2
+  ) +
+  geom_line(color = "#B07AA1", linewidth = 1) +
+  geom_hline(yintercept = 0, linetype = 2, color = "#666666") +
+  scale_x_continuous(labels = scales::percent_format(accuracy = 1)) +
+  labs(
+    title = "GAM effect của tỷ lệ quay lại sản phẩm",
+    x = "Tỷ lệ click vào sản phẩm đã xem",
+    y = "Hiệu ứng trên log-odds"
+  )
+
+(p_order_smooth | p_price_smooth) /
+  (p_delta_smooth | p_repeat_smooth)
+```
+
+Các dải tin cậy của smooth term là khoảng tin cậy mô hình gần đúng. Do nhiều
+click thuộc cùng session, p-value mặc định của GAM không được dùng làm bằng
+chứng duy nhất. Các đồ thị được giữ để mô tả dạng hàm, nhưng chỉ được diễn giải
+như diagnostic nếu chẩn đoán concurvity cho thấy các term chồng lấn mạnh.
+
+### Chẩn đoán mô hình
+
+```{r model-diagnostics-data, results='hide'}
+gam_k_check <- as.data.frame(k.check(gam_history))
+gam_k_check$Smooth <- rownames(gam_k_check)
+rownames(gam_k_check) <- NULL
+
+gam_concurvity <- concurvity(gam_history, full = FALSE)$estimate
+diag(gam_concurvity) <- NA_real_
+max_concurvity <- max(gam_concurvity, na.rm = TRUE)
+concurvity_pairs <- as.data.frame(as.table(gam_concurvity)) |>
+  filter(!is.na(Freq)) |>
+  arrange(desc(Freq)) |>
+  slice_head(n = 5) |>
+  transmute(
+    `Term được giải thích` = Var1,
+    `Term còn lại` = Var2,
+    Concurvity = Freq
+  )
+
+logit_vif_raw <- car::vif(logit_history)
+if (is.matrix(logit_vif_raw)) {
+  logit_vif <- data.frame(
+    Term = rownames(logit_vif_raw),
+    Adjusted_GVIF = logit_vif_raw[, ncol(logit_vif_raw)],
+    row.names = NULL
+  )
+} else {
+  logit_vif <- data.frame(
+    Term = names(logit_vif_raw),
+    Adjusted_GVIF = sqrt(logit_vif_raw),
+    row.names = NULL
+  )
+}
+logit_vif <- logit_vif |> arrange(desc(Adjusted_GVIF))
+
+logit_test_prediction <- as.numeric(
+  full_sensitivity_predictions[["Logistic GLM"]]
+)
+logit_binned_residual <- data.frame(
+  prediction = logit_test_prediction,
+  residual = sensitivity$exit - logit_test_prediction
+) |>
+  mutate(bin = ntile(prediction, 20)) |>
+  group_by(bin) |>
+  summarise(
+    fitted = mean(prediction),
+    mean_residual = mean(residual),
+    se = sd(residual) / sqrt(n()),
+    .groups = "drop"
+  )
+```
+
+```{r model-diagnostic-tables}
+gam_k_display <- gam_k_check |>
+  transmute(
+    Smooth,
+    `k'` = fmt_num(`k'`, 1),
+    edf = fmt_num(edf, 2),
+    `k-index` = fmt_num(`k-index`, 3),
+    `p-value` = vapply(`p-value`, fmt_p, character(1))
+  )
+knitr::kable(
+  gam_k_display,
+  caption = "Kiểm tra kích thước basis của GAM history-enhanced"
+)
+
+knitr::kable(
+  logit_vif |> slice_head(n = 10) |>
+    mutate(Adjusted_GVIF = fmt_num(Adjusted_GVIF, 3)),
+  col.names = c("Term", "GVIF điều chỉnh"),
+  caption = "Mười GVIF điều chỉnh lớn nhất của Logistic GLM"
+)
+
+knitr::kable(
+  concurvity_pairs |>
+    mutate(Concurvity = fmt_num(Concurvity, 3)),
+  caption = "Năm cặp term có concurvity cao nhất trong GAM"
+)
+```
+
+Concurvity lớn nhất giữa các term của GAM là
+`r fmt_num(max_concurvity, 3)`. K-index được đọc cùng edf; một p-value nhỏ chỉ
+đáng lo khi edf đồng thời tiến sát giới hạn basis. Bảng cặp term giúp phân biệt
+concurvity do các biểu diễn chồng lấn của tiến trình session với vấn đề thiếu
+basis. `s(unique_products)` đã được loại khỏi GAM vì gần trùng thông tin với
+`Order` và `repeat_rate`; `unique_products` vẫn được giữ trong Logistic GLM,
+nơi GVIF điều chỉnh còn thấp. Vì concurvity sau rút gọn vẫn ở mức gần xác định,
+các partial-effect plot của GAM không được diễn giải như hiệu ứng riêng biệt;
+GAM chỉ được giữ làm đối chứng dự báo phi tuyến.
+
+```{r binned-residual-plot}
+ggplot(logit_binned_residual, aes(fitted, mean_residual)) +
+  geom_hline(yintercept = 0, linetype = 2, color = "#777777") +
+  geom_errorbar(
+    aes(ymin = mean_residual - 1.96 * se, ymax = mean_residual + 1.96 * se),
+    width = 0
+  ) +
+  geom_point(color = "#4E79A7", size = 2) +
+  labs(
+    title = "Binned residual plot của Logistic GLM trên temporal test",
+    x = "Xác suất fitted trung bình",
+    y = "Residual quan sát − dự đoán"
+  )
+```
+
+## So sánh khả năng dự đoán và phân loại
+
+### Các metric được sử dụng
+
+Với quan sát \(i=1,\ldots,n\), ký hiệu \(y_i\in\{0,1\}\) là nhãn `Exit` thực
+tế và \(\hat p_i=P(Y_i=1\mid X_i)\) là xác suất do mô hình dự đoán. Báo cáo
+đánh giá hai khía cạnh khác nhau: **chất lượng xác suất** và **chất lượng phân
+loại sau khi chọn threshold**.
+
+**Metric không phụ thuộc threshold**
+
+- **ROC--AUC** là diện tích dưới đường ROC, trong đó
+  \(\operatorname{TPR}(t)=P(\hat p\geq t\mid Y=1)\) và
+  \(\operatorname{FPR}(t)=P(\hat p\geq t\mid Y=0)\). Tương đương,
+  \[
+  \operatorname{AUC}
+  =P(\hat p_{+}>\hat p_{-})+\tfrac12P(\hat p_{+}=\hat p_{-}).
+  \]
+  AUC bằng 0,5 tương ứng xếp hạng ngẫu nhiên; càng gần 1 càng tốt. Metric này
+  đo khả năng xếp hạng nhưng không cho biết xác suất có được hiệu chỉnh tốt
+  hay không.
+
+- **Average Precision (AP)** tóm tắt đường Precision--Recall:
+  \[
+  \operatorname{AP}
+  =\sum_k (R_k-R_{k-1})P_k,
+  \]
+  với \(P_k\) và \(R_k\) lần lượt là precision và recall tại threshold thứ
+  \(k\). AP càng cao càng tốt; mốc tham chiếu của mô hình ngẫu nhiên xấp xỉ
+  prevalence của `Exit`. Vì lớp `Exit = 1` ít hơn, AP được báo cáo cùng AUC để
+  tránh chỉ nhìn một metric có thể trông lạc quan khi dữ liệu mất cân bằng.
+
+- **Log loss** đánh giá trực tiếp xác suất dự đoán:
+  \[
+  -\frac{1}{n}\sum_{i=1}^{n}
+  \left[y_i\log(\hat p_i)+(1-y_i)\log(1-\hat p_i)\right].
+  \]
+  Giá trị càng nhỏ càng tốt và phạt rất mạnh các dự đoán tự tin nhưng sai.
+
+- **Brier score** là sai số bình phương trung bình của xác suất:
+  \[
+  \operatorname{Brier}
+  =\frac{1}{n}\sum_{i=1}^{n}(\hat p_i-y_i)^2.
+  \]
+  Giá trị càng nhỏ càng tốt. **Brier Skill Score** so sánh mô hình với dự báo
+  hằng bằng prevalence trên tập train:
+  \[
+  \operatorname{BSS}
+  =1-\frac{\operatorname{Brier}_{model}}
+           {\operatorname{Brier}_{reference}}.
+  \]
+  BSS \(>0\) nghĩa là tốt hơn mô hình tham chiếu, bằng 0 là tương đương và
+  \(<0\) là kém hơn.
+
+- **Calibration intercept và slope** được ước lượng từ
+  \[
+  \operatorname{logit}\{P(Y=1)\}
+  =\alpha+\beta\,\operatorname{logit}(\hat p).
+  \]
+  Mô hình hiệu chỉnh lý tưởng có \(\alpha=0\) và \(\beta=1\). Intercept âm cho
+  thấy mô hình có xu hướng dự đoán xác suất quá cao; slope nhỏ hơn 1 thường
+  cho thấy dự đoán quá cực đoan hoặc có overfitting.
+
+**Metric phụ thuộc threshold**
+
+Sau khi chọn threshold \(t\), dự đoán dương khi \(\hat p_i\geq t\). Gọi
+\(TP,TN,FP,FN\) lần lượt là số dương đúng, âm đúng, dương giả và âm giả:
+
+\[
+\begin{aligned}
+\operatorname{Accuracy} &= \frac{TP+TN}{TP+TN+FP+FN},\\
+\operatorname{Precision} &= \frac{TP}{TP+FP},\\
+\operatorname{Recall\ (Sensitivity)} &= \frac{TP}{TP+FN},\\
+\operatorname{Specificity} &= \frac{TN}{TN+FP},\\
+F_1 &= 2\frac{\operatorname{Precision}\times\operatorname{Recall}}
+{\operatorname{Precision}+\operatorname{Recall}}.
+\end{aligned}
+\]
+
+Threshold của từng mô hình được chọn bằng cách tối đa hóa \(F_1\) trên
+prediction out-of-fold của tập train, rồi được khóa trước validation tháng 7
+và temporal test tháng 8. Vì dữ liệu mất cân bằng, Accuracy không được dùng để
+chọn mô hình. Trên validation, các mô hình nằm trong 1% log loss tốt nhất rồi
+1% Brier tốt nhất được xem là gần tương đương; khi còn nhiều ứng viên, ưu tiên
+Logistic GLM vì đơn giản và dễ diễn giải hơn GAM, còn LPM chỉ là benchmark.
+Các metric threshold chỉ mô tả hành vi vận hành tại ngưỡng đã chọn.
+
+```{r bootstrap-metrics, results='hide'}
+set.seed(20260726)
+test_session_rows <- split(
+  seq_len(nrow(sensitivity)),
+  sensitivity$session_id
+)
+bootstrap_metrics <- vector("list", 500)
+for (b in seq_len(500)) {
+  sampled_sessions <- sample(
+    names(test_session_rows),
+    length(test_session_rows),
+    replace = TRUE
+  )
+  idx <- unlist(test_session_rows[sampled_sessions], use.names = FALSE)
+  bootstrap_metrics[[b]] <- bind_rows(lapply(names(full_models), function(model_name) {
+    metrics <- prob_metrics(
+      sensitivity$exit[idx],
+      as.numeric(full_sensitivity_predictions[[model_name]])[idx],
+      reference_prevalence = mean(train$exit)
+    )
+    data.frame(Model = model_name, t(metrics), check.names = FALSE)
+  }))
+}
+bootstrap_metrics <- bind_rows(bootstrap_metrics, .id = "Lần")
+bootstrap_ci <- bootstrap_metrics |>
+  group_by(Model) |>
+  summarise(
+    AUC_lower = quantile(ROC_AUC, 0.025),
+    AUC_upper = quantile(ROC_AUC, 0.975),
+    AP_lower = quantile(Average_precision, 0.025),
+    AP_upper = quantile(Average_precision, 0.975),
+    Logloss_lower = quantile(Log_loss, 0.025),
+    Logloss_upper = quantile(Log_loss, 0.975),
+    Brier_lower = quantile(Brier, 0.025),
+    Brier_upper = quantile(Brier, 0.975),
+    .groups = "drop"
+  )
+full_metrics_with_ci <- left_join(
+  full_sensitivity_metrics,
+  bootstrap_ci,
+  by = "Model"
+)
+
+roc_data <- bind_rows(lapply(names(full_models), function(model_name) {
+  roc_points(
+    sensitivity$exit,
+    as.numeric(full_sensitivity_predictions[[model_name]]),
+    model_name
+  )
+}))
+pr_data <- bind_rows(lapply(names(full_models), function(model_name) {
+  pr_points(
+    sensitivity$exit,
+    as.numeric(full_sensitivity_predictions[[model_name]]),
+    model_name
+  )
+}))
+calibration_data <- bind_rows(lapply(names(full_models), function(model_name) {
+  calibration_points(
+    sensitivity$exit,
+    as.numeric(full_sensitivity_predictions[[model_name]]),
+    model_name
+  )
+}))
+
+winner_prediction <- as.numeric(full_sensitivity_predictions[[winner]])
+sensitivity$order_band <- cut(
+  sensitivity$order,
+  breaks = c(0, 2, 4, 7, 12, 20, Inf),
+  labels = c("1–2", "3–4", "5–7", "8–12", "13–20", ">20")
+)
+subgroup_metric <- function(index, label, group_name) {
+  y <- sensitivity$exit[index]
+  p <- winner_prediction[index]
+  metrics <- prob_metrics(y, p, mean(train$exit))
+  data.frame(
+    Phân_tầng = group_name,
+    Nhóm = label,
+    N = length(y),
+    Prevalence = mean(y),
+    ROC_AUC = unname(metrics["ROC_AUC"]),
+    Average_precision = unname(metrics["Average_precision"]),
+    Log_loss = unname(metrics["Log_loss"]),
+    Brier = unname(metrics["Brier"])
+  )
+}
+subgroup_results <- bind_rows(
+  lapply(levels(sensitivity$category), function(group_i) {
+    subgroup_metric(
+      sensitivity$category == group_i,
+      group_i,
+      "Category"
+    )
+  }),
+  lapply(levels(sensitivity$order_band), function(group_i) {
+    subgroup_metric(
+      sensitivity$order_band == group_i,
+      group_i,
+      "Order"
+    )
+  })
+)
+```
+
+```{r final-metric-table}
+final_metric_display <- full_metrics_with_ci |>
+  transmute(
+    Model,
+    `ROC–AUC (CI 95%)` = paste0(
+      fmt_num(ROC_AUC, 3), " (",
+      fmt_num(AUC_lower, 3), "–", fmt_num(AUC_upper, 3), ")"
+    ),
+    `Average precision (CI 95%)` = paste0(
+      fmt_num(Average_precision, 3), " (",
+      fmt_num(AP_lower, 3), "–", fmt_num(AP_upper, 3), ")"
+    ),
+    `Log loss (CI 95%)` = paste0(
+      fmt_num(Log_loss, 3), " (",
+      fmt_num(Logloss_lower, 3), "–", fmt_num(Logloss_upper, 3), ")"
+    ),
+    `Brier skill` = fmt_num(Brier_skill, 3),
+    `Brier (CI 95%)` = paste0(
+      fmt_num(Brier, 3), " (",
+      fmt_num(Brier_lower, 3), "–", fmt_num(Brier_upper, 3), ")"
+    ),
+    `Calibration intercept` = fmt_num(Calibration_intercept, 3),
+    `Calibration slope` = fmt_num(Calibration_slope, 3),
+    `Ngoài [0,1]` = fmt_pct(Out_of_bounds, 3)
+  )
+knitr::kable(
+  final_metric_display,
+  caption = "Hiệu năng cuối của ba mô hình trên temporal test 01–12/08"
+)
+```
+
+```{r roc-calibration-plots, fig.height=7.6}
+# Tiêu đề chung đặt ở plot_annotation nên tiêu đề từng panel giữ ngắn để không
+# chồng nhau; legend chỉ bật ở một panel rồi gom xuống đáy bằng guides="collect".
+p_roc <- ggplot(roc_data, aes(FPR, TPR, color = Model)) +
+  geom_abline(linetype = 2, color = "#888888") +
+  geom_line(linewidth = 1) +
+  coord_equal(xlim = c(0, 1), ylim = c(0, 1)) +
+  guides(color = "none") +
+  labs(
+    title = "ROC curve",
+    x = "False Positive Rate",
+    y = "True Positive Rate",
+    color = NULL
+  )
+
+p_pr <- ggplot(pr_data, aes(Recall, Precision, color = Model)) +
+  geom_hline(
+    yintercept = mean(sensitivity$exit),
+    linetype = 2,
+    color = "#888888"
+  ) +
+  geom_line(linewidth = 1) +
+  coord_equal(xlim = c(0, 1), ylim = c(0, 1)) +
+  guides(color = "none") +
+  labs(
+    title = "Precision–Recall curve",
+    subtitle = "Đường ngang là prevalence Exit",
+    x = "Recall",
+    y = "Precision",
+    color = NULL
+  )
+
+p_calibration <- ggplot(
+  calibration_data,
+  aes(predicted, observed, color = Model)
+) +
+  geom_abline(linetype = 2, color = "#888888") +
+  geom_line(linewidth = 0.9) +
+  geom_point(size = 2, show.legend = FALSE) +
+  coord_equal() +
+  scale_x_continuous(labels = scales::percent_format(accuracy = 1)) +
+  scale_y_continuous(labels = scales::percent_format(accuracy = 1)) +
+  labs(
+    title = "Calibration plot",
+    x = "Xác suất dự đoán",
+    y = "Tỷ lệ Exit quan sát",
+    color = NULL
+  )
+
+p_roc + p_pr + p_calibration +
+  plot_layout(design = "AB\nCC", guides = "collect", heights = c(1, 1.02)) +
+  plot_annotation(
+    title = "Hiệu năng ba mô hình trên temporal test 01–12/08",
+    theme = theme(plot.title = element_text(face = "bold", size = 14))
+  ) &
+  theme(legend.position = "bottom")
+```
+
+ROC–AUC đo khả năng xếp hạng, trong khi log loss, Brier và calibration đánh giá
+độ lớn của xác suất. Average precision được đọc so với prevalence `Exit` vì
+ROC có thể quá lạc quan khi lớp dương ít hơn. Brier skill dương nghĩa là mô
+hình tốt hơn dự báo hằng bằng prevalence train. Accuracy không được dùng làm
+tiêu chí chính.
+
+```{r classification-table}
+classification_display <- classification_table |>
+  transmute(
+    Model,
+    Threshold = fmt_num(Threshold, 3),
+    TP = fmt_int(TP),
+    TN = fmt_int(TN),
+    FP = fmt_int(FP),
+    FN = fmt_int(FN),
+    Accuracy = fmt_pct(Accuracy),
+    Precision = fmt_pct(Precision),
+    Recall = fmt_pct(Recall),
+    Specificity = fmt_pct(Specificity),
+    F1 = fmt_pct(F1)
+  )
+knitr::kable(
+  classification_display,
+  caption = paste(
+    "Metric phân loại temporal test tại threshold chọn từ grouped OOF train"
+  )
+)
+```
+
+```{r sensitivity-metric-table}
+validation_display <- full_test_metrics |>
+  transmute(
+    Model,
+    `ROC–AUC` = fmt_num(ROC_AUC, 3),
+    `Average precision` = fmt_num(Average_precision, 3),
+    `Log loss` = fmt_num(Log_loss, 3),
+    Brier = fmt_num(Brier, 3),
+    `Brier skill` = fmt_num(Brier_skill, 3),
+    `Calibration intercept` = fmt_num(Calibration_intercept, 3),
+    `Calibration slope` = fmt_num(Calibration_slope, 3)
+  )
+knitr::kable(
+  validation_display,
+  caption = "Metric validation tháng 7 dùng trong lựa chọn mô hình"
+)
+```
+
+```{r subgroup-table}
+subgroup_display <- subgroup_results |>
+  transmute(
+    `Phân tầng` = Phân_tầng,
+    Nhóm,
+    N = vapply(N, fmt_int, character(1)),
+    Prevalence = vapply(Prevalence, fmt_pct, character(1)),
+    `ROC–AUC` = vapply(ROC_AUC, fmt_num, character(1), digits = 3),
+    `Average precision` =
+      vapply(Average_precision, fmt_num, character(1), digits = 3),
+    `Log loss` = vapply(Log_loss, fmt_num, character(1), digits = 3),
+    Brier = vapply(Brier, fmt_num, character(1), digits = 3)
+  )
+knitr::kable(
+  subgroup_display,
+  caption = paste(
+    "Hiệu năng phân tầng của",
+    winner,
+    "trên temporal test 01–12/08"
+  )
+)
+```
+
+Theo quy tắc lựa chọn đã xác định trước, mô hình được chọn trên validation là
+**`r winner`**. Các ứng viên trong ngưỡng 1% của log loss và Brier được xem là
+gần tương đương; Logistic GLM được ưu tiên vì đơn giản và dễ diễn giải hơn.
+Temporal test chỉ dùng để báo cáo khả năng khái quát hóa sau quyết định này.
+
+# Nhận xét và kết luận
+
+## Kết quả chính
+
+Tháng 7 cho thấy nhóm sản phẩm có giá cao hơn trung bình danh mục có tỷ lệ
+`Exit` cao hơn nhóm còn lại khoảng `r fmt_num(100 * ab_diff, 2)` điểm phần
+trăm; adjusted risk difference là
+`r fmt_num(100 * ab_adjusted_rd, 2)` điểm phần trăm. Hướng khác biệt lặp lại
+trong train và đầu tháng 8. Interaction test theo Category có
+\(p\) `r fmt_p(ab_interaction_p)`, cho thấy hiệu ứng gộp không nhất thiết đại
+diện đồng đều cho mọi danh mục. Đây là bằng chứng về một mối liên hệ dự báo,
+không phải bằng chứng rằng giá cao gây kết thúc session.
+
+Các mô hình current-click kiểm tra xem đặc điểm sản phẩm có bổ sung thông tin
+ngoài `Order`, thời gian và country. Nhóm history features tiếp tục cải thiện
+Logistic GLM: ROC–AUC tăng `r fmt_num(logit_auc_gain, 3)` và log loss giảm
+`r fmt_num(logit_logloss_reduction, 3)` trên tháng 7. Robust joint test của
+history features có \(p\) `r fmt_p(history_joint_p)`. Kết quả này cho thấy hành
+vi đã diễn ra trong session chứa tín hiệu mà chỉ nhìn click hiện tại sẽ bỏ sót.
+Bằng chứng liên hệ mạnh nhất trong Logistic GLM tập trung ở
+`r top_term_text`; đây là xếp hạng liên hệ dự báo, không phải thứ hạng tác
+động nhân quả.
+
+Trên validation tháng 7, **`r winner`** nằm trong nhóm gần tương đương về log
+loss và Brier, rồi được chọn vì đơn giản và dễ diễn giải. Temporal test
+01–12/08 chỉ được mở để đánh giá sau lựa chọn và không dùng để tối ưu lại mô
+hình. Dù được cải thiện, khả năng phân biệt vẫn ở mức trung bình và chưa đủ để
+xem là một hệ thống triển khai sẵn.
+
+## Hàm ý thực tiễn
+
+- `Order` và các xác suất chuẩn hóa có thể dùng để nhận diện giai đoạn session
+  cần ưu tiên hỗ trợ, nhưng không nên xem `Order` là một can thiệp.
+- Số sản phẩm đã xem, hành vi quay lại sản phẩm và chuyển đổi giữa các danh mục
+  có thể được cập nhật theo thời gian thực mà không cần biết tương lai của
+  session.
+- Nhóm giá cao hơn trung bình có thể là một tín hiệu bổ sung trong hệ thống dự
+  báo. Trước khi thay đổi chính sách giá hoặc giao diện, cần một thí nghiệm
+  ngẫu nhiên thực sự, chẳng hạn thử thông điệp giá trị, ưu đãi vận chuyển hoặc
+  cách trình bày thông tin giá.
+- Nếu triển khai dự báo, cần theo dõi cả calibration theo thời gian; AUC tốt
+  không bảo đảm xác suất dự đoán đúng về độ lớn.
+
+## Hạn chế
+
+- Không có treatment/control ngẫu nhiên; phân tích hai nhóm giá là quan sát và
+  chịu confounding bởi sản phẩm, danh mục và hành vi duyệt.
+- Giả thuyết nhóm giá được định hướng từ EDA; p-value cần được đọc cùng effect
+  size, balance diagnostics, kiểm tra theo thời gian và Holm correction.
+- Không có thông tin mua hàng, giỏ hàng, thanh toán, user ID dài hạn, giờ click
+  hoặc thời lượng giữa click.
+- Nhiều click trong cùng session phụ thuộc nhau; robust SE và bootstrap theo
+  session chỉ xử lý một phần vấn đề.
+- Tháng 8 không đầy đủ và ngày 13/08 có dấu hiệu thu thập dở dang.
+- Tại mỗi `Order`, chỉ các session sống sót đến vị trí đó được quan sát; quan hệ
+  theo tiến trình chịu selection của session còn tồn tại.
+- Dữ liệu từ năm 2008 và một e-shop cụ thể; cần đánh giá lại trước khi áp dụng
+  cho môi trường hiện tại.

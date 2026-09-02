@@ -1,0 +1,1899 @@
+---
+title: "Đồ án kết thúc học phần Mô hình hóa Thống kê"
+author: "Lê Hoàng Như"
+date: "03/08/2026"
+output:
+  html_document:
+    self_contained: true
+    toc: true
+    toc_float:
+      collapsed: true
+      smooth_scroll: true
+---
+
+# Phân tích và dự báo mức thu nhập hàng tháng
+
+```{r setup, include=FALSE}
+required_packages <- c(
+  "tidyverse", "caret", "car", "lmtest", "sandwich",
+  "glmnet", "pls", "emmeans", "effectsize", "gridExtra"
+)
+
+missing_packages <- required_packages[
+  !vapply(required_packages, requireNamespace, quietly = TRUE, FUN.VALUE = logical(1))
+]
+if (length(missing_packages) > 0) {
+  stop(
+    "Thiếu package: ", paste(missing_packages, collapse = ", "),
+    ". Hãy cài đặt trước khi knit báo cáo."
+  )
+}
+
+suppressPackageStartupMessages({
+  library(tidyverse)
+  library(caret)
+  library(car)
+  library(lmtest)
+  library(sandwich)
+  library(glmnet)
+  library(pls)
+  library(emmeans)
+  library(effectsize)
+  library(gridExtra)
+})
+
+SEED <- 123L
+B_TEST <- 2000L
+B_STABILITY <- 100L
+
+knitr::opts_chunk$set(
+  echo = TRUE, warning = FALSE, message = FALSE,
+  fig.align = "center", fig.width = 8, fig.height = 5
+)
+
+metric_values <- function(actual, predicted) {
+  predicted <- as.numeric(predicted)
+  c(
+    RMSE = sqrt(mean((actual - predicted)^2)),
+    MAE = mean(abs(actual - predicted)),
+    R2 = 1 - sum((actual - predicted)^2) /
+      sum((actual - mean(actual))^2)
+  )
+}
+
+format_p <- function(p) format.pval(p, digits = 3, eps = 1e-16)
+
+parent_feature <- function(design_name, original_names) {
+  hits <- original_names[
+    vapply(
+      original_names,
+      function(v) design_name == v || startsWith(design_name, paste0(v, ".")),
+      FUN.VALUE = logical(1)
+    )
+  ]
+  if (length(hits) == 0) {
+    return(design_name)
+  }
+  hits[which.max(nchar(hits))]
+}
+```
+
+## Mục tiêu và cách thực hiện
+
+Bộ dữ liệu được dùng cho hai mục tiêu khác nhau và hai mục tiêu này được
+tách riêng:
+
+1. **Phân tích các yếu tố liên quan đến thu nhập:** sử dụng ANOVA và hồi quy tuyến
+   tính. Các hệ số được diễn giải như **mối liên hệ**.
+2. **Đánh giá khả năng dự báo của mô hình:** ước lượng `MonthlyIncome` cho nhân viên
+   trước quyết định lương. Mọi bước chọn biến và xây dựng mô hình được thực hiện
+   trên tập Train; tập Test chỉ dùng để đánh giá cuối cùng.
+
+Dữ liệu IBM HR là dữ liệu **mô phỏng**. Báo cáo gọi `MonthlyIncome` là “thu nhập hàng
+tháng theo đơn vị của bộ dữ liệu”, không mặc định đơn vị đó là USD khi
+chưa có tài liệu nguồn xác nhận.
+
+# 1. Kiểm tra và tiền xử lý dữ liệu
+
+## 1.1. Kiểm tra dữ liệu khuyết và dữ liệu trùng lặp
+
+```{r data-audit}
+df_raw <- read.csv(
+  "data/WA_Fn-UseC_-HR-Employee-Attrition.csv",
+  stringsAsFactors = FALSE
+)
+
+required_columns <- c(
+  "MonthlyIncome", "EmployeeNumber", "JobLevel", "JobRole",
+  "Department", "Gender", "TotalWorkingYears", "YearsAtCompany"
+)
+stopifnot(all(required_columns %in% names(df_raw)))
+
+constant_cols <- names(df_raw)[
+  vapply(df_raw, function(x) length(unique(x)) == 1, FUN.VALUE = logical(1))
+]
+
+content_for_duplicate_check <- df_raw %>%
+  select(-any_of(c("EmployeeNumber", constant_cols)))
+
+invalid_year_relations <- sum(
+  df_raw$YearsAtCompany > df_raw$TotalWorkingYears |
+    df_raw$YearsInCurrentRole > df_raw$YearsAtCompany |
+    df_raw$YearsWithCurrManager > df_raw$YearsAtCompany |
+    df_raw$YearsSinceLastPromotion > df_raw$YearsAtCompany
+)
+
+data_audit <- tibble(
+  `Kiểm tra` = c(
+    "Số quan sát", "Số biến", "Tổng giá trị khuyết",
+    "EmployeeNumber bị trùng", "Dòng trùng sau khi bỏ ID/hằng số",
+    "Biến chỉ có một giá trị", "Quan hệ thâm niên bất hợp lý"
+  ),
+  `Kết quả` = c(
+    nrow(df_raw), ncol(df_raw), sum(is.na(df_raw)),
+    sum(duplicated(df_raw$EmployeeNumber)),
+    sum(duplicated(content_for_duplicate_check)),
+    length(constant_cols), invalid_year_relations
+  )
+)
+
+knitr::kable(data_audit, caption = "Kết quả kiểm tra dữ liệu ban đầu")
+cat("Các biến hằng số:", paste(constant_cols, collapse = ", "))
+```
+
+Không có dòng trùng, dữ liệu khuyết hoặc quan hệ thâm niên bất hợp lý. Vì vậy,
+báo cáo không cần điền giá trị khuyết hoặc xóa quan sát. Ba biến chỉ có một
+giá trị không cung cấp thông tin cho mô hình.
+
+## 1.2. Loại biến không phù hợp và chuyển đổi kiểu dữ liệu
+
+Mô hình được giả định sử dụng **trước khi quyết định lương**. Vì vậy, ngoài mã nhân
+viên và các biến chỉ có một giá trị, báo cáo loại những biến phản ánh kết
+quả xảy ra sau đó hoặc thông tin lương, đãi ngộ đã biết sẵn. Cách làm này
+tránh đưa thông tin không phù hợp vào mô hình dự báo.
+
+```{r feature-policy}
+policy_excluded <- c(
+  "EmployeeNumber", "EmployeeCount", "Over18", "StandardHours",
+  "Attrition", "DailyRate", "HourlyRate", "MonthlyRate",
+  "PercentSalaryHike", "StockOptionLevel"
+)
+
+feature_policy <- tibble(
+  `Biến bị loại` = policy_excluded,
+  `Lý do` = c(
+    "Mã định danh", "Biến hằng", "Biến hằng", "Biến hằng",
+    "Kết quả xảy ra sau/không phù hợp thời điểm dự báo",
+    rep("Thông tin lương hoặc đãi ngộ đồng thời", 4),
+    "Quyết định đãi ngộ đồng thời"
+  )
+)
+knitr::kable(feature_policy, caption = "Các biến không được dùng để dự báo thu nhập")
+
+df_model <- df_raw %>%
+  select(-all_of(policy_excluded)) %>%
+  mutate(
+    JobLevel = factor(JobLevel),
+    PerformanceRating = factor(PerformanceRating),
+    Education = factor(Education),
+    EnvironmentSatisfaction = factor(EnvironmentSatisfaction),
+    JobInvolvement = factor(JobInvolvement),
+    JobSatisfaction = factor(JobSatisfaction),
+    RelationshipSatisfaction = factor(RelationshipSatisfaction),
+    WorkLifeBalance = factor(WorkLifeBalance)
+  ) %>%
+  mutate(across(where(is.character), factor)) %>%
+  mutate(
+    JobLevel = stats::relevel(JobLevel, ref = "1"),
+    JobRole = stats::relevel(JobRole, ref = "Sales Executive"),
+    Education = stats::relevel(Education, ref = "3"),
+    PerformanceRating = stats::relevel(PerformanceRating, ref = "3"),
+    Gender = stats::relevel(Gender, ref = "Female")
+  )
+
+stopifnot(sum(is.na(df_model)) == 0)
+
+type_summary <- tibble(
+  `Kiểu dữ liệu` = names(table(vapply(df_model, class, character(1)))),
+  `Số biến` = as.integer(table(vapply(df_model, class, character(1))))
+)
+knitr::kable(type_summary, caption = "Cấu trúc biến sau tiền xử lý tĩnh")
+
+reference_groups <- tibble(
+  `Biến phân loại` = c(
+    "JobLevel", "JobRole", "Education", "PerformanceRating", "Gender"
+  ),
+  `Nhóm tham chiếu` = c(
+    "1", "Sales Executive", "3 - Bachelor",
+    "3 - Excellent", "Female"
+  ),
+  `Lý do lựa chọn` = c(
+    "Cấp thấp nhất và cũng là nhóm đông nhất",
+    "Vai trò có số quan sát lớn nhất",
+    "Trình độ phổ biến nhất trong dữ liệu",
+    "Mức đánh giá phổ biến nhất trong dữ liệu",
+    "Giúp diễn giải trực tiếp chênh lệch Male so với Female"
+  )
+)
+knitr::kable(
+  reference_groups,
+  caption = "Nhóm tham chiếu của các biến phân loại trong mô hình hồi quy"
+)
+```
+
+`JobLevel` và các thang đánh giá được chuyển thành biến phân loại. Cách mã hóa này
+không áp đặt giả định rằng khoảng cách giữa mức 1 và 2 phải tương đương khoảng
+cách giữa mức 3 và 4.
+
+Nhóm tham chiếu được đặt rõ ràng, không phụ thuộc thứ tự chữ cái mặc định
+của R. Các nhóm này áp dụng cho OLS, Stepwise và ma trận biến giả của
+các mô hình dự báo. Việc đổi nhóm tham chiếu chỉ đổi cách trình bày hệ số;
+giá trị dự báo và mức độ phù hợp của mô hình không thay đổi.
+
+## 1.3. Kiểm tra và quyết định xử lý ngoại lai bằng IQR
+
+```{r outlier-audit}
+numeric_variables <- names(df_model)[vapply(df_model, is.numeric, logical(1))]
+
+iqr_outlier_table <- purrr::map_dfr(numeric_variables, function(variable_name) {
+  x <- df_model[[variable_name]]
+  q1 <- quantile(x, 0.25, na.rm = TRUE)
+  q3 <- quantile(x, 0.75, na.rm = TRUE)
+  iqr_value <- IQR(x, na.rm = TRUE)
+  lower_bound <- q1 - 1.5 * iqr_value
+  upper_bound <- q3 + 1.5 * iqr_value
+
+  tibble(
+    `Biến` = variable_name,
+    Q1 = q1,
+    Q3 = q3,
+    IQR = iqr_value,
+    `Biên dưới` = lower_bound,
+    `Biên trên` = upper_bound,
+    `Số ngoại lai` = sum(x < lower_bound | x > upper_bound, na.rm = TRUE)
+  )
+})
+
+knitr::kable(
+  iqr_outlier_table,
+  digits = 2,
+  caption = "Kiểm tra ngoại lai của các biến định lượng bằng phương pháp IQR"
+)
+```
+
+Một quan sát được gắn cờ nếu nhỏ hơn $Q_1-1{,}5IQR$ hoặc lớn hơn
+$Q_3+1{,}5IQR$. IQR chỉ phát hiện các giá trị cần chú ý. Báo cáo không
+xóa hoặc giới hạn các giá trị đó vì chúng vẫn nằm trong miền hợp lệ của
+dữ liệu; đặc biệt, thu nhập cao có thể phản ánh nhân viên thuộc `JobLevel` cao. Việc
+tự động thay đổi chúng có thể sẽ làm sai lệch biến cần dự báo.
+
+```{r response-plots, fig.width=10, fig.height=4}
+p_income <- ggplot(df_model, aes(MonthlyIncome)) +
+  geom_histogram(bins = 30, fill = "#35618f", color = "white") +
+  theme_minimal() +
+  labs(
+    title = "Phân phối MonthlyIncome",
+    x = "Thu nhập hàng tháng", y = "Tần số"
+  )
+
+p_level <- ggplot(df_model, aes(JobLevel, MonthlyIncome, fill = JobLevel)) +
+  geom_boxplot(alpha = 0.75, outlier.alpha = 0.45) +
+  theme_minimal() +
+  theme(legend.position = "none") +
+  labs(
+    title = "MonthlyIncome theo JobLevel",
+    x = "JobLevel", y = "Thu nhập hàng tháng"
+  )
+
+gridExtra::grid.arrange(p_income, p_level, ncol = 2)
+```
+
+# 2. Phân tích các yếu tố liên quan đến thu nhập
+
+Phần này sử dụng toàn bộ dữ liệu để mô tả các mối liên hệ thống kê.
+Kết quả không được dùng để lựa chọn mô hình dự báo và không được diễn giải
+như quan hệ nhân quả.
+
+## 2.1. Phân tích phương sai ANOVA nhiều nhân tố
+
+```{r robust-anova}
+df_anova <- df_model
+contrasts(df_anova$JobLevel) <- contr.sum(nlevels(df_anova$JobLevel))
+contrasts(df_anova$Department) <- contr.sum(nlevels(df_anova$Department))
+contrasts(df_anova$Gender) <- contr.sum(nlevels(df_anova$Gender))
+
+anova_fit <- lm(
+  MonthlyIncome ~ JobLevel * Department + Gender,
+  data = df_anova
+)
+
+anova_type3_classical <- car::Anova(anova_fit, type = 3)
+anova_type3_hc3 <- car::Anova(anova_fit, type = 3, white.adjust = "hc3")
+
+anova_hc3_table <- as.data.frame(anova_type3_hc3) %>%
+  rownames_to_column("Thành phần")
+knitr::kable(
+  anova_hc3_table,
+  digits = 4,
+  caption = "ANOVA Type III với ma trận hiệp phương sai HC3"
+)
+
+anova_effects <- effectsize::eta_squared(
+  anova_type3_classical,
+  partial = TRUE,
+  ci = 0.95
+)
+knitr::kable(
+  as.data.frame(anova_effects),
+  digits = 4,
+  caption = "Partial eta-squared và khoảng tin cậy"
+)
+```
+
+Partial eta-squared được tính từ tổng bình phương cổ điển và chỉ mô tả
+quy mô liên hệ. Kết luận kiểm định chính vẫn dựa trên Type III với HC3.
+
+Type III được dùng vì mô hình có tương tác và số quan sát giữa các tổ
+hợp `JobLevel x Department` không cân bằng. Khi tương tác có ý nghĩa, một “tác động chung”
+của `Department` không đủ để mô tả cấu trúc dữ liệu; cần xem chênh lệch phòng ban
+tại từng cấp bậc.
+
+ANOVA dùng mã hóa tổng bằng `contr.sum`, nên không lấy một phòng ban hoặc giới
+làm nhóm tham chiếu duy nhất. Mỗi hiệu ứng được đánh giá quanh trung bình chung có
+điều chỉnh. Các so sánh cặp `emmeans` bên dưới nêu trực tiếp hai nhóm được so sánh.
+
+```{r marginal-means}
+anova_vcov_hc3 <- sandwich::vcovHC(anova_fit, type = "HC3")
+emm_department <- emmeans::emmeans(
+  anova_fit,
+  ~ Department | JobLevel,
+  vcov. = anova_vcov_hc3,
+  weights = "proportional"
+)
+
+emm_table <- as.data.frame(emm_department)
+pair_table <- as.data.frame(
+  pairs(emm_department, adjust = "tukey")
+)
+
+knitr::kable(
+  emm_table,
+  digits = 2,
+  caption = "Thu nhập trung bình hiệu chỉnh theo Department trong từng JobLevel"
+)
+knitr::kable(
+  pair_table,
+  digits = 3,
+  caption = "So sánh Department trong từng JobLevel, điều chỉnh Tukey"
+)
+```
+
+Không bác bỏ hệ số giới tính không chứng minh doanh nghiệp đã đạt bình đẳng lương.
+Nó chỉ cho thấy mô hình hiện tại chưa phát hiện được chênh lệch trung bình theo
+giới sau khi điều chỉnh các biến trong công thức.
+
+## 2.2. Mô hình hồi quy tuyến tính được xác định trước
+
+Các biến trong mô hình dưới đây được chọn trước khi xem p-value, dựa trên mục tiêu
+nghiên cứu: cấp bậc, vai trò, kinh nghiệm, thời gian tại công ty, lịch sử công việc,
+giáo dục, hiệu suất và giới tính. `Department` đã được phân tích cùng tương tác ở phần
+ANOVA và không được đưa đồng thời với `JobRole` trong mô hình giải thích này.
+
+```{r core-ols}
+core_formula <- MonthlyIncome ~ JobLevel + JobRole + TotalWorkingYears +
+  YearsAtCompany + NumCompaniesWorked + Education +
+  PerformanceRating + Gender
+
+ols_core <- lm(core_formula, data = df_model)
+ols_summary <- summary(ols_core)
+ols_vcov_hc3 <- sandwich::vcovHC(ols_core, type = "HC3")
+ols_hc3 <- lmtest::coeftest(ols_core, vcov. = ols_vcov_hc3)
+ols_global_hc3 <- car::linearHypothesis(
+  ols_core,
+  names(coef(ols_core))[-1],
+  vcov. = ols_vcov_hc3,
+  test = "F"
+)
+
+critical_t <- qt(0.975, df.residual(ols_core))
+ols_hc3_table <- tibble(
+  `Hệ số` = rownames(ols_hc3),
+  Estimate = ols_hc3[, 1],
+  `SE HC3` = ols_hc3[, 2],
+  `t` = ols_hc3[, 3],
+  `p` = ols_hc3[, 4],
+  `CI 2.5%` = ols_hc3[, 1] - critical_t * ols_hc3[, 2],
+  `CI 97.5%` = ols_hc3[, 1] + critical_t * ols_hc3[, 2]
+)
+
+ols_overall_table <- tibble(
+  `Chỉ tiêu` = c(
+    "Số quan sát", "R-squared", "R-squared hiệu chỉnh",
+    "Sai số chuẩn phần dư", "Wald F với HC3", "p-value Wald HC3"
+  ),
+  `Kết quả` = c(
+    nobs(ols_core),
+    sprintf("%.4f", ols_summary$r.squared),
+    sprintf("%.4f", ols_summary$adj.r.squared),
+    sprintf("%.2f", ols_summary$sigma),
+    sprintf("%.2f", ols_global_hc3$F[2]),
+    format_p(ols_global_hc3$`Pr(>F)`[2])
+  )
+)
+
+knitr::kable(
+  ols_overall_table,
+  caption = "Mức độ phù hợp tổng thể của mô hình OLS"
+)
+
+knitr::kable(
+  ols_hc3_table,
+  digits = 3,
+  caption = "Hệ số OLS với sai số chuẩn và khoảng tin cậy HC3"
+)
+```
+
+### Nhận xét mô hình OLS
+
+Trong bảng hệ số, hệ số chặn đại diện cho hồ sơ thuộc toàn bộ nhóm tham
+chiếu khi các biến số bằng 0. Mỗi hệ số của biến phân loại là chênh lệch
+thu nhập so với nhóm tham chiếu tương ứng, sau khi giữ các biến khác không đổi.
+
+- Mô hình phù hợp tổng thể cao và kiểm định Wald HC3 cho thấy tập
+  biến có liên hệ rõ ràng với thu nhập. Tuy nhiên, $R^2$ cao
+  không đồng nghĩa mọi hệ số riêng lẻ đều có ý nghĩa.
+- `JobLevel` là nhóm biến nổi bật nhất: hệ số tăng đều từ Level 2 đến Level 5
+  so với Level 1. Điều này phù hợp với cấu trúc lương theo cấp bậc đã thấy
+  trên biểu đồ hộp.
+- Sau khi giữ các biến khác không đổi, các vị trí `Manager` và `Research Director` có hệ
+  số dương lớn so với `Sales Executive`. `Laboratory Technician`, `Research Scientist`
+  và `Sales Representative` có hệ số âm so với nhóm tham chiếu này. Các chênh lệch
+  đó không phải mức lương tuyệt đối.
+- `TotalWorkingYears` có hệ số dương và khoảng tin cậy không chứa 0, cho thấy tổng kinh nghiệm
+  làm việc có liên hệ ổn định với thu nhập. Ngược lại, `YearsAtCompany` không còn ý nghĩa
+  rõ ràng sau khi đã điều chỉnh cấp bậc, vai trò và tổng kinh nghiệm.
+- Hệ số `GenderMale` so sánh `Male` với nhóm tham chiếu `Female`; hệ số
+  `PerformanceRating4` so sánh mức 4 với mức 3. Hai hệ số này không có bằng
+  chứng khác 0 sau điều chỉnh. Kết quả không đủ để kết luận chính sách lương
+  hoàn toàn công bằng.
+- Các hệ số `Education` so sánh từng trình độ với mức 3, tức `Bachelor`.
+  Cần đọc từng khoảng tin cậy HC3 trước khi kết luận về khác biệt theo học vấn.
+
+Sai số chuẩn HC3 được dùng khi phương sai phần dư thay đổi, làm cho sai số
+chuẩn cổ điển không còn đáng tin cậy. Cách điều chỉnh này không biến mối liên hệ
+quan sát thành quan hệ nhân quả.
+
+## 2.3. Kiểm định các giả định của hồi quy tuyến tính
+
+```{r ols-diagnostics, fig.width=11, fig.height=4}
+par(mfrow = c(1, 3), mar = c(4, 4, 2, 1))
+plot(ols_core, which = c(1, 2, 3))
+par(mfrow = c(1, 1))
+
+bp_core <- lmtest::bptest(ols_core)
+reset_core <- lmtest::resettest(ols_core, power = 2:3, type = "fitted")
+shapiro_core <- shapiro.test(residuals(ols_core))
+
+# VIF thông thường được tính trên từng cột của ma trận thiết kế.
+# model.matrix() chuyển biến phân loại thành biến giả và bỏ một mức tham chiếu.
+core_design <- model.matrix(ols_core)[, -1, drop = FALSE]
+core_vif <- vapply(seq_len(ncol(core_design)), function(j) {
+  auxiliary_fit <- lm(core_design[, j] ~ core_design[, -j, drop = FALSE])
+  1 / (1 - summary(auxiliary_fit)$r.squared)
+}, FUN.VALUE = numeric(1))
+
+vif_table <- tibble(
+  `Biến/cột biến giả` = colnames(core_design),
+  VIF = core_vif,
+  `Đánh giá` = case_when(
+    VIF < 5 ~ "Không đáng kể",
+    VIF < 10 ~ "Cần lưu ý",
+    TRUE ~ "Nghiêm trọng"
+  )
+) %>% arrange(desc(VIF))
+
+diagnostic_table <- tibble(
+  `Giả định/chỉ tiêu` = c(
+    "RESET: quan hệ tuyến tính",
+    "Breusch–Pagan: phương sai đồng nhất",
+    "Shapiro–Wilk: phần dư chuẩn"
+  ),
+  `Thống kê` = c(
+    unname(reset_core$statistic),
+    unname(bp_core$statistic),
+    unname(shapiro_core$statistic)
+  ),
+  `p-value` = c(
+    format_p(reset_core$p.value),
+    format_p(bp_core$p.value),
+    format_p(shapiro_core$p.value)
+  )
+)
+
+knitr::kable(diagnostic_table, digits = 4, caption = "Kết quả kiểm định giả định OLS")
+knitr::kable(vif_table, digits = 3, caption = "VIF thông thường của các biến và cột biến giả")
+
+alpha_diagnostic <- 0.05
+max_core_vif <- max(vif_table$VIF)
+
+assumption_conclusion <- tibble(
+  `Giả định/chỉ tiêu` = c(
+    "Quan hệ tuyến tính",
+    "Độc lập của sai số",
+    "Phương sai đồng nhất",
+    "Phần dư chuẩn",
+    "Không đa cộng tuyến nghiêm trọng"
+  ),
+  `Kết luận` = c(
+    if (reset_core$p.value < alpha_diagnostic) {
+      "Vi phạm ở mức ý nghĩa 5%"
+    } else if (reset_core$p.value < 0.10) {
+      "Chưa vi phạm ở mức 5%, nhưng kết quả sát ngưỡng"
+    } else {
+      "Chưa phát hiện vi phạm"
+    },
+    "Chưa thể xác nhận từ dữ liệu chéo hiện có",
+    if (bp_core$p.value < alpha_diagnostic) "Vi phạm" else "Chưa phát hiện vi phạm",
+    if (shapiro_core$p.value < alpha_diagnostic) "Vi phạm" else "Chưa phát hiện vi phạm",
+    if (max_core_vif < 5) "Đạt" else "Cần xem xét"
+  ),
+  `Xử lý/định hướng` = c(
+    "Giữ dạng hiện tại; kiểm tra spline hoặc tương tác nếu dữ liệu mới cho kết quả khác",
+    "Cần mã nhóm hoặc thời gian; dùng sai số chuẩn theo cụm hay mô hình hỗn hợp nếu cần",
+    "Dùng sai số chuẩn HC3; cân nhắc WLS hoặc mô hình hóa phương sai",
+    "Dùng HC3 hoặc bootstrap; thử biến đổi đáp ứng nhưng phải kiểm định lại",
+    "Không loại biến chỉ vì đa cộng tuyến"
+  )
+)
+
+knitr::kable(
+  assumption_conclusion,
+  caption = "Kết luận và hướng xử lý các giả định của mô hình OLS"
+)
+```
+
+### Kết luận về chất lượng mô hình OLS
+
+Mô hình OLS **tốt để làm mô hình cơ sở**, nhưng chưa thỏa hoàn toàn các giả
+định OLS cổ điển. Kết luận này dựa trên các kết quả sau:
+
+1. **Quan hệ tuyến tính chưa bị bác bỏ, nhưng cần thận trọng.** RESET cho
+   p-value bằng 0,0517, chỉ cao hơn mức ý nghĩa 5% một khoảng nhỏ. Vì vậy,
+   chưa có đủ bằng chứng kết luận sai dạng hàm, nhưng kết quả đang sát ngưỡng.
+   Nếu dữ liệu mới làm p-value giảm dưới 0,05, cần thử spline hoặc các
+   tương tác khác dựa trên cơ sở nghiệp vụ. 
+
+2. **Chưa thể xác nhận tính độc lập.** Dữ liệu không có thứ tự thời gian,
+   mã nhóm hoặc quan hệ quản lý để kiểm tra sự phụ thuộc giữa các quan sát.
+   Durbin–Watson không phù hợp để tự động kết luận cho bộ dữ liệu chéo này.
+   Khi có dữ liệu theo nhóm, nên dùng sai số chuẩn theo cụm hoặc mô hình
+   hỗn hợp. Đây là hạn chế dữ liệu, không phải một giả định đã được chứng minh.
+
+3. **Mô hình vi phạm giả định phương sai đồng nhất.** Breusch–Pagan có p-value
+   nhỏ hơn $10^{-16}$, nên bác bỏ giả thuyết phương sai phần dư không đổi.
+   Vì vậy, sai số chuẩn OLS thông thường không còn phù hợp để kiểm định hệ số.
+   Báo cáo đã dùng HC3 cho sai số chuẩn, p-value và khoảng tin cậy.
+   HC3 không làm phương sai trở nên đồng nhất; nó giúp suy luận vẫn đáng tin
+   cậy khi phương sai thay đổi. Nếu cần mô hình hóa chính phương sai, có thể
+   thử WLS hoặc GLS rồi kiểm định lại trên phần dư đã chuẩn hóa.
+
+4. **Mô hình vi phạm giả định phần dư chuẩn.** Shapiro–Wilk có p-value bằng
+   $6{,}42 \times 10^{-16}$, nên phần dư không tuân theo phân phối chuẩn.
+   Q–Q plot cần được đọc cùng kết quả này để nhận diện sai lệch ở hai đuôi.
+   Với 1.470 quan sát, vi phạm này ít ảnh hưởng đến ước lượng điểm hơn việc
+   dùng sai số chuẩn sai. HC3 được giữ cho suy luận; bootstrap có thể được
+   dùng nếu cần khoảng tin cậy ít phụ thuộc phân phối hơn.
+
+
+**Về vấn đề đa cộng tuyến:** VIF lớn nhất bằng 4,629, thấp hơn ngưỡng 5.
+Vì vậy, không cần loại thêm biến vì đa cộng tuyến.
+
+**Vì sao dùng VIF thông thường?** VIF được định nghĩa cho từng biến dự báo có một
+bậc tự do. Các biến phân loại như `JobLevel` hoặc `JobRole` được chuyển thành các cột biến
+giả bằng `model.matrix()`; một mức tham chiếu được bỏ để tránh bẫy biến giả. Nhờ đó, mỗi
+cột có VIF theo công thức $VIF_j=1/(1-R_j^2)$ và dùng ngưỡng quen thuộc: dưới 5
+là không đáng kể, từ 5 đến dưới 10 cần lưu ý, và từ 10 trở lên
+là nghiêm trọng. Một biến phân loại có nhiều dòng VIF tương ứng với nhiều cột biến
+giả, vì vậy không tự động loại cả biến chỉ dựa trên một cột.
+
+```{r log-sensitivity}
+ols_log_core <- lm(update(core_formula, log(MonthlyIncome) ~ .), data = df_model)
+bp_log <- lmtest::bptest(ols_log_core)
+shapiro_log <- shapiro.test(residuals(ols_log_core))
+
+log_sensitivity <- tibble(
+  `Mô hình` = c("OLS thang gốc", "OLS log(MonthlyIncome)"),
+  `BP p-value` = c(bp_core$p.value, bp_log$p.value),
+  `Shapiro p-value` = c(shapiro_core$p.value, shapiro_log$p.value),
+  `Độ lệch phần dư` = c(
+    mean((residuals(ols_core) - mean(residuals(ols_core)))^3) /
+      sd(residuals(ols_core))^3,
+    mean((residuals(ols_log_core) - mean(residuals(ols_log_core)))^3) /
+      sd(residuals(ols_log_core))^3
+  )
+)
+knitr::kable(log_sensitivity, digits = 5, caption = "Độ nhạy với biến đổi log")
+```
+
+Biến đổi log làm độ lệch phần dư giảm từ 0,617 xuống -0,248. Tuy nhiên,
+cả Breusch–Pagan và Shapiro–Wilk vẫn có p-value rất nhỏ. Do đó, biến đổi
+log **không xử lý hết hai vi phạm** trong dữ liệu này và không được chọn
+chỉ để làm p-value vượt 0,05.
+
+Báo cáo giữ OLS trên thang thu nhập gốc để dễ diễn giải, dùng HC3 cho
+suy luận và đánh giá khả năng dự báo riêng trên tập Test. Nếu mục tiêu
+là tìm mô hình thỏa giả định tốt hơn, cần thử WLS, GLS hoặc dạng phi
+tuyến trên tập Train, sau đó kiểm định lại và so sánh sai số trên tập Test.
+
+# 3. Xây dựng mô hình dự báo và đánh giá mô hình 
+
+## 3.1. Chia tập Train/Test
+
+```{r split-and-design}
+set.seed(SEED)
+train_index <- caret::createDataPartition(
+  df_model$MonthlyIncome,
+  p = 0.70,
+  list = FALSE
+)
+
+train_data <- droplevels(df_model[train_index, ])
+test_data <- df_model[-train_index, ]
+
+single_level_train <- vapply(
+  train_data,
+  function(x) is.factor(x) && nlevels(x) < 2,
+  FUN.VALUE = logical(1)
+)
+if (any(single_level_train)) {
+  removed_single_train <- names(train_data)[single_level_train]
+  train_data <- train_data[, !single_level_train, drop = FALSE]
+  test_data <- test_data[, !single_level_train, drop = FALSE]
+}
+
+factor_predictors <- setdiff(
+  names(train_data)[vapply(train_data, is.factor, logical(1))],
+  "MonthlyIncome"
+)
+novel_levels <- lapply(factor_predictors, function(v) {
+  setdiff(unique(as.character(test_data[[v]])), levels(train_data[[v]]))
+})
+names(novel_levels) <- factor_predictors
+stopifnot(all(lengths(novel_levels) == 0))
+
+for (v in factor_predictors) {
+  test_data[[v]] <- factor(test_data[[v]], levels = levels(train_data[[v]]))
+}
+
+dummy_encoder <- caret::dummyVars(
+  MonthlyIncome ~ .,
+  data = train_data, fullRank = TRUE
+)
+x_train <- predict(dummy_encoder, newdata = train_data)
+x_test <- predict(dummy_encoder, newdata = test_data)
+y_train <- train_data$MonthlyIncome
+y_test <- test_data$MonthlyIncome
+
+stopifnot(
+  identical(colnames(x_train), colnames(x_test)),
+  !anyNA(x_train), !anyNA(x_test),
+  all(is.finite(x_train)), all(is.finite(x_test)),
+  length(intersect(train_index, setdiff(seq_len(nrow(df_model)), train_index))) == 0
+)
+
+set.seed(SEED + 1L)
+fold_id <- sample(rep(seq_len(10L), length.out = nrow(train_data)))
+fold_segments <- lapply(seq_len(10L), function(k) which(fold_id == k))
+
+split_table <- tibble(
+  `Tập dữ liệu` = c("Train", "Test"),
+  N = c(nrow(train_data), nrow(test_data)),
+  `Tỷ lệ` = c(nrow(train_data), nrow(test_data)) / nrow(df_model)
+)
+knitr::kable(split_table, digits = 3, caption = "Phân chia dữ liệu")
+cat("Số cột ma trận thiết kế:", ncol(x_train))
+```
+
+
+Tất cả bước mã hóa biến phân loại, chọn biến và lựa chọn tham số mô hình
+chỉ dùng tập Train. Tập Test chưa được dùng ở thời điểm này. Tỷ lệ
+Train/Test xấp xỉ 7/3.
+
+## 3.2. Chọn quy trình bằng nested cross-validation trong tập Train
+
+Nested CV dùng các fold ngoài để so sánh quy trình và các fold trong
+để chọn tham số. Nhờ đó, tập Test không quyết định mô hình cuối cùng.
+
+```{r nested-cv-selection}
+outer_train_indices <- local({
+  set.seed(SEED + 30L)
+  caret::createMultiFolds(y_train, k = 5, times = 3)
+})
+
+step_directions <- tibble(
+  Model = c(
+    "Forward–AIC", "Backward–AIC", "Hybrid–AIC",
+    "Forward–BIC", "Backward–BIC", "Hybrid–BIC"
+  ),
+  Direction = c("forward", "backward", "both", "forward", "backward", "both"),
+  Criterion = c("AIC", "AIC", "AIC", "BIC", "BIC", "BIC")
+)
+
+make_inner_folds <- function(y, seed_value) {
+  set.seed(seed_value)
+  fold_list <- caret::createFolds(y, k = 5, returnTrain = FALSE)
+  fold_id_inner <- integer(length(y))
+  for (j in seq_along(fold_list)) fold_id_inner[fold_list[[j]]] <- j
+  list(id = fold_id_inner, segments = fold_list)
+}
+
+align_factor_levels <- function(analysis_data, assessment_data) {
+  factor_names <- names(analysis_data)[
+    vapply(analysis_data, is.factor, FUN.VALUE = logical(1))
+  ]
+  analysis_data <- droplevels(analysis_data)
+  for (variable_name in factor_names) {
+    unseen <- setdiff(
+      unique(as.character(assessment_data[[variable_name]])),
+      levels(analysis_data[[variable_name]])
+    )
+    if (length(unseen) > 0) {
+      stop("Outer fold có mức phân loại mới ở biến ", variable_name)
+    }
+    assessment_data[[variable_name]] <- factor(
+      assessment_data[[variable_name]],
+      levels = levels(analysis_data[[variable_name]])
+    )
+  }
+  list(analysis = analysis_data, assessment = assessment_data)
+}
+
+evaluate_outer_split <- function(analysis_id, split_name, split_number) {
+  assessment_id <- setdiff(seq_len(nrow(train_data)), analysis_id)
+  aligned <- align_factor_levels(
+    train_data[analysis_id, , drop = FALSE],
+    train_data[assessment_id, , drop = FALSE]
+  )
+  analysis_data <- aligned$analysis
+  assessment_data <- aligned$assessment
+  actual <- assessment_data$MonthlyIncome
+  y_analysis <- analysis_data$MonthlyIncome
+  inner <- make_inner_folds(y_analysis, SEED + 1000L + split_number)
+
+  add_result <- function(model_name, prediction, complexity) {
+    tibble(
+      Split = split_name,
+      Model = model_name,
+      TrainRow = assessment_id,
+      Actual = actual,
+      Prediction = as.numeric(prediction),
+      Complexity = as.numeric(complexity)
+    )
+  }
+
+  result_parts <- list()
+  result_parts[["mean"]] <- add_result(
+    "Trung bình Train",
+    rep(mean(y_analysis), length(actual)),
+    0
+  )
+
+  joblevel_outer <- lm(MonthlyIncome ~ JobLevel, data = analysis_data)
+  result_parts[["joblevel"]] <- add_result(
+    "Chỉ dùng JobLevel",
+    predict(joblevel_outer, newdata = assessment_data),
+    joblevel_outer$rank - 1
+  )
+
+  ols_outer <- lm(MonthlyIncome ~ ., data = analysis_data)
+  result_parts[["ols"]] <- add_result(
+    "OLS",
+    predict(ols_outer, newdata = assessment_data),
+    ols_outer$rank - 1
+  )
+
+  log_outer <- lm(log(MonthlyIncome) ~ ., data = analysis_data)
+  smearing_outer <- mean(exp(residuals(log_outer)))
+  result_parts[["log_ols"]] <- add_result(
+    "Log-OLS + Duan",
+    exp(predict(log_outer, newdata = assessment_data)) * smearing_outer,
+    log_outer$rank - 1
+  )
+
+  null_outer <- lm(MonthlyIncome ~ 1, data = analysis_data)
+  outer_scope <- list(lower = formula(null_outer), upper = formula(ols_outer))
+  for (j in seq_len(nrow(step_directions))) {
+    start_model <- if (step_directions$Direction[j] == "backward") {
+      ols_outer
+    } else {
+      null_outer
+    }
+    penalty <- if (step_directions$Criterion[j] == "AIC") {
+      2
+    } else {
+      log(nrow(analysis_data))
+    }
+    step_outer <- step(
+      start_model,
+      scope = outer_scope,
+      direction = step_directions$Direction[j],
+      k = penalty,
+      trace = 0
+    )
+    result_parts[[step_directions$Model[j]]] <- add_result(
+      step_directions$Model[j],
+      predict(step_outer, newdata = assessment_data),
+      step_outer$rank - 1
+    )
+  }
+
+  outer_encoder <- caret::dummyVars(
+    MonthlyIncome ~ ., data = analysis_data, fullRank = TRUE
+  )
+  x_analysis <- predict(outer_encoder, newdata = analysis_data)
+  x_assessment <- predict(outer_encoder, newdata = assessment_data)
+
+  pcr_outer <- pls::pcr(
+    MonthlyIncome ~ ., data = analysis_data,
+    scale = TRUE, validation = "CV", segments = inner$segments
+  )
+  pcr_outer_rmsep <- drop(
+    pls::RMSEP(pcr_outer, estimate = "CV")$val[1, 1, ]
+  )
+  pcr_outer_components <- which.min(pcr_outer_rmsep[-1])
+  result_parts[["pcr"]] <- add_result(
+    "PCR (CV nhỏ nhất)",
+    drop(predict(
+      pcr_outer,
+      newdata = assessment_data,
+      ncomp = pcr_outer_components
+    )),
+    pcr_outer_components
+  )
+
+  ridge_outer <- glmnet::cv.glmnet(
+    x_analysis, y_analysis,
+    alpha = 0, foldid = inner$id, standardize = TRUE
+  )
+  lasso_outer <- glmnet::cv.glmnet(
+    x_analysis, y_analysis,
+    alpha = 1, foldid = inner$id, standardize = TRUE
+  )
+  outer_elastic_alphas <- seq(0.1, 0.9, by = 0.1)
+  elastic_outer_grid <- lapply(outer_elastic_alphas, function(alpha_value) {
+    glmnet::cv.glmnet(
+      x_analysis, y_analysis,
+      alpha = alpha_value,
+      foldid = inner$id,
+      standardize = TRUE
+    )
+  })
+  elastic_outer_index <- which.min(vapply(
+    elastic_outer_grid,
+    function(fit) min(fit$cvm),
+    FUN.VALUE = numeric(1)
+  ))
+  elastic_outer <- elastic_outer_grid[[elastic_outer_index]]
+
+  penalized_fits <- list(
+    Ridge = ridge_outer,
+    LASSO = lasso_outer,
+    `Elastic-Net` = elastic_outer
+  )
+  for (model_name in names(penalized_fits)) {
+    penalized_fit <- penalized_fits[[model_name]]
+    active_count <- sum(
+      as.matrix(coef(penalized_fit, s = "lambda.min"))[-1, 1] != 0
+    )
+    result_parts[[model_name]] <- add_result(
+      model_name,
+      drop(predict(
+        penalized_fit,
+        newx = x_assessment,
+        s = "lambda.min"
+      )),
+      active_count
+    )
+  }
+
+  bind_rows(result_parts)
+}
+
+nested_predictions <- purrr::imap_dfr(
+  outer_train_indices,
+  function(analysis_id, split_name) {
+    split_number <- match(split_name, names(outer_train_indices))
+    evaluate_outer_split(analysis_id, split_name, split_number)
+  }
+)
+
+nested_split_metrics <- nested_predictions %>%
+  group_by(Split, Model) %>%
+  summarise(
+    RMSE = metric_values(Actual, Prediction)["RMSE"],
+    MAE = metric_values(Actual, Prediction)["MAE"],
+    Complexity = first(Complexity),
+    .groups = "drop"
+  )
+
+nested_summary <- nested_split_metrics %>%
+  group_by(Model) %>%
+  summarise(
+    `RMSE trung bình` = mean(RMSE),
+    `SE của RMSE` = sd(RMSE) / sqrt(n()),
+    `MAE trung bình` = mean(MAE),
+    `Độ phức tạp trung bình` = mean(Complexity),
+    .groups = "drop"
+  )
+
+best_nested_row <- nested_summary %>%
+  slice_min(`RMSE trung bình`, n = 1, with_ties = FALSE)
+one_se_limit <- best_nested_row$`RMSE trung bình` + best_nested_row$`SE của RMSE`
+
+selection_priority <- c(
+  "Hybrid–BIC", "Forward–BIC", "Backward–BIC",
+  "Hybrid–AIC", "Forward–AIC", "Backward–AIC",
+  "LASSO", "Elastic-Net", "PCR (CV nhỏ nhất)",
+  "Ridge", "OLS", "Log-OLS + Duan",
+  "Chỉ dùng JobLevel", "Trung bình Train"
+)
+
+nested_summary <- nested_summary %>%
+  mutate(
+    `Trong ngưỡng một SE` = `RMSE trung bình` <= one_se_limit,
+    Priority = match(Model, selection_priority)
+  ) %>%
+  arrange(`RMSE trung bình`)
+
+selected_nested_row <- nested_summary %>%
+  filter(`Trong ngưỡng một SE`) %>%
+  arrange(`Độ phức tạp trung bình`, `MAE trung bình`, Priority) %>%
+  slice(1)
+
+final_procedure_name <- selected_nested_row$Model
+
+knitr::kable(
+  nested_summary %>% select(-Priority),
+  digits = 2,
+  caption = "Kết quả nested CV trong tập Train và quy tắc một sai số chuẩn"
+)
+cat("Mô hình được lựa chọn hoàn toàn trên Train:", final_procedure_name)
+```
+
+Quy trình lựa chọn trên Train dùng quy tắc một sai số chuẩn và tính gọn.
+RMSE Test chỉ dùng để đánh giá khả năng khái quát hóa của mô hình.
+SE được ước lượng từ 15 outer assessments và dùng như quy tắc thực hành.
+Các fold lặp có phụ thuộc, nên không diễn giải SE như kiểm định độc lập.
+
+## 3.3. Mô hình cơ sở, OLS và PCR
+
+```{r predictive-baselines-pcr}
+pred_mean <- rep(mean(y_train), length(y_test))
+
+joblevel_fit <- lm(MonthlyIncome ~ JobLevel, data = train_data)
+pred_joblevel <- predict(joblevel_fit, newdata = test_data)
+
+ols_full <- lm(MonthlyIncome ~ ., data = train_data)
+pred_ols <- predict(ols_full, newdata = test_data)
+
+set.seed(SEED + 2L)
+pcr_fit <- pls::pcr(
+  MonthlyIncome ~ .,
+  data = train_data,
+  scale = TRUE, validation = "CV", segments = fold_segments
+)
+
+pcr_rmsep <- drop(pls::RMSEP(pcr_fit, estimate = "CV")$val[1, 1, ])
+k_pcr_min <- which.min(pcr_rmsep[-1])
+k_pcr_1se <- pls::selectNcomp(pcr_fit, method = "onesigma", plot = FALSE)
+if (is.na(k_pcr_1se) || k_pcr_1se < 1) k_pcr_1se <- k_pcr_min
+
+pred_pcr_min <- drop(predict(pcr_fit, newdata = test_data, ncomp = k_pcr_min))
+pred_pcr_1se <- drop(predict(pcr_fit, newdata = test_data, ncomp = k_pcr_1se))
+
+pcr_selection <- tibble(
+  `Quy tắc` = c("CV minimum", "One-sigma"),
+  `Số thành phần` = c(k_pcr_min, k_pcr_1se),
+  `RMSEP CV` = c(
+    pcr_rmsep[k_pcr_min + 1],
+    pcr_rmsep[k_pcr_1se + 1]
+  )
+)
+knitr::kable(pcr_selection, digits = 2, caption = "Lựa chọn số thành phần PCR")
+```
+
+Mô hình chỉ dùng `JobLevel` cho biết một biến nghiệp vụ đơn giản có thể dự báo
+được bao nhiêu. PCR được báo cáo ở cả điểm sai số kiểm định chéo nhỏ nhất
+và quy tắc một sai số chuẩn; bảng dự báo chính dùng điểm sai số nhỏ nhất
+để so sánh nhất quán với các mô hình khác.
+
+## 3.4. Chọn biến bằng các phương pháp Forward, Backward và Hybrid selection
+
+Ba phương pháp lựa chọn biến được thực hiện trên cùng một phạm vi mô hình:
+
+- **Forward:** bắt đầu từ mô hình chỉ có hệ số chặn và lần lượt thêm biến.
+- **Backward:** bắt đầu từ mô hình đầy đủ và lần lượt loại biến.
+- **Hybrid:** sau mỗi bước có thể thêm hoặc loại biến.
+
+### Cơ sở lựa chọn mức phạt AIC và BIC
+
+Trong `stats::step()`, `k` là **mức phạt cho mỗi tham số**, không phải ngưỡng
+p-value hay ngưỡng thêm biến. Với $p$ tham số và hàm hợp lý $L$:
+
+$$
+\mathrm{AIC}=-2\log L+2p,
+$$
+
+$$
+\mathrm{BIC}=-2\log L+p\log(n_{Train}).
+$$
+
+Mức phạt 2 thuộc định nghĩa AIC của [Akaike (1974)](https://doi.org/10.1109/TAC.1974.1100705).
+AIC ước lượng tổn thất thông tin kỳ vọng và thường hướng đến khả năng dự báo.
+Mức phạt `log(n_Train)` thuộc tiêu chuẩn của [Schwarz (1978)](https://doi.org/10.1214/aos/1176344136).
+Nó xuất phát từ xấp xỉ xác suất mô hình Bayes và tăng theo kích thước mẫu.
+
+```{r stepwise-selection}
+null_model <- lm(MonthlyIncome ~ 1, data = train_data)
+step_scope <- list(
+  lower = formula(null_model),
+  upper = formula(ols_full)
+)
+bic_penalty <- log(nrow(train_data))
+
+penalty_table <- tibble(
+  `Tiêu chí` = c("AIC", "BIC"),
+  `Mức phạt trên mỗi tham số` = c(2, bic_penalty),
+  `Số quan sát dùng tính mức phạt` = c(NA_integer_, nrow(train_data))
+)
+knitr::kable(
+  penalty_table,
+  digits = 3,
+  caption = "Mức phạt AIC và BIC dùng trong Stepwise"
+)
+
+step_forward_aic <- step(
+  null_model,
+  scope = step_scope,
+  direction = "forward", k = 2, trace = 0
+)
+step_backward_aic <- step(
+  ols_full,
+  scope = step_scope,
+  direction = "backward", k = 2, trace = 0
+)
+step_hybrid_aic <- step(
+  null_model,
+  scope = step_scope,
+  direction = "both", k = 2, trace = 0
+)
+
+step_forward_bic <- step(
+  null_model,
+  scope = step_scope,
+  direction = "forward", k = bic_penalty, trace = 0
+)
+step_backward_bic <- step(
+  ols_full,
+  scope = step_scope,
+  direction = "backward", k = bic_penalty, trace = 0
+)
+step_hybrid_bic <- step(
+  null_model,
+  scope = step_scope,
+  direction = "both", k = bic_penalty, trace = 0
+)
+
+step_models <- list(
+  `Forward–AIC` = step_forward_aic,
+  `Backward–AIC` = step_backward_aic,
+  `Hybrid–AIC` = step_hybrid_aic,
+  `Forward–BIC` = step_forward_bic,
+  `Backward–BIC` = step_backward_bic,
+  `Hybrid–BIC` = step_hybrid_bic
+)
+
+stepwise_table <- purrr::imap_dfr(step_models, function(model, model_name) {
+  selected_terms <- attr(terms(model), "term.labels")
+  tibble(
+    `Phương pháp` = model_name,
+    `Số biến` = length(selected_terms),
+    `Các biến được chọn` = paste(selected_terms, collapse = ", "),
+    AIC = AIC(model),
+    BIC = BIC(model)
+  )
+})
+
+knitr::kable(
+  stepwise_table,
+  digits = 2,
+  caption = "Kết quả chọn biến bằng Forward, Backward và Hybrid"
+)
+
+pred_step_aic <- predict(step_hybrid_aic, newdata = test_data)
+pred_step_bic <- predict(step_hybrid_bic, newdata = test_data)
+```
+
+Trong bộ dữ liệu này, ba hướng tìm kiếm hội tụ về cùng một tập biến đối
+với từng tiêu chí. Vì vậy, phần đánh giá trên tập Test chỉ dùng Hybrid–AIC và Hybrid–BIC
+làm hai mô hình đại diện, tránh lặp lại các dự báo giống nhau.
+
+Không sử dụng p-value hoặc kết quả trên tập Test để quyết định thêm hay loại biến.
+P-value của mô hình sau Stepwise chỉ mang tính tham khảo vì công thức mô hình đã
+được lựa chọn từ chính dữ liệu Train.
+
+### Nhận xét các mô hình Stepwise
+
+- Cả Forward, Backward và Hybrid đều đi đến cùng một kết quả trong từng tiêu chí. Điều
+  này cho thấy tập biến được chọn không phụ thuộc vào hướng bắt đầu của thuật toán
+  trong bộ dữ liệu hiện tại.
+- Cả AIC và BIC đều giữ `JobLevel`, `JobRole` và `TotalWorkingYears`. Đây là ba nhóm thông tin xuất
+  hiện nhất quán, phù hợp với nhận xét từ ANOVA và mô hình OLS.
+- AIC giữ thêm `NumCompaniesWorked`, trong khi BIC loại biến này vì BIC phạt số lượng tham số
+  mạnh hơn. Do đó, mô hình BIC dễ diễn giải và tiết kiệm biến hơn.
+- Stepwise giúp tạo mô hình gọn nhưng có thể không ổn định khi dữ liệu thay đổi.
+
+
+## 3.5. Ridge, LASSO và Elastic-Net
+
+```{r penalized-models, fig.width=10, fig.height=7}
+cv_ridge <- glmnet::cv.glmnet(
+  x_train, y_train,
+  alpha = 0,
+  foldid = fold_id, standardize = TRUE
+)
+cv_lasso <- glmnet::cv.glmnet(
+  x_train, y_train,
+  alpha = 1,
+  foldid = fold_id, standardize = TRUE
+)
+
+elastic_alphas <- seq(0.1, 0.9, by = 0.1)
+cv_elastic_grid <- lapply(elastic_alphas, function(a) {
+  glmnet::cv.glmnet(
+    x_train, y_train,
+    alpha = a,
+    foldid = fold_id, standardize = TRUE
+  )
+})
+elastic_cv_min <- vapply(
+  cv_elastic_grid,
+  function(fit) min(fit$cvm),
+  FUN.VALUE = numeric(1)
+)
+best_elastic_index <- which.min(elastic_cv_min)
+best_elastic_alpha <- elastic_alphas[best_elastic_index]
+cv_elastic <- cv_elastic_grid[[best_elastic_index]]
+
+par(mfrow = c(2, 2), mar = c(4, 4, 3, 1))
+plot(cv_ridge)
+title("Ridge: CV theo log(lambda)", line = 2.5)
+plot(cv_lasso)
+title("LASSO: CV theo log(lambda)", line = 2.5)
+plot(cv_elastic)
+title(
+  paste0("Elastic-Net: alpha = ", best_elastic_alpha),
+  line = 2.5
+)
+plot(elastic_alphas, sqrt(elastic_cv_min),
+  type = "b", pch = 19,
+  xlab = "alpha", ylab = "CV RMSE", main = "Tuning alpha Elastic-Net"
+)
+par(mfrow = c(1, 1))
+
+pred_ridge_min <- drop(predict(cv_ridge, newx = x_test, s = "lambda.min"))
+pred_ridge_1se <- drop(predict(cv_ridge, newx = x_test, s = "lambda.1se"))
+pred_lasso_min <- drop(predict(cv_lasso, newx = x_test, s = "lambda.min"))
+pred_lasso_1se <- drop(predict(cv_lasso, newx = x_test, s = "lambda.1se"))
+pred_elastic_min <- drop(predict(cv_elastic, newx = x_test, s = "lambda.min"))
+pred_elastic_1se <- drop(predict(cv_elastic, newx = x_test, s = "lambda.1se"))
+
+tuning_table <- tibble(
+  `Mô hình` = c("Ridge", "LASSO", "Elastic-Net"),
+  alpha = c(0, 1, best_elastic_alpha),
+  `lambda.min` = c(
+    cv_ridge$lambda.min, cv_lasso$lambda.min, cv_elastic$lambda.min
+  ),
+  `lambda.1se` = c(
+    cv_ridge$lambda.1se, cv_lasso$lambda.1se, cv_elastic$lambda.1se
+  ),
+  `CV RMSE tại lambda.min` = sqrt(c(
+    min(cv_ridge$cvm), min(cv_lasso$cvm), min(cv_elastic$cvm)
+  )),
+  `Số hệ số khác 0 tại min` = c(
+    sum(as.matrix(coef(cv_ridge, s = "lambda.min"))[-1, 1] != 0),
+    sum(as.matrix(coef(cv_lasso, s = "lambda.min"))[-1, 1] != 0),
+    sum(as.matrix(coef(cv_elastic, s = "lambda.min"))[-1, 1] != 0)
+  )
+)
+knitr::kable(tuning_table, digits = 4, caption = "Kết quả lựa chọn tham số trên tập Train")
+```
+
+Trục ngang mặc định của `plot(cv.glmnet)` là **`log(lambda)`**. `lambda.min` làm
+sai số kiểm định chéo nhỏ nhất. `lambda.1se` chọn mức phạt lớn nhất có sai
+số nằm trong một sai số chuẩn của giá trị nhỏ nhất, nên thường gọn hơn.
+
+- **Ridge** dùng phạt L2 để làm nhỏ mọi hệ số, nhưng thường không đưa
+  hệ số về đúng 0. Phương pháp này hữu ích khi nhiều biến tương quan.
+- **LASSO** dùng phạt L1, có thể đưa hệ số ít hữu ích về 0 và
+  thực hiện chọn biến. Khi các biến tương quan mạnh, biến được giữ có thể
+  thay đổi giữa các mẫu.
+- **Elastic-Net** kết hợp L1 và L2. Nó vừa chọn biến, vừa xử lý các
+  nhóm biến tương quan ổn định hơn LASSO. Tham số `alpha` quyết định tỷ lệ
+  kết hợp và được chọn bằng kiểm định chéo trên tập Train.
+
+Mỗi phương pháp biến đổi hệ số khác nhau. Vì vậy, cần thận trọng khi diễn
+giải các hệ số ở phần sau.
+
+```{r selection-criteria}
+criteria_table <- tibble(
+  `Phương pháp` = c(
+    "Forward / Backward / Hybrid",
+    "PCR", "Ridge", "LASSO", "Elastic-Net"
+  ),
+  `Tiêu chí lựa chọn` = c(
+    "AIC hoặc BIC trên tập Train",
+    "RMSEP qua kiểm định chéo; điểm nhỏ nhất và quy tắc một sai số chuẩn",
+    "CV-RMSE để chọn lambda.min hoặc lambda.1se",
+    "CV-RMSE và hệ số khác 0; kiểm tra thêm độ ổn định bằng lấy mẫu lặp",
+    "CV-RMSE để chọn đồng thời alpha và lambda"
+  ),
+  `Vai trò của tập Test` = "Chỉ đánh giá mô hình sau khi đã lựa chọn"
+)
+knitr::kable(criteria_table, caption = "Tiêu chí lựa chọn của từng phương pháp")
+```
+
+## 3.6. Đánh giá một lần trên tập Test
+
+```{r test-metrics}
+log_ols_full <- lm(log(MonthlyIncome) ~ ., data = train_data)
+duan_smearing <- mean(exp(residuals(log_ols_full)))
+pred_log_ols <- exp(predict(log_ols_full, newdata = test_data)) * duan_smearing
+
+step_test_predictions <- lapply(
+  step_models[c("Hybrid–AIC", "Hybrid–BIC")],
+  function(model) predict(model, newdata = test_data)
+)
+
+predictions_primary <- c(list(
+  `Trung bình Train` = pred_mean,
+  `Chỉ dùng JobLevel` = pred_joblevel,
+  OLS = pred_ols
+), step_test_predictions, list(
+  `PCR (CV nhỏ nhất)` = pred_pcr_min,
+  Ridge = pred_ridge_min,
+  LASSO = pred_lasso_min,
+  `Elastic-Net` = pred_elastic_min,
+  `Log-OLS + Duan` = pred_log_ols
+))
+
+stopifnot(final_procedure_name %in% names(predictions_primary))
+
+metrics_primary <- t(vapply(
+  predictions_primary,
+  function(p) metric_values(y_test, p),
+  FUN.VALUE = c(RMSE = 0, MAE = 0, R2 = 0)
+)) %>%
+  as.data.frame() %>%
+  rownames_to_column("Mô hình") %>%
+  arrange(RMSE)
+
+knitr::kable(
+  metrics_primary,
+  digits = 3,
+  caption = "Hiệu suất dự báo trên tập Test"
+)
+
+predictions_parsimonious <- list(
+  `PCR quy tắc một sai số chuẩn` = pred_pcr_1se,
+  `Ridge lambda.1se` = pred_ridge_1se,
+  `LASSO lambda.1se` = pred_lasso_1se,
+  `Elastic-Net lambda.1se` = pred_elastic_1se
+)
+
+metrics_parsimonious <- t(vapply(
+  predictions_parsimonious,
+  function(p) metric_values(y_test, p),
+  FUN.VALUE = c(RMSE = 0, MAE = 0, R2 = 0)
+)) %>%
+  as.data.frame() %>%
+  rownames_to_column("Mô hình")
+
+knitr::kable(
+  metrics_parsimonious,
+  digits = 3,
+  caption = "Các phương án tinh gọn theo quy tắc một sai số chuẩn"
+)
+```
+
+RMSE nhấn mạnh sai số lớn, còn MAE phản ánh sai số tuyệt đối điển hình.
+$R^2$ Test đo cải thiện so với trung bình của chính tập Test.
+
+Nested CV đã hoàn tất việc chọn mô hình chỉ bằng dữ liệu Train.
+Thứ hạng Test chỉ dùng để đánh giá, không dùng để chọn lại mô hình.
+
+### Nhận xét khả năng dự báo của các mô hình hồi quy
+
+- Hybrid–BIC có RMSE và MAE thấp nhất, đồng thời chỉ dùng ba biến gốc. Hybrid–AIC cho kết
+  quả rất gần nhưng cần thêm `NumCompaniesWorked`; vì vậy BIC có lợi thế về tính gọn nhẹ.
+- LASSO và Elastic-Net đứng ngay sau hai mô hình Stepwise, nhưng RMSE và
+  MAE đều cao hơn Hybrid–BIC. Khoảng cách nhỏ cho thấy hai mô hình vẫn
+  dự báo tốt, dù không được chọn làm mô hình cuối cùng.
+- OLS và PCR có kết quả gần như tương đương. PCR phải giữ gần như toàn bộ
+  số thành phần mới đạt mức sai số này, nên không tạo ra lợi ích giảm chiều
+  rõ rệt.
+- Ridge có sai số cao hơn các mô hình còn lại. Trong dữ liệu này, giữ và
+  co nhỏ toàn bộ hệ số không hiệu quả bằng việc loại các biến ít hữu ích.
+  Vì vậy, Ridge cũng không được chọn làm mô hình cuối cùng.
+- Mô hình chỉ dùng `JobLevel` đã tốt hơn rất nhiều so với dự báo bằng trung bình
+  Train. Điều này xác nhận cấp bậc công việc giải thích phần lớn biến động thu nhập,
+  nhưng bổ sung `JobRole` và kinh nghiệm vẫn cải thiện đáng kể dự báo.
+- Thứ hạng từ RMSE và MAE cần được đọc cùng khoảng tin cậy lấy mẫu lặp ở
+  phần sau; một chênh lệch điểm nhỏ chưa đủ để khẳng định hai mô hình khác nhau
+  rõ rệt.
+
+```{r log-prediction-sensitivity}
+log_prediction_table <- rbind(
+  `OLS thang gốc` = metric_values(y_test, pred_ols),
+  `Log-OLS + Duan smearing` = metric_values(y_test, pred_log_ols)
+) %>%
+  as.data.frame() %>%
+  rownames_to_column("Mô hình")
+knitr::kable(
+  log_prediction_table,
+  digits = 3,
+  caption = "Độ nhạy dự báo với biến đổi log"
+)
+```
+
+Biến đổi log chỉ được chọn nếu vừa cải thiện chẩn đoán phần dư vừa mang lại
+đánh đổi dự báo phù hợp trên thang thu nhập gốc; nó không được chọn chỉ vì
+biến phản hồi lệch phải.
+
+## 3.7. Độ bất định trên tập Test cố định
+
+```{r paired-bootstrap}
+reference_model <- final_procedure_name
+reference_prediction <- predictions_primary[[reference_model]]
+
+set.seed(SEED + 10L)
+bootstrap_ids <- replicate(
+  B_TEST,
+  sample.int(length(y_test), replace = TRUE)
+)
+
+bootstrap_summary <- lapply(names(predictions_primary), function(model_name) {
+  model_prediction <- predictions_primary[[model_name]]
+  boot_values <- apply(bootstrap_ids, 2, function(ii) {
+    model_metrics <- metric_values(y_test[ii], model_prediction[ii])
+    ref_metrics <- metric_values(y_test[ii], reference_prediction[ii])
+    c(
+      RMSE = unname(model_metrics["RMSE"]),
+      MAE = unname(model_metrics["MAE"]),
+      Delta_RMSE = unname(model_metrics["RMSE"] - ref_metrics["RMSE"]),
+      Delta_MAE = unname(model_metrics["MAE"] - ref_metrics["MAE"])
+    )
+  })
+
+  tibble(
+    `Mô hình` = model_name,
+    `RMSE CI 95%` = sprintf(
+      "[%.1f; %.1f]",
+      quantile(boot_values["RMSE", ], 0.025),
+      quantile(boot_values["RMSE", ], 0.975)
+    ),
+    `MAE CI 95%` = sprintf(
+      "[%.1f; %.1f]",
+      quantile(boot_values["MAE", ], 0.025),
+      quantile(boot_values["MAE", ], 0.975)
+    ),
+    `Delta RMSE so với mô hình cuối cùng` =
+      metric_values(y_test, model_prediction)["RMSE"] -
+        metric_values(y_test, reference_prediction)["RMSE"],
+    `Delta RMSE CI 95%` = sprintf(
+      "[%.1f; %.1f]",
+      quantile(boot_values["Delta_RMSE", ], 0.025),
+      quantile(boot_values["Delta_RMSE", ], 0.975)
+    ),
+    `Delta MAE CI 95%` = sprintf(
+      "[%.1f; %.1f]",
+      quantile(boot_values["Delta_MAE", ], 0.025),
+      quantile(boot_values["Delta_MAE", ], 0.975)
+    )
+  )
+}) %>% bind_rows()
+
+knitr::kable(
+  bootstrap_summary,
+  digits = 2,
+  caption = paste0(
+    "Bootstrap ghép cặp trên Test cố định; mô hình tham chiếu: ",
+    reference_model
+  )
+)
+```
+
+Khoảng tin cậy này giữ nguyên Train, mô hình và lần chia dữ liệu. Nó
+chỉ phản ánh biến động do thành phần quan sát trong tập Test cố định.
+Biến động huấn luyện được thể hiện bằng các outer fold của nested CV.
+
+Nếu khoảng chênh RMSE chứa 0, chưa có bằng chứng rõ về khác biệt
+hiệu suất so với mô hình cuối cùng.
+
+```{r prediction-plots, fig.height=8}
+plot_models <- setdiff(names(predictions_primary), "Trung bình Train")
+prediction_plot_data <- bind_rows(lapply(plot_models, function(model_name) {
+  tibble(
+    Quan_sat = y_test,
+    Du_doan = as.numeric(predictions_primary[[model_name]]),
+    Phan_du = y_test - as.numeric(predictions_primary[[model_name]]),
+    Mo_hinh = model_name
+  )
+}))
+
+p_observed <- ggplot(prediction_plot_data, aes(Quan_sat, Du_doan)) +
+  geom_point(alpha = 0.35, size = 0.9, color = "#35618f") +
+  geom_abline(slope = 1, intercept = 0, linetype = 2, color = "#b5443c") +
+  facet_wrap(~Mo_hinh, scales = "free") +
+  theme_minimal() +
+  labs(
+    title = "Giá trị dự đoán so với quan sát",
+    x = "Quan sát", y = "Dự đoán"
+  )
+
+p_residual <- ggplot(prediction_plot_data, aes(Du_doan, Phan_du)) +
+  geom_point(alpha = 0.35, size = 0.9, color = "#35618f") +
+  geom_hline(yintercept = 0, linetype = 2, color = "#b5443c") +
+  facet_wrap(~Mo_hinh, scales = "free") +
+  theme_minimal() +
+  labs(
+    title = "Phần dư dự báo theo giá trị dự đoán",
+    x = "Dự đoán", y = "Quan sát - Dự đoán"
+  )
+
+print(p_observed)
+print(p_residual)
+```
+
+```{r subgroup-errors}
+final_test_prediction <- as.numeric(predictions_primary[[reference_model]])
+test_error_data <- test_data %>%
+  mutate(
+    Prediction = final_test_prediction,
+    Error = MonthlyIncome - Prediction,
+    AbsoluteError = abs(Error)
+  )
+
+subgroup_error <- bind_rows(
+  test_error_data %>%
+    group_by(Nhom = "Gender", Muc = as.character(Gender)) %>%
+    summarise(N = n(), Bias = mean(Error), MAE = mean(AbsoluteError), .groups = "drop"),
+  test_error_data %>%
+    group_by(Nhom = "Department", Muc = as.character(Department)) %>%
+    summarise(N = n(), Bias = mean(Error), MAE = mean(AbsoluteError), .groups = "drop"),
+  test_error_data %>%
+    group_by(Nhom = "JobLevel", Muc = as.character(JobLevel)) %>%
+    summarise(N = n(), Bias = mean(Error), MAE = mean(AbsoluteError), .groups = "drop")
+)
+
+knitr::kable(
+  subgroup_error,
+  digits = 1,
+  caption = paste0("Sai số theo nhóm của mô hình cuối cùng ", reference_model)
+)
+```
+
+Sai số nhóm chỉ là chẩn đoán dự báo. Nó không phải một kiểm định đầy đủ
+về công bằng lương, đặc biệt khi các nhóm có kích thước và cơ cấu nghề nghiệp
+khác nhau.
+
+## 3.8. Kết quả lựa chọn biến của LASSO
+
+### 3.8.1. Hệ số LASSO khác 0
+
+```{r lasso-active-coefficients}
+original_predictors <- setdiff(names(train_data), "MonthlyIncome")
+design_sd <- apply(x_train, 2, sd)
+
+extract_active_lasso <- function(rule) {
+  coef_matrix <- as.matrix(coef(cv_lasso, s = rule))
+  active_names <- rownames(coef_matrix)[coef_matrix[, 1] != 0]
+  active_names <- setdiff(active_names, "(Intercept)")
+  tibble(
+    `Quy tắc` = rule,
+    `Cột thiết kế` = active_names,
+    `Biến gốc` = vapply(
+      active_names, parent_feature,
+      original_names = original_predictors,
+      FUN.VALUE = character(1)
+    ),
+    `Hệ số thang gốc` = coef_matrix[active_names, 1],
+    `Hệ số × SD(X)` = coef_matrix[active_names, 1] * design_sd[active_names]
+  ) %>%
+    arrange(desc(abs(`Hệ số × SD(X)`)))
+}
+
+lasso_active_table <- bind_rows(
+  extract_active_lasso("lambda.min"),
+  extract_active_lasso("lambda.1se")
+)
+
+knitr::kable(
+  lasso_active_table,
+  digits = 3,
+  caption = "Các cột thiết kế được LASSO giữ lại"
+)
+```
+
+`glmnet` chọn từng cột biến giả (dummy), không nhất thiết chọn hoặc loại toàn bộ một biến
+phân loại. Hệ số thang gốc không thể so sánh trực tiếp giữa biến liên tục và
+biến giả; cột `Hệ số × SD(X)` giúp so sánh quy mô dễ hơn, nhưng vẫn chỉ
+phản ánh mối liên hệ dự báo.
+
+### 3.8.2. Kiểm tra độ ổn định bằng lấy mẫu lặp trên tập Train
+
+```{r lasso-selection-stability}
+set.seed(SEED + 20L)
+selection_counts <- setNames(integer(ncol(x_train)), colnames(x_train))
+
+for (b in seq_len(B_STABILITY)) {
+  bootstrap_train_id <- sample.int(nrow(x_train), replace = TRUE)
+  x_boot <- x_train[bootstrap_train_id, , drop = FALSE]
+  y_boot <- y_train[bootstrap_train_id]
+
+  set.seed(SEED + 100L + b)
+  cv_boot <- glmnet::cv.glmnet(
+    x_boot, y_boot,
+    alpha = 1, nfolds = 5,
+    standardize = TRUE
+  )
+  coef_boot <- as.matrix(coef(cv_boot, s = "lambda.min"))[-1, 1]
+  selection_counts <- selection_counts + as.integer(coef_boot != 0)
+}
+
+selection_stability <- tibble(
+  `Cột thiết kế` = names(selection_counts),
+  `Biến gốc` = vapply(
+    names(selection_counts), parent_feature,
+    original_names = original_predictors,
+    FUN.VALUE = character(1)
+  ),
+  `Tần suất chọn` = selection_counts / B_STABILITY,
+  `Mức ổn định` = case_when(
+    `Tần suất chọn` >= 0.70 ~ "Ổn định (>=70%)",
+    `Tần suất chọn` >= 0.40 ~ "Phụ thuộc mẫu (40–70%)",
+    TRUE ~ "Không ổn định (<40%)"
+  )
+) %>%
+  arrange(desc(`Tần suất chọn`), `Cột thiết kế`)
+
+knitr::kable(
+  selection_stability,
+  digits = 2,
+  caption = paste0(
+    "Độ ổn định LASSO lambda.min qua ", B_STABILITY,
+    " lần lấy mẫu lại từ Train"
+  )
+)
+```
+
+Tần suất này dùng cùng quy tắc `lambda.min` với LASSO trong bảng Test.
+Nó cho biết một biến được giữ lại bao nhiêu lần khi lấy mẫu Train.
+Đây là kiểm tra độ ổn định, không phải xác suất một biến
+“thực sự có tác động”. Những biến có tần suất thấp không nên được dùng để đưa
+ra khuyến nghị quản trị mạnh.
+
+
+## 3.9. Mô hình cuối cùng dùng để dự báo
+
+**Mô hình cuối cùng được chọn là Hybrid–BIC**, với công thức:
+
+$$
+\mathrm{MonthlyIncome} \sim \mathrm{JobLevel}+\mathrm{JobRole}
++\mathrm{TotalWorkingYears}.
+$$
+
+Nested CV sử dụng riêng Train đã chọn Hybrid–BIC. Mô hình nằm trong
+ngưỡng một SE và có độ phức tạp thấp nhất trong nhóm cạnh tranh.
+Kết quả Test chỉ xác nhận khả năng khái quát hóa của lựa chọn này.
+
+Hybrid–AIC có hiệu suất gần tương đương và khoảng tin cậy của chênh lệch
+RMSE chứa 0. Vì vậy, chưa có bằng chứng Hybrid–AIC kém hơn rõ ràng.
+Hybrid–BIC vẫn được ưu tiên vì dùng ít hơn một biến và dễ triển khai hơn.
+
+Ridge, LASSO và Elastic-Net **không được chọn làm mô hình cuối cùng**.
+So với Hybrid–BIC, khoảng tin cậy 95% của chênh lệch RMSE lần lượt là
+[89,4; 163,1], [0,3; 23,0] và [0,5; 23,8]. Cả ba khoảng đều nằm
+trên 0 trong lần chia dữ liệu này. Ridge kém hơn rõ rệt; LASSO và
+Elastic-Net chỉ kém hơn một khoảng nhỏ.
+
+```{r final-prediction-model}
+expected_final_terms <- c("JobLevel", "JobRole", "TotalWorkingYears")
+stopifnot(final_procedure_name %in% names(step_models))
+selected_train_model <- step_models[[final_procedure_name]]
+selected_bic_terms <- attr(terms(selected_train_model), "term.labels")
+stopifnot(setequal(selected_bic_terms, expected_final_terms))
+
+final_formula <- formula(selected_train_model)
+final_model <- lm(final_formula, data = df_model)
+final_vcov_hc3 <- sandwich::vcovHC(final_model, type = "HC3")
+final_hc3 <- lmtest::coeftest(final_model, vcov. = final_vcov_hc3)
+final_global_hc3 <- car::linearHypothesis(
+  final_model,
+  names(coef(final_model))[-1],
+  vcov. = final_vcov_hc3,
+  test = "F"
+)
+final_critical_t <- qt(0.975, df.residual(final_model))
+
+final_bp <- lmtest::bptest(final_model)
+final_reset <- lmtest::resettest(
+  final_model, power = 2:3, type = "fitted"
+)
+final_shapiro <- shapiro.test(residuals(final_model))
+
+final_design <- model.matrix(final_model)[, -1, drop = FALSE]
+final_vif <- vapply(seq_len(ncol(final_design)), function(j) {
+  auxiliary_fit <- lm(
+    final_design[, j] ~ final_design[, -j, drop = FALSE]
+  )
+  1 / (1 - summary(auxiliary_fit)$r.squared)
+}, FUN.VALUE = numeric(1))
+
+final_test_metrics <- metrics_primary %>%
+  filter(`Mô hình` == final_procedure_name) %>%
+  select(RMSE, MAE, R2)
+
+final_oof_residuals <- nested_predictions %>%
+  filter(Model == final_procedure_name) %>%
+  mutate(Residual = Actual - Prediction)
+screening_cutoff <- unname(quantile(
+  final_oof_residuals$Residual,
+  probs = 0.05
+))
+
+final_model_summary <- tibble(
+  `Nội dung` = c(
+    "Mô hình cuối cùng",
+    "Công thức",
+    "Cách chọn công thức",
+    "Dữ liệu fit mô hình triển khai",
+    "RMSE Test trước khi fit lại",
+    "MAE Test trước khi fit lại",
+    "R-squared Test trước khi fit lại",
+    "Ngưỡng phần dư ngoài-fold 5%"
+  ),
+  `Kết quả` = c(
+    final_procedure_name,
+    paste(deparse(final_formula), collapse = " "),
+    "Nested CV một-SE; Hybrid Stepwise–BIC trên Train",
+    paste0("Toàn bộ ", nrow(df_model), " quan sát"),
+    round(final_test_metrics$RMSE, 3),
+    round(final_test_metrics$MAE, 3),
+    round(final_test_metrics$R2, 4),
+    round(screening_cutoff, 3)
+  )
+)
+
+final_coefficient_table <- tibble(
+  `Hệ số` = rownames(final_hc3),
+  `Ước lượng` = final_hc3[, 1],
+  `SE HC3` = final_hc3[, 2],
+  `p-value HC3` = final_hc3[, 4],
+  `CI 2.5%` = final_hc3[, 1] - final_critical_t * final_hc3[, 2],
+  `CI 97.5%` = final_hc3[, 1] + final_critical_t * final_hc3[, 2]
+)
+
+final_diagnostic_table <- tibble(
+  `Chỉ tiêu` = c(
+    "RESET: dạng hàm",
+    "Breusch–Pagan: phương sai đồng nhất",
+    "Shapiro–Wilk: phần dư chuẩn",
+    "VIF lớn nhất",
+    "Wald HC3 tổng thể"
+  ),
+  `Kết quả` = c(
+    format_p(final_reset$p.value),
+    format_p(final_bp$p.value),
+    format_p(final_shapiro$p.value),
+    sprintf("%.3f", max(final_vif)),
+    format_p(final_global_hc3$`Pr(>F)`[2])
+  ),
+  `Kết luận` = c(
+    if (final_reset$p.value < 0.05) "Vi phạm" else "Chưa phát hiện vi phạm",
+    if (final_bp$p.value < 0.05) "Vi phạm" else "Chưa phát hiện vi phạm",
+    if (final_shapiro$p.value < 0.05) "Vi phạm" else "Chưa phát hiện vi phạm",
+    if (max(final_vif) < 5) "Đạt" else "Cần xem xét",
+    "Mô hình có ý nghĩa tổng thể"
+  )
+)
+
+knitr::kable(
+  final_model_summary,
+  caption = "Mô hình cuối cùng dùng để dự báo thu nhập"
+)
+knitr::kable(
+  final_coefficient_table,
+  digits = 3,
+  caption = "Hệ số OLS cuối cùng với suy luận HC3"
+)
+knitr::kable(
+  final_diagnostic_table,
+  caption = "Chẩn đoán đúng mô hình OLS ba biến cuối cùng"
+)
+```
+
+Mô hình cuối không vi phạm dạng hàm theo RESET và không có đa cộng
+tuyến đáng kể. Tuy nhiên, Breusch–Pagan và Shapiro–Wilk vẫn bác bỏ phương
+sai đồng nhất và phần dư chuẩn. Vì vậy, báo cáo dùng HC3 khi suy luận.
+Hai vi phạm này không làm mất giá trị dự báo điểm đã đánh giá trên Test.
+
+Mô hình fit lại dùng toàn bộ dữ liệu để ước lượng hệ số cuối cùng. Các
+chỉ số Test trong bảng thuộc phiên bản chỉ fit trên Train, nên vẫn là
+kết quả đánh giá trước khi fit lại. Không dùng dữ liệu đã fit lại để
+tính lại hiệu suất Test.
+
+Với nhân viên mới, cần cung cấp đúng ba biến và giữ nguyên các mức
+phân loại. Dự báo được tạo bằng `predict(final_model, newdata = new_employee)`.
+Kết quả chỉ là mức lương tham chiếu, không phải quyết định lương tự động.
+
+Ngưỡng sàng lọc lấy phân vị 5% của phần dư ngoài-fold trong Train.
+Nhân viên được gắn cờ khi thu nhập thực tế trừ dự báo thấp hơn ngưỡng.
+Ngưỡng kiểm soát tỷ lệ cảnh báo tham chiếu tốt hơn một MAE tùy ý.
+
+Tập Test không chọn mô hình nhưng vẫn chỉ là một mẫu đánh giá. Cần
+dữ liệu độc lập mới trước khi triển khai thực tế.
+
+
+# 4. Kết luận và đề xuất hành động
+
+## 4.1. Nhận xét tổng hợp
+
+```{r final-summary}
+stable_design_columns <- selection_stability %>%
+  filter(`Tần suất chọn` >= 0.70) %>%
+  nrow()
+
+summary_table <- tibble(
+  `Nội dung` = c(
+    "Mô hình cuối cùng dùng để dự báo",
+    "Công thức mô hình cuối cùng",
+    "Nested-CV RMSE trung bình",
+    "Nested-CV SE của RMSE",
+    "RMSE Test", "MAE Test", "Test R-squared",
+    "Ngưỡng phần dư ngoài-fold 5%",
+    "Biến được chọn bởi Hybrid–AIC",
+    "Biến được chọn bởi Hybrid–BIC",
+    "Số cột LASSO ổn định qua lấy mẫu lặp"
+  ),
+  `Kết quả` = c(
+    final_procedure_name,
+    paste(deparse(final_formula), collapse = " "),
+    round(selected_nested_row$`RMSE trung bình`, 2),
+    round(selected_nested_row$`SE của RMSE`, 2),
+    round(final_test_metrics$RMSE, 2),
+    round(final_test_metrics$MAE, 2),
+    round(final_test_metrics$R2, 4),
+    round(screening_cutoff, 2),
+    paste(attr(terms(step_hybrid_aic), "term.labels"), collapse = ", "),
+    paste(attr(terms(step_hybrid_bic), "term.labels"), collapse = ", "),
+    stable_design_columns
+  )
+)
+knitr::kable(summary_table, caption = "Tóm tắt kết quả có thể tái lập")
+```
+
+Các kết luận cuối cùng được giới hạn như sau:
+
+1. `JobLevel`, `JobRole` và kinh nghiệm cung cấp phần lớn tín hiệu liên hệ và dự báo thu
+   nhập trong bộ dữ liệu mô phỏng này. Điều đó không chứng minh thay đổi một biến
+   sẽ gây ra thay đổi lương tương ứng.
+2. OLS ba biến cuối cùng không vi phạm dạng hàm và chưa có đa cộng
+   tuyến nghiêm trọng. Phương sai thay đổi và phần dư không chuẩn vẫn tồn
+   tại, nên phần suy luận hệ số dùng HC3.
+3. Forward, Backward và Hybrid dùng AIC/BIC trên tập Train. Trong dữ liệu này, ba hướng tìm kiếm
+   hội tụ về cùng mô hình cho từng tiêu chí; BIC chọn mô hình gọn hơn AIC.
+4. Nested CV chỉ dùng Train để chọn Hybrid–BIC. Bootstrap ghép cặp chỉ
+   đo độ bất định trên Test cố định, không đo lại biến động huấn luyện.
+5. Ridge, LASSO và Elastic-Net đều có sai số Test cao hơn Hybrid–BIC.
+   Ridge kém hơn rõ rệt, còn LASSO và Elastic-Net chỉ kém hơn một khoảng
+   nhỏ. Vì vậy, ba mô hình phạt không được chọn làm mô hình cuối cùng.
+6. LASSO lựa chọn biến theo sai số kiểm định chéo và hệ số khác 0, không theo
+   p-value. Chỉ những cột có tần suất lựa chọn cao khi lấy mẫu lại mới được mô
+   tả là ổn định.
+7. Vì dữ liệu là mô phỏng và không có bộ dữ liệu độc lập khác, kết quả
+   phù hợp cho minh họa phương pháp thống kê; chưa đủ để triển khai chính sách lương
+   thực tế.
+
+## 4.2. Đề xuất hành động cho bộ phận nhân sự
+
+Kết quả phân tích không nên dừng lại ở việc chọn mô hình có RMSE thấp nhất.
+Giá trị thực tế của mô hình nằm ở khả năng hỗ trợ HR phát hiện các
+trường hợp cần xem xét và chuẩn hóa quy trình trả lương. Các hành động được đề
+xuất theo thứ tự ưu tiên như sau:
+
+### Hành động 1: Chuẩn hóa khung lương theo cấp bậc và vị trí
+
+- Xây dựng bảng lương tham chiếu theo tổ hợp `JobLevel x JobRole`, vì đây là hai nhóm
+  biến được giữ lại nhất quán bởi OLS, Stepwise và LASSO.
+- So sánh trung vị và khoảng biến động thu nhập trong cùng cấp bậc, cùng vị trí
+  thay vì so sánh trực tiếp toàn công ty.
+- Kiểm tra lại những vị trí có mức lương chồng lấn lớn giữa các cấp để xác
+  định nguyên nhân đến từ chuyên môn, trách nhiệm hay dữ liệu chưa đầy đủ.
+
+### Hành động 2: Dùng Hybrid–BIC làm công cụ sàng lọc ban đầu
+
+- Nested CV chọn Hybrid–BIC theo quy tắc một-SE và tính gọn trên Train.
+  Test xác nhận mô hình khái quát hóa tốt trên dữ liệu giữ lại.
+- Tính chênh lệch bằng thu nhập thực tế trừ thu nhập dự đoán của mô hình.
+- Ưu tiên trường hợp có phần dư thấp hơn phân vị 5% ngoài-fold của Train.
+  Đây là ngưỡng rà soát, không phải căn cứ tự động tăng lương.
+- HR cần xem thêm thành tích, lịch sử lương, trách nhiệm và dữ liệu thị
+  trường trước khi đưa ra quyết định.
+
+### Hành động 3: Kiểm tra tính nhất quán giữa các nhóm nhân viên
+
+- Theo dõi sai lệch dự báo trung bình và MAE theo các biến `Gender`, `Department` và `JobLevel`.
+- Nếu một nhóm liên tục có sai lệch âm, HR cần kiểm tra xem nhóm đó có
+  đang nhận mức lương thấp hơn khung tham chiếu hay mô hình đang thiếu biến giải thích
+  quan trọng.
+- Không dùng việc hệ số `Gender` không có ý nghĩa thống kê để khẳng định đã đạt
+  công bằng lương. Đánh giá công bằng cần xem thêm cơ cấu chức vụ, cấp bậc, kinh
+  nghiệm và khoảng tin cậy của chênh lệch.
+- Mô hình học từ lương lịch sử nên có thể tái tạo bất bình đẳng sẵn có.
+  HR phải kiểm tra sai lệch nhóm trước mọi ứng dụng thực tế.
+
+### Hành động 4: Hoàn thiện dữ liệu trước khi áp dụng thực tế
+
+- Bổ sung các biến có ý nghĩa đối với thị trường lao động như địa điểm làm
+  việc, kỹ năng chuyên môn, chứng chỉ, quy mô nhóm quản lý, mức lương thị trường và
+  kết quả đánh giá qua nhiều năm.
+- Chuẩn hóa đơn vị tiền tệ, thời điểm ghi nhận và định nghĩa các biến trước khi
+  huấn luyện lại mô hình.
+- Kiểm tra dữ liệu khuyết, dữ liệu trùng lặp và ngoại lai bằng cùng quy trình đã
+  trình bày trong báo cáo.
+
+### Hành động 5: Thử nghiệm có kiểm soát và theo dõi định kỳ
+
+- Chạy thử mô hình trên dữ liệu lương thực tế nhưng chưa sử dụng kết quả để
+  thay đổi lương ngay lập tức.
+- HR và nhóm phân tích cùng xem xét các trường hợp bị gắn cờ để đánh giá
+  tỷ lệ cảnh báo hữu ích và nguyên nhân của cảnh báo sai.
+- Theo dõi RMSE, MAE, sai lệch theo nhóm và tỷ lệ trường hợp được HR xác nhận
+  sau mỗi kỳ rà soát.
+- Đánh giá lại mô hình theo quý hoặc khi cơ cấu chức danh, khung lương hay thị
+  trường lao động thay đổi đáng kể.
+
+## 4.3. Thông điệp hành động chính
+
+**Không sử dụng mô hình để tự động quyết định mức lương.** Hãy dùng mô hình
+mà chúng ta chọn như một
+công cụ tạo mức lương tham chiếu, ưu tiên rà soát các nhân viên có thu nhập
+thấp hơn đáng kể so với dự đoán, sau đó để HR đưa ra quyết định cuối
+cùng dựa trên thông tin nghiệp vụ đầy đủ. Đây là bước hành động trực tiếp nhất
+có thể rút ra từ kết quả của báo cáo.
+
+# Phụ lục tái lập
+
+```{r reproducibility-summary}
+seed_table <- tibble(
+  `Công đoạn` = c(
+    "Chia Train/Test",
+    "Fold CV toàn Train",
+    "Nested outer folds",
+    "Nested inner folds",
+    "Bootstrap Test",
+    "Ổn định LASSO"
+  ),
+  `Seed` = c(
+    SEED,
+    SEED + 1L,
+    SEED + 30L,
+    SEED + 1001L,
+    SEED + 10L,
+    SEED + 20L
+  )
+)
+knitr::kable(seed_table, caption = "Các seed chính của báo cáo")
+sessionInfo()
+```

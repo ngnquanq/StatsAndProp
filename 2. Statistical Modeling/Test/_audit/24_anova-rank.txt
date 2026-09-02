@@ -1,0 +1,10 @@
+=== CHUNK 24 anova-rank ===
+--- header: ```{r anova-rank} 
+
+
+[BẢNG] Kiểm tra khả năng ước lượng của mô hình tương tác đầy đủ. 
+                  Chỉ tiêu Giá trị
+1  Số cột ma trận thiết kế      15
+2      Hạng thực tế (rank)      12
+3 Số hệ số bị aliased (NA)       3
+

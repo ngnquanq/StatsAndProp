@@ -1,0 +1,12 @@
+=== CHUNK 2 doc-du-lieu ===
+--- header: ```{r doc-du-lieu} 
+
+
+[BẢNG] Kích thước và cấu trúc cơ bản của bộ dữ liệu. 
+            Chỉ tiêu Giá trị
+1        Số quan sát     366
+2            Số biến      37
+3    Số họ (Family1)       1
+4     Số bộ (Order1)       1
+5 Số loài (Species1)     366
+
