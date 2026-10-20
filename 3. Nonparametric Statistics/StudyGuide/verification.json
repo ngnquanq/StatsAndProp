@@ -1,0 +1,209 @@
+{
+  "kernel_moments": {
+    "Epanechnikov": {
+      "mu2_exact": "1/5",
+      "R_exact": "3/5"
+    },
+    "Uniform": {
+      "mu2_exact": "1/3",
+      "R_exact": "1/2"
+    },
+    "Triangular": {
+      "mu2_exact": "1/6",
+      "R_exact": "2/3"
+    },
+    "Biweight": {
+      "mu2_exact": "1/7",
+      "R_exact": "5/7"
+    },
+    "Triweight": {
+      "mu2_exact": "1/9",
+      "R_exact": "350/429"
+    },
+    "Tricube": {
+      "mu2_exact": "35/243",
+      "R_exact": "175/247"
+    }
+  },
+  "derivative_table": "All seven interior derivative formulas verified symbolically; knots checked separately.",
+  "density_exercises": {
+    "Epanechnikov": 0.140625,
+    "Uniform": 0.25,
+    "Triangular": 0.125,
+    "Gaussian": 0.1485090128208607,
+    "Gaussian_derivatives": [
+      1.734723475976807e-18,
+      -0.01650306219207654
+    ],
+    "at_h_1.5": {
+      "Epanechnikov": {
+        "density": 0.1388888888888889,
+        "d1": 0.0,
+        "d2": -0.2222222222222222
+      },
+      "Uniform": {
+        "density": 0.16666666666666666,
+        "d1": 0.0,
+        "d2": 0.0
+      },
+      "Triangular": {
+        "density": 0.1111111111111111,
+        "d1": 0.0,
+        "d2": 0.0
+      },
+      "Gaussian": {
+        "density": 0.16115269339944863,
+        "d1": 3.0839528461809902e-18,
+        "d2": -0.007393736705840426
+      }
+    }
+  },
+  "normal_reference": {
+    "sample_s": 1.8257418583505538,
+    "coefficient": 1.0592238410488122,
+    "h_exact": 1.4655988707433494,
+    "h_rounded_1.06": 1.46667280586291
+  },
+  "histogram": {
+    "2": {
+      "counts": [
+        3,
+        1
+      ],
+      "CV": -0.7500000000000002
+    },
+    "4": {
+      "counts": [
+        2,
+        1,
+        0,
+        1
+      ],
+      "CV": 0.16666666666666652
+    }
+  },
+  "CV": {
+    "0.75": {
+      "integrated_square": 0.32098765432098764,
+      "loo_sum": 0.0,
+      "CV": 0.32098765432098764
+    },
+    "1.5": {
+      "integrated_square": 0.2345679012345679,
+      "loo_sum": 0.6666666666666666,
+      "CV": -0.20987654320987653
+    },
+    "Gaussian_h=0.5": {
+      "integrated_square": 0.38587166612902685,
+      "loo_sum": 0.21596386605275225,
+      "CV": 0.1699078000762746
+    },
+    "Gaussian_h=1.0": {
+      "integrated_square": 0.2508952182538697,
+      "loo_sum": 0.48394144903828673,
+      "CV": -0.23304623078441705
+    }
+  },
+  "KS_CvM_AD": {
+    "uniform": {
+      "Dplus": 0.19999999999999996,
+      "Dminus": 0.15000000000000002,
+      "D": 0.19999999999999996,
+      "u": [
+        0.1,
+        0.4,
+        0.6,
+        0.8
+      ],
+      "CvM": 0.02833333333333333,
+      "AD": 0.2043880257843087
+    },
+    "exponential": {
+      "Dplus": 0.2231301601484298,
+      "Dminus": 0.18126924692201815,
+      "D": 0.2231301601484298,
+      "u": [
+        0.18126924692201815,
+        0.3934693402873666,
+        0.6321205588285577,
+        0.7768698398515702
+      ]
+    },
+    "ties": {
+      "Dplus": 0.3,
+      "Dminus": 0.2,
+      "D": 0.3,
+      "u": [
+        0.2,
+        0.2,
+        0.7,
+        0.9
+      ]
+    }
+  },
+  "boundary": {
+    "h": 0.2,
+    "original_expectation": 0.45317311730504545,
+    "reflected_expectation": 0.9063462346100909
+  },
+  "beginner_projection": {
+    "1": {
+      "counts": [
+        8
+      ],
+      "heights": [
+        1.0
+      ],
+      "contrast": -1.0,
+      "score": -0.9583333333333334
+    },
+    "2": {
+      "counts": [
+        5,
+        3
+      ],
+      "heights": [
+        1.25,
+        0.75
+      ],
+      "contrast": -1.0625,
+      "score": -0.9791666666666666
+    },
+    "4": {
+      "counts": [
+        3,
+        2,
+        1,
+        2
+      ],
+      "heights": [
+        1.5,
+        1.0,
+        0.5,
+        1.0
+      ],
+      "contrast": -1.125,
+      "score": -0.9583333333333334
+    }
+  },
+  "root_unroot": {
+    "Y": [
+      0.6519202405202649,
+      0.9082951062292476,
+      1.1067971810589328,
+      1.2747548783981961
+    ],
+    "normalizer": 1.025
+  },
+  "checks_passed": 1374,
+  "seed": 20261009,
+  "figures": [
+    "bandwidth_risk.pdf",
+    "boundary.pdf",
+    "edf_dkw.pdf",
+    "hist_origin.pdf",
+    "kernels.pdf",
+    "projection_models.pdf",
+    "regression.pdf"
+  ]
+}

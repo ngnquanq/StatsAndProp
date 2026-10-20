@@ -1,0 +1,547 @@
+\chapter{Ngân hàng bài tập có lời giải từng bước}\label{ch:exercises}
+Các bài dưới đây là bài luyện tự biên soạn hoặc diễn giải từ dạng bài
+trong các nguồn ở thư mục môn học, không được gán số bài của sách hay
+đề thi chính thức. Dùng cùng quy ước kernel và quantile trong giáo trình.
+Làm tròn ở bước cuối; giữ phân số hoặc biểu thức chuẩn tắc càng lâu càng tốt.
+
+\section{Dạng 1: tính KDE và đạo hàm}
+\begin{exercise}[Mẫu gốc và điểm không khả vi]\label{ex:original}
+Cho $X=(1,2,4,5)$, $x=3$, $h=2$. Tính $\widehat f_2(3)$,
+$\widehat f_2'(3)$, $\widehat f_2''(3)$ với Epanechnikov, Uniform,
+Triangular và Gaussian. Giải thích nếu đạo hàm không tồn tại.
+\end{exercise}
+\begin{solution}
+\step{1. Chuẩn hóa khoảng cách và các mẫu số.}
+$n=4$, $(u_1,u_2,u_3,u_4)=(1,1/2,-1/2,-1)$.
+Các mẫu số cho mật độ, đạo hàm một và hai là
+$nh=8$, $nh^2=16$, $nh^3=32$.
+\begin{center}
+\begin{tabular}{ccccc}
+\toprule $u$ & Epanechnikov & Uniform & Triangular & Gaussian\\\midrule
+$1$ & $0$ & $1/2$ & $0$ & $\varphi(1)$\\
+$1/2$ & $9/16$ & $1/2$ & $1/2$ & $\varphi(1/2)$\\
+$-1/2$ & $9/16$ & $1/2$ & $1/2$ & $\varphi(1/2)$\\
+$-1$ & $0$ & $1/2$ & $0$ & $\varphi(1)$\\\bottomrule
+\end{tabular}
+\end{center}
+\step{2. Cộng trọng số và chia cho $nh$.}
+\[
+\widehat f_{\rm E}(3)=\frac{18/16}{8}=\boxed{\frac9{64}},\quad
+\widehat f_{\rm U}(3)=\frac{2}{8}=\boxed{\frac14},\quad
+\widehat f_{\rm T}(3)=\frac1{8}=\boxed{\frac18}.
+\]
+Với Gaussian,
+\[
+\widehat f_{\rm G}(3)=\boxed{\frac{\varphi(1)+\varphi(1/2)}4}
+\approx0.14850901.
+\]
+Uniform dùng đầu mút đóng; nếu dùng $|u|<1$, giá trị tại đúng 3 sẽ
+là $1/8$. Giá trị giới hạn quanh 3 vẫn phải kiểm tra riêng.
+
+\step{3. Gaussian: dùng trực tiếp công thức đạo hàm.}
+$K'$ lẻ, nên các cặp đối xứng triệt tiêu và $\widehat f_{\rm G}'(3)=0$.
+$K''(\pm1)=0$, $K''(\pm1/2)=-3\varphi(1/2)/4$, nên
+\[
+\widehat f_{\rm G}''(3)=\frac{-3\varphi(1/2)/2}{32}
+=\boxed{-\frac{3\varphi(1/2)}{64}}\approx-0.01650306.
+\]
+
+\step{4. Epanechnikov: xét tổng ở $3+\delta$.}
+Với $|\delta|$ đủ nhỏ, hai điểm 2 và 4 ở trong cửa sổ. Tổng kernel
+của chúng bằng $9/8-3\delta^2/8$.
+Nếu $\delta>0$, chỉ điểm 5 ở đầu ngoài đi vào cửa sổ, đóng góp
+$3\delta/4-3\delta^2/16$; nếu $\delta<0$, điểm 1 đi vào, cho
+$-3\delta/4-3\delta^2/16$. Ghép hai phía:
+\[
+\widehat f_{\rm E}(3+\delta)=\frac9{64}
++\frac3{32}|\delta|-\frac9{128}\delta^2.
+\]
+Thương sai phân từ trái tiến về $-3/32$, từ phải về $3/32$.
+Vì hai giới hạn khác nhau,
+$\boxed{\widehat f_{\rm E}'(3)\text{ không tồn tại}}$;
+đạo hàm bậc hai cổ điển cũng không tồn tại.
+Tính đối xứng của hàm không buộc đạo hàm tại tâm tồn tại: $|\delta|$
+là phản ví dụ đơn giản.
+
+\step{5. Triangular và Uniform: kiểm tra tương tự.}
+Với Triangular, hai điểm nội cho tổng 1; một điểm ở ranh giới đi vào cho
+$|\delta|/2$:
+\[
+\widehat f_{\rm T}(3+\delta)=\frac18+\frac1{16}|\delta|.
+\]
+Hai độ dốc là $-1/16$ và $1/16$, nên cả hai đạo hàm yêu cầu không tồn tại.
+Với Uniform đóng, tại 3 có bốn điểm được đếm, nhưng với
+$0<|\delta|$ đủ nhỏ chỉ còn ba điểm. Vì thế
+\[
+\lim_{\delta\to0,\,\delta\ne0}\widehat f_{\rm U}(3+\delta)=\frac3{16}
+\ne\frac14=\widehat f_{\rm U}(3).
+\]
+Hàm không liên tục tại 3, nên không có đạo hàm một hoặc hai ở đó.
+\pitfall{Không dùng giá trị $K''=-3/2$ của Epanechnikov ở điểm nối;
+không bỏ các điểm $u=\pm1$ khi kiểm tra giới hạn. Giá trị mật độ tại
+đầu mút và tính khả vi của tổng là hai câu hỏi khác nhau.}
+\end{solution}
+
+\begin{exercise}[Cùng mẫu, điểm khả vi]
+Giữ $X=(1,2,4,5)$ và $x=3$, đổi $h=3/2$. Tính ba đại lượng trên
+cho cùng bốn kernel.
+\end{exercise}
+\begin{solution}
+\step{1. Xác định điểm nội và ngoại.}
+$u=(4/3,2/3,-2/3,-4/3)$. Với các kernel compact, hai điểm ngoài
+không đóng góp, hai điểm còn lại không ở điểm nối hoặc ở 0.
+Các mẫu số là $nh=6$, $nh^2=9$, $nh^3=27/2$.
+
+\step{2. Epanechnikov.}
+$K(\pm2/3)=\frac34(1-4/9)=5/12$, nên
+\[
+\widehat f(3)=\frac{2(5/12)}6=\boxed{\frac5{36}},\quad
+\widehat f'(3)=\frac{-1+1}{9}=\boxed0,\quad
+\widehat f''(3)=\frac{-3}{27/2}=\boxed{-\frac29}.
+\]
+
+\step{3. Uniform và Triangular.}
+Uniform cho $\widehat f(3)=2(1/2)/6=\boxed{1/6}$,
+hai đạo hàm bằng 0 vì estimator hằng trong một lân cận của 3.
+Triangular cho $\widehat f(3)=2(1/3)/6=\boxed{1/9}$,
+đạo hàm một bằng $(-1+1)/9=0$, đạo hàm hai bằng 0 tại điểm này.
+
+\step{4. Gaussian.}
+Đặt $a=\varphi(4/3)$, $b=\varphi(2/3)$:
+\[
+\widehat f(3)=\boxed{\frac{a+b}{3}}\approx0.16115269,\quad
+\widehat f'(3)=\boxed0,
+\]
+\[
+\widehat f''(3)=\frac{2[(7/9)a-(5/9)b]}{27/2}
+=\boxed{\frac{4(7a-5b)}{243}}\approx-0.00739374.
+\]
+Ở đây áp dụng công thức đạo hàm hợp lệ vì tất cả đối số tránh điểm
+không khả vi. Đây không phải chứng cứ rằng Uniform ước lượng $f''$ tốt:
+đạo hàm bằng 0 chỉ phản ánh hàm hằng từng đoạn.
+\end{solution}
+
+\begin{exercise}[Biweight ở một điểm nội]
+Cho $X=(0,1,2)$, $x=1$, $h=2$, kernel Biweight.
+Tính mật độ, đạo hàm một và hai.
+\end{exercise}
+\begin{solution}
+\step{1. Lập bảng ba giá trị.}
+$u=(1/2,0,-1/2)$, mẫu số $(nh,nh^2,nh^3)=(6,12,24)$.
+\[
+K(\pm1/2)=\frac{15}{16}\left(\frac34\right)^2=\frac{135}{256},
+\qquad K(0)=\frac{15}{16}.
+\]
+\step{2. Mật độ.}
+\[
+\widehat f_2(1)=\frac{270/256+240/256}{6}
+=\boxed{\frac{85}{256}}.
+\]
+\step{3. Đạo hàm.}
+$K'$ lẻ nên tổng bằng 0. Với $K''(u)=15(3u^2-1)/4$,
+\[
+K''(\pm1/2)=-\frac{15}{16},\qquad K''(0)=-\frac{15}{4},
+\]
+\[
+\boxed{\widehat f_2'(1)=0,\qquad
+\widehat f_2''(1)=\frac{-15/16-15/4-15/16}{24}
+=-\frac{15}{64}.}
+\]
+Độ cong âm thể hiện hình dạng lõm xuống của estimator tại tâm mẫu này.
+\end{solution}
+
+\section{Dạng 2: tích phân hằng số kernel}
+\begin{exercise}[Uniform và Triangular]
+Tính trực tiếp $\mu_2(K)$ và $R(K)$ của hai kernel.
+\end{exercise}
+\begin{solution}
+\step{1. Uniform.}
+Đối xứng cho
+\[
+\mu_2=2\int_0^1u^2\frac12du=[u^3/3]_0^1=\boxed{1/3},
+\quad
+R=2\int_0^1(1/2)^2du=\boxed{1/2}.
+\]
+\step{2. Triangular.}
+Trên $[0,1]$, $K=1-u$, nên
+\[
+\mu_2=2\int_0^1(u^2-u^3)du
+=2\left(\frac13-\frac14\right)=\boxed{1/6},
+\]
+\[
+R=2\int_0^1(1-2u+u^2)du
+=2\left(1-1+\frac13\right)=\boxed{2/3}.
+\]
+Không bỏ hệ số 2 khi chuyển tích phân kernel chẵn từ $[-1,1]$ sang $[0,1]$.
+\end{solution}
+
+\begin{exercise}[Epanechnikov]
+Kiểm tra chuẩn hóa, rồi tính $\mu_2$ và $R$.
+\end{exercise}
+\begin{solution}
+\step{1. Diện tích.}
+$\int K=(3/2)\int_0^1(1-u^2)du=(3/2)(1-1/3)=1$.
+\step{2. Moment bậc hai.}
+\[
+\mu_2=\frac32\int_0^1(u^2-u^4)du
+=\frac32\left(\frac13-\frac15\right)=\boxed{\frac15}.
+\]
+\step{3. Bình phương kernel.}
+Phải bình phương cả hệ số $3/4$:
+\[
+R=\frac98\int_0^1(1-2u^2+u^4)du
+=\frac98\left(1-\frac23+\frac15\right)
+=\frac98\frac8{15}=\boxed{\frac35}.
+\]
+Hai hằng số này đi vào AMISE theo cách khác nhau: $\mu_2$ bình phương
+trong squared bias, $R$ tuyến tính trong variance.
+\end{solution}
+
+\begin{exercise}[Biweight]
+Tính $\mu_2$ và $R$ bằng khai triển đa thức.
+\end{exercise}
+\begin{solution}
+\step{1. Chuẩn hóa.}
+\[
+\int K=\frac{15}{8}\int_0^1(1-2u^2+u^4)du
+=\frac{15}{8}\frac8{15}=1.
+\]
+\step{2. Moment bậc hai.}
+\[
+\mu_2=\frac{15}{8}\int_0^1(u^2-2u^4+u^6)du
+=\frac{15}{8}\left(\frac13-\frac25+\frac17\right)
+=\frac{15}{8}\frac8{105}=\boxed{\frac17}.
+\]
+\step{3. Bình phương.}
+$(1-u^2)^4=1-4u^2+6u^4-4u^6+u^8$, nên
+\begin{align*}
+R&=\frac{225}{128}\left(1-\frac43+\frac65-\frac47+\frac19\right)\\
+&=\frac{225}{128}\frac{128}{315}=\boxed{\frac57}.
+\end{align*}
+Giữ phân số tránh sai số khi các số hạng đa thức triệt tiêu mạnh.
+\end{solution}
+
+\section{Dạng 3: bandwidth và cross-validation}
+\begin{exercise}[Bandwidth tham chiếu chuẩn]
+Với $X=(1,2,4,5)$, tính bandwidth Gaussian normal-reference.
+So sánh hệ số chính xác $(4/3)^{1/5}$ với hệ số làm tròn 1.06.
+\end{exercise}
+\begin{solution}
+\step{1. Tính độ lệch chuẩn mẫu.}
+$\overline X=3$, tổng bình phương độ lệch là 10.
+\[
+s^2=\frac{10}{4-1}=\frac{10}{3},\qquad s\approx1.82574186.
+\]
+\step{2. Tính thừa số cỡ mẫu.}
+$4^{-1/5}\approx0.75785828$. Do đó
+\[
+\boxed{h_{\rm NR}=(4/3)^{1/5}\sqrt{10/3}\,4^{-1/5}
+\approx1.46559887.}
+\]
+Dùng 1.06 cho $h\approx1.46667281$. Khác biệt là làm tròn hệ số,
+không phải phương pháp khác.
+\step{3. Nếu dùng scale bền vững.}
+Theo quantile nghịch đảo EDF, $Q_{0.25}=1$, $Q_{0.75}=4$, nên
+$\IQR=3$, $\IQR/1.34\approx2.23881>s$.
+Vậy $a=\min(s,\IQR/1.34)=s$. Quy tắc hệ số $0.9$ cho
+$0.9s4^{-1/5}\approx1.24528823$.
+\pitfall{Dùng phương sai plug-in $2.5$ thay $s^2=10/3$ làm thay đổi đáp số.
+Phải ghi rõ định nghĩa scale và quy ước quantile.}
+\end{solution}
+
+\begin{exercise}[Uniform LOOCV bằng phân số]
+Cho $X=(0,1,2)$, kernel Uniform. Tính $\widehat J(h)$ với
+$h=3/4,3/2$, rồi chọn trong hai ứng viên.
+\end{exercise}
+\begin{solution}
+\step{1. Tính tích phân bằng độ dài giao.}
+Mỗi cửa sổ dài $2h$, cao $1/(2nh)$. Hai cửa sổ cách tâm $d$ giao trên
+đoạn dài $(2h-|d|)_+$. Do đó
+\[
+\int\widehat f_h^2=\frac1{4n^2h^2}\sum_{i,j}(2h-|X_i-X_j|)_+.
+\]
+Trong chín cặp có thứ tự: ba cặp khoảng cách 0, bốn cặp khoảng cách 1,
+hai cặp khoảng cách 2.
+
+\step{2. Bandwidth $h=3/4$.}
+Tổng độ dài giao là $3(3/2)+4(1/2)=13/2$.
+Tích phân bình phương bằng $(13/2)/(36\cdot9/16)=26/81$.
+Không có quan sát khác trong khoảng cách $h$ của mỗi điểm, nên tổng
+LOO bằng 0:
+\[
+\boxed{\widehat J(3/4)=26/81\approx0.32098765.}
+\]
+
+\step{3. Bandwidth $h=3/2$.}
+Tổng độ dài giao là $3(3)+4(2)+2(1)=19$.
+Tích phân bằng $19/(36\cdot9/4)=19/81$.
+Số hàng xóm LOO lần lượt là $(1,2,1)$, nên các mật độ LOO bằng
+$(1/6,1/3,1/6)$ và tổng bằng $2/3$.
+\[
+\boxed{\widehat J(3/2)=\frac{19}{81}-\frac23\frac23
+=-\frac{17}{81}\approx-0.20987654.}
+\]
+Chọn $\boxed{h=3/2}$ trong hai ứng viên vì tiêu chuẩn nhỏ hơn.
+\pitfall{LOO đếm khoảng cách $\leq h$, còn phần tích phân bình phương
+phụ thuộc khoảng giao khi khoảng cách $<2h$. Các bài này tránh trường
+hợp khoảng cách bằng đúng $h$, nên quy ước đầu mút không đổi điểm CV.}
+\end{solution}
+
+\begin{exercise}[Gaussian LOOCV bằng tổng đôi]
+Cho $X=(0,1)$, Gaussian. Tính CV tại $h=1/2,1$.
+\end{exercise}
+\begin{solution}
+\step{1. Dùng kernel tích chập.}
+$C_K(v)=e^{-v^2/4}/(2\sqrt\pi)$. Có hai cặp đường chéo và hai cặp
+ngoài đường chéo, nên
+\[
+\int\widehat f_h^2=\frac{2C_K(0)+2C_K(1/h)}{4h}
+=\frac{1+e^{-1/(4h^2)}}{4\sqrt\pi h}.
+\]
+\step{2. Mật độ LOO.}
+Sau khi bỏ một điểm chỉ còn một điểm; mỗi giá trị LOO bằng
+$\varphi(1/h)/h$. Vì $2/n=1$, số hạng trừ là
+$2\varphi(1/h)/h$. Do đó
+\[
+\boxed{\widehat J(h)=\frac{1+e^{-1/(4h^2)}}{4\sqrt\pi h}
+-\frac{2\varphi(1/h)}h.}
+\]
+\step{3. Thế số.}
+\begin{center}
+\begin{tabular}{cccc}
+\toprule $h$ & $\int\widehat f_h^2$ & Tổng LOO & $\widehat J(h)$\\\midrule
+$1/2$ & $0.38587167$ & $0.21596387$ & $0.16990780$\\
+$1$ & $0.25089522$ & $0.48394145$ & $-0.23304623$\\\bottomrule
+\end{tabular}
+\end{center}
+Chọn $\boxed{h=1}$ trong hai ứng viên. Với mẫu rất nhỏ, quyết định chỉ
+minh họa phép tính; không cho biết bandwidth tối ưu toàn bộ miền dương.
+\end{solution}
+
+\section{Dạng 4: kiểm định KS từng bước}
+\begin{exercise}[{Mẫu trên $[0,1]$}]\label{ex:ksuniform}
+Cho $X=(0.1,0.4,0.6,0.8)$, kiểm định $H_0:X\sim U[0,1]$.
+Tính $D_n^+$, $D_n^-$, $D_n$. Dùng DKW mức 5\% để quyết định.
+\end{exercise}
+\begin{solution}
+\step{1. Sắp xếp và tính CDF null.}
+Mẫu đã sắp, $F_0(X_{(i)})=X_{(i)}$.
+\begin{center}
+\begin{tabular}{ccccc}
+\toprule $i$ & $u_i$ & $i/4-u_i$ & $u_i-(i-1)/4$\\\midrule
+1 & $0.10$ & $0.15$ & $0.10$\\
+2 & $0.40$ & $0.10$ & $0.15$\\
+3 & $0.60$ & $0.15$ & $0.10$\\
+4 & $0.80$ & $0.20$ & $0.05$\\\bottomrule
+\end{tabular}
+\end{center}
+\step{2. Lấy cực đại của hai cột sai khác.}
+\[
+\boxed{D_4^+=0.20,\quad D_4^-=0.15,\quad D_4=0.20.}
+\]
+\step{3. So với ngưỡng bảo thủ hữu hạn mẫu.}
+$\epsilon_4=\sqrt{\log40/8}\approx0.67905$.
+$0.20<0.67905$, nên không bác bỏ bằng kiểm định DKW này.
+Ngưỡng lớn phản ánh mẫu chỉ có bốn quan sát; không thể kết luận phân
+phối đều đúng vì không bác bỏ.
+
+\step{4. Kiểm tra thêm CvM và AD trên cùng mẫu.}
+Các tâm so sánh CvM lần lượt là
+\[
+(0.125,0.375,0.625,0.875).
+\]
+\[
+W_4^2=\frac1{48}+(-.025)^2+(.025)^2+(-.025)^2+(-.075)^2
+=\boxed{\frac{17}{600}\approx0.02833333}.
+\]
+AD dùng công thức log ở Chương 1 cho
+$\boxed{A_4^2\approx0.20438803}$.
+Các số này là thống kê; cần phân phối null tương ứng để đưa ra quyết định
+CvM hoặc AD, không so chúng với ngưỡng KS.
+\end{solution}
+
+\begin{exercise}[Null mũ được chỉ định đầy đủ]
+Cho $X=(0.2,0.5,1,1.5)$, kiểm định với $F_0(x)=1-e^{-x}$,
+$x\geq0$, tức tốc độ mũ cố định bằng 1. Tính KS.
+\end{exercise}
+\begin{solution}
+\step{1. Tính $u_i$.}
+\begin{center}
+\begin{tabular}{ccccc}
+\toprule $i$ & $X_{(i)}$ & $u_i$ & $i/4-u_i$ & $u_i-(i-1)/4$\\\midrule
+1 & $0.2$ & $.18126925$ & $.06873075$ & $.18126925$\\
+2 & $0.5$ & $.39346934$ & $.10653066$ & $.14346934$\\
+3 & $1.0$ & $.63212056$ & $.11787944$ & $.13212056$\\
+4 & $1.5$ & $.77686984$ & $.22313016$ & $.02686984$\\\bottomrule
+\end{tabular}
+\end{center}
+\step{2. Cực đại hai phía.}
+\[
+\boxed{D_4^+=e^{-1.5}\approx0.22313016,\quad
+D_4^-=1-e^{-0.2}\approx0.18126925,\quad D_4\approx0.22313016.}
+\]
+Nếu dùng DKW 5\%, không bác bỏ vì nhỏ hơn $0.67905$.
+Không thay tốc độ bằng $1/\overline X$ trong bài này: đề đã chỉ định
+tốc độ 1. Nếu fit tốc độ từ mẫu, cần phân phối null được hiệu chỉnh.
+\end{solution}
+
+\begin{exercise}[Dữ liệu trùng và giới hạn trái]
+Cho $X=(0.2,0.2,0.7,0.9)$, null đều trên $[0,1]$.
+Tính KS và giải thích cách xử lý bước nhảy cao $2/4$.
+\end{exercise}
+\begin{solution}
+\step{1. Viết hai cột với tất cả thứ tự thống kê.}
+Các $u_i=(.2,.2,.7,.9)$.
+\[
+\left(\frac i4-u_i\right)=(.05,.30,.05,.10),
+\quad
+\left(u_i-\frac{i-1}4\right)=(.20,-.05,.20,.15).
+\]
+Các giá trị ở thứ hạng giữa một nhóm trùng không tương ứng EDF thực
+ở một khoảng riêng, nhưng cực đại đúng vẫn được giữ: dùng thứ hạng
+cuối nhóm cho phía phải, thứ hạng đầu nhóm cho giới hạn trái.
+\step{2. Kiểm tra tại giá trị khác nhau.}
+Tại $x=.2$, $\Fhat(.2)=.5$, $\Fhat(.2-)=0$.
+Sai khác bên phải là $.5-.2=.3$, bên trái là $.2-0=.2$.
+Tại $.7$, hai sai khác là $.75-.7=.05$ và $.7-.5=.2$;
+tại $.9$, là $.1$ và $.15$. Vậy
+\[
+\boxed{D_4^+=.3,\quad D_4^-=.2,\quad D_4=.3.}
+\]
+Nếu dữ liệu trùng do làm tròn hoặc do phân phối rời rạc, mô hình quan
+sát cần được xét lại khi hiệu chỉnh mức kiểm định. Trong một mô hình
+liên tục chính xác, xác suất có các giá trị trùng đúng bằng nhau là 0.
+Phép tính thống kê vẫn xác định; diễn giải null phải phù hợp dữ liệu.
+\end{solution}
+
+\section{Bốn bài chứng minh củng cố}
+\begin{exercise}[EDF, covariance và DKW]
+Chứng minh covariance EDF khi $x<y$ bằng số đếm; tìm cỡ mẫu để băng
+DKW 95\% có nửa độ rộng không quá $0.05$.
+\end{exercise}
+\begin{solution}
+\step{1. Chia ba vùng loại trừ nhau.}
+Đặt $A_i=\1_{X_i\leq x}$, $B_i=\1_{x<X_i\leq y}$.
+Với $p=F(x)$, $q=F(y)$, $\E A_i=p$, $\E B_i=q-p$,
+và $A_iB_i=0$. Vì thế
+$\Cov(A_i,B_i)=-p(q-p)$.
+\step{2. Dùng $\1_{X_i\leq y}=A_i+B_i$.}
+\[
+\Cov(A_i,A_i+B_i)=p(1-p)-p(q-p)=p(1-q).
+\]
+Giữa quan sát khác nhau, covariance bằng 0. Chia tổng covariance cho
+$n^2$ cho $\boxed{p(1-q)/n}$.
+\step{3. Giải điều kiện độ rộng.}
+\[
+\sqrt{\frac{\log40}{2n}}\leq.05
+\iff n\geq\frac{\log40}{2(.05)^2}\approx737.77589.
+\]
+Lấy số nguyên lớn hơn hoặc bằng: $\boxed{n\geq738}$.
+Không làm tròn xuống vì cần bảo đảm bất đẳng thức.
+\end{solution}
+
+\begin{exercise}[Histogram: MISE chính xác cho mật độ tuyến tính]
+Cho $f(x)=2x$ trên $[0,1]$, $n=96$, $m=4$.
+Tính squared bias tích phân và phương sai tích phân chính xác, rồi
+so với AMISE.
+\end{exercise}
+\begin{solution}
+\step{1. Xác suất từng ô.}
+$h=1/4$ và
+\[
+p_j=\int_{(j-1)/4}^{j/4}2x\,dx
+=\frac{j^2-(j-1)^2}{16}=\frac{2j-1}{16}.
+\]
+Vì thế $p=(1,3,5,7)/16$; kỳ vọng histogram ở ô $j$ là $p_j/h=(2j-1)/4$,
+bằng $2c_j$. Bias tại $x$ là $2(c_j-x)$, chính xác vì mật độ tuyến tính.
+\step{2. Squared bias tích phân.}
+\[
+\int b^2=\sum_{j=1}^4\int_{-h/2}^{h/2}4t^2dt
+=4\frac{4h^3}{12}=\boxed{\frac1{48}}.
+\]
+\step{3. Phương sai tích phân.}
+$\sum_jp_j^2=(1+9+25+49)/256=21/64$.
+\[
+\int\Var=\frac1{96/4}\left(1-\frac{21}{64}\right)
+=\boxed{\frac{43}{1536}}.
+\]
+Tổng $\MISE=1/48+43/1536=\boxed{25/512\approx0.04882813}$.
+\step{4. So với AMISE.}
+$R(f')=4$ nên $h_*=(6/(4\cdot96))^{1/3}=1/4$.
+AMISE tại đó là $4h^2/12+1/(nh)=1/48+1/24=\boxed{1/16}$.
+AMISE khác MISE vì bỏ số hạng âm bậc $1/n$ trong variance tích phân.
+\end{solution}
+
+\begin{exercise}[AMISE và độ nhạy bandwidth]
+Với Epanechnikov, $R(f'')=1$, $n=480$, tìm $h_*$, AMISE tối ưu và
+AMISE tại $h_*/2$, $2h_*$; chứng minh tỷ số tổng quát.
+\end{exercise}
+\begin{solution}
+\step{1. Thế các hằng số kernel.}
+\[
+\AMISE(h)=\frac{(1/5)^2}{4}h^4+\frac{3/5}{480h}
+=\frac{h^4}{100}+\frac1{800h}.
+\]
+\step{2. Đạo hàm và nghiệm.}
+$4h^3/100-1/(800h^2)=0\iff h^5=1/32$, nên
+$\boxed{h_*=1/2}$. Khi đó squared bias bằng $1/1600$,
+variance bằng $1/400$, tổng $\boxed{1/320}$.
+\step{3. Hai ứng viên lệch tối ưu.}
+\[
+\AMISE(1/4)=\frac1{25600}+\frac1{200}
+=\boxed{\frac{129}{25600}},\quad
+\AMISE(1)=\frac1{100}+\frac1{800}=\boxed{\frac9{800}}.
+\]
+\step{4. Tỷ số tổng quát.}
+Viết AMISE là $Ah^4+B/(nh)$. Tại nghiệm,
+$B/(nh_*)=4Ah_*^4$. Vì vậy
+\[
+\boxed{\frac{\AMISE(ch_*)}{\AMISE(h_*)}
+=\frac{c^4Ah_*^4+4Ah_*^4/c}{5Ah_*^4}
+=\frac{c^4+4/c}{5}.}
+\]
+Đổi bandwidth nửa lần hoặc hai lần không gây thay đổi đối xứng về rủi ro,
+vì bias bình phương tăng theo lũy thừa bốn.
+\end{solution}
+
+\begin{exercise}[Contrast, Pythagoras và tái tạo tuyến tính]
+Chứng minh ba sự triệt tiêu sau: contrast có cực tiểu tại hệ số mẫu;
+hạng chéo sai số chiếu bằng 0; local linear triệt tiêu thành phần độ dốc.
+Nêu nguyên nhân khác nhau của mỗi sự triệt tiêu.
+\end{exercise}
+\begin{solution}
+\step{1. Contrast.}
+Với $g=\sum_{j\leq D}b_j\phi_j$,
+\[
+\gamma_n(g)=\sum_j(b_j^2-2b_j\widehat a_j)
+=\sum_j(b_j-\widehat a_j)^2-\sum_j\widehat a_j^2.
+\]
+Tổng bình phương cực tiểu bằng 0 khi $b_j=\widehat a_j$.
+Đó là hoàn thành bình phương, không phải một giả thiết độc lập.
+\step{2. Pythagoras.}
+$f-f_D$ có tích vô hướng 0 với mọi $\phi_j$, $j\leq D$;
+$f_D-\widehat f_D$ là tổ hợp của các hàm này. Do tuyến tính,
+$\inner{f-f_D}{f_D-\widehat f_D}=0$. Khi khai triển bình phương chuẩn,
+hạng chéo mất do \emph{trực giao trong không gian hàm}.
+\step{3. Local linear.}
+Với $w_i=k_i(S_2-S_1d_i)/\Delta$,
+\[
+\sum_iw_id_i=\frac{S_2\sum_i k_id_i-S_1\sum_i k_id_i^2}{\Delta}
+=\frac{S_2S_1-S_1S_2}{\Delta}=0.
+\]
+Taylor $r(X_i)=r(x)+r'(x)d_i+O(h^2)$;
+$r'(x)\sum_iw_id_i=0$. Đây là \emph{đẳng thức moment của trọng số},
+đúng với thiết kế cụ thể nếu $\Delta>0$.
+\step{4. Kết luận.}
+Ba thao tác cùng loại bỏ hạng nhưng lý do khác nhau: tối ưu đại số,
+trực giao hàm, và ràng buộc moment. Không viết chung một câu
+``do các biến độc lập'' cho cả ba.
+\end{solution}
+
+\section{Cách tự chấm bài}
+Một lời giải đủ cần có định nghĩa estimator, bảng đối số hoặc ô, mẫu số
+đúng, miền áp dụng, phép cộng/tích phân và kết luận.
+Với đạo hàm, kiểm tra điểm nối trước khi tính.
+Với bandwidth, ghi đây là tối ưu AMSE tại điểm, AMISE toàn cục hay CV
+trên tập ứng viên. Với kiểm định, ghi null, thống kê, ngưỡng và quyết
+định; tránh biến ``không bác bỏ'' thành ``chứng minh đúng''.

@@ -1,0 +1,156 @@
+\chapter*{Cách học và kiến thức nền}
+\addcontentsline{toc}{chapter}{Cách học và kiến thức nền}
+\section*{Lộ trình học}
+Hãy đọc phần nền này trước, rồi học Chương 1--3 theo thứ tự. Chương 4 dùng
+tích vô hướng và trực chuẩn; Chương 5 dùng thêm bình phương tối thiểu.
+Trong Chương 6, nhóm bài tính KDE chỉ cần định nghĩa, nhưng nhóm bandwidth
+cần hiểu bias--variance. Với mỗi chứng minh, tự viết lại phép đổi biến và
+kiểm tra điều kiện trước khi xem lời giải.
+
+Mục tiêu của ``phi tham số'' là không cố định mật độ hoặc hàm hồi quy trong
+một họ hữu hạn chiều như $\{N(\mu,\sigma^2)\}$. Ta vẫn có giả thiết:
+mẫu độc lập, độ trơn, miền giá đỡ, moment và mật độ thiết kế. Càng ít
+ràng buộc về hình dạng, càng cần dữ liệu để ước lượng cả một hàm.
+
+\section*{Bảng ký hiệu}
+\begin{longtable}{p{.23\textwidth}p{.70\textwidth}}
+\toprule Ký hiệu & Ý nghĩa\\\midrule\endhead
+$X_1,\ldots,X_n$ & Mẫu i.i.d. (độc lập, cùng phân phối), trừ khi ghi khác.\\
+$F(x)$, $f(x)$ & CDF $\Pp(X\leq x)$ và mật độ, nếu phân phối tuyệt đối liên tục.\\
+$\Fhat$, $\fhat$ & EDF và KDE; dấu mũ biểu thị đại lượng tính từ mẫu.\\
+$h>0$, $D$ & Băng thông hoặc độ rộng ô; số chiều mô hình phép chiếu.\\
+$p_j$, $\widehat p_j$ & Xác suất thật trong ô $B_j$; tần suất quan sát trong ô.\\
+$K$, $\mu_j(K)$ & Kernel; moment $\int u^jK(u)\,du$.\\
+$R(g)$ & $\int g(x)^2\,dx$; ở đây chữ $R$ trong $R(g)$ không phải ký hiệu rủi ro khác.\\
+$\norm{g}_2^2$ & $\int g^2$ trên miền đang xét.\\
+$\Bias$, $\Var$ & Chệch có dấu và phương sai lấy mẫu của ước lượng.\\
+$\ISE$, $\MISE$ & Sai số bình phương tích phân của một mẫu; kỳ vọng của sai số đó.\\
+$\AMSE$, $\AMISE$ & Xấp xỉ tiệm cận của MSE tại điểm và MISE toàn cục.\\
+$\varphi$, $\Phi$ & Mật độ và CDF chuẩn tắc $N(0,1)$.\\
+$r(x)$, $\sigma^2(x)$ & $\E(Y\mid X=x)$ và $\Var(Y\mid X=x)$.\\
+\bottomrule
+\end{longtable}
+
+\section*{CDF, mật độ và xác suất}
+Một CDF không giảm, liên tục phải và có giới hạn 0, 1 tại hai đầu trục số.
+Nếu $F$ tuyệt đối liên tục thì $F(x)=\int_{-\infty}^x f(t)\,dt$,
+$f\geq0$ và $\int f=1$. Khi đó
+\[
+\Pp(a<X\leq b)=F(b)-F(a)=\int_a^bf(t)\,dt.
+\]
+Mật độ là chiều cao, không phải xác suất tại điểm. Chẳng hạn mật độ đều
+trên $[0,0.1]$ cao 10 nhưng diện tích là 1. Một phân phối rời rạc có CDF
+nhưng không có mật độ theo độ đo Lebesgue; EDF luôn là phân phối rời rạc.
+
+Với một hàm $a$ khả tích, $\int a\,dF$ là kỳ vọng $\E a(X)$.
+Nếu có mật độ thì bằng $\int a(x)f(x)\,dx$; với EDF thì bằng
+$n^{-1}\sum_i a(X_i)$. Ký hiệu $dF$ do đó dùng chung cho cả liên tục và rời rạc.
+
+\section*{Biến chỉ báo và các quy tắc tính}
+Đặt $I=\1_A$. Vì $I^2=I$,
+\[
+\E I=\Pp(A)=p,\qquad \Var I=\E I^2-(\E I)^2=p(1-p).
+\]
+Với hai sự kiện $A,B$,
+$\Cov(\1_A,\1_B)=\Pp(A\cap B)-\Pp(A)\Pp(B)$.
+Tuyến tính của kỳ vọng không đòi độc lập. Ngược lại,
+\[
+\Var\left(\sum_iZ_i\right)=\sum_i\Var Z_i+
+2\sum_{i<j}\Cov(Z_i,Z_j).
+\]
+Chỉ khi các hiệp phương sai bằng 0 mới bỏ được tổng chéo.
+Với i.i.d. có phương sai hữu hạn,
+$\Var(n^{-1}\sum_iZ_i)=\Var(Z_1)/n$.
+
+\section*{Chệch, phương sai và rủi ro}
+Đặt $m=\E\widehat\theta$ và $\theta$ là giá trị thật.
+\begin{align*}
+\E(\widehat\theta-\theta)^2
+&=\E[(\widehat\theta-m)+(m-\theta)]^2\\
+&=\E(\widehat\theta-m)^2+(m-\theta)^2
+ +2(m-\theta)\E(\widehat\theta-m)\\
+&=\Var(\widehat\theta)+\Bias(\widehat\theta)^2.
+\end{align*}
+Hạng chéo bằng 0 vì $\E(\widehat\theta-m)=0$, không phải vì hai hạng
+``độc lập''. Với hàm mật độ,
+\[
+\ISE=\int(\widehat f-f)^2,\qquad
+\MISE=\E\ISE=\int\Bias(\widehat f(x))^2\,dx+
+\int\Var(\widehat f(x))\,dx.
+\]
+Tonelli cho phép đổi kỳ vọng và tích phân của hàm không âm
+$(\widehat f-f)^2$, kể cả khi tích phân vô hạn. Để tách hoặc đổi thứ tự
+những tích phân có dấu, cần điều kiện khả tích tuyệt đối.
+\intuition{Chệch đo vị trí trung bình của các ước lượng qua nhiều mẫu;
+phương sai đo mức dao động quanh vị trí đó. Một đường ước lượng rất đẹp
+trên một mẫu chưa chứng minh được rủi ro nhỏ.}
+
+\section*{Hội tụ và ký hiệu tiệm cận}
+\begin{itemize}
+\item $Z_n\xrightarrow{a.s.}Z$: ngoài một sự kiện xác suất 0, dãy giá trị
+  hội tụ. $Z_n\xrightarrow{P}Z$: với mọi $\epsilon>0$,
+  $\Pp(|Z_n-Z|>\epsilon)\to0$.
+\item $Z_n\Rightarrow Z$: hội tụ phân phối. CLT mô tả phân phối của
+  sai số sau chuẩn hóa, không nói sai số chưa chuẩn hóa giữ nguyên độ lớn.
+\item $a_n=O(b_n)$: $|a_n|\leq C|b_n|$ khi $n$ đủ lớn;
+  $a_n=o(b_n)$: $a_n/b_n\to0$; $a_n\asymp b_n$: chặn trên và dưới
+  bởi các hằng số dương.
+\item $Z_n=O_P(b_n)$: $Z_n/b_n$ bị chặn theo xác suất;
+  $Z_n=o_P(b_n)$: $Z_n/b_n\xrightarrow P0$.
+\end{itemize}
+LLN: nếu $Z_i$ i.i.d. và $\E|Z_1|<\infty$,
+$\overline Z_n\xrightarrow{a.s.}\E Z_1$.
+CLT: nếu thêm $0<\Var Z_1=\tau^2<\infty$,
+\[
+\sqrt n(\overline Z_n-\E Z_1)\Rightarrow N(0,\tau^2).
+\]
+Hội tụ điểm của $g_n(x)$ kiểm soát mỗi $x$ cố định; hội tụ đều kiểm soát
+$\sup_x|g_n(x)-g(x)|$. Không tự đổi $x$ thành một điểm phụ thuộc mẫu
+trong một kết quả chỉ có hội tụ điểm.
+
+\section*{Taylor, delta method và phép đổi biến}
+Nếu $g$ đủ trơn gần $x$,
+\[
+g(x+t)=g(x)+tg'(x)+\frac{t^2}2g''(x)+\cdots.
+\]
+Muốn tích phân phần dư trên toàn trục phải có chặn khả tích thích hợp.
+Chỉ biết $g''$ liên tục cho phần dư $o(t^2)$, không tự cho $O(t^4)$.
+Khi $u=(x-t)/h$, ta có $t=x-hu$, $dt=-h\,du$. Hai cận đảo thứ tự
+nên dấu âm mất khi viết lại tích phân từ $-\infty$ đến $\infty$.
+
+Delta method: nếu $\sqrt n(\widehat\theta-\theta)\Rightarrow N(0,\tau^2)$
+và $g$ khả vi tại $\theta$, thì khi $g'(\theta)\ne0$,
+\[
+\sqrt n[g(\widehat\theta)-g(\theta)]
+\Rightarrow N(0,[g'(\theta)]^2\tau^2).
+\]
+Nguồn gốc là khai triển $g(\widehat\theta)-g(\theta)
+=g'(\theta)(\widehat\theta-\theta)+o_P(n^{-1/2})$.
+Nếu đạo hàm bằng 0, phải xét bậc khai triển tiếp theo.
+
+\section*{Tích vô hướng và trực chuẩn}
+Trên $[0,1]$, đặt $\inner gq=\int_0^1gq$ và
+$\norm g_2^2=\inner gg$. Nếu $\inner{\phi_j}{\phi_k}=\delta_{jk}$ thì
+\[
+\norm{\sum_{j=1}^Db_j\phi_j}_2^2
+=\sum_{j,k}b_jb_k\inner{\phi_j}{\phi_k}=\sum_jb_j^2.
+\]
+Hạng chéo mất do tích phân các hàm trực giao, không do các hệ số ngẫu nhiên
+độc lập. Đây là nền tảng của Chương 4.
+
+\section*{Một phép tối ưu dùng xuyên suốt tài liệu}
+Với $A,B,\beta>0$, xét $G(h)=Ah^{2\beta}+B/(nh)$.
+\[
+G'(h)=2\beta Ah^{2\beta-1}-\frac{B}{nh^2}=0
+\quad\Longleftrightarrow\quad
+h_*^{2\beta+1}=\frac{B}{2\beta An}.
+\]
+Vì $G(h)\to\infty$ khi $h\to0$ hoặc $h\to\infty$ và nghiệm dương duy
+nhất, đây là cực tiểu toàn cục. Thế lại:
+\[
+h_*\asymp n^{-1/(2\beta+1)},\qquad
+G(h_*)\asymp n^{-2\beta/(2\beta+1)}.
+\]
+Với $\beta=1$ nhận histogram, với $\beta=2$ nhận KDE bậc hai.
+Đây là tối ưu một biểu thức xấp xỉ hoặc một chặn trên, không phải tự động
+nghiệm tối ưu chính xác của rủi ro hữu hạn mẫu.

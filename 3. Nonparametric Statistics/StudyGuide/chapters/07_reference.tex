@@ -1,0 +1,131 @@
+\chapter{Bảng tra cứu, nguồn và tái lập}\label{app:reference}
+\section{Các hằng số kernel}
+Mọi kernel compact trong bảng dùng giá đỡ $[-1,1]$ và chuẩn hóa như
+Chương 3. Với kernel Uniform có giá đỡ $[-1/2,1/2]$, các hằng số sẽ
+khác; không trộn hai cách chuẩn hóa khi dùng cùng bandwidth.
+\begin{center}
+\begin{tabular}{lcc}
+\toprule Kernel & $\mu_2(K)$ & $R(K)$\\\midrule
+Gaussian & $1$ & $1/(2\sqrt\pi)$\\
+Epanechnikov & $1/5$ & $3/5$\\
+Uniform & $1/3$ & $1/2$\\
+Triangular & $1/6$ & $2/3$\\
+Biweight & $1/7$ & $5/7$\\
+Triweight & $1/9$ & $350/429$\\
+Tricube & $35/243$ & $175/247$\\\bottomrule
+\end{tabular}
+\end{center}
+Các hằng số compact được kiểm chứng bằng tích phân đa thức chính xác
+và tích phân số độc lập. Với Gaussian dùng tích phân chuẩn tắc.
+
+\section{Bảng công thức và điều kiện tối thiểu cần nhớ}
+\begin{longtable}{p{.20\textwidth}p{.72\textwidth}}
+\toprule Chủ đề & Công thức và điều kiện\\\midrule\endhead
+EDF & $\E\Fhat(x)=F(x)$, $\Var\Fhat(x)=F(x)(1-F(x))/n$;
+mẫu i.i.d., không yêu cầu có mật độ.\\[4pt]
+DKW & $\epsilon_n=\sqrt{\log(2/\alpha)/(2n)}$; băng cắt tại 0 và 1,
+phủ đồng thời ít nhất $1-\alpha$.\\[4pt]
+Plug-in & $T(\Fhat)$; nhất quán cần tính liên tục phù hợp hoặc LLN
+và điều kiện moment của thống kê cụ thể.\\[4pt]
+KS & $D_n=\max_i\{i/n-F_0(X_{(i)}),F_0(X_{(i)})-(i-1)/n\}$;
+bảng null chuẩn dùng $F_0$ liên tục, đã chỉ định đầy đủ.\\[4pt]
+Histogram & $N_j/(nh)$; bias thường $O(h)$, variance $O(1/(nh))$;
+MISE $n^{-2/3}$ trong thiết lập trơn bậc một và phân hoạch thích hợp.\\[4pt]
+KDE & $(nh)^{-1}\sum K((x-X_i)/h)$; $K\geq0$, $\int K=1$
+đảm bảo mật độ.\\[4pt]
+Bias KDE & $h^2\mu_2f''/2+O(h^4)$ dưới điều kiện đạo hàm bậc bốn
+và moment tuyệt đối bậc bốn; không áp dụng ở biên chưa hiệu chỉnh.\\[4pt]
+AMISE KDE & $h^4\mu_2^2R(f'')/4+R(K)/(nh)$;
+cần điều kiện phần dư tích phân. $h_*\asymp n^{-1/5}$,
+MISE $O(n^{-4/5})$.\\[4pt]
+Normal reference & $(4/3)^{1/5}s n^{-1/5}$ với Gaussian và mật độ
+tham chiếu chuẩn; scale bền vững hoặc hệ số $0.9$ cần ghi riêng.\\[4pt]
+CV & $\int\widehat f_h^2-(2/n)\sum_i\widehat f_{(-i),h}(X_i)$;
+giữ $h$, estimator LOO có mẫu số $n-1$.\\[4pt]
+Phép chiếu & $\sum_{j\leq D}\widehat a_j\phi_j$;
+rủi ro bằng sai số xấp xỉ cộng tổng variance hệ số. Không tự không âm.\\[4pt]
+NW & $\sum k_iY_i/\sum k_i$; mẫu số dương, bias nội miền có
+design bias $2r'f'/f$.\\[4pt]
+Local linear & $(S_2T_0-S_1T_1)/(S_0S_2-S_1^2)$;
+ma trận không suy biến, $\sum w_i=1$, $\sum w_i(X_i-x)=0$.\\[4pt]
+Root--Unroot & $Y_j=\sqrt{(k/n)(N_j+1/4)}$;
+variance gần $k/(4n)$ trong xấp xỉ Poisson đủ tốt;
+hồi quy, lấy phần dương, bình phương và chuẩn hóa.\\[4pt]
+Nhiều chiều & Với trơn bậc hai và xử lý biên phù hợp,
+$h_*\asymp n^{-1/(4+d)}$, MISE $O(n^{-4/(4+d)})$.\\
+\bottomrule
+\end{longtable}
+
+\section{Bản đồ nguồn để đọc sâu}
+Số trang PDF tính từ 1 và có tính cả bìa; số trang in là số trong giáo
+trình. Trong các slide, số slide trùng thứ tự trang PDF của các bản hiện có.
+\begin{longtable}{p{.22\textwidth}p{.70\textwidth}}
+\toprule Nội dung & Nguồn chính\\\midrule\endhead
+EDF, plug-in, GOF & \cite{slide1}, 46 trang PDF; Wasserman Chương 2.
+EDF/hội tụ đều ở slide 10--20; plug-in 30--35; GOF 36--46.\\[4pt]
+Histogram & \cite{slide2}, slide 12--18; Wasserman Mục 6.2,
+chứng minh MISE trong phụ lục trang in 140--142, PDF 149--151.\\[4pt]
+KDE và bandwidth & \cite{slide2}, slide 19--29; Wasserman Mục 6.3,
+trang in 132--136, PDF 141--145.\\[4pt]
+Hölder và minimax & Tsybakov Mục 1.2, đặc biệt Mệnh đề 1.1--1.2
+và Định lý 1.1, trang in 4--9, PDF 15--20;
+Chương 2 cho công cụ lower bound.
+Wasserman Định lý 6.31, trang in 134--135, PDF 143--144,
+cho lower bound MISE trên lớp đạo hàm $L_2$.\\[4pt]
+Phép chiếu & \cite{projection}, slide 8--24; \cite{slide2}, slide 30--34.
+Tsybakov Mục 1.7 bổ sung nền chuỗi trực chuẩn; lưu ý phần đó chủ yếu
+xét hồi quy, không thay nguyên xi variance hồi quy bằng variance mật độ.\\[4pt]
+Hồi quy và băng & Wasserman Mục 5.4 về hồi quy cục bộ, Mục 5.7
+về băng tin cậy; trang in 89--90, PDF 99--100, nêu vấn đề mục tiêu
+làm trơn so với hàm thật. Tsybakov Mục 1.5--1.6.\\[4pt]
+Root--Unroot & Wasserman Mục 6.6, trang in 139--140, PDF 148--149.\\[4pt]
+KDE nhiều chiều & Wasserman Mục 6.5, trang in 138--139, PDF 147--148.\\
+\bottomrule
+\end{longtable}
+
+\subsection{Các điểm được làm rõ khi đối chiếu}
+\begin{enumerate}
+\item Chệch histogram và KDE cần phân biệt giá trị tại điểm, toàn miền,
+và tích phân. Không tích phân một chặn điểm hằng trên miền vô hạn.
+\item Nhân $K_4=(3-u^2)\varphi/2$ là bậc bốn theo định nghĩa moment
+của tài liệu; tên ``bậc ba'' trong một số quy ước chỉ đếm số moment
+bị triệt tiêu. Công thức moment mới là căn cứ.
+\item Hölder bậc lớn hơn 1 phải dùng đạo hàm; histogram không tự đạt
+$D^{-2\beta}$ với mọi $\beta$ chỉ vì mật độ trơn.
+\item Đồng nhất thức contrast dùng $-2\nu_n(g)$ với
+$\nu_n=P_n-P$. Dấu được suy lại từ định nghĩa, không sao chép dấu cộng
+trong phác thảo slide chiếu.
+\item Chuyển mật độ từ $[0,1]$ về $[a,b]$ cần hệ số $1/(b-a)$;
+$1/\sqrt{b-a}$ chỉ là hệ số chuẩn hóa cơ sở $L_2$.
+\item Không gán một hằng số phạt phổ quát từ ví dụ mô phỏng cho một
+định lý oracle. Phác thảo Chương 4 ghi tường minh bước tập trung được
+viện dẫn.
+\end{enumerate}
+
+\section{Tái lập bản PDF và kiểm chứng}
+Thư mục chứa \texttt{main.tex}, các chương trong \texttt{chapters/},
+bảy hình PDF trong \texttt{figures/}, script \texttt{verify\_and\_figures.py}
+và báo cáo \texttt{verification.json}.
+Chạy tại thư mục tài liệu:
+\begin{verbatim}
+python3 verify_and_figures.py
+latexmk -xelatex -interaction=nonstopmode -halt-on-error main.tex
+\end{verbatim}
+Python cần NumPy, SciPy, SymPy, Matplotlib. Trên môi trường workspace
+hiện tại, interpreter có sẵn các thư viện là
+\path{/opt/anaconda3/bin/python}; có thể thay \texttt{python3} bằng đường
+dẫn đó. XeLaTeX dùng Latin Modern, \texttt{polyglossia} và các gói trong
+preamble; không yêu cầu font thương mại hay font cài riêng từ hệ điều hành.
+Lệnh \texttt{make check} chạy cả kiểm chứng số, biên dịch và kiểm tra cấu
+trúc PDF bằng \texttt{check\_document.py}; bước cuối cần thêm PyMuPDF.
+Nếu cần chọn interpreter, dùng
+\texttt{make check PYTHON=/opt/anaconda3/bin/python}.
+
+Script dùng seed cố định, kiểm tra moment bằng đại số và tích phân số,
+kiểm tra công thức đạo hàm bên trong miền, giới hạn một phía ở bài gốc,
+CV qua công thức và tích phân độc lập, KS qua thuật toán thư viện,
+CvM/AD qua tích phân trực tiếp, và tái tạo tuyến tính ở cả hai biên.
+Các phép kiểm số không thay thế chứng minh tiệm cận hoặc lower bound.
+\intuition{Nguồn, quy ước và cách chạy là một phần của tính tái lập.
+Nếu đáp số khác phần mềm, kiểm tra chuẩn hóa kernel, quantile, mẫu số
+variance và quy ước đầu mút trước khi kết luận công thức sai.}

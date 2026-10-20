@@ -1,0 +1,85 @@
+% !TeX program = xelatex
+% Build: latexmk -xelatex -interaction=nonstopmode -halt-on-error main.tex
+\documentclass[11pt,a4paper,oneside]{report}
+\usepackage{fontspec,polyglossia}
+\setdefaultlanguage{vietnamese}
+\setotherlanguage{english}
+% Latin Modern is the Unicode counterpart of LaTeX's Computer Modern family.
+\setmainfont{lmroman10}[Extension=.otf,UprightFont=*-regular,BoldFont=*-bold,ItalicFont=*-italic,BoldItalicFont=*-bolditalic]
+\usepackage{amsmath,amsthm,unicode-math}
+\setmathfont{latinmodern-math.otf}
+\usepackage[a4paper,margin=2.5cm]{geometry}
+\usepackage{graphicx,booktabs,longtable,array,enumitem,hyperref}
+\hypersetup{hidelinks,pdftitle={Thống kê phi tham số: Giáo trình lấy gốc},pdfauthor={}}
+\graphicspath{{figures/}}
+\setcounter{tocdepth}{2}
+\setcounter{secnumdepth}{2}
+\allowdisplaybreaks[2]
+\setlength{\emergencystretch}{2em}
+\setlist{itemsep=3pt,topsep=5pt,leftmargin=*}
+\pagestyle{plain}
+\newcommand{\E}{\mathbb E}
+\newcommand{\Pp}{\mathbb P}
+\newcommand{\R}{\mathbb R}
+\newcommand{\1}{\mathbf 1}
+\newcommand{\Fhat}{\widehat F_n}
+\newcommand{\fhat}{\widehat f_h}
+\newcommand{\norm}[1]{\left\lVert #1\right\rVert}
+\newcommand{\inner}[2]{\left\langle #1,#2\right\rangle}
+\DeclareMathOperator{\Var}{Var}
+\DeclareMathOperator{\Cov}{Cov}
+\DeclareMathOperator{\Bias}{Bias}
+\DeclareMathOperator{\MSE}{MSE}
+\DeclareMathOperator{\MISE}{MISE}
+\DeclareMathOperator{\AMSE}{AMSE}
+\DeclareMathOperator{\AMISE}{AMISE}
+\DeclareMathOperator{\ISE}{ISE}
+\DeclareMathOperator{\IQR}{IQR}
+\DeclareMathOperator*{\argmin}{arg\,min}
+\newcommand{\step}[1]{\par\medskip\noindent\textbf{#1}\quad}
+\newcommand{\intuition}[1]{\par\medskip\noindent\textbf{Trực giác và ý nghĩa thực tiễn.}\ #1\par}
+\newcommand{\pitfall}[1]{\par\medskip\noindent\textbf{Lỗi dễ mắc.}\ #1\par}
+\newcommand{\source}[1]{\par\smallskip\noindent\textit{Đối chiếu nguồn: #1.}\par}
+\theoremstyle{plain}
+\newtheorem{theorem}{Định lý}[chapter]
+\newtheorem{proposition}[theorem]{Mệnh đề}
+\newtheorem{lemma}[theorem]{Bổ đề}
+\theoremstyle{definition}
+\newtheorem{definition}[theorem]{Định nghĩa}
+\newtheorem{example}[theorem]{Ví dụ}
+\newtheorem{exercise}{Bài}[chapter]
+\newenvironment{solution}{\par\noindent\textbf{Lời giải.}\ }{\par\medskip}
+\renewcommand{\proofname}{Chứng minh}
+\begin{document}
+\begin{center}
+{\Large\bfseries THỐNG KÊ PHI THAM SỐ}\\[6pt]
+{\large Giáo trình lấy gốc và luyện giải bài tập}\\[6pt]
+EDF, histogram, KDE, phép chiếu và hồi quy phi tham số
+\end{center}
+\noindent Tài liệu tự học dựa trên slide Chương 1--2 trong thư mục môn học,
+Wasserman \cite{wasserman} và Tsybakov \cite{tsybakov}.
+Các chứng minh và bài mẫu được diễn giải lại để đọc độc lập.
+Đây là tài liệu học tập; danh sách bài luyện không được coi là đề thi chính thức.
+\tableofcontents
+\input{chapters/00_nen_tang}
+\input{chapters/01_edf}
+\input{chapters/02_histogram}
+\input{chapters/03_kde}
+\input{chapters/04_projection}
+\input{chapters/05_regression}
+\input{chapters/06_exercises}
+\appendix
+\input{chapters/07_reference}
+\begin{thebibliography}{9}
+\addcontentsline{toc}{chapter}{Tài liệu tham khảo}
+\bibitem{slide1} Slide môn học, \emph{TKPTS\_Chương 1}, 46 trang PDF.
+\bibitem{slide2} Slide môn học, \emph{Chap2\_Density\_estimation (handout)}, 37 trang PDF.
+\bibitem{projection} Slide môn học, \emph{Chap2\_Density\_Estimation\_Projection\_estimator-2}, 29 trang PDF.
+\bibitem{wasserman} Larry Wasserman (2006), \emph{All of Nonparametric Statistics}, Springer.
+\bibitem{tsybakov} Alexandre B. Tsybakov (2009), \emph{Introduction to Nonparametric Estimation}, Springer.
+\bibitem{localex} Các bài tập và lời giải tại \texttt{../Exercise/}, đặc biệt
+\path{Chuong1_ECDF_BaiTap}, \path{test_loi_giai_mo_rong},
+\path{KDE_Exam_Complete_Solutions}. Đây là nguồn bài luyện phụ trợ;
+mọi công thức dùng trong giáo trình được kiểm tra lại.
+\end{thebibliography}
+\end{document}
