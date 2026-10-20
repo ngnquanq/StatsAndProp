@@ -1,0 +1,98 @@
+%==============================================================================
+%  Exercise 3 --- Thống kê nhiều chiều & cao chiều (Johnson--Wichern, Chương 4--5)
+%  Theo templates/hmmt-solution-template.tex (phong cách Harvard-MIT Math Tournament)
+%  - Chỉ trắng và đen: không màu, không khung, không tcolorbox, không đổ bóng.
+%  - Tiêu đề gọn ở giữa trang, không trang bìa, không \maketitle.
+%  - Đề bài chạy dòng ("1." / "Bài 2.1." in đậm), lời giải run-in "Lời giải:".
+%  - Đáp số cuối cùng đóng khung bằng \boxed{...}.
+%  Biên dịch: xelatex (bắt buộc, vì dùng fontspec + polyglossia + unicode-math)
+%==============================================================================
+\documentclass[11pt,a4paper]{article}
+
+% --- Ngôn ngữ và font: Latin Modern (Computer Modern) như bản HMMT gốc -------
+\usepackage{fontspec}
+\usepackage{polyglossia}
+\setdefaultlanguage{vietnamese}
+\setmainfont{lmroman10-regular.otf}[
+  BoldFont       = lmroman10-bold.otf,
+  ItalicFont     = lmroman10-italic.otf,
+  BoldItalicFont = lmroman10-bolditalic.otf
+]
+
+% --- Toán học ---------------------------------------------------------------
+\usepackage{amsmath, amssymb, amsthm}
+\usepackage{unicode-math}
+\setmathfont{latinmodern-math.otf}
+\renewcommand{\boldsymbol}[1]{\symbf{#1}}
+\allowdisplaybreaks
+
+% --- Khổ trang: lề rộng, khối chữ gọn vào giữa ------------------------------
+\usepackage[a4paper, top=2.5cm, bottom=2.5cm, left=2.7cm, right=2.7cm]{geometry}
+\usepackage{enumitem}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage[hidelinks]{hyperref}
+\setlist{itemsep=5pt, topsep=6pt, parsep=2pt, partopsep=0pt, leftmargin=1.8em}
+
+% Đoạn văn kiểu HMMT: thụt đầu dòng, KHÔNG dùng parskip (không chèn dòng trống)
+\setlength{\parindent}{1.5em}
+\setlength{\parskip}{0pt}
+\setlength{\abovedisplayskip}{5pt plus 1pt minus 2pt}
+\setlength{\belowdisplayskip}{5pt plus 1pt minus 2pt}
+\setlength{\abovedisplayshortskip}{2pt plus 1pt}
+\setlength{\belowdisplayshortskip}{2pt plus 1pt}
+
+% Chỉ số trang canh giữa chân trang, không running header
+\pagestyle{plain}
+\raggedbottom
+
+% --- Thông tin tài liệu (sửa 4 dòng này cho mỗi bài) ------------------------
+\newcommand{\coursename}{Thống kê nhiều chiều}
+\newcommand{\docdate}{\today}
+\newcommand{\doctitle}{Lời giải bài tập về nhà -- Exercise 3}
+\newcommand{\studentname}{Quang Nguyễn}
+
+% --- Đề bài / lời giải ------------------------------------------------------
+\newcounter{prob}
+\makeatletter
+% \begin{problem}            -> tự đánh số 1., 2., 3., ...
+% \begin{problem}[Bài 2.1.]  -> dùng nhãn tự đặt
+\newenvironment{problem}[1][]{%
+  \par\addvspace{14pt}\noindent\begin{minipage}{\linewidth}
+  \def\@tempa{#1}%
+  \ifx\@tempa\@empty\refstepcounter{prob}\textbf{\theprob.}\else\textbf{#1}\fi
+  \ \ignorespaces
+}{\par\end{minipage}\par\nopagebreak[4]}
+\makeatother
+
+% Lời giải: tiêu đề riêng dòng, tách rõ khỏi các ý của đề bài.
+\newenvironment{solution}{%
+  \par\medskip\noindent\textbf{Lời giải:}\par\nobreak\smallskip\noindent\ignorespaces
+}{\par}
+
+% Đáp số cuối cùng luôn đóng khung
+\newcommand{\answer}[1]{\boxed{#1}}
+
+\begin{document}
+
+%------------------------------ Tiêu đề gọn ---------------------------------
+\begin{center}
+  {\bfseries\coursename}\\
+  \docdate\\
+  \doctitle: \textbf{\studentname}
+\end{center}
+\vspace{0.5em}
+
+
+\input{formulas.tex}
+\input{chapter4.tex}
+\input{chapter5.tex}
+\medskip
+\noindent\textit{Nguồn đối chiếu đề và dữ liệu:} Johnson \& Wichern,
+\textit{Applied Multivariate Statistical Analysis}, 6th ed., trang 200--205,
+261--268; Bảng 5.1, 5.2, 5.11, 5.12 và Ví dụ 5.1, 5.3.
+\href{https://www.stat.uchicago.edu/~lekheng/courses/331/books/Johnson-Wichern%20-%20Applied%20Multivariate%20Analysis.pdf}{Bản PDF trên website University of Chicago}.
+Các file CSV, mã tính toán và hình vẽ đi kèm cho phép tái lập kết quả.
+\vfill
+\begin{center}{\small\itshape --- HẾT BÀI TẬP 3 ---}\end{center}
+\end{document}

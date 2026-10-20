@@ -1,0 +1,347 @@
+\begin{center}\textbf{Chương 4. Phân phối chuẩn nhiều chiều}\end{center}
+
+\begin{problem}[Bài 4.3.]
+Tính độc lập của các thành phần và tổ hợp tuyến tính.
+\end{problem}
+\begin{solution}
+Dữ kiện là $\boldsymbol\mu=(-3,1,4)'$ và
+\[
+\boldsymbol\Sigma=\begin{pmatrix}1&-2&0\\-2&5&0\\0&0&2\end{pmatrix}.
+\]
+Mọi vectơ ghép từ các tổ hợp tuyến tính của $\mathbf X$ đều chuẩn đồng thời.
+Do đó độc lập tương đương với ma trận hiệp phương sai chéo bằng không.
+\begin{enumerate}[label=\textbf{\alph*)}]
+\item $\operatorname{Cov}(X_1,X_2)=-2\ne0$: \textbf{không độc lập}.
+\item $\operatorname{Cov}(X_2,X_3)=0$: \textbf{độc lập}.
+\item $\operatorname{Cov}((X_1,X_2)',X_3)=(0,0)'$: \textbf{độc lập}.
+\item $\operatorname{Cov}((X_1+X_2)/2,X_3)=(0+0)/2=0$: \textbf{độc lập}.
+\item Đặt $W=X_2-\frac52X_1-X_3$. Khi đó
+\[
+\operatorname{Cov}(X_2,W)=5-\frac52(-2)-0=10\ne0,
+\]
+ nên $X_2$ và $W$ \textbf{không độc lập}.
+\end{enumerate}
+\[
+\answer{\text{Độc lập: (b), (c), (d); không độc lập: (a), (e).}}
+\]
+Lưu ý dấu trừ ở câu (e): hệ số $-5/2$ không triệt tiêu hiệp phương sai.
+\end{solution}
+
+\begin{problem}[Bài 4.4.]
+Phân phối của tổ hợp tuyến tính và lựa chọn hệ số để có tính độc lập.
+\end{problem}
+\begin{solution}
+Ở đây
+\[
+\boldsymbol\mu=(2,-3,1)',\qquad
+\boldsymbol\Sigma=\begin{pmatrix}1&1&1\\1&3&2\\1&2&2\end{pmatrix}.
+\]
+\begin{enumerate}[label=\textbf{\alph*)}]
+\item Với $\mathbf c=(3,-2,1)'$, $Y=\mathbf c'\mathbf X$ là biến chuẩn.
+Ta có
+\[
+E(Y)=3(2)-2(-3)+1=13,\qquad
+\boldsymbol\Sigma\mathbf c=(2,-1,1)',
+\]
+\[
+\operatorname{Var}(Y)=\mathbf c'\boldsymbol\Sigma\mathbf c
+=3(2)+(-2)(-1)+1=9.
+\]
+Vậy $\answer{3X_1-2X_2+X_3\sim\mathcal N(13,9)}$.
+\item Đặt $W=X_2-a_1X_1-a_2X_3$. Cặp $(X_2,W)$ chuẩn đồng thời và
+\[
+\operatorname{Cov}(X_2,W)=3-a_1-2a_2.
+\]
+Vì vậy toàn bộ nghiệm là
+\[
+\answer{\mathbf a=(3-2t,t)',\quad t\in\mathbb R.}
+\]
+Chẳng hạn, $\mathbf a=(1,1)'$ cho $X_2$ độc lập với $X_2-X_1-X_3$.
+Điều kiện đề yêu cầu là độc lập với $X_2$; không được thay bằng điều kiện
+phần dư độc lập với vectơ $(X_1,X_3)'$, vốn là một bài toán khác.
+\end{enumerate}
+\end{solution}
+
+\begin{problem}[Bài 4.5.]
+Ba phân phối có điều kiện, dùng dữ kiện của Bài 4.2, 4.3 và 4.4.
+\end{problem}
+\begin{solution}
+Công thức dùng chung cho vectơ chuẩn phân hoạch $(\mathbf U',\mathbf V')'$ là
+\[
+\mathbf U\mid\mathbf V=\mathbf v\sim\mathcal N\bigl(
+\boldsymbol\mu_U+\boldsymbol\Sigma_{UV}\boldsymbol\Sigma_{VV}^{-1}
+(\mathbf v-\boldsymbol\mu_V),\;
+\boldsymbol\Sigma_{UU}-\boldsymbol\Sigma_{UV}\boldsymbol\Sigma_{VV}^{-1}
+\boldsymbol\Sigma_{VU}\bigr).
+\]
+\begin{enumerate}[label=\textbf{\alph*)}]
+\item Bài 4.2 cho $\mu_1=0,\mu_2=2,\sigma_{11}=2,\sigma_{22}=1,\rho_{12}=1/2$.
+Do đó $\sigma_{12}=\rho_{12}\sqrt{\sigma_{11}\sigma_{22}}=1/\sqrt2$ và
+\[
+E(X_1\mid X_2=x_2)=\frac{x_2-2}{\sqrt2},\qquad
+\operatorname{Var}(X_1\mid X_2)=2-\frac12=\frac32.
+\]
+Suy ra
+\[
+\answer{X_1\mid X_2=x_2\sim\mathcal N\left(\frac{x_2-2}{\sqrt2},\frac32\right).}
+\]
+\item Trong Bài 4.3, $\mathbf V=(X_1,X_3)'$ có kỳ vọng $(-3,4)'$,
+$\boldsymbol\Sigma_{VV}=\operatorname{diag}(1,2)$ và
+$\boldsymbol\Sigma_{2V}=(-2,0)$. Vậy
+\[
+E(X_2\mid\mathbf V)=1-2(x_1+3)=-2x_1-5,\qquad
+\operatorname{Var}(X_2\mid\mathbf V)=5-4=1.
+\]
+\[
+\answer{X_2\mid(X_1=x_1,X_3=x_3)\sim\mathcal N(-2x_1-5,1).}
+\]
+\item Trong Bài 4.4, đặt $\mathbf V=(X_1,X_2)'$. Khi đó
+\[
+\boldsymbol\Sigma_{VV}=\begin{pmatrix}1&1\\1&3\end{pmatrix},\quad
+\boldsymbol\Sigma_{VV}^{-1}=\frac12\begin{pmatrix}3&-1\\-1&1\end{pmatrix},\quad
+\boldsymbol\Sigma_{3V}=(1,2).
+\]
+Hệ số hồi quy là $(1,2)\boldsymbol\Sigma_{VV}^{-1}=(1/2,1/2)$, nên
+\[
+E(X_3\mid\mathbf V)=1+\tfrac12(x_1-2)+\tfrac12(x_2+3)
+=\tfrac32+\tfrac12(x_1+x_2),
+\]
+\[
+\operatorname{Var}(X_3\mid\mathbf V)=2-(1/2,1/2)(1,2)'=\tfrac12.
+\]
+\[
+\answer{X_3\mid(X_1=x_1,X_2=x_2)\sim
+\mathcal N\left(\frac{3+x_1+x_2}{2},\frac12\right).}
+\]
+\end{enumerate}
+\end{solution}
+
+\begin{problem}[Bài 4.6.]
+Kiểm tra năm quan hệ độc lập.
+\end{problem}
+\begin{solution}
+Dữ kiện $\boldsymbol\mu=(1,-1,2)'$ và
+\[
+\boldsymbol\Sigma=\begin{pmatrix}4&0&-1\\0&5&0\\-1&0&2\end{pmatrix}.
+\]
+Dùng tính chuẩn đồng thời, ta có
+\begin{enumerate}[label=\textbf{\alph*)}]
+\item $\operatorname{Cov}(X_1,X_2)=0$: độc lập.
+\item $\operatorname{Cov}(X_1,X_3)=-1$: không độc lập.
+\item $\operatorname{Cov}(X_2,X_3)=0$: độc lập.
+\item $\operatorname{Cov}((X_1,X_3)',X_2)=(0,0)'$: độc lập.
+\item $\operatorname{Cov}(X_1,X_1+3X_2-2X_3)=4+3(0)-2(-1)=6$: không độc lập.
+\end{enumerate}
+\[
+\answer{\text{Độc lập: (a), (c), (d); không độc lập: (b), (e).}}
+\]
+\end{solution}
+
+\begin{problem}[Bài 4.7.]
+Phân phối có điều kiện từ dữ kiện Bài 4.6.
+\end{problem}
+\begin{solution}
+\begin{enumerate}[label=\textbf{\alph*)}]
+\item Ta có
+\[
+E(X_1\mid X_3=x_3)=1+\frac{-1}{2}(x_3-2)=2-\frac{x_3}{2},\qquad
+\operatorname{Var}(X_1\mid X_3)=4-\frac{(-1)^2}{2}=\frac72.
+\]
+Vậy
+\[
+\answer{X_1\mid X_3=x_3\sim\mathcal N(2-x_3/2,7/2).}
+\]
+\item Vì $X_2$ độc lập với cả vectơ $(X_1,X_3)'$, việc biết thêm $X_2=x_2$
+không thay đổi phân phối trên. Có thể kiểm tra trực tiếp:
+\[
+(0,-1)\begin{pmatrix}5&0\\0&2\end{pmatrix}^{-1}=(0,-1/2).
+\]
+Do đó
+\[
+\answer{X_1\mid(X_2=x_2,X_3=x_3)\sim\mathcal N(2-x_3/2,7/2).}
+\]
+\end{enumerate}
+\end{solution}
+
+\begin{problem}[Bài 4.16.]
+Phân phối biên và mật độ đồng thời của hai tổ hợp vectơ chuẩn độc lập.
+\end{problem}
+\begin{solution}
+Bốn vectơ $\mathbf X_j$ độc lập, cùng phân phối $\mathcal N_p(\boldsymbol\mu,\boldsymbol\Sigma)$.
+Các hệ số trong sách đều có mẫu số $4$:
+\[
+\mathbf V_1=\frac{\mathbf X_1-\mathbf X_2+\mathbf X_3-\mathbf X_4}{4},\qquad
+\mathbf V_2=\frac{\mathbf X_1+\mathbf X_2-\mathbf X_3-\mathbf X_4}{4}.
+\]
+\begin{enumerate}[label=\textbf{\alph*)}]
+\item Tổng hệ số của mỗi tổ hợp bằng $0$, tổng bình phương hệ số bằng $4/16=1/4$.
+Bởi tính độc lập giữa các quan sát,
+\[
+E(\mathbf V_k)=\mathbf0,\qquad\operatorname{Cov}(\mathbf V_k)=\frac14\boldsymbol\Sigma.
+\]
+Do tổ hợp tuyến tính của các vectơ chuẩn độc lập vẫn chuẩn,
+\[
+\answer{\mathbf V_1,\mathbf V_2\sim\mathcal N_p(\mathbf0,\boldsymbol\Sigma/4).}
+\]
+\item Hiệp phương sai chéo là
+\[
+\operatorname{Cov}(\mathbf V_1,\mathbf V_2)
+=\frac{1-1-1+1}{16}\boldsymbol\Sigma=\mathbf0.
+\]
+Vectơ ghép chuẩn đồng thời nên $\mathbf V_1\perp\!\!\!\perp\mathbf V_2$ và
+\[
+\begin{pmatrix}\mathbf V_1\\\mathbf V_2\end{pmatrix}
+\sim\mathcal N_{2p}\left(\mathbf0,
+\begin{pmatrix}\boldsymbol\Sigma/4&0\\0&\boldsymbol\Sigma/4\end{pmatrix}\right).
+\]
+Nếu $\boldsymbol\Sigma>0$, nhân hai mật độ biên thu được
+\[
+\answer{f(\mathbf v_1,\mathbf v_2)=\frac{4^p}{(2\pi)^p|\boldsymbol\Sigma|}
+\exp\{-2(\mathbf v_1'\boldsymbol\Sigma^{-1}\mathbf v_1+
+\mathbf v_2'\boldsymbol\Sigma^{-1}\mathbf v_2)\}.}
+\]
+\end{enumerate}
+\end{solution}
+
+\begin{problem}[Bài 4.17.]
+Kỳ vọng và hiệp phương sai của hai tổ hợp từ năm vectơ i.i.d.
+\end{problem}
+\begin{solution}
+Đặt $\mathbf U=(\mathbf X_1+\cdots+\mathbf X_5)/5$ và
+$\mathbf V=\mathbf X_1-\mathbf X_2+\mathbf X_3-\mathbf X_4+\mathbf X_5$.
+Không cần giả thiết chuẩn để tính các moment. Theo tính tuyến tính,
+\[
+E(\mathbf U)=\frac55\boldsymbol\mu=\boldsymbol\mu,\qquad
+E(\mathbf V)=(1-1+1-1+1)\boldsymbol\mu=\boldsymbol\mu.
+\]
+Các hiệp phương sai giữa quan sát khác nhau bằng không, vì vậy
+\[
+\answer{\operatorname{Cov}(\mathbf U)=\frac15\boldsymbol\Sigma,\qquad
+\operatorname{Cov}(\mathbf V)=5\boldsymbol\Sigma.}
+\]
+Ngoài ra,
+\[
+\answer{\operatorname{Cov}(\mathbf U,\mathbf V)
+=\frac{1-1+1-1+1}{5}\boldsymbol\Sigma=\frac15\boldsymbol\Sigma.}
+\]
+Nếu $\boldsymbol\Sigma\ne0$, hai vectơ không độc lập. Đề này không giả thiết
+chuẩn, nên không thể tự kết luận các tổ hợp có phân phối chuẩn chính xác.
+\end{solution}
+
+\begin{problem}[Bài 4.19.]
+Các phân phối mẫu khi $n=20$, $p=6$ và tổng thể chuẩn.
+\end{problem}
+\begin{solution}
+\begin{enumerate}[label=\textbf{\alph*)}]
+\item Đặt $\mathbf Z=\boldsymbol\Sigma^{-1/2}(\mathbf X_1-\boldsymbol\mu)$.
+Khi đó $\mathbf Z\sim\mathcal N_6(0,I)$, nên
+\[
+\answer{(\mathbf X_1-\boldsymbol\mu)'\boldsymbol\Sigma^{-1}
+(\mathbf X_1-\boldsymbol\mu)=\sum_{j=1}^6Z_j^2\sim\chi_6^2.}
+\]
+\item Trung bình của các vectơ chuẩn độc lập vẫn chuẩn, với hiệp phương sai
+$20\boldsymbol\Sigma/20^2=\boldsymbol\Sigma/20$. Vì vậy
+\[
+\answer{\bar{\mathbf X}\sim\mathcal N_6(\boldsymbol\mu,\boldsymbol\Sigma/20),
+\qquad\sqrt{20}(\bar{\mathbf X}-\boldsymbol\mu)\sim\mathcal N_6(0,\boldsymbol\Sigma).}
+\]
+\item Định lý phân phối mẫu chuẩn cho
+\[
+\answer{19\mathbf S\sim W_6(19,\boldsymbol\Sigma).}
+\]
+Quy ước $W_p(\nu,\boldsymbol\Sigma)$ là phân phối của
+$\sum_{i=1}^{\nu}\mathbf Z_i\mathbf Z_i'$ với $\mathbf Z_i$ độc lập,
+$\mathcal N_p(0,\boldsymbol\Sigma)$; vì thế $E(19\mathbf S)=19\boldsymbol\Sigma$.
+Ngoài ra, $\bar{\mathbf X}$ độc lập với $\mathbf S$.
+\end{enumerate}
+\end{solution}
+
+\begin{problem}[Bài 4.20.]
+Biến đổi ma trận Wishart trong Bài 4.19.
+\end{problem}
+\begin{solution}
+Viết $19\mathbf S\stackrel d=\sum_{i=1}^{19}\mathbf Z_i\mathbf Z_i'$,
+$\mathbf Z_i\sim\mathcal N_6(0,\boldsymbol\Sigma)$ độc lập. Khi đó
+\[
+\mathbf B(19\mathbf S)\mathbf B'=\sum_{i=1}^{19}
+(\mathbf B\mathbf Z_i)(\mathbf B\mathbf Z_i)',\qquad
+\mathbf B\mathbf Z_i\sim\mathcal N_2(0,\mathbf B\boldsymbol\Sigma\mathbf B').
+\]
+Cả hai ma trận $\mathbf B$ dưới đây có hạng hàng bằng $2$, nên
+\[
+\answer{\mathbf B(19\mathbf S)\mathbf B'\sim W_2(19,\mathbf B\boldsymbol\Sigma\mathbf B').}
+\]
+\begin{enumerate}[label=\textbf{\alph*)}]
+\item Với
+$\mathbf B=\begin{pmatrix}1&-1/2&-1/2&0&0&0\\0&0&0&-1/2&-1/2&1\end{pmatrix}$,
+viết ma trận tham số là $\begin{pmatrix}q_{11}&q_{12}\\q_{12}&q_{22}\end{pmatrix}$, trong đó
+\begin{align*}
+q_{11}&=\sigma_{11}+\tfrac14\sigma_{22}+\tfrac14\sigma_{33}
+-\sigma_{12}-\sigma_{13}+\tfrac12\sigma_{23},\\
+q_{22}&=\tfrac14\sigma_{44}+\tfrac14\sigma_{55}+\sigma_{66}
++\tfrac12\sigma_{45}-\sigma_{46}-\sigma_{56},\\
+q_{12}&=-\tfrac12\sigma_{14}-\tfrac12\sigma_{15}+\sigma_{16}
++\tfrac14(\sigma_{24}+\sigma_{25}+\sigma_{34}+\sigma_{35})
+-\tfrac12(\sigma_{26}+\sigma_{36}).
+\end{align*}
+\item Với
+$\mathbf B=\begin{pmatrix}1&0&0&0&0&0\\0&0&1&0&0&0\end{pmatrix}$,
+chỉ giữ các thành phần thứ nhất và thứ ba, nên
+\[
+\answer{\mathbf B(19\mathbf S)\mathbf B'\sim W_2\left(19,
+\begin{pmatrix}\sigma_{11}&\sigma_{13}\\\sigma_{13}&\sigma_{33}\end{pmatrix}\right).}
+\]
+\end{enumerate}
+\end{solution}
+
+\begin{problem}[Bài 4.21.]
+Các phân phối mẫu và xấp xỉ khi $n=60$, $p=4$, tổng thể chuẩn.
+\end{problem}
+\begin{solution}
+\begin{enumerate}[label=\textbf{\alph*)}]
+\item $\answer{\bar{\mathbf X}\sim\mathcal N_4(\boldsymbol\mu,\boldsymbol\Sigma/60)}$,
+ bởi tính chuẩn và tính độc lập của $60$ quan sát.
+\item Chuẩn hóa một quan sát như Bài 4.19 cho
+\[
+\answer{(\mathbf X_1-\boldsymbol\mu)'\boldsymbol\Sigma^{-1}
+(\mathbf X_1-\boldsymbol\mu)\sim\chi_4^2.}
+\]
+\item Vì $\sqrt{60}(\bar{\mathbf X}-\boldsymbol\mu)\sim\mathcal N_4(0,\boldsymbol\Sigma)$,
+\[
+\answer{60(\bar{\mathbf X}-\boldsymbol\mu)'\boldsymbol\Sigma^{-1}
+(\bar{\mathbf X}-\boldsymbol\mu)\sim\chi_4^2.}
+\]
+\item $\mathbf S\xrightarrow{P}\boldsymbol\Sigma$ và phép nghịch đảo liên tục
+trên các ma trận xác định dương. Theo Slutsky,
+\[
+\answer{60(\bar{\mathbf X}-\boldsymbol\mu)'\mathbf S^{-1}
+(\bar{\mathbf X}-\boldsymbol\mu)\ \dot\sim\ \chi_4^2.}
+\]
+Ký hiệu $\dot\sim$ chỉ xấp xỉ tại cỡ mẫu hiện tại; hội tụ được hiểu theo
+một dãy mẫu khi $n\to\infty$, $p=4$ cố định. Trong bài này còn có phân phối
+chính xác $T^2\sim\frac{59}{14}F_{4,56}$, thích hợp hơn khi cần hiệu chỉnh hữu hạn mẫu.
+\end{enumerate}
+\end{solution}
+
+\begin{problem}[Bài 4.22.]
+Xấp xỉ mẫu lớn với $n=75$, không giả thiết tổng thể chuẩn.
+\end{problem}
+\begin{solution}
+Giả sử mẫu i.i.d., có moment bậc hai hữu hạn, $\boldsymbol\Sigma>0$ và số chiều
+$p$ cố định, $p<75$ và $\mathbf S$ khả nghịch cho mẫu đang xét.
+Định lý giới hạn trung tâm nhiều chiều cho
+$\sqrt n(\bar{\mathbf X}-\boldsymbol\mu)\xrightarrow d\mathcal N_p(0,\boldsymbol\Sigma)$.
+\begin{enumerate}[label=\textbf{\alph*)}]
+\item Tại $n=75$,
+\[
+\answer{\bar{\mathbf X}\ \dot\sim\ \mathcal N_p(\boldsymbol\mu,\boldsymbol\Sigma/75).}
+\]
+\item Kết hợp $\mathbf S^{-1}\xrightarrow P\boldsymbol\Sigma^{-1}$ với Slutsky,
+\[
+\answer{75(\bar{\mathbf X}-\boldsymbol\mu)'\mathbf S^{-1}
+(\bar{\mathbf X}-\boldsymbol\mu)\ \dot\sim\ \chi_p^2.}
+\]
+\end{enumerate}
+Không gán $p=4$ từ bài trước: Bài 4.22 để số chiều tổng quát. Cũng không
+khẳng định phân phối $F$ chính xác hoặc Wishart vì đề không giả thiết chuẩn.
+\end{solution}

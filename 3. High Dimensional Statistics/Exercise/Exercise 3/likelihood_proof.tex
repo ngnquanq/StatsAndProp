@@ -1,0 +1,25 @@
+Đặt $\mathbf d=\bar{\mathbf x}-\boldsymbol\mu_0$ và
+$\mathbf A=\sum_i(\mathbf x_i-\bar{\mathbf x})(\mathbf x_i-\bar{\mathbf x})'=(n-1)\mathbf S$.
+Dưới mô hình không ràng buộc, ước lượng hợp lý cực đại của hiệp phương sai là
+$\widehat{\boldsymbol\Sigma}=\mathbf A/n$. Dưới $H_0$, ta có
+\[
+\widehat{\boldsymbol\Sigma}_0
+=\frac1n\sum_i(\mathbf x_i-\boldsymbol\mu_0)(\mathbf x_i-\boldsymbol\mu_0)'
+=\frac{\mathbf A+n\mathbf d\mathbf d'}n.
+\]
+Tỉ số hợp lý cực đại là
+\[
+\Lambda=\left(\frac{|\widehat{\boldsymbol\Sigma}|}
+{|\widehat{\boldsymbol\Sigma}_0|}\right)^{n/2}
+=\left(\frac{|\mathbf A|}{|\mathbf A+n\mathbf d\mathbf d'|}\right)^{n/2}.
+\]
+Theo bổ đề định thức, $|\mathbf A+n\mathbf d\mathbf d'|
+=|\mathbf A|(1+n\mathbf d'\mathbf A^{-1}\mathbf d)$, nên
+\[
+\answer{\Lambda=\left(1+\frac{T^2}{n-1}\right)^{-n/2},\qquad
+\Lambda^{2/n}=\left(1+\frac{T^2}{n-1}\right)^{-1}.}
+\]
+Vì biểu thức này giảm nghiêm ngặt theo $T^2$, bác bỏ khi $\Lambda$ nhỏ
+hoàn toàn tương đương bác bỏ khi $T^2$ lớn. Theo quy ước của sách,
+tỉ số định thức $\Lambda^{2/n}$ là Wilks' lambda; cần phân biệt
+quy ước ấy với tỉ số hợp lý $\Lambda$ đang dùng ở đây.

@@ -1,0 +1,31 @@
+\noindent\textit{Phạm vi.} Lời giải cho 22 bài được chỉ định trong Johnson--Wichern,
+\textit{Applied Multivariate Statistical Analysis}, ấn bản 6, Chương 4--5.
+Các nhãn bài theo sách; phần đề chỉ ghi tóm tắt, các phép tính và chứng minh
+được trình bày độc lập. Dữ kiện được đối chiếu với bản sách, không suy ra
+chỉ từ sự tương đồng với Exercise 1--2.
+
+\medskip
+\noindent\textbf{Quy ước và công thức dùng chung.}
+Với mẫu $\mathbf{x}_1,\ldots,\mathbf{x}_n\in\mathbb R^p$, đặt
+\[
+\bar{\mathbf{x}}=\frac1n\sum_i\mathbf{x}_i,\qquad
+\mathbf S=\frac1{n-1}\sum_i(\mathbf{x}_i-\bar{\mathbf{x}})
+(\mathbf{x}_i-\bar{\mathbf{x}})'.
+\]
+Các phân vị $F_{a,b}(q)$, $t_\nu(q)$ và $\chi_p^2(q)$ là phân vị tích lũy mức $q$.
+Với mẫu chuẩn, $\boldsymbol\Sigma>0$ và $n>p$, dưới $H_0:\boldsymbol\mu=\boldsymbol\mu_0$,
+\[
+T^2=n(\bar{\mathbf x}-\boldsymbol\mu_0)'\mathbf S^{-1}
+(\bar{\mathbf x}-\boldsymbol\mu_0),\qquad
+\frac{n-p}{p(n-1)}T^2\sim F_{p,n-p}.
+\]
+Đặt $c_T=\frac{p(n-1)}{n-p}F_{p,n-p}(1-\alpha)$. Miền tin cậy là
+$n(\bar{\mathbf x}-\boldsymbol\mu)'\mathbf S^{-1}(\bar{\mathbf x}-\boldsymbol\mu)\le c_T$.
+Khoảng đồng thời cho mọi tổ hợp tuyến tính là
+\[
+\mathbf a'\bar{\mathbf x}\pm\sqrt{c_T\mathbf a'\mathbf S\mathbf a/n}.
+\]
+Với $m$ đại lượng được chỉ định trước, Bonferroni dùng
+$t_{n-1}(1-\alpha/(2m))$ thay cho $\sqrt{c_T}$.
+Khi chỉ có giả thiết mẫu lớn và số chiều cố định, dùng $\chi_p^2(1-\alpha)$
+thay cho $c_T$; tính chính xác của phân phối $F$ đòi hỏi mẫu chuẩn.
