@@ -1,0 +1,56 @@
+\subsection{Ma trận nào mô tả quan sát, ma trận nào mô tả trung bình?}
+\label{sec:covariance_roles}
+Trước khi dựng miền tin cậy, cần biết ma trận đang đo độ phân tán của
+\emph{đại lượng nào}. Các ma trận dưới đây có cùng kích thước $p\times p$
+nhưng không có cùng vai trò.
+\begin{center}
+\small
+\begin{tabular}{L{.19\linewidth}L{.25\linewidth}L{.44\linewidth}}
+\toprule
+Ma trận & Đại lượng được mô tả & Ý nghĩa và cách sử dụng\\
+\midrule
+$\Sigma$ & Một quan sát $\mathbf X_j$ & Hiệp phương sai tổng thể;
+ mô tả đám mây quan sát, thường chưa biết.\\[3pt]
+$S$ & Ước lượng $\Sigma$ & Hiệp phương sai mẫu không chệch;
+ phản ánh độ phân tán và liên hệ giữa các cột dữ liệu.\\[3pt]
+$\Sigma/n$ & Trung bình mẫu $\Xbar$ & Hiệp phương sai thực của trung bình
+ mẫu khi các quan sát iid.\\[3pt]
+$S/n$ & Ước lượng $\Cov(\Xbar)$ & Mô tả sai số của trung bình;
+ nghịch đảo của nó tạo thước đo trong $T^2$.\\[3pt]
+$\widehat\Sigma$ & MLE của $\Sigma$ & Bằng $(n-1)S/n$, phục vụ hàm hợp
+ lý; không phải hiệp phương sai của trung bình mẫu.\\
+\bottomrule
+\end{tabular}
+\end{center}
+\nguon{Chương 4, §4.3, Result 4.11, tr.~171--172; §4.4, (4-23), tr.~174}
+
+\paragraph{Đường chéo: biến thiên của từng biến riêng.}
+$s_{ii}$ ước lượng phương sai của biến thứ $i$; $s_{ii}/n$ ước lượng
+phương sai của trung bình thành phần. Do đó sai số chuẩn là
+$\sqrt{s_{ii}/n}$. Không dùng $\sqrt{s_{ii}}$ làm sai số chuẩn của
+trung bình: nó mô tả độ phân tán của quan sát.
+
+\paragraph{Ngoài đường chéo: cách hai biến biến thiên cùng nhau.}
+$s_{ik}$ mang thông tin ghép cặp giữa hai biến. Tương quan mẫu là
+$r_{ik}=s_{ik}/\sqrt{s_{ii}s_{kk}}$. Nếu chia toàn bộ ma trận cho $n$,
+tương quan không đổi vì hệ số $1/n$ triệt tiêu ở tử và mẫu.
+Lấy nhiều quan sát giúp ước lượng trung bình chính xác hơn, nhưng không
+đồng nghĩa hai thành phần trung bình mẫu trở nên không tương quan.
+
+\paragraph{Ma trận nghịch đảo: độ lệch theo hướng nào đáng chú ý?}
+Hotelling dùng $T^2=\mathbf r'(S/n)^{-1}\mathbf r$ với
+$\mathbf r=\xbar-\vmu_0$. Phép nghịch đảo hiệu chỉnh đồng thời đơn vị,
+phương sai và hiệp phương sai. Sau khi xoay theo các vectơ riêng,
+\[
+ T^2=n\sum_{i=1}^p\frac{(\mathbf e_i'\mathbf r)^2}{\ell_i},
+ \qquad S\mathbf e_i=\ell_i\mathbf e_i.
+\]
+Độ lệch theo hướng có phương sai nhỏ $\ell_i$ bị đánh trọng số lớn hơn.
+Đó là lý do một điểm gần tâm theo khoảng cách thường vẫn có thể nằm
+ngoài elip. Nếu một trị riêng gần 0, nghịch đảo rất nhạy với sai số dữ
+liệu; nếu trị riêng bằng 0, công thức cổ điển không dùng được.
+
+\hieu{Hiệp phương sai không chỉ quyết định khoảng riêng của từng biến.
+Nó còn cho biết các \emph{cặp giá trị trung bình} nào phù hợp với nhau.
+Miền elip giữ thông tin về các hướng đó; một hình chữ nhật dựng từ hai
+khoảng thành phần chỉ đặt giới hạn riêng cho từng tọa độ.}

@@ -1,0 +1,107 @@
+\clearpage
+\section{Tự luyện: từ đọc tham số đến chọn phương pháp}
+\label{sec:practice}
+Các bài dưới đây được biên soạn để luyện theo bài giảng. Khi làm, ghi cả
+giả thiết và diễn giải kết quả, không chỉ viết một con số. Đáp án ở
+Phụ lục~\ref{app:answers}; nên làm xong mỗi nhóm rồi mới đối chiếu.
+
+\subsection{Nhóm A: tham số, tổ hợp và điều kiện}
+\begin{enumerate}[label=\textbf{Bài \arabic*.},ref=\arabic*,series=practice]
+\item Cho $\vmu=(10,20)'$,
+$\Sigma=\begin{pmatrix}4&2\\2&9\end{pmatrix}$.
+Hãy đọc trung bình, độ lệch chuẩn và tương quan; kiểm tra xác định dương;
+tính $\Sigma^{-1}$. Vì sao chỉ biết hai phương sai chưa đủ để xác định
+phân phối chuẩn hai chiều?
+
+\item Với $\mathbf X\sim\N_3(\vmu,\Sigma)$ theo
+\eqref{eq:running3d}, tìm phân phối của $(X_3,X_1)'$ và của $X_2$.
+Viết ma trận chọn cho vectơ con. Giải thích vì sao không dùng công thức
+có điều kiện ở đây.
+
+\item Vẫn dùng \eqref{eq:running3d}, đặt $Y=X_1+2X_2-X_3$.
+Tìm phân phối $Y$ bằng hai cách tính phương sai: nhân ma trận và khai triển
+hiệp phương sai. Giải thích dấu của hạng chứa $\Cov(X_1,X_3)$.
+
+\item Đặt $U=X_1+X_3$, $V=X_1-X_3$ trong cùng mô hình.
+$U,V$ có độc lập không? $X_2,U$ có độc lập không? Nếu thay yêu cầu thứ
+nhất bằng ``tìm $c$ sao cho $X_1+cX_3$ độc lập với $X_1-X_3$'', nghiệm là gì?
+
+\item Cho $Z\sim\N(0,1)$ và $W=Z^2$.
+Tính $\Cov(Z,W)$ và giải thích vì sao không suy ra độc lập.
+Một người nói ``chỉ cần mỗi biến riêng chuẩn thì không tương quan tương
+đương độc lập''. Hãy dùng phản ví dụ ở Phần~\ref{sec:linear} để bác bỏ.
+
+\item Tìm phân phối $(X_1,X_2)'\mid X_3=4$ trong
+\eqref{eq:running3d}. Viết đủ bốn khối hiệp phương sai cần dùng.
+So sánh với phân phối biên và giải thích biến nào được cập nhật.
+\end{enumerate}
+
+\subsection{Nhóm B: phân phối mẫu và Hotelling}
+\begin{enumerate}[label=\textbf{Bài \arabic*.},ref=\arabic*,resume=practice]
+\item Mẫu iid $\N_2((10,20)',\begin{pmatrix}4&3\\3&9\end{pmatrix})$
+có $n=25$. Nêu phân phối của $\Xbar$, phân phối của $24S$ và mối quan
+hệ độc lập. So sánh độ lệch chuẩn của $X_{j1}$ và $\bar X_1$.
+Nếu tổng thể không chuẩn nhưng vẫn có các moment hữu hạn, kết quả nào
+về moment còn đúng và kết quả phân phối nào không còn chính xác?
+
+\item Mẫu iid chuẩn có dữ liệu
+\[
+ \mathbf D=\begin{pmatrix}1&2\\2&1\\3&4\\4&3\\5&5\end{pmatrix}.
+\]
+Tính $\xbar,S,S^{-1}$; kiểm định $\vmu_0=(2,2)'$ mức 5\%.
+Cho $F_{2,3;0.95}\approx9.5521$.
+Tính thống kê có phân phối $F$ và viết kết luận bằng lời.
+Viết log-hợp lý của mẫu; dùng phân rã tổng tích ngoài để tìm MLE trung
+bình, rồi tìm MLE hiệp phương sai và so sánh với $S$.
+
+\item Dùng mẫu Bài 8. Đặt
+$C=\diag(100,0.1)$, $\mathbf d=(5,-2)'$.
+Tính trung bình, hiệp phương sai và vectơ giả thuyết sau biến đổi.
+Kiểm tra $T^2$ không đổi. Nếu bảng dữ liệu viết mỗi quan sát thành hàng,
+phải nhân bảng với $C$ hay $C'$ trong công thức tổng quát?
+Giải thích vì sao giá trị p và quyết định kiểm định cũng không đổi;
+đẳng thức bất biến có cần giả thiết chuẩn không?
+\end{enumerate}
+
+\subsection{Nhóm C: khoảng đồng thời, hợp lý và mẫu lớn}
+\begin{enumerate}[label=\textbf{Bài \arabic*.},ref=\arabic*,resume=practice]
+\item Với số tóm tắt $n=40$ ở \eqref{eq:intervaldata}, cần báo cáo
+$\mu_1,\mu_2,\mu_1-\mu_2,2\mu_1-\mu_2$.
+Xác định $m$, tính ước lượng và sai số chuẩn của tổ hợp cuối.
+Lập khoảng $T^2$ và Bonferroni cho tổ hợp đó.
+Cho $t_{39;1-0.05/8}\approx2.6189$.
+Có được dùng hệ số Bonferroni tính với $m=3$ cho cả bốn phát biểu không?
+Xét riêng bài toán \emph{chỉ báo cáo hai trung bình}, dùng $m=2$ và
+$t_{39;0.9875}\approx2.3313$. Dựng hình chữ nhật Bonferroni và kiểm tra
+hai điểm $P=(10.70,18.95)'$, $R=(10.80,20.60)'$ trong chữ nhật và elip.
+Nếu đổi $s_{12}$ từ 3 thành $-3$, miền nào đổi, và sai số chuẩn của
+$2\mu_1-\mu_2$ tăng hay giảm?
+
+\item Dùng Bài 8, tính $\widehat\Sigma$ và
+$\widehat\Sigma_0$ dưới giả thuyết $(2,2)'$.
+Từ định thức, tính $\lambda_W$, $\Lambda_{\mathrm{LR}}$ và $T^2$.
+Vì sao Wilks' lambda không phải luôn là giá trị p?
+
+\item Một mẫu iid từ tổng thể không chuẩn, có moment bậc hai hữu hạn,
+cho $n=100,p=2$, $\xbar=(0.2,0.1)'$, $S=I_2$.
+Với $H_0:\vmu=0$, tính kiểm định chi-bình phương xấp xỉ mức 5\% và
+khoảng thành phần đồng thời chi-bình phương. Cho
+$\chi^2_{2;0.95}=5.9915$, $z_{0.9875}=2.2414$.
+Tính thêm khoảng Bonferroni cho hai thành phần.
+Sau đó đánh giá hai phát biểu: ``$n=20,p=25$ vẫn dùng $S^{-1}$ bình thường'';
+``$n=2000,p=1900$ đủ điều kiện xấp xỉ chỉ vì $n-p=100$''.
+\end{enumerate}
+
+\subsection{Tự đánh giá trước khi xem đáp án}
+Bạn đã nắm ý chính khi có thể trả lời bằng lời:
+\begin{itemize}
+ \item Vì sao $\Sigma$ và $\Sigma/n$ xuất hiện trong hai bài toán khác nhau?
+ \item Khi nào biết một biến khác giúp giảm phương sai có điều kiện?
+ \item Tại sao $T^2$ có hệ số $n$ và phải chuyển đổi trước khi so với $F$?
+ \item Miền elip khác hình chữ nhật từ khoảng thành phần như thế nào?
+ \item Bonferroni bảo vệ danh sách nào, và ai quyết định số $m$?
+ \item Chuẩn của trung bình mẫu có nghĩa là các quan sát gốc chuẩn không?
+\end{itemize}
+Nếu tính được số nhưng chưa giải thích được các câu này, hãy đọc lại phần
+``Hiểu bằng lời'' tương ứng. Mục tiêu là chọn đúng công cụ cho câu hỏi,
+không phải chỉ nhận ra hình dáng của một công thức.

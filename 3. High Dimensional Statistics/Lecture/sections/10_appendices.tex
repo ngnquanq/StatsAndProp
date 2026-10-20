@@ -1,0 +1,515 @@
+\clearpage
+\section{Chứng minh đọc sâu}
+\label{sec:proofs}
+Phần này có thể đọc ở lượt thứ hai. Các chứng minh làm rõ vì sao công
+thức có dạng như trong mạch chính; không cần thuộc lòng từng dòng để bắt
+đầu giải bài. Những định lý nền như CLT và phân phối Hotelling được dùng
+như kết quả đã có trong giáo trình, không tuyên bố chứng minh đầy đủ ở đây.
+
+\subsection{Làm trắng và phân phối khoảng cách}
+\label{app:whitening}
+Vì $\Sigma$ đối xứng xác định dương, tồn tại phân rã phổ
+\[
+ \Sigma=QDQ',\qquad Q'Q=I,
+ \quad D=\diag(\lambda_1,\ldots,\lambda_p),\quad\lambda_i>0.
+\]
+Đặt $\Sigma^{-1/2}=QD^{-1/2}Q'$ và
+$\mathbf Z=\Sigma^{-1/2}(\mathbf X-\vmu)$.
+Theo tính chất biến đổi tuyến tính,
+\[
+ \mathbf Z\sim\N_p(0,\Sigma^{-1/2}\Sigma\Sigma^{-1/2})=\N_p(0,I).
+\]
+Các thành phần của $\mathbf Z$ chuẩn đồng thời và không tương quan, nên
+độc lập. Mặt khác,
+\[
+ (\mathbf X-\vmu)'\Sigma^{-1}(\mathbf X-\vmu)
+ =\mathbf Z'\mathbf Z=\sum_{i=1}^p Z_i^2\sim\chi^2_p.
+\]
+Đây là chứng minh Result 4.7(a). Việc lấy phân vị của phân phối vừa tìm
+cho ngay kết luận về xác suất của elipsoid.
+\nguon{Chương 4, §4.2, Result 4.7 và chứng minh, tr.~163--164}
+
+\subsection{Phân phối có điều kiện qua phần dư}
+Đặt $B=\Sigma_{12}\Sigma_{22}^{-1}$ và
+\[
+ \mathbf R=\mathbf X_1-\vmu_1-B(\mathbf X_2-\vmu_2).
+\]
+Vectơ $(\mathbf R',\mathbf X_2')'$ chuẩn vì là biến đổi tuyến tính của
+vectơ gốc. Ta tính
+\[
+ \Cov(\mathbf R,\mathbf X_2)=\Sigma_{12}-B\Sigma_{22}=0.
+\]
+Do đó $\mathbf R$ độc lập với $\mathbf X_2$.
+Hiệp phương sai phần dư là
+\begin{align*}
+ \Cov(\mathbf R)
+ &=\Sigma_{11}-B\Sigma_{21}-\Sigma_{12}B'+B\Sigma_{22}B'\\
+ &=\Sigma_{11}-\Sigma_{12}\Sigma_{22}^{-1}\Sigma_{21}.
+\end{align*}
+Ở dòng cuối ta dùng tính đối xứng của $\Sigma_{22}$.
+Khi biết $\mathbf X_2=\mathbf x_2$,
+\[
+ \mathbf X_1=\vmu_1+B(\mathbf x_2-\vmu_2)+\mathbf R.
+\]
+Phần trước $\mathbf R$ là hằng số có điều kiện, còn $\mathbf R$ vẫn giữ
+nguyên phân phối. Suy ra cả trung bình và hiệp phương sai trong
+\eqref{eq:conditionalmean}--\eqref{eq:conditionalcov}.
+\nguon{Chương 4, §4.2, chứng minh Result 4.6, tr.~161}
+
+Hiệp phương sai được giảm theo nghĩa ma trận:
+\[
+ \Sigma_{11}-\Sigma_{11\mid2}
+ =\Sigma_{12}\Sigma_{22}^{-1}\Sigma_{21}\succeq0.
+\]
+Thật vậy với mọi $\mathbf a$,
+$\mathbf a'\Sigma_{12}\Sigma_{22}^{-1}\Sigma_{21}\mathbf a\ge0$.
+Do đó phương sai của \emph{bất kỳ tổ hợp tuyến tính} của khối mục tiêu
+không tăng khi điều kiện hóa trong mô hình chuẩn này. ``Giảm theo nghĩa
+ma trận'' không có nghĩa mọi phần tử hiệp phương sai đều giảm về mặt số học.
+
+\subsection{Vì sao trung bình mẫu độc lập với \texorpdfstring{$S$}{S}?}
+\label{app:wishart}
+Viết bảng quan sát thành ma trận $D$ kích thước $n\times p$.
+Chọn ma trận trực giao $H$ kích thước $n\times n$, có hàng đầu
+$\mathbf 1'/\sqrt n$, các hàng còn lại vuông góc với $\mathbf1$.
+Đặt $Y=HD$, với các hàng được xem là vectơ quan sát mới.
+
+Hàng đầu là $\sqrt n\Xbar'$ và có trung bình $\sqrt n\vmu'$.
+Các hàng còn lại có trung bình 0. Hiệp phương sai giữa hàng $r$ và hàng
+$s$ của $Y$ là
+\[
+ \sum_{j=1}^n H_{rj}H_{sj}\Sigma
+ =\begin{cases}\Sigma,&r=s,\\0,&r\ne s.\end{cases}
+\]
+Các hàng chuẩn đồng thời, nên độc lập. Viết $\mathbf Y_r$ là chuyển vị
+của hàng $r$, ta có $\mathbf Y_2,\ldots,\mathbf Y_n$ iid $\N_p(0,\Sigma)$.
+Tính trực giao cho
+\[
+ (n-1)S=D'\left(I_n-\frac{\mathbf1\mathbf1'}n\right)D
+ =\sum_{r=2}^n\mathbf Y_r\mathbf Y_r'.
+\]
+Vế phải là Wishart với $n-1$ bậc tự do, chỉ phụ thuộc các hàng 2 đến $n$.
+Hàng đầu quyết định trung bình mẫu và độc lập với những hàng đó, nên
+$\Xbar\perp S$.
+\nguon{Khai triển bổ sung cho kết quả phân phối mẫu (4-23), Chương 4, §4.4, tr.~174}
+
+\subsection{Kiểm tra cực đại MLE bằng trị riêng}
+\label{app:mle_global}
+Nếu muốn tránh đạo hàm ma trận ở Phần~\ref{sec:mle_derivation}, có thể
+kiểm tra cực đại toàn cục bằng bất đẳng thức một biến.
+Đặt $M=A/n\succ0$ và $B=M^{1/2}\Sigma^{-1}M^{1/2}\succ0$.
+Gọi $\lambda_1,\ldots,\lambda_p$ là các trị riêng của $B$.
+Từ log-hợp lý đã đặt $\vmu=\xbar$, ta có
+\begin{align*}
+ \ell(\xbar,\Sigma)-\ell(\xbar,M)
+ &=\frac n2\bigl[\log|B|-\tr(B)+p\bigr]\\
+ &=\frac n2\sum_{i=1}^p(\log\lambda_i-\lambda_i+1)\le0.
+\end{align*}
+Dòng cuối dùng $\log u\le u-1$ với $u>0$, dấu bằng chỉ khi $u=1$.
+Cực đại đạt duy nhất khi mọi $\lambda_i=1$, tức $B=I$ vì $B$ đối xứng,
+và do đó $\Sigma=M=A/n$. Bước tìm trung bình đã bảo đảm
+$\ell(\vmu,\Sigma)\le\ell(\xbar,\Sigma)$, nên đây là cực đại đồng thời.
+\nguon{Lập luận tương đương Chương 4, §4.3, Result 4.10, tr.~170--171,
+ và Result 4.11, tr.~171--172}
+
+Nếu $A$ có hạng $r<p$, viết
+$A=U\diag(a_1,\ldots,a_r,0,\ldots,0)U'$ với $a_i>0$.
+Chọn
+\[
+ \Sigma_\varepsilon=U\diag(a_1/n,\ldots,a_r/n,
+ \varepsilon,\ldots,\varepsilon)U',\qquad\varepsilon>0.
+\]
+Khi đó $\tr(\Sigma_\varepsilon^{-1}A)=nr$ không đổi, nhưng
+$\log|\Sigma_\varepsilon|=\text{hằng số}+(p-r)\log\varepsilon
+\to-\infty$ khi $\varepsilon\downarrow0$.
+Suy ra $\ell(\xbar,\Sigma_\varepsilon)\to+\infty$.
+Không có cực đại hữu hạn trong miền hiệp phương sai xác định dương;
+ma trận suy biến $A/n$ không khắc phục vấn đề bằng cách được gọi là
+nghiệm trong mô hình không suy biến.
+
+Chứng minh bất biến của $T^2$, gồm cả giá trị p và quyết định kiểm định,
+được trình bày ngay trong Phần~\ref{sec:invariance_proof} để thuận tiện
+đọc cùng ví dụ. Không cần lặp lại chứng minh đó ở đây.
+
+\subsection{Tỷ số định thức và Wilks' lambda}
+Đặt $A=(n-1)S$ và $\mathbf r=\xbar-\vmu_0$. Tách tổng bình phương quanh
+giá trị giả thuyết:
+\begin{align*}
+ \sum_j(\mathbf x_j-\vmu_0)(\mathbf x_j-\vmu_0)'
+ &=\sum_j\bigl[(\mathbf x_j-\xbar)+\mathbf r\bigr]
+ \bigl[(\mathbf x_j-\xbar)+\mathbf r\bigr]'\\
+ &=A+n\mathbf r\mathbf r'.
+\end{align*}
+Hai hạng chéo bằng 0 vì $\sum_j(\mathbf x_j-\xbar)=0$.
+Bổ đề định thức cho cập nhật hạng một là
+\[
+ |A+\mathbf u\mathbf v'|=|A|(1+\mathbf v'A^{-1}\mathbf u).
+\]
+Lấy $\mathbf u=n\mathbf r$, $\mathbf v=\mathbf r$:
+\[
+ \frac{|A+n\mathbf r\mathbf r'|}{|A|}
+ =1+n\mathbf r'A^{-1}\mathbf r=1+\frac{T^2}{n-1}.
+\]
+Vì $n\widehat\Sigma=A$ và $n\widehat\Sigma_0=A+n\mathbf r\mathbf r'$,
+ta có
+\[
+ \frac{|\widehat\Sigma|}{|\widehat\Sigma_0|}
+ =\left(1+\frac{T^2}{n-1}\right)^{-1}.
+\]
+Để hoàn tất kết nối với hợp lý, ở MLE của mô hình chuẩn, phần mũ của hàm
+hợp lý bằng $e^{-np/2}$ ở cả hai mô hình. Hệ số $(2\pi)^{-np/2}$ cũng
+giống nhau, nên tỷ số cực đại chỉ còn
+$\Lambda_{\mathrm{LR}}=(|\widehat\Sigma|/|\widehat\Sigma_0|)^{n/2}$.
+\nguon{Chương 5, §5.3, chứng minh Result 5.1, tr.~218; phân rã tổng bình phương (4-14), tr.~169}
+
+\subsection{Hình chiếu elipsoid và khoảng đồng thời}
+\label{app:projection}
+Cho $\mathbf h=\vmu-\xbar$. Nếu $\vmu\in\mathcal C$, thì
+$\mathbf h'S^{-1}\mathbf h\le c_T^2/n$.
+Viết
+\[
+ \mathbf a'\mathbf h=(S^{1/2}\mathbf a)'(S^{-1/2}\mathbf h).
+\]
+Bất đẳng thức Cauchy--Schwarz cho
+\begin{align*}
+ |\mathbf a'\mathbf h|
+ &\le\sqrt{\mathbf a'S\mathbf a}
+ \sqrt{\mathbf h'S^{-1}\mathbf h}\\
+ &\le\sqrt{c_T^2}\sqrt{\mathbf a'S\mathbf a/n}.
+\end{align*}
+Đây chính là hai đầu khoảng \eqref{eq:t2interval}. Với $\mathbf a\ne0$,
+dấu bằng đạt tại
+\[
+ \mathbf h=\pm\sqrt{\frac{c_T^2}{n}}
+ \frac{S\mathbf a}{\sqrt{\mathbf a'S\mathbf a}}.
+\]
+Vì thế khoảng là hình chiếu \emph{chính xác} của elipsoid, không phải
+một xấp xỉ về hình học.
+
+Theo chiều ngược lại, nếu khoảng phủ cho mọi $\mathbf a$, chọn
+$\mathbf a=S^{-1}\mathbf h$ để suy ra
+$\mathbf h'S^{-1}\mathbf h\le c_T^2/n$ (trường hợp $\mathbf h=0$ hiển nhiên).
+Do đó biến cố ``mọi khoảng đều phủ'' tương đương ``elipsoid phủ vectơ
+trung bình'', có xác suất $1-\alpha$ dưới mô hình chuẩn.
+\nguon{Chương 5, §5.4, (5-23) và Result 5.3, tr.~225; Supplement 5A về hình chiếu}
+
+\subsection{Bonferroni và Slutsky: hai kiểu bảo đảm khác nhau}
+Cho $C_j$ là biến cố khoảng thứ $j$ phủ đúng. Với mọi kết quả ngẫu nhiên,
+\[
+ \mathbf1_{\cup_j C_j^c}\le\sum_j\mathbf1_{C_j^c}.
+\]
+Lấy kỳ vọng và phần bù:
+\[
+ \Prob\left(\bigcap_j C_j\right)
+ =1-\Prob\left(\bigcup_j C_j^c\right)
+ \ge1-\sum_j\Prob(C_j^c).
+\]
+Nếu mỗi khoảng có xác suất sai $\alpha/m$, cả nhóm có xác suất phủ
+ít nhất $1-\alpha$. Bất đẳng thức luôn đúng; việc xác suất sai của từng
+khoảng có \emph{đúng} bằng $\alpha/m$ hay chỉ xấp xỉ tùy vào phương pháp
+dựng khoảng và mô hình.
+\nguon{Chương 5, §5.4, (5-28), tr.~232}
+
+Với Slutsky, đặt $\mathbf Z_n=\sqrt n(\Xbar-\vmu)$.
+CLT cho $\mathbf Z_n\xrightarrow{d}\mathbf Z\sim\N_p(0,\Sigma)$.
+Luật số lớn và tính liên tục của phép nghịch đảo tại ma trận xác định
+dương cho $S^{-1}\xrightarrow{P}\Sigma^{-1}$.
+Slutsky và phép ánh xạ liên tục dẫn đến
+\[
+ \mathbf Z_n'S^{-1}\mathbf Z_n\xrightarrow{d}
+ \mathbf Z'\Sigma^{-1}\mathbf Z\sim\chi^2_p.
+\]
+Không cần $\Xbar$ và $S$ độc lập ở mẫu hữu hạn cho lập luận giới hạn này.
+Đây là một lý do suy diễn mẫu lớn có thể vượt ra ngoài tổng thể chuẩn.
+\nguon{Diễn giải bổ sung cho Chương 4, §4.5, (4-28), tr.~176}
+
+\clearpage
+\section{Đáp án và lời giải ngắn cho bài tự luyện}
+\label{app:answers}
+\subsection*{Bài 1--3: đọc tham số và biến đổi}
+\noindent\textbf{Bài 1.}
+Trung bình là 10 và 20; độ lệch chuẩn là 2 và 3; tương quan
+$2/(2\cdot3)=1/3$. $|\Sigma|=36-4=32>0$, $\sigma_{11}>0$, nên
+xác định dương. Nghịch đảo là
+$\frac1{32}\begin{pmatrix}9&-2\\-2&4\end{pmatrix}$.
+Các phương sai không cho biết hiệp phương sai ngoài đường chéo; thiếu
+nó, hướng và độ dài các trục elip chưa được xác định.
+
+\noindent\textbf{Bài 2.}
+Ma trận chọn $A=\begin{pmatrix}0&0&1\\1&0&0\end{pmatrix}$, nên
+\[
+ (X_3,X_1)'\sim\N_2\left((2,1)',
+ \begin{pmatrix}2&-1\\-1&4\end{pmatrix}\right),\qquad
+ X_2\sim\N(-1,5).
+\]
+Không biết giá trị biến nào khác, nên đây là phân phối biên.
+
+\noindent\textbf{Bài 3.}
+$\mathbf a=(1,2,-1)'$, $\mathbf a'\vmu=-3$ và
+$\Sigma\mathbf a=(5,10,-3)'$, do đó phương sai $5+20+3=28$.
+Cách khai triển: $4+4\cdot5+2+2(1)(-1)(-1)=28$.
+Hạng chéo là dương vì hệ số của $X_3$ âm và hiệp phương sai với $X_1$
+cũng âm. Vậy $Y\sim\N(-3,28)$.
+
+\subsection*{Bài 4--6: độc lập và điều kiện}
+\noindent\textbf{Bài 4.}
+$\Cov(U,V)=\Var(X_1)-\Var(X_3)=2\ne0$: không độc lập.
+$\Cov(X_2,U)=0+0=0$: độc lập nhờ chuẩn đồng thời.
+Với $U_c=X_1+cX_3$,
+\[
+ \Cov(U_c,V)=4-(-1)+c(-1-2)=5-3c.
+\]
+Nghiệm $c=5/3$.
+
+\noindent\textbf{Bài 5.}
+$\Cov(Z,Z^2)=\E(Z^3)=0$, nhưng $Z^2$ được xác định bởi $Z$, nên phụ
+thuộc. Để minh họa chuẩn của từng biên vẫn chưa đủ, dùng $V=BZ$ với $B$
+độc lập và nhận $\pm1$ đồng xác suất. Hai biên chuẩn, hiệp phương sai
+0, nhưng $|V|=|Z|$; chúng không chuẩn đồng thời và không độc lập.
+
+\noindent\textbf{Bài 6.}
+Khối mục tiêu $\mathbf U=(X_1,X_2)'$ có
+$\vmu_U=(1,-1)'$, $\Sigma_{UU}=\diag(4,5)$.
+Khối đã biết là $V=X_3$, $\mu_V=2$, $\Sigma_{VV}=2$;
+$\Sigma_{UV}=(-1,0)'$, $\Sigma_{VU}=(-1,0)$.
+\[
+ \mathbf U\mid V=4\sim\N_2\left((0,-1)',\diag(7/2,5)\right).
+\]
+Chỉ thành phần thứ nhất được cập nhật; $X_2$ độc lập với $X_3$.
+Trong phân phối có điều kiện này, hai thành phần vẫn độc lập vì ma trận
+hiệp phương sai chéo bằng không và chúng chuẩn đồng thời.
+
+\subsection*{Bài 7--9: phân phối mẫu và kiểm định}
+\noindent\textbf{Bài 7.}
+\[
+ \Xbar\sim\N_2\left((10,20)',
+ \begin{pmatrix}.16&.12\\.12&.36\end{pmatrix}\right),\qquad
+ 24S\sim W_{2,24}(\Sigma),\quad\Xbar\perp S.
+\]
+Độ lệch chuẩn của $X_{j1}$ là 2, của $\bar X_1$ là 0.4.
+Với mẫu iid không chuẩn, $\E(\Xbar)=\vmu$, $\Cov(\Xbar)=\Sigma/25$
+và $\E(S)=\Sigma$ vẫn đúng khi có moment hữu hạn. Phân phối chuẩn chính
+xác, Wishart và độc lập của $\Xbar,S$ không còn được bảo đảm.
+
+\noindent\textbf{Bài 8.}
+$n=5,p=2$, $\xbar=(3,3)'$.
+\[
+ S=\begin{pmatrix}2.5&2\\2&2.5\end{pmatrix},\quad
+ |S|=2.25,\quad
+ S^{-1}=\begin{pmatrix}10/9&-8/9\\-8/9&10/9\end{pmatrix}.
+\]
+Với $\mathbf d=(1,1)'$, $T^2=5\cdot4/9=20/9$.
+Thống kê $F=(3/8)T^2=5/6\sim F_{2,3}$ dưới $H_0$.
+Ngưỡng cho $T^2$ là $(8/3)9.5521\approx25.4723$.
+Chưa bác bỏ giả thuyết ở mức 5\%; giá trị p khoảng 0.5154.
+Không coi đây là bằng chứng hai trung bình chắc chắn bằng 2.
+MLE trung bình là $(3,3)'$; MLE hiệp phương sai là
+$\widehat\Sigma=\frac45S=\begin{pmatrix}2&1.6\\1.6&2\end{pmatrix}$.
+Trong log-hợp lý, phân rã tổng tích ngoài thành $4S$ và
+$5(\xbar-\vmu)(\xbar-\vmu)'$ cho thấy phần phụ thuộc trung bình
+đạt cực đại tại $\vmu=\xbar$. Tối ưu phần còn lại cho $\Sigma=4S/5$;
+đây là thiết lập ở Phần~\ref{sec:mle_derivation}, không phải quy tắc
+đổi mẫu số tùy ý.
+
+\noindent\textbf{Bài 9.}
+\[
+ \bar{\mathbf y}=(305,-1.7)',\qquad\vmu_{Y,0}=(205,-1.8)',
+ \qquad S_Y=\begin{pmatrix}25000&20\\20&.025\end{pmatrix}.
+\]
+Độ lệch mới là $(100,0.1)'$, $T_Y^2=20/9=T_X^2$.
+Trong công thức tổng quát cho bảng hàng, $D_Y=D_XC'+\mathbf1\mathbf d'$;
+với $C$ chéo riêng bài này, $C'=C$, nhưng không được suy như vậy cho mọi ma trận.
+Vì $n=5,p=2$ và $T^2$ giữ nguyên, thống kê $F$, số bậc tự do và giá trị
+p khoảng 0.5154 giữ nguyên; vẫn chưa bác bỏ giả thuyết mức 5\%.
+Đẳng thức đại số không cần chuẩn; chuẩn cần cho phân phối $F$ chính xác.
+
+\subsection*{Bài 10--12: khoảng, hợp lý và mẫu lớn}
+\noindent\textbf{Bài 10.}
+$m=4$. Tổ hợp $\mathbf a=(2,-1)'$ có ước lượng $2(10)-20=0$,
+\[
+ \mathbf a'S\mathbf a=4(4)+9-4(3)=13,\qquad
+ \mathrm{SE}=\sqrt{13/40}\approx0.5701.
+\]
+Khoảng $T^2$ là $0\pm\sqrt{6.6604}\sqrt{13/40}\approx0\pm1.4713$.
+Khoảng Bonferroni là $0\pm t_{39;0.99375}\sqrt{13/40}
+\approx0\pm1.4930$.
+Với danh sách này, Bonferroni hơi rộng hơn $T^2$; không mặc định nó luôn
+hẹp hơn. Không dùng $m=3$ để bảo vệ cả bốn phát biểu.
+Khi \emph{chỉ xét hai trung bình}, dùng $m=2$, hình chữ nhật là
+$[9.2628;10.7372]\times[18.8942;21.1058]$.
+$P$ ở trong chữ nhật nhưng $T^2(P)=19.6>6.6604$, ngoài elip;
+$R$ ở ngoài chữ nhật nhưng $T^2(R)=6.4<6.6604$, trong elip.
+Đổi dấu hiệp phương sai chéo giữ nguyên chữ nhật thành phần nhưng đổi
+hướng elip. Phương sai tổ hợp $(2,-1)'$ tăng từ 13 thành
+$16+9-4(-3)=37$, nên sai số chuẩn tăng từ $\sqrt{13/40}$
+thành $\sqrt{37/40}$.
+
+\noindent\textbf{Bài 11.}
+\[
+ \widehat\Sigma=\frac45 S=
+ \begin{pmatrix}2&1.6\\1.6&2\end{pmatrix},\quad
+ \widehat\Sigma_0=\widehat\Sigma+\mathbf d\mathbf d'
+ =\begin{pmatrix}3&2.6\\2.6&3\end{pmatrix}.
+\]
+Hai định thức là 1.44 và 2.24.
+\[
+ \lambda_W=\frac9{14},\qquad
+ \Lambda_{\mathrm{LR}}=\left(\frac9{14}\right)^{5/2},\qquad
+ T^2=4\left(\frac{14}9-1\right)=\frac{20}9.
+\]
+Giá trị p được tính từ \emph{phân phối dưới $H_0$} của thống kê;
+tỷ số định thức không phải phép tính đuôi xác suất nói chung.
+
+\noindent\textbf{Bài 12.}
+$T^2=100(0.2^2+0.1^2)=5<5.9915$: chưa bác bỏ ở mức xấp xỉ 5\%.
+Giá trị p xấp xỉ $\exp(-5/2)\approx0.0821$.
+Nửa độ rộng khoảng chi-bình phương là
+$\sqrt{5.9915/100}\approx0.2448$, nên các khoảng là
+$[-0.0448;0.4448]$ và $[-0.1448;0.3448]$.
+Bonferroni cho $m=2$ có nửa độ rộng 0.2241, cho các khoảng
+$[-0.0241;0.4241]$ và $[-0.1241;0.3241]$.
+Đây đều là bảo đảm xấp xỉ, không chính xác như mẫu chuẩn hữu hạn.
+
+Với $n=20,p=25$, hạng $S\le19<25$, nên không thể dùng nghịch đảo.
+Với $n=2000,p=1900$, việc $n-p=100$ không đủ để khẳng định xấp xỉ cổ
+điển tốt: $p$ rất lớn so với $n$, và giới hạn $p$ cố định không tự bảo
+đảm cho tình huống cao chiều đó.
+
+\clearpage
+\section{Bảng công thức và điều kiện đi kèm}
+\label{sec:formula}
+\subsection{Công thức phân phối}
+\begin{longtable}{L{.28\linewidth}L{.63\linewidth}}
+\toprule
+Điều kiện / câu hỏi & Công thức\\
+\midrule
+\endhead
+Chuẩn không suy biến &
+$f(\mathbf x)=(2\pi)^{-p/2}|\Sigma|^{-1/2}
+ \exp[-(\mathbf x-\vmu)'\Sigma^{-1}(\mathbf x-\vmu)/2]$;
+$\Sigma$ xác định dương.\\[4pt]
+Biến đổi chuẩn & $A\mathbf X+\mathbf d\sim\N_q(A\vmu+\mathbf d,A\Sigma A')$.
+Thiếu hạng hàng của $A$ có thể cho chuẩn suy biến.\\[4pt]
+Phân phối biên chuẩn & Chọn các thành phần của $\vmu$ và các hàng/cột cùng thứ tự của $\Sigma$.\\[4pt]
+Độc lập trong chuẩn chung & $\mathbf X_1\perp\mathbf X_2\iff\Sigma_{12}=0$;
+$\mathbf a'\mathbf X\perp\mathbf b'\mathbf X\iff\mathbf a'\Sigma\mathbf b=0$.\\[4pt]
+Điều kiện, $\Sigma_{22}$ khả nghịch &
+$\vmu_{1\mid2}=\vmu_1+\Sigma_{12}\Sigma_{22}^{-1}(\mathbf x_2-\vmu_2)$;
+$\Sigma_{11\mid2}=\Sigma_{11}-\Sigma_{12}\Sigma_{22}^{-1}\Sigma_{21}$.\\[4pt]
+Khoảng cách, tham số biết & $(\mathbf X-\vmu)'\Sigma^{-1}(\mathbf X-\vmu)\sim\chi^2_p$
+ khi $\mathbf X$ chuẩn và $\Sigma$ xác định dương.\\[4pt]
+MLE mẫu chuẩn, $A\succ0$ & $\widehat{\vmu}=\xbar$;
+$\widehat\Sigma=A/n=(n-1)S/n$, với $A$ là tổng tích ngoài quanh $\xbar$.
+Khác với $\Cov(\Xbar)=\Sigma/n$.\\[4pt]
+Mẫu iid chuẩn & $\Xbar\sim\N_p(\vmu,\Sigma/n)$;
+$(n-1)S\sim W_{p,n-1}(\Sigma)$; $\Xbar\perp S$.\\[4pt]
+Mẫu iid, moment hữu hạn & $\sqrt n(\Xbar-\vmu)\xrightarrow{d}\N_p(0,\Sigma)$;
+$S\xrightarrow{P}\Sigma$, với $p$ cố định.\\
+\bottomrule
+\end{longtable}
+
+\subsection{Công thức suy diễn cho trung bình}
+Đặt $\mathbf d=\xbar-\vmu_0$, $T^2=n\mathbf d'S^{-1}\mathbf d$.
+\begin{longtable}{L{.28\linewidth}L{.63\linewidth}}
+\toprule
+Điều kiện / câu hỏi & Công thức\\
+\midrule
+\endhead
+Mẫu iid chuẩn, $n>p$, $\Sigma\succ0$ &
+$\dfrac{n-p}{p(n-1)}T^2\sim F_{p,n-p}$ dưới $H_0$;
+$c_T^2=\dfrac{p(n-1)}{n-p}F_{p,n-p;1-\alpha}$.\\[5pt]
+Miền tin cậy chính xác & $n(\xbar-\vmu)'S^{-1}(\xbar-\vmu)\le c_T^2$.\\[4pt]
+Bonferroni thành phần & $\mathcal R_B=\prod_{i=1}^p
+[\bar x_i-h_i;\bar x_i+h_i]$, $h_i=t_{n-1;1-\alpha/(2m)}\sqrt{s_{ii}/n}$.
+Với danh sách chỉ các thành phần thì $m=p$;
+miền không dùng hiệp phương sai chéo.\\[4pt]
+Mọi tổ hợp, mẫu chuẩn & $\mathbf a'\xbar\pm\sqrt{c_T^2}\sqrt{\mathbf a'S\mathbf a/n}$.\\[4pt]
+$m$ tổ hợp định trước, mẫu chuẩn & $\mathbf a_j'\xbar\pm
+t_{n-1;1-\alpha/(2m)}\sqrt{\mathbf a_j'S\mathbf a_j/n}$;
+phủ đồng thời ít nhất $1-\alpha$.\\[4pt]
+Hiệu hai thành phần cùng đối tượng & Ước lượng $\bar x_i-\bar x_k$;
+sai số chuẩn $\sqrt{(s_{ii}+s_{kk}-2s_{ik})/n}$.\\[4pt]
+Mẫu lớn, iid, moment hữu hạn, $p$ cố định, $\Sigma\succ0$ & Thay $c_T^2$ bằng
+$\chi^2_{p;1-\alpha}$; Bonferroni dùng $z_{1-\alpha/(2m)}$.
+Độ tin cậy và mức kiểm định là xấp xỉ.\\[4pt]
+Liên hệ với hợp lý, mẫu chuẩn & $\lambda_W=(1+T^2/(n-1))^{-1}$;
+$\Lambda_{\mathrm{LR}}=\lambda_W^{n/2}$;
+$T^2=(n-1)(|\widehat\Sigma_0|/|\widehat\Sigma|-1)$.\\
+\bottomrule
+\end{longtable}
+
+\subsection{Từ điển ký hiệu ngắn}
+\begin{center}
+\begin{tabular}{lp{.70\linewidth}}
+\toprule
+Ký hiệu & Cách đọc\\
+\midrule
+$n,p$ & Số đối tượng và số biến của mỗi đối tượng.\\
+$\vmu,\Sigma$ & Trung bình và hiệp phương sai của tổng thể.\\
+$\Xbar,\xbar$ & Trung bình mẫu ngẫu nhiên và giá trị đã quan sát.\\
+$S,\widehat\Sigma$ & Hiệp phương sai mẫu không chệch và MLE hiệp phương sai.\\
+$S/n,\Theta$ & Ước lượng hiệp phương sai trung bình mẫu; $\Theta=\Sigma^{-1}$ là ma trận độ chính xác.\\
+$\tr(B)$ & Tổng các phần tử đường chéo của ma trận vuông $B$.\\
+$\Sigma_{12}$ & Khối hiệp phương sai chéo giữa hai nhóm biến.\\
+$\perp$ & Độc lập ngẫu nhiên.\\
+$\xrightarrow{P},\xrightarrow{d}$ & Hội tụ theo xác suất, hội tụ về phân phối.\\
+$F_{r,s;\gamma},t_{\nu;\gamma}$ & Phân vị dưới mức $\gamma$; không phải đuôi trên $\gamma$.\\
+$m$ & Số phát biểu trong danh sách Bonferroni định trước.\\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\clearpage
+\section{Bản đồ đối chiếu với giáo trình}
+\label{sec:references}
+Các vị trí dưới đây được đối chiếu với bản PDF địa phương của ấn bản thứ
+sáu, Pearson New International Edition, bản quyền 2014.
+Tên file năm 2013 không được dùng thay cho năm in ở trang bản quyền.
+Trong Chương 4--5, muốn đến trang in 150, mở trang PDF 155; tương tự trang
+in 235 là trang PDF 240.
+
+\footnotesize
+\begin{longtable}{L{.35\linewidth}L{.43\linewidth}r}
+\toprule
+Chủ đề & Vị trí trong sách & Trang in\\
+\midrule
+\endhead
+Mật độ chuẩn nhiều chiều & Ch.~4, §4.2, (4-4) & 150\\
+Hình học đường đồng mức & Ch.~4, §4.2, (4-7), Result 4.1 & 153\\
+Tổ hợp tuyến tính một biến & Ch.~4, §4.2, Result 4.2 & 156\\
+Biến đổi nhiều tổ hợp & Ch.~4, §4.2, Result 4.3 & 157\\
+Phân phối biên & Ch.~4, §4.2, Result 4.4 & 158--159\\
+Độc lập và hiệp phương sai 0 & Ch.~4, §4.2, Result 4.5 & 159--160\\
+Phân phối có điều kiện & Ch.~4, §4.2, Result 4.6 & 160--161\\
+Dạng hồi quy của trung bình điều kiện & Ch.~4, §4.2, (4-9) & 163\\
+Mahalanobis và chi-bình phương & Ch.~4, §4.2, Result 4.7 & 163--164\\
+Tách tổng tích ngoài & Ch.~4, §4.3, (4-14) & 169\\
+Hàm hợp lý & Ch.~4, §4.3, (4-16), (4-17) & 170\\
+Kiểm tra cực đại theo hiệp phương sai & Ch.~4, §4.3, Result 4.10 & 170--171\\
+MLE trung bình, hiệp phương sai & Ch.~4, §4.3, Result 4.11 & 171--172\\
+Wishart và phân phối mẫu & Ch.~4, §4.4, (4-22), (4-23) & 174\\
+Luật số lớn & Ch.~4, §4.5, Result 4.12, (4-26), (4-27) & 175\\
+CLT và dạng toàn phương giới hạn & Ch.~4, §4.5, Result 4.13, (4-28) & 176\\
+Ôn kiểm định một chiều & Ch.~5, §5.2, (5-1)--(5-3) & 210--211\\
+Thống kê Hotelling & Ch.~5, §5.2, (5-4) & 211\\
+Phân phối $F$ và ngưỡng & Ch.~5, §5.2, (5-5)--(5-7) & 212\\
+Bất biến & Ch.~5, §5.2, (5-9) và diễn giải & 215--216\\
+Hợp lý cực đại dưới hai mô hình & Ch.~5, §5.3, (5-10)--(5-12) & 216--217\\
+Wilks' lambda và $T^2$ & Ch.~5, §5.3, Result 5.1, (5-14) & 218\\
+$T^2$ từ hai định thức & Ch.~5, §5.3, (5-15) & 219\\
+Miền tin cậy elipsoid & Ch.~5, §5.4, (5-18), (5-19) & 221\\
+Khoảng đồng thời mọi hướng & Ch.~5, §5.4, Result 5.3 & 225\\
+Khoảng cho thành phần và hiệu & Ch.~5, §5.4, (5-24), (5-25) & 225--226\\
+Bonferroni và khoảng thành phần & Ch.~5, §5.4, (5-28), (5-29) & 232\\
+So sánh độ dài khoảng & Ch.~5, §5.4, (5-30) & 234\\
+Suy diễn mẫu lớn & Ch.~5, §5.5, Results 5.4, 5.5, (5-31) & 235--236\\
+\bottomrule
+\end{longtable}
+\normalsize
+
+Một số vị trí trong bản tổng hợp ban đầu cần cập nhật khi dùng bản sách
+này: phân phối có điều kiện vẫn thuộc §4.2; MLE hiệp phương sai thuộc
+Result 4.11, không phải (4-14); công thức (5-15) ở trang 219; Bonferroni
+(5-28), (5-29) ở trang 232. Nội dung giảng và các bảng ở đây dùng các
+vị trí đã đối chiếu, đồng thời phân biệt rõ kết quả toán học với quy tắc
+thực hành về kích thước mẫu.

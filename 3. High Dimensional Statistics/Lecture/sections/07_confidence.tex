@@ -1,0 +1,209 @@
+\clearpage
+\section{Miền tin cậy và khoảng tin cậy đồng thời}
+\label{sec:confidence}
+
+\input{sections/07_covariance_role}
+
+\subsection{Đảo kiểm định để tìm các giá trị trung bình còn phù hợp}
+Ở phần trước, ta kiểm tra một vectơ $\vmu_0$ cụ thể. Bây giờ thử mọi vectơ
+$\vmu$ và giữ các vectơ không bị bác bỏ. Ta thu được miền
+\begin{equation}
+ \mathcal C=\left\{\vmu:
+ n(\xbar-\vmu)'S^{-1}(\xbar-\vmu)\le c_T^2\right\},
+ \qquad c_T^2=\frac{p(n-1)}{n-p}F_{p,n-p;1-\alpha}.
+ \label{eq:ellipsoid}
+\end{equation}
+Dưới giả thiết mẫu iid chuẩn và $n>p$, đây là miền tin cậy mức
+$1-\alpha$ cho vectơ trung bình.
+\nguon{Chương 5, §5.4, miền tin cậy (5-18), tr.~221; diễn giải hình học tr.~221--223}
+
+\hieu{Tâm của miền là trung bình mẫu. Vectơ trung bình nào quá xa tâm
+so với sai số lấy mẫu bị loại. Miền thể hiện các giá trị \emph{đồng thời}
+của tất cả các thành phần, có xét đến tương quan.}
+
+Nếu $\ell_i$ là trị riêng của $S$ với vectơ riêng đơn vị $\mathbf e_i$,
+bán trục theo hướng $\mathbf e_i$ dài $\sqrt{c_T^2\ell_i/n}$.
+Phân biệt với elipsoid xác suất cho quan sát trong
+Phần~\ref{sec:normal}: ở đây $S$ ước lượng từ mẫu và có hệ số $1/n$.
+
+Nếu $\vmu_0\notin\mathcal C$, kiểm định mức $\alpha$ bác bỏ $H_0$;
+nếu $\vmu_0\in\mathcal C$, kiểm định chưa bác bỏ. Đây là cùng một quy tắc,
+không phải hai kết quả suy diễn độc lập cần chỉnh mức ý nghĩa lần nữa.
+
+\subsection{Khoảng tin cậy cho một tổ hợp bất kỳ}
+Cho $\mathbf a$ là vectơ hệ số. Từ miền \eqref{eq:ellipsoid}, các giá trị
+có thể của $\mathbf a'\vmu$ nằm trong
+\begin{equation}
+ \mathbf a'\xbar\ \pm\
+ \sqrt{c_T^2}\sqrt{\frac{\mathbf a'S\mathbf a}{n}}.
+ \label{eq:t2interval}
+\end{equation}
+\begin{result}
+Với mẫu iid chuẩn, $\Sigma$ xác định dương và $n>p$, các khoảng
+\eqref{eq:t2interval} chứa $\mathbf a'\vmu$ \emph{đồng thời cho mọi}
+$\mathbf a$, với xác suất $1-\alpha$ trước khi lấy mẫu.
+\end{result}
+\nguon{Chương 5, §5.4, Result 5.3, tr.~225}
+
+Trong công thức, $\sqrt{\mathbf a'S\mathbf a/n}$ là sai số chuẩn của
+$\mathbf a'\xbar$, còn $\sqrt{c_T^2}$ là hệ số mở rộng để bảo đảm đồng
+thời cho \emph{mọi hướng}. Nó thường lớn hơn hệ số của một khoảng $t$
+cho một tổ hợp cố định.
+
+Vì đã bảo vệ mọi hướng, kết quả còn cho phép xem dữ liệu rồi chọn hướng
+đáng chú ý để khảo sát. Điều này khác Bonferroni thông thường cho một
+danh sách hữu hạn đã định trước. Phụ lục~\ref{app:projection} giải thích
+bằng bất đẳng thức Cauchy--Schwarz.
+
+\subsection{Trung bình thành phần và hiệu hai trung bình}
+Chọn $\mathbf a=\mathbf e_i$ (vectơ có 1 ở vị trí $i$ và 0 ở nơi khác):
+\begin{equation}
+ \mu_i:\quad\bar x_i\pm\sqrt{c_T^2}\sqrt{s_{ii}/n}.
+ \label{eq:t2components}
+\end{equation}
+Chọn $\mathbf a=\mathbf e_i-\mathbf e_k$:
+\begin{equation}
+ \mu_i-\mu_k:\quad
+ (\bar x_i-\bar x_k)\pm\sqrt{c_T^2}
+ \sqrt{\frac{s_{ii}+s_{kk}-2s_{ik}}n}.
+ \label{eq:t2difference}
+\end{equation}
+\nguon{Chương 5, §5.4, (5-24), tr.~225; (5-25), tr.~226}
+
+\luuy{Đây là hiệu hai \emph{thành phần đo trên cùng các đối tượng},
+không phải hiệu trung bình của hai mẫu độc lập. Bỏ $-2s_{ik}$ là bỏ
+thông tin ghép cặp. Đồng thời, chỉ diễn giải một hiệu nếu đơn vị đo và
+câu hỏi thực tế làm hiệu đó có ý nghĩa.}
+
+\begin{example}[Một bộ số minh họa cho các khoảng]
+Giả sử mẫu iid chuẩn hai chiều có $n=40$, $\xbar=(10,20)'$ và
+\begin{equation}
+ S=\begin{pmatrix}4&3\\3&9\end{pmatrix},\qquad\alpha=0.05.
+ \label{eq:intervaldata}
+\end{equation}
+Đây là \emph{số tóm tắt giả định để minh họa}, không phải dữ liệu của mẫu
+$n=4$ ở phần trước. Ta có
+\[
+ c_T^2=\frac{2\cdot39}{38}F_{2,38;0.95}\approx6.6604,
+ \qquad\sqrt{c_T^2}\approx2.5808.
+\]
+Ba sai số chuẩn là
+\[
+ \sqrt{4/40}=0.3162,\quad\sqrt{9/40}=0.4743,\quad
+ \sqrt{(4+9-6)/40}=\sqrt{7/40}=0.4183.
+\]
+Các khoảng $T^2$ đồng thời:
+\begin{align*}
+ \mu_1 &: 10\pm0.8161=[9.1839;10.8161],\\
+ \mu_2 &: 20\pm1.2242=[18.7758;21.2242],\\
+ \mu_1-\mu_2 &: -10\pm1.0796=[-11.0796;-8.9204].
+\end{align*}
+Khoảng hiệu không chứa 0, nên có bằng chứng hai trung bình thành phần
+khác nhau, khi hiệu có ý nghĩa về đơn vị và thiết kế đo.
+\end{example}
+
+\subsection{Hình chiếu của miền elip và ý nghĩa của hình chữ nhật}
+Các khoảng cho từng thành phần là \emph{hình chiếu} của elip lên các trục.
+Hình chữ nhật tạo bởi chúng chứa toàn bộ elip và thêm các góc ngoài elip.
+Do đó việc từng thành phần của $\vmu_0$ nằm trong khoảng riêng $T^2$
+\emph{chưa đủ} để nói vectơ $\vmu_0$ nằm trong elip.
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}[x=3.4cm,y=2.3cm,>=Stealth]
+ \draw[->] (-1.18,0)--(1.2,0) node[right]{$\mu_1-10$};
+ \draw[->] (0,-1.6)--(0,1.6) node[above]{$\mu_2-20$};
+ \draw[dashed] (-.816114,-1.224171) rectangle (.816114,1.224171);
+ \draw[domain=0:360,samples=120,smooth,variable=\t]
+ plot ({.816114*cos(\t)},{.612085*cos(\t)+1.060163*sin(\t)});
+ \fill (0,0) circle (.025) node[below left]{tâm};
+ \fill (.75,-1.1) circle (.025) node[right]{$Q$};
+ \node[below] at (.816114,0) {$0.8161$};
+ \node[above left] at (0,1.224171) {$1.2242$};
+\end{tikzpicture}
+\caption{Elip 95\% của ví dụ $n=40$, vẽ theo độ lệch khỏi trung bình mẫu.
+Nét đứt là hình chữ nhật từ các khoảng thành phần $T^2$.
+Điểm $Q$ nằm trong hình chữ nhật nhưng ngoài elip.}
+\label{fig:projection}
+\end{figure}
+
+Trong hình, $Q$ biểu diễn $\vmu_0=(10.75,18.9)'$.
+Hai độ lệch nằm trong các nửa độ rộng $0.8161,1.2242$,
+nhưng
+\[
+ 40(0.75,-1.1)S^{-1}(0.75,-1.1)'\approx22.0037>6.6604.
+\]
+Kiểm định vectơ trung bình vẫn bác bỏ giả thuyết này. Điểm đó lệch ngược
+chiều tương quan dương, một hướng ít biến thiên của dữ liệu.
+
+\subsection{Bonferroni: bảo vệ một danh sách hữu hạn}
+Giả sử trước khi xem dữ liệu, ta muốn ước lượng $m$ đại lượng
+$\theta_j=\mathbf a_j'\vmu$, $j=1,\ldots,m$.
+Một khoảng $t$ cho mỗi đại lượng ở mức $1-\alpha/m$ là
+\begin{equation}
+ \mathbf a_j'\xbar\ \pm\
+ t_{n-1;1-\alpha/(2m)}\sqrt{\frac{\mathbf a_j'S\mathbf a_j}{n}}.
+ \label{eq:bonf}
+\end{equation}
+Dưới mẫu iid chuẩn, mỗi khoảng có xác suất không phủ bằng $\alpha/m$.
+Bất đẳng thức hợp cho
+\[
+ \Prob(\text{ít nhất một khoảng không phủ})
+ \le\sum_{j=1}^m\frac\alpha m=\alpha.
+\]
+Vậy xác suất tất cả các khoảng đồng thời phủ các tham số tương ứng
+\emph{ít nhất} $1-\alpha$. Không cần các khoảng độc lập.
+\nguon{Chương 5, §5.4, bất đẳng thức (5-28) và khoảng (5-29), tr.~232;
+ mở rộng sang tổ hợp và so độ dài (5-30), tr.~234}
+
+\hieu{Ta chia ngân sách sai số tổng $\alpha$ cho $m$ phát biểu.
+Mỗi phát biểu được phép sai ít hơn, nên khoảng riêng phải rộng hơn khoảng
+95\% thông thường. Đổi lại, cả nhóm có bảo đảm đồng thời.}
+
+Với hai trung bình và một hiệu, có $m=3$, dù dữ liệu chỉ có $p=2$ biến.
+Nếu chỉ báo cáo hai trung bình, $m=2$. Không mặc định $m=p$ nếu danh sách
+có thêm các tổ hợp khác. Hệ số dùng $\alpha/(2m)$ vì mỗi khoảng là hai phía.
+
+\begin{example}[So sánh trên cùng danh sách ba phát biểu]
+Với \eqref{eq:intervaldata}, danh sách là
+$\mu_1,\mu_2,\mu_1-\mu_2$, nên $m=3$.
+$t_{39;1-0.05/6}\approx2.5017$.
+\begin{center}
+\begin{tabular}{lrr}
+\toprule
+Đại lượng & Nửa độ rộng $T^2$ & Nửa độ rộng Bonferroni\\
+\midrule
+$\mu_1$ & 0.8161 & 0.7911\\
+$\mu_2$ & 1.2242 & 1.1866\\
+$\mu_1-\mu_2$ & 1.0796 & 1.0465\\
+\bottomrule
+\end{tabular}
+\end{center}
+Các khoảng Bonferroni là $[9.2089;10.7911]$,
+$[18.8134;21.1866]$ và $[-11.0465;-8.9535]$.
+Trong ví dụ này Bonferroni hẹp hơn, nhưng chỉ bảo vệ danh sách đã xác định,
+còn $T^2$ bảo vệ mọi tổ hợp tuyến tính.
+\end{example}
+
+\input{sections/07_geometry}
+
+\subsection{Khi nào Bonferroni hẹp hơn?}
+Cho cùng một tổ hợp, cùng dữ liệu, cùng mức $\alpha$, tỉ số độ dài là
+\begin{equation}
+ \frac{\text{độ dài Bonferroni}}{\text{độ dài }T^2}
+ =\frac{t_{n-1;1-\alpha/(2m)}}{\sqrt{c_T^2}}.
+ \label{eq:widthratio}
+\end{equation}
+Chỉ khi tỉ số nhỏ hơn 1 mới nói Bonferroni hẹp hơn. Khi $m$ tăng, hệ số
+Bonferroni tăng; do đó kết luận không đúng cho mọi danh sách hữu hạn.
+Ví dụ với $n=100,p=2,\alpha=0.05$, hệ số $T^2$ khoảng 2.4983,
+còn với $m=10000$, hệ số Bonferroni khoảng 4.8291.
+
+Điều quan trọng không chỉ là độ rộng: phải chọn bảo đảm phù hợp câu hỏi.
+Nếu chỉ có vài phát biểu xác định trước, Bonferroni dễ áp dụng.
+Nếu cần mọi hướng hoặc chọn hướng sau khi xem dữ liệu, $T^2$ phù hợp hơn.
+Không tính nhiều khoảng rồi chỉ giữ những khoảng ``đẹp'' mà coi $m$ là
+số khoảng cuối cùng đã chọn.
+
+\kiemtra{Các khoảng Bonferroni có cần độc lập không? Không.
+Nếu có 4 trung bình và 1 hiệu cần báo cáo thì $m=5$, không phải 4.}

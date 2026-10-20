@@ -1,0 +1,167 @@
+\clearpage
+\section{Phân phối có điều kiện: biết thêm một biến thì điều gì thay đổi?}
+\label{sec:conditional}
+
+\subsection{Phân phối biên và có điều kiện trả lời hai câu hỏi khác nhau}
+Phân phối biên của chiều cao mô tả một người chọn ngẫu nhiên khi ta chưa
+biết cân nặng. Phân phối chiều cao \emph{có điều kiện} tại cân nặng 70 kg
+mô tả người trong nhóm có cân nặng đó. Nếu hai đặc điểm liên hệ, biết cân
+nặng cung cấp thông tin về chiều cao và làm dự báo bớt bất định.
+
+Ký hiệu $X_1\mid X_2=x_2$ không phải phép chia. Nó nói rằng ta xét phân
+phối của $X_1$ sau khi biết giá trị của $X_2$. Vì biến liên tục có xác suất
+đúng một điểm bằng 0, công thức có điều kiện được hiểu qua mật độ có điều
+kiện, không tính bằng cách chia cho $\Prob(X_2=x_2)$.
+
+\subsection{Công thức hai biến: dễ nhớ qua tương quan}
+Với $(X_1,X_2)'$ chuẩn hai chiều, đặt
+$\Var(X_1)=\sigma_1^2$, $\Var(X_2)=\sigma_2^2$ và tương quan $\rho$.
+Khi $\sigma_2^2>0$,
+\begin{align}
+ \E(X_1\mid X_2=x_2)
+ &=\mu_1+\rho\frac{\sigma_1}{\sigma_2}(x_2-\mu_2),
+ \label{eq:cond2mean}\\
+ \Var(X_1\mid X_2=x_2)&=\sigma_1^2(1-\rho^2).
+ \label{eq:cond2var}
+\end{align}
+Toàn bộ phân phối có điều kiện là chuẩn với hai tham số này.
+\nguon{Chương 4, §4.2, Result 4.6 và Example 4.7, tr.~160--162}
+
+\hieu{Nếu $X_2$ cao hơn trung bình, và $\rho>0$, dự báo $X_1$ cũng dịch
+lên. Độ dịch phụ thuộc tương quan và tỉ lệ đơn vị đo.
+Thông tin về $X_2$ giải thích được phần $\rho^2$ của phương sai $X_1$;
+phần còn lại là $1-\rho^2$.}
+
+Nếu $\rho=0$, trung bình và phương sai không đổi: biết $X_2$ không giúp
+dự báo $X_1$ trong mô hình chuẩn. Nếu $|\rho|$ gần 1, phương sai còn lại
+nhỏ. Trường hợp $|\rho|=1$ là suy biến, không thuộc mô hình mật độ hai chiều
+không suy biến đang xét.
+
+\begin{example}[Một lần cập nhật dự báo]
+Giả sử $\vmu=(10,20)'$, $\Sigma=\begin{pmatrix}4&3\\3&9\end{pmatrix}$.
+Ta có $\rho=0.5$, $\sigma_1=2$, $\sigma_2=3$.
+Khi quan sát $X_2=23$,
+\[
+ \E(X_1\mid X_2=23)=10+\frac39(23-20)=11,
+\]
+\[
+ \Var(X_1\mid X_2=23)=4-\frac{3^2}{9}=3.
+\]
+Vậy $X_1\mid X_2=23\sim\N(11,3)$.
+Trước khi biết $X_2$, $X_1\sim\N(10,4)$: dự báo đã dịch từ 10 đến 11,
+độ lệch chuẩn giảm từ 2 xuống $\sqrt3$.
+\end{example}
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}[x=.62cm,y=7cm,>=Stealth]
+ \draw[->] (3,0)--(18,0) node[right]{$x_1$};
+ \draw[->] (3,0)--(3,.28) node[above]{mật độ};
+ \draw[domain=3:17,samples=90,smooth,dashed]
+ plot (\x,{exp(-((\x-10)^2)/8)/sqrt(8*pi)});
+ \draw[domain=3:17,samples=90,smooth]
+ plot (\x,{exp(-((\x-11)^2)/6)/sqrt(6*pi)});
+ \draw[dotted] (10,0)--(10,.2);
+ \draw[dotted] (11,0)--(11,.231);
+ \node[below] at (10,0) {10};
+ \node[below] at (11,0) {11};
+ \node[align=left,anchor=west] at (13,.27) {Nét đứt: biên $\N(10,4)$};
+ \node[align=left,anchor=west] at (13,.18) {Nét liền: điều kiện $\N(11,3)$};
+\end{tikzpicture}
+\caption{Biết $X_2=23$ làm tâm dịch sang phải và phân phối $X_1$ hẹp lại
+trong ví dụ. Diện tích dưới mỗi đường vẫn bằng 1.}
+\end{figure}
+
+\subsection{Công thức ma trận: dự báo một khối bằng một khối khác}
+Phân hoạch vectơ và tham số thành
+\[
+ \mathbf X=\begin{pmatrix}\mathbf X_1\\\mathbf X_2\end{pmatrix},\quad
+ \vmu=\begin{pmatrix}\vmu_1\\\vmu_2\end{pmatrix},\quad
+ \Sigma=\begin{pmatrix}\Sigma_{11}&\Sigma_{12}\\\Sigma_{21}&\Sigma_{22}\end{pmatrix}.
+\]
+Khối $\mathbf X_1$ có $q_1$ thành phần; khối $\mathbf X_2$ có $q_2$ thành
+phần. Chỉ số ``1'' ở đây là nhãn \emph{khối}, không nhất thiết chỉ biến
+thứ nhất của dữ liệu.
+
+\begin{result}
+Nếu vectơ ghép chuẩn và $\Sigma_{22}$ khả nghịch, thì
+\begin{equation}
+ \mathbf X_1\mid\mathbf X_2=\mathbf x_2
+ \sim\N_{q_1}\left(\vmu_{1\mid2},\Sigma_{11\mid2}\right),
+ \label{eq:conditional}
+\end{equation}
+với
+\begin{align}
+ \vmu_{1\mid2}&=\vmu_1+\Sigma_{12}\Sigma_{22}^{-1}(\mathbf x_2-\vmu_2),
+ \label{eq:conditionalmean}\\
+ \Sigma_{11\mid2}&=\Sigma_{11}-\Sigma_{12}\Sigma_{22}^{-1}\Sigma_{21}.
+ \label{eq:conditionalcov}
+\end{align}
+\end{result}
+\nguon{Chương 4, §4.2, Result 4.6, tr.~160--161; dạng hồi quy (4-9), tr.~163}
+
+Ma trận $B=\Sigma_{12}\Sigma_{22}^{-1}$ có kích thước $q_1\times q_2$
+và đóng vai trò hệ số hồi quy. Nó biến độ lệch của khối đã biết thành phần
+hiệu chỉnh cho khối cần dự báo.
+Khối trừ đi trong \eqref{eq:conditionalcov} là phần phương sai được giải
+thích bởi thông tin đó; $\Sigma_{11\mid2}$ còn được gọi là bổ Schur.
+
+Đặc biệt, hiệp phương sai có điều kiện không phụ thuộc \emph{giá trị}
+$\mathbf x_2$. Thay $\mathbf x_2$ làm tâm dịch chuyển nhưng không làm
+độ phân tán có điều kiện thay đổi. Tính chất này là của mô hình chuẩn;
+không suy ra như vậy cho mọi phân phối.
+
+\subsection{Quy trình tính: ghi đúng khối trước khi nhân}
+\begin{example}[Dự báo một biến từ hai biến]
+Với \eqref{eq:running3d}, tìm $X_1\mid(X_2=x_2,X_3=x_3)$.
+\buoc{1}{Đặt khối mục tiêu và khối đã biết}
+Đặt $U=X_1$, $\mathbf V=(X_2,X_3)'$.
+\buoc{2}{Trích tham số đúng thứ tự}
+\[
+ \mu_U=1,\quad\vmu_V=\begin{pmatrix}-1\\2\end{pmatrix},\quad
+ \Sigma_{UU}=4,\quad\Sigma_{UV}=(0,-1),\quad
+ \Sigma_{VV}=\begin{pmatrix}5&0\\0&2\end{pmatrix}.
+\]
+\buoc{3}{Tính hệ số cập nhật}
+\[
+ B=(0,-1)\begin{pmatrix}1/5&0\\0&1/2\end{pmatrix}=(0,-1/2).
+\]
+\buoc{4}{Tính hai tham số}
+\[
+ \E(U\mid\mathbf V)=1+(0,-1/2)
+ \begin{pmatrix}x_2+1\\x_3-2\end{pmatrix}=2-\frac{x_3}{2},
+\]
+\[
+ \Var(U\mid\mathbf V)=4-(0,-1/2)(0,-1)'=\frac72.
+\]
+Vậy $X_1\mid(X_2=x_2,X_3=x_3)\sim\N(2-x_3/2,7/2)$.
+Giá trị $x_2$ biến mất vì $X_2$ độc lập với cả $(X_1,X_3)'$.
+\end{example}
+
+Nếu chỉ biết $X_3=x_3$, ta vẫn nhận được đúng phân phối trên. Khi
+$x_3=4$, trung bình có điều kiện bằng 0. Không có mâu thuẫn với trung bình
+biên bằng 1: đó là trung bình trên tất cả các giá trị của $X_3$, còn ở đây
+ta đã giới hạn vào một nhóm có $X_3=4$.
+
+\subsection{Phần dư hồi quy và tính độc lập}
+Đặt phần dư đã trừ trung bình
+\[
+ \mathbf R=\mathbf X_1-\vmu_1-B(\mathbf X_2-\vmu_2),
+ \qquad B=\Sigma_{12}\Sigma_{22}^{-1}.
+\]
+Ta có $\E(\mathbf R)=0$ và
+\[
+ \Cov(\mathbf R,\mathbf X_2)=\Sigma_{12}-B\Sigma_{22}=0.
+\]
+Vì $(\mathbf R,\mathbf X_2)$ chuẩn đồng thời, $\mathbf R\perp\mathbf X_2$.
+Do đó khi biết $\mathbf X_2$, phần dư vẫn có cùng phân phối; điều kiện hóa
+chỉ biến $B(\mathbf X_2-\vmu_2)$ thành một độ dịch tâm xác định.
+Đây là cách suy ra công thức có điều kiện mà không cần tính tích phân.
+
+\luuy{Ở đây các hệ số $B$ tính từ tham số tổng thể đã biết. Đây là tính
+chất của phân phối, chưa phải bài toán ước lượng hệ số hồi quy từ mẫu.
+Không tự thay bậc tự do của hồi quy vào công thức này.}
+
+\kiemtra{Có thể lấy ma trận hiệp phương sai biên $\Sigma_{11}$ làm
+hiệp phương sai có điều kiện không? Chỉ khi phần hiệu chỉnh bằng 0,
+chẳng hạn hai khối độc lập.}

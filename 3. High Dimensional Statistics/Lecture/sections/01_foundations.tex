@@ -1,0 +1,208 @@
+\clearpage
+\section{Kiến thức nền: đọc công thức ma trận như đọc một câu văn}
+\label{sec:foundations}
+
+\subsection{Vì sao cần thống kê nhiều chiều?}
+Giả sử trên mỗi người ta đo huyết áp và nhịp tim. Mỗi người cung cấp một
+\emph{cặp} số, không phải hai quan sát rời rạc. Người có nhịp tim cao có thể
+cũng có huyết áp cao. Nếu phân tích từng biến riêng, ta bỏ qua mối liên hệ này.
+Thống kê nhiều chiều giữ nguyên các thành phần thuộc cùng một đối tượng và
+phân tích chúng đồng thời.
+
+Một quan sát có $p$ biến được viết thành vectơ cột
+\[
+ \mathbf X=\begin{pmatrix}X_1\\X_2\\\vdots\\X_p\end{pmatrix}\in\R^p.
+\]
+Ở đây $p$ là \emph{số biến}. Khi lấy mẫu $n$ đối tượng, ta có
+$\mathbf X_1,\ldots,\mathbf X_n$, mỗi vectơ vẫn chứa $p$ thành phần.
+Chỉ số dưới của $\mathbf X_j$ chỉ \emph{đối tượng}; chỉ số dưới của $X_i$ trong
+một vectơ chỉ \emph{biến}. Nếu cần cả hai, viết $X_{ji}$: biến thứ $i$ của đối
+tượng thứ $j$.
+
+\begin{example}[Đọc một bảng dữ liệu]
+\[
+ \mathbf D=\begin{pmatrix}2&12\\8&9\\6&9\\8&10\end{pmatrix}.
+\]
+Mỗi hàng là một đối tượng, mỗi cột là một biến: $n=4$, $p=2$.
+Quan sát đầu là vectơ cột $\mathbf x_1=(2,12)'$.
+Trong bài giảng, chữ hoa như $\mathbf X_1$ chỉ đại lượng ngẫu nhiên,
+chữ thường như $\mathbf x_1$ chỉ giá trị đã quan sát.
+\end{example}
+
+\kiemtra{Một bảng có 60 hàng và 4 cột cho $n$ và $p$ bằng bao nhiêu?
+Đáp án: $n=60$, $p=4$, không phải ngược lại.}
+
+\subsection{Chuyển vị, phép nhân và kích thước}
+Dấu phẩy trên $'$ hoặc ký hiệu $\mathsf T$ có nghĩa là \emph{chuyển vị}:
+đổi hàng thành cột. Với $\mathbf a=(a_1,a_2)'$, ta có
+$\mathbf a'=(a_1,a_2)$. Trong dữ liệu thực của bài giảng, hai ký hiệu này
+có cùng nghĩa.
+\[
+ \mathbf a'\mathbf x=(a_1,a_2)
+ \begin{pmatrix}x_1\\x_2\end{pmatrix}=a_1x_1+a_2x_2.
+\]
+Vậy $\mathbf a'\mathbf X$ chính là một tổng có trọng số. Ta có thể dùng nó
+để biểu diễn tổng điểm, trung bình có trọng số hoặc hiệu giữa hai phép đo.
+
+Nếu $A$ có kích thước $q\times p$, phép nhân $A\mathbf X$ có kích thước
+$q\times1$. Quy tắc là: hai kích thước ở giữa phải khớp nhau.
+\[
+ \underbrace{A}_{q\times p}
+ \underbrace{\mathbf X}_{p\times1}
+ =\underbrace{\mathbf Y}_{q\times1}.
+\]
+Chẳng hạn,
+\[
+ A=\begin{pmatrix}1&-1\\1&1\end{pmatrix}
+ \quad\Longrightarrow\quad
+ A\mathbf X=\begin{pmatrix}X_1-X_2\\X_1+X_2\end{pmatrix}.
+\]
+Một phép nhân ma trận ở đây chỉ gói hai tổ hợp tuyến tính vào cùng một biểu thức.
+Ma trận đơn vị $I_p$ giữ nguyên vectơ: $I_p\mathbf x=\mathbf x$.
+Ma trận không $0$ cho kết quả bằng không, với kích thước phù hợp.
+
+\luuy{Khi gặp một công thức khó, kiểm tra kích thước trước. Ví dụ
+$\mathbf a'\Sigma\mathbf a$ có kích thước
+$(1\times p)(p\times p)(p\times1)=1\times1$, nên là một số.}
+
+\subsection{Nghịch đảo và định thức}
+Nghịch đảo $A^{-1}$ là phép ``hoàn tác'' của $A$:
+$A^{-1}A=AA^{-1}=I$. Chỉ ma trận vuông không suy biến mới có nghịch đảo.
+Với ma trận hai chiều,
+\[
+ A=\begin{pmatrix}a&b\\c&d\end{pmatrix},\qquad
+ |A|=ad-bc,
+\]
+\[
+ A^{-1}=\frac1{ad-bc}\begin{pmatrix}d&-b\\-c&a\end{pmatrix}
+ \quad\text{khi }ad-bc\ne0.
+\]
+Định thức $|A|$ là một số, không phải ma trận trị tuyệt đối của từng phần tử.
+Nó đo hệ số thay đổi thể tích của phép biến đổi tuyến tính, xét theo trị tuyệt đối.
+Nếu $|A|=0$, phép biến đổi làm mất ít nhất một hướng và không thể hoàn tác.
+
+\begin{example}[Một nghịch đảo sẽ dùng nhiều lần]
+\[
+ \Sigma=\begin{pmatrix}4&3\\3&4\end{pmatrix},\qquad
+ |\Sigma|=16-9=7,\qquad
+ \Sigma^{-1}=\frac17\begin{pmatrix}4&-3\\-3&4\end{pmatrix}.
+\]
+Nhân hai ma trận sẽ được $I_2$. Khi tính bằng phần mềm, thay vì tạo nghịch đảo
+một cách tường minh, thường giải hệ $\Sigma\mathbf z=\mathbf d$ rồi tính
+$\mathbf d'\mathbf z$; đây là cùng đại lượng $\mathbf d'\Sigma^{-1}\mathbf d$.
+\end{example}
+
+\subsection{Kỳ vọng và ma trận hiệp phương sai}
+Vectơ trung bình là
+\[
+ \vmu=\E(\mathbf X)=\begin{pmatrix}\E(X_1)\\\vdots\\\E(X_p)\end{pmatrix}.
+\]
+Ma trận hiệp phương sai là
+\begin{equation}
+ \Sigma=\Cov(\mathbf X)
+ =\E\bigl[(\mathbf X-\vmu)(\mathbf X-\vmu)'\bigr].
+ \label{eq:covdef}
+\end{equation}
+Tích bên trong là \emph{tích ngoài}: $(p\times1)(1\times p)=p\times p$.
+Phần tử hàng $i$, cột $k$ là
+\[
+ \sigma_{ik}=\Cov(X_i,X_k)
+ =\E[(X_i-\mu_i)(X_k-\mu_k)].
+\]
+Trên đường chéo, $\sigma_{ii}=\Var(X_i)$ là phương sai. Ngoài đường chéo là
+hiệp phương sai; đối xứng vì $\sigma_{ik}=\sigma_{ki}$.
+\nguon{Chương 4, §4.2, tr.~150, nhắc lại định nghĩa (2-30), (2-31) từ Chương 2}
+
+Hiệp phương sai dương cho biết hai biến có xu hướng lệch cùng chiều so với
+trung bình; hiệp phương sai âm cho biết chúng thường lệch ngược chiều.
+Độ lớn phụ thuộc đơn vị đo, nên để so sánh người ta dùng tương quan
+\[
+ \rho_{ik}=\frac{\sigma_{ik}}{\sqrt{\sigma_{ii}\sigma_{kk}}},
+ \qquad -1\le\rho_{ik}\le1,
+\]
+khi cả hai phương sai dương. Nếu hai biến độc lập và có moment bậc hai hữu hạn,
+hiệp phương sai bằng không. Chiều ngược lại cần thêm giả thiết, sẽ được giải thích
+ở Phần~\ref{sec:linear}.
+
+\begin{example}[Đọc tham số]
+Với $\vmu=(10,20)'$ và $\Sigma=\begin{pmatrix}4&3\\3&9\end{pmatrix}$,
+biến thứ nhất có trung bình 10, độ lệch chuẩn 2; biến thứ hai có trung bình 20,
+độ lệch chuẩn 3. Tương quan là $3/(2\cdot3)=0.5$.
+Không đọc 3 ở ngoài đường chéo thành độ lệch chuẩn.
+\end{example}
+
+\subsection{Xác định dương: có độ biến thiên theo mọi hướng}
+Ma trận đối xứng $\Sigma$ được gọi là \emph{xác định dương} nếu
+\[
+ \mathbf a'\Sigma\mathbf a>0\qquad\text{với mọi }\mathbf a\ne0.
+\]
+Vì $\mathbf a'\Sigma\mathbf a=\Var(\mathbf a'\mathbf X)$, điều này có nghĩa
+mọi tổ hợp tuyến tính không tầm thường đều có phương sai dương. Không có một
+hướng nào bị ``dẹt hoàn toàn''. Ma trận xác định dương có các trị riêng dương,
+có nghịch đảo và định thức dương.
+
+Một ma trận hiệp phương sai nói chung chỉ cần \emph{nửa xác định dương}:
+$\mathbf a'\Sigma\mathbf a\ge0$. Chẳng hạn, nếu $X_2=2X_1$, thì
+$2X_1-X_2$ luôn bằng 0; phương sai theo hướng $(2,-1)'$ bằng 0 và $\Sigma$
+không khả nghịch. Trong bài giảng, trừ khi nói khác, các công thức có
+$\Sigma^{-1}$ giả định $\Sigma$ xác định dương.
+
+Với ma trận đối xứng $2\times2$, điều kiện xác định dương tương đương
+$\sigma_{11}>0$ và $|\Sigma|>0$. Ở kích thước tổng quát, chỉ kiểm tra định
+thức dương cho một ma trận đối xứng bất kỳ là chưa đủ; ví dụ $\diag(-1,-1)$
+có định thức 1 nhưng không xác định dương. Riêng với ma trận \emph{đã biết là
+hiệp phương sai}, định thức dương loại bỏ trường hợp suy biến.
+
+\subsection{Ôn suy diễn một chiều: từ mẫu đến tổng thể}
+Cho $X_1,\ldots,X_n$ iid, tức độc lập và cùng phân phối. Trung bình mẫu và
+phương sai mẫu không chệch là
+\[
+ \bar X=\frac1n\sum_{j=1}^n X_j,\qquad
+ s^2=\frac1{n-1}\sum_{j=1}^n(X_j-\bar X)^2.
+\]
+Độ lệch chuẩn $s$ mô tả độ phân tán giữa các quan sát; sai số chuẩn
+$s/\sqrt n$ mô tả độ bất định của \emph{trung bình mẫu}. Hai đại lượng
+phục vụ hai câu hỏi khác nhau.
+
+Nếu mẫu lấy từ $\N(\mu,\sigma^2)$, dưới $H_0:\mu=\mu_0$,
+\[
+ t=\frac{\bar X-\mu_0}{s/\sqrt n}\sim t_{n-1}.
+\]
+Số bậc tự do $n-1$ phản ánh việc một mức trung bình đã được ước lượng từ mẫu.
+Kiểm định hai phía mức $\alpha$ bác bỏ $H_0$ nếu
+$|t|>t_{n-1;1-\alpha/2}$. Khoảng tin cậy tương ứng là
+\[
+ \bar x\pm t_{n-1;1-\alpha/2}\frac{s}{\sqrt n}.
+\]
+\nguon{Chương 5, §5.2, tr.~210--211, công thức (5-1)--(5-3)}
+
+\paragraph{Quy ước phân vị xuyên suốt tài liệu.}
+Nếu $Y$ có phân phối tích lũy $G$, thì $q_\gamma$ thỏa
+$\Prob(Y\le q_\gamma)=\gamma$. Do đó $t_{\nu;0.975}$ là phân vị dưới
+97.5\%, có xác suất đuôi phải 2.5\%. Tương tự,
+$F_{r,s;0.95}$ và $\chi^2_{p;0.95}$ có xác suất đuôi phải 5\%.
+Sách thường viết $F_{r,s}(\alpha)$ cho \emph{phân vị đuôi trên}
+$\alpha$; nó tương ứng với $F_{r,s;1-\alpha}$ trong bài giảng.
+
+\paragraph{Mức ý nghĩa, giá trị p và kết luận.}
+Mức ý nghĩa $\alpha$ là xác suất bác bỏ sai giả thuyết không, khi giả thuyết
+đó đúng và mô hình áp dụng đúng. Giá trị p là xác suất, \emph{dưới $H_0$},
+nhận được thống kê ít nhất cực đoan như giá trị quan sát. Nó không phải
+xác suất $H_0$ đúng. Nếu $\text{p-value}>\alpha$, viết ``chưa đủ bằng chứng
+để bác bỏ'', không viết ``đã chứng minh $H_0$ đúng''.
+
+Khoảng tin cậy 95\% có nghĩa: nếu lặp lại cách lấy mẫu và dựng khoảng,
+khoảng 95\% các khoảng sẽ chứa tham số cố định. Với một khoảng đã tính,
+không diễn giải 95\% thành xác suất hậu nghiệm của tham số khi chưa có mô hình Bayes.
+
+\begin{example}[Một phép tính một chiều]
+Với cột đầu $(2,8,6,8)'$ ở bảng dữ liệu trên,
+$\bar x=6$ và $s^2=(16+4+0+4)/3=8$.
+Kiểm định $\mu_0=7$ cho $t=(6-7)/\sqrt{8/4}=-0.7071$.
+Khoảng 95\% là $6\pm3.1824\sqrt2$, tức xấp xỉ $[1.499;10.501]$.
+Đây là suy diễn cho \emph{một} biến đã chọn, chưa phải phát biểu đồng thời
+cho cả hai biến trong bảng.
+\end{example}
+
+\kiemtra{Nếu tăng $n$ lên bốn lần mà độ phân tán tổng thể giữ nguyên,
+sai số chuẩn của trung bình giảm bao nhiêu? Đáp án: giảm một nửa.}

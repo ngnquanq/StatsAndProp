@@ -1,0 +1,113 @@
+% Biên dịch: latexmk -xelatex -interaction=nonstopmode -halt-on-error main.tex
+\documentclass[12pt,a4paper]{article}
+\usepackage{fontspec}
+\usepackage{polyglossia}
+\setdefaultlanguage{vietnamese}
+% Latin Modern: họ chữ kế thừa Computer Modern mặc định của LaTeX.
+\setmainfont{lmroman10-regular.otf}[
+ BoldFont=lmroman10-bold.otf,ItalicFont=lmroman10-italic.otf,
+ BoldItalicFont=lmroman10-bolditalic.otf]
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{unicode-math}
+\setmathfont{latinmodern-math.otf}
+\renewcommand{\boldsymbol}[1]{\symbf{#1}}
+\usepackage[a4paper,margin=2.6cm]{geometry}
+\usepackage{graphicx,booktabs,array,longtable,enumitem}
+\newcolumntype{L}[1]{>{\raggedright\arraybackslash}p{#1}}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,calc}
+\usepackage[unicode,hidelinks]{hyperref}
+\hypersetup{pdftitle={Phân phối chuẩn nhiều chiều và suy diễn cho vectơ trung bình},
+ pdfauthor={},pdfsubject={Bài giảng tự học tiếng Việt, theo Johnson và Wichern},
+ bookmarksdepth=2}
+\setcounter{tocdepth}{1}
+\setlength{\parindent}{1.4em}
+\setlength{\parskip}{4pt}
+\linespread{1.06}
+\setlist{itemsep=3pt,topsep=4pt,leftmargin=1.8em}
+\setlength{\emergencystretch}{2em}
+\raggedbottom
+\clubpenalty=8000
+\widowpenalty=8000
+\numberwithin{equation}{section}
+\newtheorem{result}{Kết quả}[section]
+\theoremstyle{definition}
+\newtheorem{example}[result]{Ví dụ}
+\newtheorem{definition}[result]{Định nghĩa}
+\renewcommand{\proofname}{Chứng minh}
+\newcommand{\R}{\mathbb R}
+\newcommand{\N}{\mathcal N}
+\newcommand{\E}{\operatorname{E}}
+\newcommand{\Var}{\operatorname{Var}}
+\newcommand{\Cov}{\operatorname{Cov}}
+\newcommand{\Prob}{\operatorname{P}}
+\newcommand{\diag}{\operatorname{diag}}
+\newcommand{\tr}{\operatorname{tr}}
+\newcommand{\vmu}{\boldsymbol\mu}
+\newcommand{\Sig}{\boldsymbol\Sigma}
+\newcommand{\Xbar}{\bar{\mathbf X}}
+\newcommand{\xbar}{\bar{\mathbf x}}
+\newcommand{\nguon}[1]{\par\smallskip{\footnotesize\textit{Đối chiếu Johnson--Wichern \cite{jw}: #1.}}\par}
+\newcommand{\hieu}[1]{\par\smallskip\noindent\textbf{Hiểu bằng lời.} #1\par}
+\newcommand{\kiemtra}[1]{\par\smallskip\noindent\textbf{Tự kiểm tra.} #1\par}
+\newcommand{\luuy}[1]{\par\smallskip\noindent\textbf{Điểm cần nhớ.} #1\par}
+\newcommand{\buoc}[2]{\par\smallskip\noindent\textbf{Bước #1: #2.}\par\nopagebreak}
+
+\begin{document}
+\begin{center}
+ {\large\bfseries BÀI GIẢNG TỰ HỌC THỐNG KÊ NHIỀU CHIỀU}\par
+ \bigskip
+ {\LARGE\bfseries Phân phối chuẩn nhiều chiều}\par
+ \medskip
+ {\Large\bfseries và suy diễn cho vectơ trung bình}\par
+ \bigskip
+ Theo Johnson \& Wichern, \textit{Applied Multivariate Statistical Analysis},\par
+ ấn bản thứ sáu, Pearson New International Edition (2014)
+\end{center}
+\bigskip
+\noindent\textbf{Bài giảng dành cho ai?}
+Cho người đã học xác suất và thống kê một chiều nhưng cần một lộ trình dễ đọc
+để hiểu công thức ma trận, phân phối chuẩn nhiều chiều và kiểm định trung bình.
+Không cần nhớ sẵn toàn bộ đại số tuyến tính: phần đầu ôn lại những phép tính cần dùng.
+
+\noindent\textbf{Sau khi học, bạn có thể làm gì?}
+Đọc được ý nghĩa của một ma trận hiệp phương sai; tìm phân phối của tổ hợp,
+vectơ con và phân phối có điều kiện; tính và diễn giải kiểm định Hotelling;
+lập miền tin cậy, khoảng tin cậy đồng thời; chọn đúng kết quả chính xác hoặc xấp xỉ.
+
+\noindent\textbf{Cách sử dụng.}
+Lần đầu đọc phần giải thích và làm lại ví dụ bằng giấy bút. Sau mỗi câu hỏi
+``Tự kiểm tra'', dừng lại để trả lời trước khi đọc tiếp. Lần thứ hai,
+làm bài tự luyện ở Phần~\ref{sec:practice} và xem chứng minh ở phụ lục.
+Bảng công thức ở Phụ lục~\ref{sec:formula} phục vụ tra cứu sau khi đã hiểu điều kiện.
+
+\noindent\textbf{Quy ước nguồn.}
+Nội dung được diễn giải bằng lời riêng, không phải bản dịch nguyên văn giáo trình.
+Các nhãn ``Kết quả'' trong bài giảng là số nội bộ; nhãn \textit{Result} trong dòng
+đối chiếu là số của sách. Số trang luôn là số \emph{in trên sách}; trong PDF địa
+phương, các trang thuộc Chương 4--5 có chỉ số PDF lớn hơn số trang in 5 đơn vị.
+Các ví dụ minh họa tự xây dựng được ghi rõ; ví dụ lấy từ bài tập chỉ chọn để giảng
+phương pháp, không thay thế toàn bộ lời giải BTVN.
+
+\clearpage
+\tableofcontents
+\input{sections/01_foundations}
+\input{sections/02_normal}
+\input{sections/03_linear}
+\input{sections/04_conditional}
+\input{sections/05_sampling}
+\input{sections/06_hotelling}
+\input{sections/07_confidence}
+\input{sections/08_large_sample}
+\input{sections/09_practice}
+\appendix
+\input{sections/10_appendices}
+\clearpage
+\begin{thebibliography}{9}
+\bibitem{jw} Richard A. Johnson và Dean W. Wichern (2014).
+\textit{Applied Multivariate Statistical Analysis}, Sixth Edition,
+Pearson New International Edition. Pearson Education Limited.
+ISBN 978-1-292-02494-3. Nguồn địa phương: thư mục \texttt{Book} của môn học;
+tên file chứa ``2013'', nhưng trang bản quyền của bản PDF ghi năm 2014.
+\end{thebibliography}
+\end{document}

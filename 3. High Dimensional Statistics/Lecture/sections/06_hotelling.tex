@@ -1,0 +1,275 @@
+\clearpage
+\section{Kiểm định Hotelling \texorpdfstring{$T^2$}{T²}: trung bình có khác giả thuyết?}
+\label{sec:hotelling}
+
+\subsection{Vì sao không kiểm định riêng từng biến?}
+Giả sử cần kiểm tra $H_0:\vmu=(\mu_{01},\mu_{02})'$. Làm hai kiểm định
+$t$ mức 5\% không tạo ra một kiểm định chung mức 5\%: xác suất có ít nhất
+một bác bỏ sai có thể lớn hơn 5\%. Hơn nữa, một hướng như $X_1-X_2$ có
+thể ít biến thiên dù từng biến riêng có phương sai lớn. Sự khác biệt theo
+hướng đó có thể bị bỏ qua nếu chỉ kiểm định từng thành phần.
+
+Hotelling $T^2$ dùng \emph{toàn bộ} ma trận hiệp phương sai để đánh giá
+vectơ chênh lệch giữa trung bình mẫu và giả thuyết. Nó là phép mở rộng
+trực tiếp của
+\[
+ t^2=n(\bar x-\mu_0)^2/s^2.
+\]
+\nguon{Chương 5, §5.2, tr.~210--212, công thức (5-1)--(5-4)}
+
+\subsection{Thống kê và phân phối chính xác}
+Ta xét giả thuyết hai phía
+\[
+ H_0:\vmu=\vmu_0,\qquad H_1:\vmu\ne\vmu_0.
+\]
+\begin{definition}
+Thống kê Hotelling một mẫu là
+\begin{equation}
+ T^2=n(\Xbar-\vmu_0)'S^{-1}(\Xbar-\vmu_0).
+ \label{eq:t2}
+\end{equation}
+\end{definition}
+\nguon{Chương 5, §5.2, công thức (5-4), tr.~211}
+
+\hieu{$T^2$ là bình phương khoảng cách từ trung bình mẫu đến vectơ
+giả thuyết, đo bằng hiệp phương sai của \emph{trung bình mẫu}, ước lượng
+bởi $S/n$. Giá trị lớn nghĩa là chênh lệch quan sát lớn so với sai số lấy mẫu.}
+
+\begin{result}
+Nếu $\mathbf X_1,\ldots,\mathbf X_n$ iid $\N_p(\vmu,\Sigma)$,
+$\Sigma$ xác định dương, $n>p$, thì dưới $H_0$,
+\begin{equation}
+ F_{\mathrm{obs}}=\frac{n-p}{p(n-1)}T^2\sim F_{p,n-p}.
+ \label{eq:t2F}
+\end{equation}
+Bác bỏ $H_0$ mức $\alpha$ nếu
+\begin{equation}
+ T^2>c_T^2,\qquad
+ c_T^2=\frac{p(n-1)}{n-p}F_{p,n-p;1-\alpha}.
+ \label{eq:t2critical}
+\end{equation}
+\end{result}
+\nguon{Chương 5, §5.2, công thức (5-5)--(5-7), tr.~212}
+
+Một cách tương đương là so sánh $F_{\mathrm{obs}}$ với phân vị $F$.
+Không so trực tiếp $T^2$ với phân vị $F$ mà bỏ hệ số chuyển đổi.
+Giá trị p là
+\[
+ \text{p-value}=1-G_{p,n-p}\!\left(\frac{n-p}{p(n-1)}T^2_{\mathrm{obs}}\right),
+\]
+trong đó $G_{p,n-p}$ là hàm phân phối tích lũy $F$.
+Phần mềm thường có hàm survival function để tính đuôi phải ổn định hơn
+phép trừ $1-G$ khi xác suất rất nhỏ.
+
+\subsection{Ví dụ mẫu nhỏ: thực hiện trọn quy trình}
+\begin{example}[Bài 3.1 của BTVN 2, tương ứng Exercise 5.1 trong sách]
+Với dữ liệu bốn quan sát ở Phần~\ref{sec:sampling}, kiểm định
+$\vmu_0=(7,11)'$ tại $\alpha=0.05$, giả sử mẫu iid chuẩn hai chiều.
+\buoc{1}{Xác định kích thước và thống kê mẫu}
+$n=4$, $p=2$, $\xbar=(6,10)'$, $S$ và $S^{-1}$ như
+\eqref{eq:sample4}. Vì $|S|=44/9>0$, nghịch đảo tồn tại.
+\buoc{2}{Tính vectơ chênh lệch}
+$\mathbf d=\xbar-\vmu_0=(-1,-1)'$.
+\buoc{3}{Tính thống kê}
+\[
+ T^2=\frac4{22}(-1,-1)
+ \begin{pmatrix}9&15\\15&36\end{pmatrix}
+ \begin{pmatrix}-1\\-1\end{pmatrix}
+ =\frac{150}{11}\approx13.6364.
+\]
+\buoc{4}{Chọn phân phối và ngưỡng đúng}
+\[
+ F_{\mathrm{obs}}=\frac{4-2}{2(4-1)}T^2=
+ \frac{T^2}{3}=\frac{50}{11}\approx4.5455.
+\]
+Dưới $H_0$, $F_{\mathrm{obs}}\sim F_{2,2}$.
+Phân vị $F_{2,2;0.95}=19$, nên $c_T^2=3\cdot19=57$.
+\buoc{5}{Ra quyết định và diễn giải}
+$13.6364<57$: chưa bác bỏ $H_0$ ở mức 5\%.
+Giá trị p bằng $11/61\approx0.1803$.
+Chưa đủ bằng chứng để nói vectơ trung bình tổng thể khác $(7,11)'$.
+\end{example}
+
+Mẫu rất nhỏ làm $S$ có độ bất định lớn, nên ngưỡng kiểm định cao.
+Nếu sai lầm dùng $\chi^2_{2;0.95}=5.9915$, ta sẽ bác bỏ ở ví dụ này,
+trái với kiểm định chính xác. Đây không phải chi tiết nhỏ về làm tròn:
+lựa chọn phân phối thay đổi kết luận.
+\nguon{Dữ kiện Exercise 5.1, Chương 5; lý thuyết §5.2. Phép tính được kiểm tra độc lập}
+
+\subsection{Kiểm tra bằng trường hợp một chiều}
+Đặt $p=1$ trong \eqref{eq:t2F}:
+\[
+ \frac{n-1}{n-1}T^2=T^2\sim F_{1,n-1}.
+\]
+Mà $t_{n-1}^2\sim F_{1,n-1}$, nên kiểm định Hotelling thu về kiểm định
+$t$ hai phía. Ngưỡng $F_{1,n-1;1-\alpha}$ bằng
+$t_{n-1;1-\alpha/2}^2$.
+
+\kiemtra{Trong ví dụ mẫu nhỏ, thống kê nào có phân phối $F_{2,2}$:
+$T^2$ hay $T^2/3$? Đáp án: $T^2/3$.}
+
+\subsection{Tính bất biến: đổi đơn vị đo không đổi kết luận}
+\label{sec:invariance_proof}
+Cho $\mathbf Y_j=C\mathbf X_j+\mathbf d$ với $C$ vuông khả nghịch.
+Biến đổi đồng thời
+\[
+ \bar{\mathbf y}=C\xbar+\mathbf d,\quad S_Y=CS_XC',\quad
+ \vmu_{Y,0}=C\vmu_0+\mathbf d.
+\]
+Khi đó
+\begin{equation}
+ T_Y^2=T_X^2.
+ \label{eq:invariance}
+\end{equation}
+Đổi mét sang centimét, đổi thang nhiệt độ hoặc chọn một hệ trục khả nghịch
+chỉ biểu diễn cùng thông tin theo cách khác. Chuẩn hóa chênh lệch bằng
+hiệp phương sai làm các hệ số đổi đơn vị triệt tiêu.
+\nguon{Chương 5, §5.2, phép biến đổi (5-9) và lập luận bất biến, tr.~215--216}
+
+\buoc{1}{Chứng minh các thống kê mẫu biến đổi đồng bộ}
+Tính trung bình hai vế của $\mathbf y_j=C\mathbf x_j+\mathbf d$ cho
+$\bar{\mathbf y}=C\xbar+\mathbf d$. Do đó
+\[
+ \mathbf y_j-\bar{\mathbf y}=C(\mathbf x_j-\xbar).
+\]
+Thế vào định nghĩa hiệp phương sai mẫu:
+\begin{align*}
+ S_Y&=\frac1{n-1}\sum_j
+ C(\mathbf x_j-\xbar)(\mathbf x_j-\xbar)'C'\\
+ &=C\left[\frac1{n-1}\sum_j
+ (\mathbf x_j-\xbar)(\mathbf x_j-\xbar)'\right]C'=CS_XC'.
+\end{align*}
+Giả thuyết cũng đổi hệ tọa độ:
+$\vmu_{Y,0}=C\vmu_0+\mathbf d$.
+Đặt $\mathbf r=\xbar-\vmu_0$, ta nhận được độ lệch mới
+\[
+ \bar{\mathbf y}-\vmu_{Y,0}=C\mathbf r.
+\]
+Phần tịnh tiến triệt tiêu vì xuất hiện ở cả hai trung bình.
+
+\buoc{2}{Thiết lập nghịch đảo của hiệp phương sai mới}
+Với tích các ma trận khả nghịch, nghịch đảo lấy theo thứ tự ngược lại:
+\[
+ (CS_XC')^{-1}=(C')^{-1}S_X^{-1}C^{-1}.
+\]
+Có thể kiểm tra bằng cách nhân với $CS_XC'$: các cặp
+$C'(C')^{-1}$, $S_XS_X^{-1}$, $CC^{-1}$ lần lượt triệt tiêu và cho $I_p$.
+
+\buoc{3}{Thế vào thống kê Hotelling}
+\begin{align*}
+ T_Y^2
+ &=n(C\mathbf r)'(CS_XC')^{-1}(C\mathbf r)\\
+ &=n\mathbf r'C'(C')^{-1}S_X^{-1}C^{-1}C\mathbf r\\
+ &=n\mathbf r'S_X^{-1}\mathbf r=T_X^2.
+\end{align*}
+Các hệ số đổi tọa độ xuất hiện trong cả độ lệch lẫn hiệp phương sai,
+nên triệt tiêu khi chuẩn hóa. Đây là chứng minh bất biến của \emph{giá
+trị thống kê}, không chỉ của dạng công thức.
+
+\buoc{4}{Suy ra bất biến của giá trị p và quyết định kiểm định}
+$C$ là ma trận $p\times p$ khả nghịch nên không thay đổi $n$ hoặc $p$.
+Hệ số chuyển sang $F$, số bậc tự do và ngưỡng $c_T^2$ đều giữ nguyên.
+Vì vậy cùng một $T^2$ cho cùng giá trị p và cùng quyết định bác bỏ hay
+chưa bác bỏ. Dưới giả thiết mẫu chuẩn, mẫu biến đổi vẫn chuẩn và có
+hiệp phương sai $C\Sigma C'\succ0$, nên phân phối kiểm định chính xác
+vẫn áp dụng được.
+
+\hieu{Nếu đổi đơn vị đo hoặc trộn các biến theo một cách có thể hoàn
+tác, ta vẫn giữ toàn bộ thông tin về giả thuyết. Kiểm định vectơ trung
+bình cần cho cùng kết luận trong hai cách biểu diễn đó.}
+
+Đẳng thức đại số $T_Y^2=T_X^2$ không cần giả thiết chuẩn, chỉ cần các
+nghịch đảo tồn tại và phép biến đổi phù hợp. Giả thiết chuẩn cần để dùng
+phân phối $F$ \emph{chính xác}; không nên nhập hai loại điều kiện làm một.
+
+\begin{example}[Bất biến từ số liệu của Example 5.1]
+Dữ liệu $(6,9),(10,6),(8,3)$ cho
+$\xbar=(8,6)'$, $S_X=\begin{pmatrix}4&-3\\-3&9\end{pmatrix}$.
+Với $\vmu_0=(9,5)'$, ta có $T_X^2=7/9$.
+Chọn $C=\begin{pmatrix}1&-1\\1&1\end{pmatrix}$, $\mathbf d=0$:
+\[
+ \bar{\mathbf y}=(2,14)',\quad\vmu_{Y,0}=(4,14)',\quad
+ S_Y=\begin{pmatrix}19&-5\\-5&7\end{pmatrix}.
+\]
+$S_Y^{-1}=\frac1{108}\begin{pmatrix}7&5\\5&19\end{pmatrix}$, nên
+\[
+ T_Y^2=\frac3{108}(-2,0)
+ \begin{pmatrix}7&5\\5&19\end{pmatrix}(-2,0)'=\frac79.
+\]
+\end{example}
+\nguon{Chương 5, Example 5.1, tr.~213; biến đổi dùng trong Bài 3.2 của BTVN 2}
+
+\luuy{Phải biến đổi cả giả thuyết. Nếu đổi dữ liệu mà giữ nguyên
+$\vmu_0$, ta kiểm định một giả thuyết khác. Nếu $C$ không khả nghịch,
+phép biến đổi có thể làm mất thông tin và tính bất biến này không còn áp dụng.}
+
+Trong hình học, miền tin cậy của dữ liệu biến đổi chính là ảnh
+$\{C\vmu+\mathbf d:\vmu\in\mathcal C_X\}$ của miền ban đầu.
+Elipsoid có thể xoay, co giãn hoặc bị kéo xiên, nhưng một vectơ giả
+thuyết và ảnh của nó luôn có cùng trạng thái nằm trong/ngoài miền.
+Đây là cách nhìn hình học của cùng chứng minh.
+Chọn một tập con biến, tương ứng với ma trận chữ nhật làm giảm số
+chiều, không phải phép đổi tọa độ khả nghịch và không thuộc kết quả này.
+
+\subsection{Tỷ số hợp lý: so hai cách giải thích cùng dữ liệu}
+Hàm hợp lý $L(\vmu,\Sigma)$ cho biết mức độ phù hợp của tham số với
+dữ liệu đã quan sát. Ta so sánh:
+\begin{itemize}
+ \item mô hình không ràng buộc: được chọn cả $\vmu$ và $\Sigma$;
+ \item mô hình dưới $H_0$: giữ $\vmu=\vmu_0$, chỉ được chọn $\Sigma$.
+\end{itemize}
+Mô hình có ràng buộc không thể đạt cực đại lớn hơn mô hình tự do. Tỷ số
+giữa hai cực đại nằm trong $[0,1]$; tỷ số nhỏ nghĩa là ràng buộc làm giảm
+độ phù hợp nhiều.
+
+Đặt $\mathbf d=\xbar-\vmu_0$. Các MLE là
+\begin{align}
+ \widehat\Sigma&=\frac{n-1}{n}S,\\
+ \widehat\Sigma_0&=\frac1n\sum_j(\mathbf x_j-\vmu_0)(\mathbf x_j-\vmu_0)'
+ =\widehat\Sigma+\mathbf d\mathbf d'.
+\end{align}
+\nguon{Chương 5, §5.3, công thức (5-10)--(5-12), tr.~216--217}
+
+Để tránh nhầm tên, bài giảng dùng hai ký hiệu riêng:
+\begin{align}
+ \Lambda_{\mathrm{LR}}
+ &=\frac{\max_{\Sigma}L(\vmu_0,\Sigma)}{\max_{\vmu,\Sigma}L(\vmu,\Sigma)}
+ =\left(\frac{|\widehat\Sigma|}{|\widehat\Sigma_0|}\right)^{n/2},\\
+ \lambda_W&=\Lambda_{\mathrm{LR}}^{2/n}
+ =\frac{|\widehat\Sigma|}{|\widehat\Sigma_0|}
+ =\left(1+\frac{T^2}{n-1}\right)^{-1}.
+ \label{eq:wilks}
+\end{align}
+$\lambda_W$ là Wilks' lambda trong bài toán này.
+Trong sách, $\Lambda$ chỉ tỷ số hợp lý và $\Lambda^{2/n}$ là Wilks' lambda.
+Từ \eqref{eq:wilks},
+\begin{equation}
+ T^2=(n-1)\left(\frac{|\widehat\Sigma_0|}{|\widehat\Sigma|}-1\right).
+ \label{eq:t2det}
+\end{equation}
+\nguon{Chương 5, §5.3, Result 5.1, công thức (5-14), tr.~218; (5-15), tr.~219}
+
+\hieu{$T^2$ lớn tương đương $\lambda_W$ nhỏ. Hai cách xây dựng dẫn
+đến cùng kiểm định trong bài toán chuẩn một mẫu. Điều này nối ý tưởng
+khoảng cách với ý tưởng so độ phù hợp mô hình.}
+
+\begin{example}[Kiểm tra lại bằng định thức]
+Ở mẫu $n=4$ trên, đặt $A=3S$, $A_0=A+4\mathbf d\mathbf d'$.
+Ta có
+\[
+ A=\begin{pmatrix}24&-10\\-10&6\end{pmatrix},\qquad
+ A_0=\begin{pmatrix}28&-6\\-6&10\end{pmatrix},
+\]
+nên $|A|=44$, $|A_0|=244$.
+Hệ số chia $n$ trong hai MLE triệt tiêu khi lấy tỷ số định thức:
+\[
+ T^2=3\left(\frac{244}{44}-1\right)=\frac{150}{11}.
+\]
+$\lambda_W=11/61$ và $\Lambda_{\mathrm{LR}}=(11/61)^2$.
+Việc $\lambda_W$ bằng giá trị p trong ví dụ này là trùng hợp riêng của
+$n=4,p=2$, không phải công thức tổng quát cho giá trị p.
+\end{example}
+
+Trong tính toán lớn, log-định thức thường ổn định hơn định thức trực tiếp.
+Tuy vậy cách tính ưu tiên cho $T^2$ vẫn là giải hệ với $S$; công thức định
+thức ở đây giúp hiểu lý thuyết và kiểm tra chéo.

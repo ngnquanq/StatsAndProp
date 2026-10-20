@@ -1,0 +1,229 @@
+\subsection{Dựng và nhận xét miền elip từng bước}
+\label{sec:construct_regions}
+Trong hai chiều, đặt $\delta_i=\mu_i-\bar x_i$ và
+$r=s_{12}/\sqrt{s_{11}s_{22}}$, với $S\succ0$ nên $|r|<1$.
+Ta có
+\[
+ S^{-1}=\frac1{s_{11}s_{22}-s_{12}^2}
+ \begin{pmatrix}s_{22}&-s_{12}\\-s_{12}&s_{11}\end{pmatrix}.
+\]
+Phương trình miền elip viết tường minh thành
+\begin{equation}
+ \frac n{1-r^2}\left[
+ \frac{\delta_1^2}{s_{11}}
+ -\frac{2r\delta_1\delta_2}{\sqrt{s_{11}s_{22}}}
+ +\frac{\delta_2^2}{s_{22}}\right]\le c_T^2.
+ \label{eq:ellipse_correlation}
+\end{equation}
+Hạng $\delta_1\delta_2$ cho thấy miền phụ thuộc cách \emph{hai tọa độ
+cùng lệch}. Nó không thể nói đầy đủ bằng hai bất đẳng thức riêng lẻ.
+
+\buoc{1}{Xác định tâm và mức tin cậy}
+Tâm là $\xbar$, không phải $\vmu_0$. Chọn $1-\alpha$, tính $c_T^2$
+theo $n,p$. Một giả thuyết cụ thể chỉ là một điểm để so với miền đã dựng.
+
+\buoc{2}{Xác định các hướng và bán trục}
+Giải $S\mathbf e_i=\ell_i\mathbf e_i$, chuẩn hóa $\mathbf e_i$ về độ
+dài 1. Bán trục theo hướng đó là $a_i=\sqrt{c_T^2\ell_i/n}$.
+Hai đầu mỗi trục là $\xbar\pm a_i\mathbf e_i$.
+Trong hai chiều có thể tính trị riêng trực tiếp:
+\[
+ \ell_{\pm}=\frac{s_{11}+s_{22}
+ \pm\sqrt{(s_{11}-s_{22})^2+4s_{12}^2}}2.
+\]
+Trị riêng lớn cho trục dài: hướng ấy có độ bất định lớn hơn.
+Khi $s_{12}=0$, trục elip song song trục tọa độ. Nếu phương sai khác
+nhau, elip vẫn không phải đường tròn.
+\nguon{Chương 5, §5.4, (5-18), (5-19), tr.~221; hình học dựa trên (4-7), tr.~153}
+
+\begin{example}[Trục của elip trong ví dụ $n=40$]
+Với \eqref{eq:intervaldata}, $S=\begin{pmatrix}4&3\\3&9\end{pmatrix}$,
+hai trị riêng là $(13\pm\sqrt{61})/2$, xấp xỉ 10.4051 và 2.5949.
+Các bán trục 95\% dài khoảng 1.3163 và 0.6573.
+Hướng trục dài có thể chọn $\mathbf e_+=(0.4242,0.9056)'$,
+nghiêng khoảng $64.9^\circ$ so với chiều dương trục $\mu_1$.
+Tương quan dương làm hướng dài nghiêng lên; độ nghiêng không nhất thiết
+$45^\circ$ vì hai phương sai 4 và 9 khác nhau.
+\end{example}
+
+\buoc{3}{Kiểm tra một điểm và viết nhận xét}
+Với điểm ứng viên $\vmu_0$, tính
+$q=n(\xbar-\vmu_0)'S^{-1}(\xbar-\vmu_0)$.
+Nếu $q\le c_T^2$, điểm nằm trong hoặc trên biên; nếu $q>c_T^2$, điểm
+nằm ngoài. Nhận xét nên nêu tâm, hướng biến thiên, độ dài trục và vị trí
+của điểm, rồi nối với quyết định Hotelling ở cùng mức $\alpha$.
+
+Một câu nhận xét đủ ý là: ``Elip tập trung quanh trung bình mẫu và kéo
+dài theo hướng hai biến cùng tăng. Điểm giả thuyết nằm ngoài elip vì lệch
+theo hướng ít biến thiên; do đó kiểm định Hotelling bác bỏ ở mức 5\%.''
+Không viết ``điểm nằm ngoài nên dữ liệu chắc chắn sai'', và không gán
+xác suất 95\% cho một tham số cố định nằm trong miền đã quan sát.
+
+\subsection{Dựng miền chữ nhật và phân biệt hai cách dựng}
+\label{sec:rectangles}
+Với hai trung bình thành phần, hình chữ nhật từ hình chiếu $T^2$ là
+\begin{equation}
+ \mathcal R_T=\prod_{i=1}^2
+ \left[\bar x_i-\sqrt{c_T^2}\sqrt{s_{ii}/n};
+ \bar x_i+\sqrt{c_T^2}\sqrt{s_{ii}/n}\right].
+ \label{eq:rectangle_T}
+\end{equation}
+Nó chứa toàn bộ elip $\mathcal C$. Bảo đảm phủ của hình chữ nhật thành
+phần là \emph{ít nhất} $1-\alpha$; kết quả phủ đúng $1-\alpha$ cho
+\emph{mọi tổ hợp} không đồng nghĩa chỉ hai khoảng thành phần cũng có
+xác suất phủ đúng bằng mức đó.
+
+Nếu chỉ hai trung bình thành phần được định trước, Bonferroni dùng $m=2$:
+\begin{equation}
+ \mathcal R_B=\prod_{i=1}^2
+ \left[\bar x_i-k_B\sqrt{s_{ii}/n};
+ \bar x_i+k_B\sqrt{s_{ii}/n}\right],\quad
+ k_B=t_{n-1;1-\alpha/4}.
+ \label{eq:rectangle_B}
+\end{equation}
+Tâm vẫn là $\xbar$; hai nửa cạnh lần lượt là
+$h_{B1}=k_B\sqrt{s_{11}/n}$ và $h_{B2}=k_B\sqrt{s_{22}/n}$.
+Các cạnh song song với trục tọa độ. Để kiểm tra điểm, chỉ cần
+$|\delta_1|\le h_{B1}$ \emph{và} $|\delta_2|\le h_{B2}$.
+\nguon{Chương 5, §5.4, hình chiếu của khoảng $T^2$, tr.~226;
+ Bonferroni (5-28), (5-29), tr.~232; so sánh các miền trong Example 5.6, tr.~233--234}
+
+\begin{example}[Hai miền không luôn chứa nhau]
+Vẫn dùng $n=40$, $\xbar=(10,20)'$, $S$ trong \eqref{eq:intervaldata}.
+Lần này danh sách Bonferroni \emph{chỉ có hai trung bình}, khác danh sách
+$m=3$ ở ví dụ trước. Với $\alpha=0.05$,
+\[
+ k_B=t_{39;0.9875}\approx2.3313,\qquad
+ (h_{B1},h_{B2})\approx(0.7372,1.1058).
+\]
+Vậy
+\[
+ \mathcal R_B=[9.2628;10.7372]\times[18.8942;21.1058].
+\]
+Xét hai điểm:
+\begin{itemize}
+ \item $P=(10.70,18.95)'$ có độ lệch $(0.70,-1.05)'$,
+ nằm trong Bonferroni nhưng $q=19.6>6.6604$, nên nằm ngoài elip.
+ \item $R=(10.80,20.60)'$ có độ lệch $(0.80,0.60)'$,
+ có $q=6.4<6.6604$, nên nằm trong elip, nhưng $0.80>0.7372$,
+ do đó nằm ngoài Bonferroni.
+\end{itemize}
+Như vậy cả hai miền đều có bảo đảm tin cậy thích hợp, nhưng hình dạng
+và cách đánh giá một điểm khác nhau. Không khẳng định hình chữ nhật
+Bonferroni luôn nằm trong elip hoặc luôn chứa elip.
+\end{example}
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}[x=3.4cm,y=2.3cm,>=Stealth]
+ \draw[->] (-1.18,0)--(1.2,0) node[right]{$\delta_1$};
+ \draw[->] (0,-1.6)--(0,1.6) node[above]{$\delta_2$};
+ \draw[dashed] (-.816114,-1.224171) rectangle (.816114,1.224171);
+ \draw[densely dotted,thick] (-.737210,-1.105816) rectangle (.737210,1.105816);
+ \draw[domain=0:360,samples=120,smooth,variable=\t]
+ plot ({.816114*cos(\t)},{.612085*cos(\t)+1.060163*sin(\t)});
+ \fill (.70,-1.05) circle (.025) node[above left]{$P$};
+ \fill (.80,.60) circle (.025) node[right]{$R$};
+ \fill (0,0) circle (.02) node[below left]{$\xbar$};
+\end{tikzpicture}
+\caption{Cùng dữ liệu và mức 95\%: nét liền là elip Hotelling,
+ nét đứt là hình chữ nhật từ các khoảng thành phần $T^2$, nét chấm là
+ Bonferroni cho $m=2$. Trục thể hiện độ lệch khỏi $\xbar$.}
+\label{fig:three_regions}
+\end{figure}
+
+\begin{center}
+\small
+\begin{tabular}{L{.21\linewidth}L{.22\linewidth}L{.23\linewidth}L{.23\linewidth}}
+\toprule
+Tiêu chí & Elip Hotelling & Chữ nhật $T^2$ & Chữ nhật Bonferroni\\
+\midrule
+Tâm & $\xbar$ & $\xbar$ & $\xbar$\\[3pt]
+Thông tin dùng để dựng & Toàn bộ $S$, kể cả $s_{12}$ & $s_{11},s_{22}$ và hệ số $T^2$ & $s_{11},s_{22}$ và hệ số theo $m$\\[3pt]
+Hướng biên & Theo vectơ riêng & Song song trục tọa độ & Song song trục tọa độ\\[3pt]
+Phủ trong mẫu chuẩn & Đúng $1-\alpha$ cho vectơ & Ít nhất $1-\alpha$ cho các thành phần & Ít nhất $1-\alpha$ cho danh sách định trước\\[3pt]
+Nhận xét điểm & Dùng dạng toàn phương & Kiểm tra từng tọa độ & Kiểm tra từng tọa độ\\[3pt]
+Quan hệ hình học & Luôn nằm trong $\mathcal R_T$ & Chứa elip & Không có quan hệ chứa nhau cố định với elip\\
+\bottomrule
+\end{tabular}
+\end{center}
+Điểm ngoài elip dẫn tới bác bỏ Hotelling. Điểm ngoài Bonferroni vi phạm
+ít nhất một khoảng thành phần đã hiệu chỉnh; đó không phải cùng một
+quy tắc kiểm định Hotelling, nên các kết luận có thể khác nhau.
+
+\subsection{Vì sao chữ nhật Bonferroni không trực tiếp phản ánh tương quan?}
+\label{sec:bonf_correlation}
+Công thức \eqref{eq:rectangle_B} không chứa $s_{12}$: mỗi cạnh được dựng
+từ một khoảng một chiều cho $\mu_i$. Sau đó Bonferroni kết hợp các
+phát biểu bằng một bất đẳng thức đúng với \emph{mọi kiểu phụ thuộc}.
+Phương pháp bảo đảm sai số mà không cần ước lượng xác suất chung chính
+xác theo tương quan. Vì vậy hình chữ nhật không xoay theo đám mây dữ liệu.
+
+Để thấy rõ, giữ $n=40$, $\xbar=(10,20)'$, mức 95\%, xét
+\begin{equation}
+ S_\rho=\begin{pmatrix}4&6\rho\\6\rho&9\end{pmatrix},\quad
+ \rho=-0.5,\ 0,\ 0.5.
+ \label{eq:covariance_family}
+\end{equation}
+Đây là ba ma trận hiệp phương sai mẫu giả định, cùng phương sai thành
+phần nhưng tương quan khác nhau. Trong cả ba, hình chữ nhật Bonferroni
+có cùng tâm, cùng nửa cạnh $(0.7372,1.1058)$.
+Elip thì đổi hướng và bán trục; tại $\rho=0$, hai bán trục là 0.8161
+và 1.2242, còn tại $\rho=\pm0.5$ là 0.6573 và 1.3163.
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}[>=Stealth,font=\small]
+ \foreach \corr/\shift in {-0.5/0,0/4.6,0.5/9.2}{
+  \begin{scope}[xshift=\shift cm,x=1.5cm,y=1.1cm]
+   \draw[->] (-1.1,0)--(1.12,0) node[right]{$\delta_1$};
+   \draw[->] (0,-1.5)--(0,1.52) node[above]{$\delta_2$};
+   \draw[densely dotted,thick] (-.737210,-1.105816) rectangle (.737210,1.105816);
+   \draw[domain=0:360,samples=100,smooth,variable=\t]
+   plot ({.816114*cos(\t)},
+    {1.224171*(\corr*cos(\t)+sqrt(1-\corr*\corr)*sin(\t))});
+   \node at (0,-1.9) {$\rho=\corr$};
+  \end{scope}
+ }
+\end{tikzpicture}
+\caption{Giữ phương sai thành phần, tâm và thang trục giống nhau:
+ nét chấm Bonferroni không đổi; nét liền elip thay đổi theo tương quan.
+ Các trục là độ lệch khỏi trung bình mẫu.}
+\label{fig:rho_regions}
+\end{figure}
+
+\hieu{Hình chữ nhật trả lời ``mỗi trung bình có thể ở khoảng nào?''.
+Elip còn trả lời ``hai trung bình có thể ở những vị trí ấy \emph{cùng
+nhau} không?''. Với tương quan dương, cặp lệch cùng chiều được đánh giá
+khác cặp lệch ngược chiều, dù từng độ lệch riêng có cùng độ lớn.}
+
+Tuy nhiên, không suy rằng ``Bonferroni hoàn toàn không liên quan tương
+quan''. Cần phân biệt ba điều:
+\begin{enumerate}
+ \item \textbf{Công thức biên của hình chữ nhật thành phần} không dùng
+ hiệp phương sai chéo. Hình chữ nhật từ các khoảng thành phần $T^2$
+ cũng có tính chất này nếu giữ đường chéo, $n,p,\alpha$ cố định.
+ \item \textbf{Xác suất phủ đồng thời thực tế} có thể phụ thuộc tương
+ quan vì các thống kê một chiều phụ thuộc nhau. Bonferroni chỉ bảo đảm
+ một cận dưới, không khẳng định xác suất phủ bằng nhau trong mọi mô hình.
+ \item \textbf{Khoảng cho tổ hợp} vẫn dùng $\mathbf a'S\mathbf a$.
+ Với hiệu, $\Var$ mẫu là $s_{11}+s_{22}-2s_{12}$; tương quan dương
+ làm khoảng hiệu hẹp hơn khi giữ các phương sai thành phần cố định.
+\end{enumerate}
+
+\paragraph{Nếu thêm một hiệu thì miền không còn đơn thuần chữ nhật.}
+Khi danh sách có $\mu_1,\mu_2,\mu_1-\mu_2$, phải dùng $m=3$ cho
+toàn bộ danh sách. Hai khoảng thành phần tạo hình chữ nhật rộng hơn
+trường hợp $m=2$. Khoảng hiệu thêm điều kiện
+\[
+ |(\mu_1-\mu_2)-(\bar x_1-\bar x_2)|
+ \le t_{n-1;1-\alpha/6}\sqrt{(s_{11}+s_{22}-2s_{12})/n}.
+\]
+Đó là một dải chéo; giao của dải với hình chữ nhật thường là đa giác.
+Trong ví dụ hiện tại, điều kiện dải là $|\delta_1-\delta_2|\le1.0465$.
+Không vẽ riêng hình chữ nhật rồi nói nó thể hiện đầy đủ cả ba khoảng.
+
+\kiemtra{Giữ $s_{11},s_{22}$ và $n$ nhưng đổi dấu $s_{12}$:
+ hình chữ nhật thành phần Bonferroni có đổi không? Không.
+ Elip có đổi không? Có, hướng nghiêng đổi.
+ Khoảng cho $\mu_1-\mu_2$ có đổi không? Có, vì có hạng $-2s_{12}$.}

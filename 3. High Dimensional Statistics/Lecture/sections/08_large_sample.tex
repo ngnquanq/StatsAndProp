@@ -1,0 +1,168 @@
+\clearpage
+\section{Suy diễn mẫu lớn và cách chọn phương pháp}
+\label{sec:large}
+
+\subsection{Điểm thay đổi: phân phối giới hạn thay cho phân phối chính xác}
+Trong tổng thể không chuẩn, $T^2$ vẫn tính được nếu $S$ khả nghịch,
+nhưng công thức $F$ của mẫu chuẩn không còn là một kết quả chính xác.
+Với mẫu iid, $p$ cố định, trung bình và hiệp phương sai hữu hạn, $\Sigma$
+xác định dương, Phần~\ref{sec:sampling} đã cho
+\[
+ n(\Xbar-\vmu)'S^{-1}(\Xbar-\vmu)\xrightarrow{d}\chi^2_p.
+\]
+Suy diễn mẫu lớn dùng phân phối giới hạn này để xấp xỉ ngưỡng.
+\nguon{Chương 4, §4.5, (4-28), tr.~176; Chương 5, §5.5, (5-31), tr.~235}
+
+\begin{result}[Kiểm định xấp xỉ]
+Với các điều kiện trên và $n$ đủ lớn, bác bỏ $H_0:\vmu=\vmu_0$ ở mức
+xấp xỉ $\alpha$ khi
+\begin{equation}
+ T^2=n(\xbar-\vmu_0)'S^{-1}(\xbar-\vmu_0)>\chi^2_{p;1-\alpha}.
+ \label{eq:largetest}
+\end{equation}
+Giá trị p xấp xỉ là đuôi phải của $\chi^2_p$ tại $T^2$ quan sát.
+\end{result}
+\nguon{Chương 5, §5.5, Result 5.4, tr.~235}
+
+Thống kê không đổi, nhưng ngưỡng thay đổi. Nếu tổng thể chuẩn và có đủ
+điều kiện, có thể tiếp tục dùng ngưỡng $F$ chính xác dù mẫu lớn.
+Không bắt buộc bỏ kết quả chính xác để dùng xấp xỉ.
+
+\subsection{Khoảng tin cậy xấp xỉ}
+Miền cho trung bình dùng
+\[
+ n(\xbar-\vmu)'S^{-1}(\xbar-\vmu)\le\chi^2_{p;1-\alpha}.
+\]
+Tương ứng, các khoảng đồng thời cho mọi tổ hợp là
+\begin{equation}
+ \mathbf a'\xbar\pm\sqrt{\chi^2_{p;1-\alpha}}
+ \sqrt{\frac{\mathbf a'S\mathbf a}{n}}.
+ \label{eq:largeinterval}
+\end{equation}
+Với từng thành phần, đặt $\mathbf a=\mathbf e_i$; với hiệu hai thành
+phần, đặt $\mathbf a=\mathbf e_i-\mathbf e_k$ như trước.
+\nguon{Chương 5, §5.5, Result 5.5, tr.~235--236}
+
+Cho $m$ tổ hợp xác định trước, Bonferroni mẫu lớn dùng
+\begin{equation}
+ \mathbf a_j'\xbar\pm z_{1-\alpha/(2m)}
+ \sqrt{\frac{\mathbf a_j'S\mathbf a_j}{n}},\qquad j=1,\ldots,m.
+ \label{eq:largebonf}
+\end{equation}
+Đây là hệ quả của CLT một chiều cho từng tổ hợp và bất đẳng thức hợp.
+$z_\gamma$ là phân vị của $\N(0,1)$.
+Trong tổng thể không chuẩn, việc giữ hệ số $t$ không tự làm bảo đảm trở
+thành chính xác; cả cách dùng $t$ lẫn $z$ đều cần đánh giá xấp xỉ.
+
+\subsection{Một ví dụ để thấy độ chênh giữa hai ngưỡng}
+\begin{example}[Số tóm tắt giả định, $n=100$]
+Giả sử $p=2$, $n=100$, $\xbar=(6,10)'$ và
+$S=\begin{pmatrix}8&-10/3\\-10/3&2\end{pmatrix}$.
+Đây là một mẫu giả định mới; không lấy bốn quan sát rồi tự đổi $n$ thành 100.
+Kiểm định $\vmu_0=(7,11)'$ cho
+\[
+ T^2=100\frac{75}{22}=340.9091.
+\]
+Ngưỡng chi-bình phương 95\% là 5.9915; nếu mẫu chuẩn, ngưỡng $F$ chính
+xác là
+\[
+ \frac{2\cdot99}{98}F_{2,98;0.95}\approx6.2415.
+\]
+Cả hai cách đều bác bỏ ở ví dụ này.
+Các khoảng thành phần chi-bình phương là
+\[
+ \mu_1:6\pm0.6923,\qquad\mu_2:10\pm0.3462.
+\]
+Với $m=3$ phát biểu định trước, hệ số Bonferroni chuẩn là
+$z_{1-0.05/6}\approx2.3940$.
+\end{example}
+
+Hãy so với mẫu $n=4$ ở phần Hotelling: trung bình và $S$ có thể giống nhau,
+nhưng sai số chuẩn của trung bình và ngưỡng suy diễn khác nhau. Vì vậy
+không thể diễn giải độ chắc chắn mà quên kích thước mẫu.
+
+\subsection{``Mẫu lớn'' không có một ngưỡng đúng cho mọi dữ liệu}
+Một quy tắc thực hành thường gặp là $n-p\ge30$. Nó có thể hữu ích cho
+ôn tập hoặc chỉ dẫn sơ bộ, nhưng không phải giả thiết của CLT hay Slutsky,
+và không bảo đảm xấp xỉ tốt cho mọi phân phối.
+Sách thảo luận rằng độ chính xác còn phụ thuộc số chiều và dạng phân phối;
+hai bài toán cùng $n-p$ vẫn có thể khác nhau nhiều.
+\nguon{Chương 5, §5.5, thảo luận về kích thước mẫu và lệch chuẩn, tr.~236}
+
+Các yếu tố cần xem gồm độ lệch, đuôi nặng, ngoại lệ, sự phụ thuộc giữa
+quan sát, tỉ lệ giữa $p$ và $n$, và tình trạng gần suy biến của $S$.
+Giới hạn với $p$ cố định không tự áp dụng khi $p$ tăng nhanh cùng $n$.
+Nếu phương sai không hữu hạn hoặc dữ liệu phụ thuộc thời gian, các công
+thức giới hạn trong bài giảng không tự được bảo đảm.
+
+\luuy{Mẫu lớn giúp trung bình mẫu gần chuẩn; nó không sửa được sai
+thiết kế lấy mẫu, không làm quan sát phụ thuộc trở thành iid, và không
+biến ma trận gần suy biến thành một ước lượng tốt.}
+
+\subsection{Kiểm tra mô hình trước khi suy diễn}
+Đối với dữ liệu thực, nên kiểm tra:
+\begin{enumerate}
+ \item \textbf{Thiết kế mẫu:} các hàng có phải những đối tượng độc lập,
+ cùng cơ chế lấy mẫu hay có đo lặp, chuỗi thời gian, phân cụm?
+ \item \textbf{Chất lượng dữ liệu:} đơn vị, giá trị thiếu, cột hằng,
+ biến trùng và phép biến đổi đã dùng.
+ \item \textbf{Đồ thị:} histogram, Q--Q plot cho từng biến; scatter plot
+ cho các cặp; điểm ngoại lệ và các dạng phi tuyến.
+ \item \textbf{Hiệp phương sai:} $n>p$, hạng và mức độ gần suy biến.
+\end{enumerate}
+Các Q--Q plot biên nhìn đẹp không chứng minh chuẩn đồng thời, như phản
+ví dụ ở Phần~\ref{sec:linear}. Đồ thị là công cụ đánh giá, không thay thế
+toàn bộ giả thiết. Khi đã biến đổi dữ liệu, kết luận thường nói về trung
+bình \emph{trên thang biến đổi}; ví dụ $\E(\log X)$ không bằng
+$\log\E(X)$ nói chung.
+\nguon{Chương 4, §4.6, tr.~177--186; §4.7, tr.~187--192; biến đổi dữ liệu ở §4.8, từ tr.~192}
+
+Không tự xóa ngoại lệ chỉ để đạt kết quả mong muốn. Cần xác định đó là
+lỗi nhập liệu hay quan sát có ý nghĩa, rồi nêu rõ xử lý. Nếu cần phương
+pháp cho dữ liệu phụ thuộc, hiệp phương sai suy biến hoặc cao chiều, phải
+xây dựng mô hình khác; chúng nằm ngoài phạm vi bài giảng này.
+
+\subsection{Bảng chọn phương pháp}
+\begin{center}
+\small
+\begin{tabular}{p{.30\linewidth}p{.30\linewidth}p{.31\linewidth}}
+\toprule
+Câu hỏi & Điều kiện chính & Công cụ\\
+\midrule
+Phân phối một tổ hợp hoặc vectơ con & Vectơ gốc chuẩn & $A\vmu$, $A\Sigma A'$; chọn khối\\
+Phân phối khi biết một khối & Chuẩn chung, khối đã biết khả nghịch & Công thức có điều kiện\\
+Độc lập giữa các tổ hợp & Chuẩn đồng thời & Kiểm tra $\mathbf a'\Sigma\mathbf b=0$\\
+Kiểm định vectơ trung bình chính xác & Mẫu iid chuẩn, $n>p$, $\Sigma$ xác định dương & $T^2$ và ngưỡng $F$\\
+Mọi tổ hợp của trung bình & Như trên & Khoảng đồng thời $T^2$\\
+Ít tổ hợp định trước & Mẫu iid chuẩn & Bonferroni với $m$ phát biểu\\
+Trung bình, tổng thể không chuẩn & Iid, moment hữu hạn, $p$ cố định, mẫu đủ lớn & Ngưỡng $\chi^2$; Bonferroni $z$\\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\subsection{Liên hệ với BTVN 1--2}
+\begin{center}
+\small
+\begin{tabular}{lp{.68\linewidth}}
+\toprule
+Bài & Phần cần đọc và thao tác chính\\
+\midrule
+2.1 & Phần 3: chọn vectơ trung bình và ma trận hiệp phương sai con.\\
+2.2 & Phần 3: kiểm tra khối hiệp phương sai hoặc hiệp phương sai của tổ hợp.\\
+2.3 & Phần 4: phân hoạch theo biến mục tiêu và biến đã biết.\\
+2.4a,b & Phần 3: tổ hợp tuyến tính; phương trình triệt tiêu hiệp phương sai.\\
+2.9a--d & Phần 5 và 8: phân phối trung bình mẫu, $T^2$ và xấp xỉ; chọn theo giả thiết của từng câu.\\
+3.1 & Phần 6: tính $T^2$, đổi sang $F$, so ngưỡng và kết luận.\\
+3.2 & Phần 6: biến đổi đồng bộ dữ liệu, $S$ và trung bình giả thuyết.\\
+3.3--3.5 & Phần 7: bảo đảm đồng thời, miền elip, khoảng thành phần và các hiệu; đếm đúng $m$.\\
+3.6a--d & Phần 8: suy diễn mẫu lớn, khoảng $\chi^2$ và Bonferroni; nhớ hạng hiệp phương sai.\\
+\bottomrule
+\end{tabular}
+\end{center}
+Số bài ở đây theo BTVN địa phương. Chúng không phải số Result hay số
+Exercise trong giáo trình. Khi đối chiếu lời giải, phải dùng đúng bộ dữ
+kiện của từng bài; không suy rằng cùng một ký hiệu $\Sigma$ nghĩa là cùng
+một ma trận ở mọi trang.
+
+\kiemtra{Nếu tổng thể chuẩn và $n=100$, có bắt buộc dùng ngưỡng
+$\chi^2$ không? Không. Ngưỡng $F$ chính xác vẫn dùng được.}

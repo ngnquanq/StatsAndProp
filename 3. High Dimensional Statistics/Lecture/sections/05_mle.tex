@@ -1,0 +1,155 @@
+\subsection{Thiết lập MLE: đi từ mật độ đến ước lượng}
+\label{sec:mle_derivation}
+Ước lượng hợp lý cực đại (maximum likelihood estimation, MLE) chọn các
+tham số làm dữ liệu \emph{đã quan sát} có mật độ chung lớn nhất. Khi tìm
+MLE, các $\mathbf x_j$ là số đã biết; $\vmu,\Sigma$ là các biến cần tối ưu.
+Ta không tìm tham số có xác suất lớn nhất, vì tham số ở đây không được
+đặt một phân phối xác suất.
+
+Giả sử mẫu iid $\N_p(\vmu,\Sigma)$ và $\Sigma\succ0$. Để có nghiệm MLE
+không suy biến, giả sử ma trận tổng tích ngoài quanh $\xbar$ xác định dương.
+Trong mẫu chuẩn với hiệp phương sai tổng thể xác định dương, $n>p$ bảo
+đảm điều này với xác suất 1; đối với bảng số cụ thể vẫn phải kiểm tra hạng.
+
+\buoc{1}{Viết hàm hợp lý và log-hợp lý}
+Tính độc lập cho phép nhân $n$ mật độ:
+\begin{equation}
+ L(\vmu,\Sigma)=(2\pi)^{-np/2}|\Sigma|^{-n/2}
+ \exp\!\left[-\frac12\sum_{j=1}^n
+ (\mathbf x_j-\vmu)'\Sigma^{-1}(\mathbf x_j-\vmu)\right].
+ \label{eq:mlelikelihood}
+\end{equation}
+Logarit là hàm tăng, nên cực đại $L$ cũng là cực đại $\ell=\log L$:
+\begin{equation}
+ \ell(\vmu,\Sigma)=-\frac{np}2\log(2\pi)-\frac n2\log|\Sigma|
+ -\frac12\sum_{j=1}^n(\mathbf x_j-\vmu)'\Sigma^{-1}(\mathbf x_j-\vmu).
+ \label{eq:mleloglikelihood}
+\end{equation}
+Logarit chuyển tích thành tổng, làm phép tối ưu dễ xử lý hơn.
+\nguon{Chương 4, §4.3, mật độ mẫu (4-11), tr.~168; hàm hợp lý (4-16), tr.~170}
+
+\buoc{2}{Tách phần phụ thuộc trung bình và tìm $\widehat{\vmu}$}
+Đặt
+\[
+ A=\sum_j(\mathbf x_j-\xbar)(\mathbf x_j-\xbar)'=(n-1)S.
+\]
+Vì $\sum_j(\mathbf x_j-\xbar)=0$, hai hạng chéo triệt tiêu khi khai triển:
+\begin{equation}
+ \sum_j(\mathbf x_j-\vmu)(\mathbf x_j-\vmu)'
+ =A+n(\xbar-\vmu)(\xbar-\vmu)'.
+ \label{eq:mlescatterdecomposition}
+\end{equation}
+Trace, ký hiệu $\tr(B)$, là tổng các phần tử đường chéo của ma trận vuông.
+Với vectơ $\mathbf u$, ta có
+$\mathbf u'B\mathbf u=\tr(B\mathbf u\mathbf u')$; do đó
+\begin{align}
+ \ell(\vmu,\Sigma)
+ &=K-\frac n2\log|\Sigma|-\frac12\tr(\Sigma^{-1}A)
+ \notag\\[-2pt]
+ &\qquad-\frac n2(\xbar-\vmu)'\Sigma^{-1}(\xbar-\vmu),
+ \label{eq:mlemeansplit}
+\end{align}
+trong đó $K=-np\log(2\pi)/2$ không phụ thuộc tham số.
+
+Với $\Sigma$ cố định, chỉ hạng cuối phụ thuộc $\vmu$. Vì
+$\Sigma^{-1}\succ0$, hạng toàn phương không âm, bằng 0 duy nhất khi
+$\vmu=\xbar$. Nó mang dấu trừ trong log-hợp lý, nên
+\begin{equation}
+ \widehat{\vmu}=\xbar.
+ \label{eq:mlemeanhat}
+\end{equation}
+Kết quả đúng với \emph{mọi} $\Sigma\succ0$ cố định, nên có thể thay
+$\vmu=\xbar$ trước rồi tối ưu theo $\Sigma$.
+\nguon{Chương 4, §4.3, phân rã (4-14), tr.~169; Result 4.11, tr.~171--172}
+
+\buoc{3}{Đổi biến để tìm ma trận hiệp phương sai}
+Đặt $\Theta=\Sigma^{-1}$, gọi là \emph{ma trận độ chính xác}. Đây là
+phép đổi biến một-một trên các ma trận xác định dương. Vì
+$\log|\Sigma|=-\log|\Theta|$, log-hợp lý sau khi chọn trung bình là
+\begin{equation}
+ \ell(\xbar,\Theta)=K+\frac n2\log|\Theta|-\frac12\tr(\Theta A).
+ \label{eq:mleprecision}
+\end{equation}
+Ý nghĩa của hai hạng: $\log|\Theta|$ thưởng cho độ phân tán nhỏ, còn
+$\tr(\Theta A)$ phạt nếu độ phân tán quá nhỏ so với các độ lệch thực tế.
+Cực đại cân bằng hai hạng đó.
+
+Để đạo hàm, dùng hai quy tắc ma trận
+\[
+ d\log|\Theta|=\tr(\Theta^{-1}d\Theta),\qquad
+ d\tr(\Theta A)=\tr(A\,d\Theta).
+\]
+Ký hiệu $d\Theta$ là một thay đổi nhỏ của ma trận, không phải vectơ
+tịnh tiến $\mathbf d$ dùng ở phần biến đổi dữ liệu. Hai quy tắc trên là
+bản mở rộng của $(\log\theta)'=1/\theta$ và $(a\theta)'=a$.
+Từ \eqref{eq:mleprecision},
+\[
+ d\ell=\frac12\tr\bigl[(n\Theta^{-1}-A)d\Theta\bigr].
+\]
+Tại điểm dừng, biểu thức phải bằng 0 theo mọi hướng thay đổi đối xứng,
+nên $n\Theta^{-1}-A=0$. Suy ra
+\begin{equation}
+ \widehat\Sigma=\widehat\Theta^{-1}=\frac An
+ =\frac1n\sum_j(\mathbf x_j-\xbar)(\mathbf x_j-\xbar)'
+ =\frac{n-1}{n}S.
+ \label{eq:mlecov}
+\end{equation}
+Đó là nguồn gốc của mẫu số $n$; ta không chọn mẫu số theo ý thích.
+
+\buoc{4}{Kiểm tra điểm dừng thực sự là cực đại}
+Đạo hàm bằng 0 chưa đủ để kết luận. Với hướng đối xứng $H\ne0$, đạo
+hàm bậc hai theo đường $\Theta+tH$ là
+\[
+ \frac{d^2}{dt^2}\ell(\xbar,\Theta+tH)\bigg|_{t=0}
+ =-\frac n2\tr(\Theta^{-1}H\Theta^{-1}H)<0.
+\]
+Thật vậy, trace trong vế phải bằng tổng bình phương các trị riêng của
+ma trận đối xứng $\Theta^{-1/2}H\Theta^{-1/2}$, nên dương khi $H\ne0$.
+Log-hợp lý là hàm lõm nghiêm ngặt theo $\Theta$ trên miền xác định dương,
+vì vậy điểm dừng tìm được là cực đại duy nhất. Kết hợp Bước 2, đây cũng
+là cực đại đồng thời theo cả trung bình và hiệp phương sai.
+\nguon{Kết quả MLE: Chương 4, §4.3, Result 4.11, tr.~171--172.
+ Sách chứng minh bằng Result 4.10; ở đây dùng dẫn xuất tương đương theo ma trận độ chính xác}
+
+\hieu{Trung bình mẫu đặt tâm tốt nhất của đám mây. Hiệp phương sai MLE
+khớp độ phân tán quanh tâm đó bằng trung bình của các tích ngoài.
+Tối ưu theo ma trận độ chính xác giúp nhìn rõ nghiệm và kiểm tra cực đại.}
+
+\subsection{MLE khác ước lượng không chệch như thế nào?}
+Thay các giá trị quan sát bằng biến ngẫu nhiên, các công thức MLE trở
+thành các \emph{ước lượng} $\widehat{\vmu}=\Xbar$ và
+$\widehat\Sigma=(n-1)S/n$. Khi đã thay số, đó là các \emph{giá trị ước lượng}.
+Ta có
+\[
+ \E(S)=\Sigma,\qquad
+ \E(\widehat\Sigma)=\frac{n-1}{n}\Sigma.
+\]
+$S$ không chệch; MLE hiệp phương sai bị chệch xuống ở mẫu hữu hạn.
+MLE tối ưu hàm hợp lý, không tối ưu tiêu chí ``không chệch''. Hai mục
+tiêu khác nhau, nên cho mẫu số khác nhau. Khi $n$ lớn, tỉ lệ $(n-1)/n$
+tiến về 1 và khác biệt giảm.
+
+\begin{example}[Tính MLE từ mẫu bốn quan sát]
+Với $\xbar=(6,10)'$, $S$ trong \eqref{eq:sample4}, $n=4$,
+\[
+ A=3S=\begin{pmatrix}24&-10\\-10&6\end{pmatrix},\quad
+ \widehat{\vmu}=\begin{pmatrix}6\\10\end{pmatrix},\quad
+ \widehat\Sigma=\frac A4=\begin{pmatrix}6&-2.5\\-2.5&1.5\end{pmatrix}.
+\]
+Ta có $|\widehat\Sigma|=2.75>0$ và $\widehat\Theta=4A^{-1}$,
+kiểm tra được $4\widehat\Theta^{-1}=A$.
+Để kiểm định Hotelling, ta dùng $S$, không thế $\widehat\Sigma$ vào
+công thức $n\mathbf r'S^{-1}\mathbf r$ mà giữ nguyên ngưỡng $F$.
+Để thiết lập tỷ số hợp lý, ta dùng đúng MLE $\widehat\Sigma$.
+\end{example}
+
+\luuy{Nếu $A$ suy biến, $A/n$ không thuộc miền $\Sigma\succ0$.
+Không có MLE hữu hạn trong mô hình chuẩn không suy biến này: có thể
+co phương sai về 0 theo một hướng không có độ lệch quan sát, khiến hàm
+hợp lý tăng không giới hạn. Tình huống này xảy ra khi $n\le p$, hoặc
+do các cột phụ thuộc tuyến tính. Phụ lục~\ref{app:mle_global} giải thích
+bằng trị riêng, đồng thời kiểm tra cực đại mà không dùng đạo hàm ma trận.}
+
+\kiemtra{Dùng cùng một mẫu, $S$ và MLE hiệp phương sai có thể khác nhau
+không? Có; MLE bằng $(n-1)S/n$. MLE trung bình có cần biết trước
+$\Sigma$ không? Không, nghiệm $\xbar$ đúng với mọi $\Sigma\succ0$.}

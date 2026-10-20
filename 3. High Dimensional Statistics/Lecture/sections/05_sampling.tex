@@ -1,0 +1,187 @@
+\clearpage
+\section{Phân phối mẫu: từ một quan sát đến thống kê của cả mẫu}
+\label{sec:sampling}
+
+\subsection{Trung bình mẫu và hiệp phương sai mẫu}
+Cho $\mathbf X_1,\ldots,\mathbf X_n$ là mẫu iid, mỗi quan sát có $p$ biến.
+Định nghĩa
+\begin{align}
+ \Xbar&=\frac1n\sum_{j=1}^n\mathbf X_j,
+ \label{eq:samplemean}\\
+ S&=\frac1{n-1}\sum_{j=1}^n
+ (\mathbf X_j-\Xbar)(\mathbf X_j-\Xbar)'.
+ \label{eq:samplecov}
+\end{align}
+Mỗi phần tử $s_{ik}$ là hiệp phương sai mẫu của hai cột $i,k$.
+Ký hiệu $S$ dùng cho cả thống kê ngẫu nhiên và ma trận giá trị đã tính;
+ngữ cảnh sẽ phân biệt. $\Xbar$ ngẫu nhiên trước khi lấy mẫu, còn $\xbar$
+là giá trị cụ thể sau khi lấy mẫu.
+
+\begin{example}[Tính từ bảng bốn quan sát]
+Với $\mathbf D=\begin{pmatrix}2&12\\8&9\\6&9\\8&10\end{pmatrix}$,
+\[
+ \xbar=\begin{pmatrix}6\\10\end{pmatrix},\qquad
+ \mathbf D_{\mathrm{centered}}=
+ \begin{pmatrix}-4&2\\2&-1\\0&-1\\2&0\end{pmatrix}.
+\]
+Đường chéo và hiệp phương sai lần lượt là
+\[
+ s_{11}=\frac{16+4+0+4}{3}=8,\quad
+ s_{22}=\frac{4+1+1+0}{3}=2,
+\]
+\[
+ s_{12}=\frac{(-4)(2)+(2)(-1)+(0)(-1)+(2)(0)}3=-\frac{10}3.
+\]
+Do đó
+\begin{equation}
+ S=\begin{pmatrix}8&-10/3\\-10/3&2\end{pmatrix},\qquad
+ S^{-1}=\frac1{22}\begin{pmatrix}9&15\\15&36\end{pmatrix}.
+ \label{eq:sample4}
+\end{equation}
+Ma trận tích $\mathbf D_{\mathrm{centered}}'
+\mathbf D_{\mathrm{centered}}$ cho đúng $(n-1)S$.
+\end{example}
+
+\subsection{Phân phối của trung bình mẫu chuẩn}
+\begin{result}
+Nếu $\mathbf X_j\overset{\mathrm{iid}}\sim\N_p(\vmu,\Sigma)$, thì
+\begin{equation}
+ \Xbar\sim\N_p\left(\vmu,\frac{\Sigma}{n}\right).
+ \label{eq:samplemeandist}
+\end{equation}
+\end{result}
+\nguon{Chương 4, §4.4, công thức (4-23), tr.~174}
+
+Kỳ vọng vẫn bằng $\vmu$, còn hiệp phương sai giảm $n$ lần.
+Điều này do các quan sát độc lập: các hiệp phương sai giữa đối tượng khác
+nhau bằng 0. Với một tổ hợp $\mathbf a'\Xbar$, phương sai là
+$\mathbf a'\Sigma\mathbf a/n$.
+
+\hieu{Nếu lấy lại nhiều mẫu, trung bình của các mẫu sẽ tụ quanh cùng một
+vectơ trung bình tổng thể. Mẫu càng lớn, đám mây các trung bình mẫu càng nhỏ.
+Các quan sát riêng lẻ vẫn có độ phân tán $\Sigma$; chúng không tự trở nên
+ít biến thiên chỉ vì ta lấy thêm dữ liệu.}
+
+Với $p=2$, $n=25$ và $\Sigma=\diag(4,9)$, độ lệch chuẩn của hai thành
+phần trung bình mẫu là $2/5$ và $3/5$, còn độ lệch chuẩn của quan sát là 2
+và 3. Cần giữ rõ ta đang xét loại đại lượng nào.
+
+\subsection{Dạng toàn phương khi biết hiệp phương sai tổng thể}
+Từ \eqref{eq:samplemeandist}, $\sqrt n(\Xbar-\vmu)\sim\N_p(0,\Sigma)$.
+Áp dụng kết quả khoảng cách Mahalanobis cho vectơ này:
+\begin{equation}
+ n(\Xbar-\vmu)'\Sigma^{-1}(\Xbar-\vmu)\sim\chi^2_p.
+ \label{eq:knowncovmean}
+\end{equation}
+Đây là kết quả \emph{chính xác} trong mẫu chuẩn khi dùng $\Sigma$ thật,
+ngay cả ở mẫu nhỏ. Trong Bài 2.9 với $n=60,p=4$, trung bình mẫu có
+hiệp phương sai $\Sigma/60$; dạng toàn phương của một quan sát và dạng
+\eqref{eq:knowncovmean} đều có phân phối $\chi^2_4$.
+Không có mâu thuẫn: hệ số $n$ bù cho việc trung bình mẫu biến thiên ít hơn.
+\nguon{Hệ quả của Chương 4, Result 4.7, tr.~163, và (4-23), tr.~174}
+
+Nếu thay $\Sigma^{-1}$ bằng $S^{-1}$, ma trận chuẩn hóa cũng ngẫu nhiên.
+Khi đó không thể giữ nguyên kết luận chi-bình phương chính xác; cần
+phân phối Hotelling hữu hạn hoặc xấp xỉ mẫu lớn. Đây là điểm phân biệt
+quan trọng giữa các câu của Bài 2.9.
+
+\subsection{Wishart: mở rộng chi-bình phương từ số sang ma trận}
+Trong một chiều, tổng bình phương các biến chuẩn độc lập cho phân phối
+chi-bình phương. Trong nhiều chiều, thay bình phương $Z^2$ bằng tích ngoài
+$\mathbf Z\mathbf Z'$, ta có phân phối Wishart.
+
+\begin{definition}
+Nếu $\mathbf Z_1,\ldots,\mathbf Z_\nu$ iid $\N_p(0,\Sigma)$, thì
+\[
+ W=\sum_{j=1}^\nu\mathbf Z_j\mathbf Z_j'
+ \sim W_{p,\nu}(\Sigma).
+\]
+$p$ là kích thước ma trận, $\nu$ là số bậc tự do, $\Sigma$ là ma trận
+tham số tỉ lệ. Một số tài liệu viết $W_p(\Sigma,\nu)$ cho cùng phân phối.
+\end{definition}
+\nguon{Chương 4, §4.4, định nghĩa (4-22), tr.~174}
+
+\begin{result}
+Với mẫu iid chuẩn nhiều chiều,
+\begin{equation}
+ (n-1)S\sim W_{p,n-1}(\Sigma),\qquad \Xbar\perp S.
+ \label{eq:wishart}
+\end{equation}
+\end{result}
+\nguon{Chương 4, §4.4, công thức (4-23), tr.~174}
+
+\hieu{Trung bình mẫu cung cấp thông tin về vị trí; hiệp phương sai mẫu
+cung cấp thông tin về độ phân tán. Trong mô hình chuẩn, hai phần thông tin
+này ngẫu nhiên độc lập với nhau. Tính chất đặc biệt đó cho phép xây dựng
+phân phối kiểm định chính xác ở phần tiếp theo.}
+
+Vì sao bậc tự do là $n-1$? Các độ lệch cộng lại bằng 0:
+$\sum_j(\mathbf X_j-\Xbar)=0$. Sau khi biết $n-1$ độ lệch, độ lệch còn
+lại đã được xác định. Các độ lệch này không iid, nhưng có thể đổi hệ tọa độ
+giữa các quan sát để viết tổng tích ngoài thành tổng của $n-1$ vectơ chuẩn
+độc lập. Phụ lục~\ref{app:wishart} mô tả phép đổi đó.
+
+Với $p=1$, Wishart thu về
+\[
+ \frac{(n-1)s^2}{\sigma^2}\sim\chi^2_{n-1},
+\]
+nên đây thực sự là mở rộng của kết quả một chiều.
+
+\subsection{Khi nào \texorpdfstring{$S$}{S} có nghịch đảo?}
+Hạng của ma trận dữ liệu đã trừ trung bình không vượt quá $n-1$. Do đó
+\[
+ \operatorname{rank}(S)\le\min(p,n-1).
+\]
+Nếu $n\le p$, $S$ chắc chắn suy biến. Nếu mẫu iid chuẩn, $\Sigma$ xác định
+dương và $n>p$, thì $S$ khả nghịch với xác suất 1. Trong dữ liệu thực,
+biến lặp lại hoặc quan hệ tuyến tính chính xác vẫn có thể gây suy biến.
+
+\luuy{Điều kiện $n>p$ là cần thiết để dùng nghịch đảo hiệp phương sai
+mẫu trong kiểm định cổ điển. Nó không tự bảo đảm dữ liệu bất kỳ không có
+cột trùng hay cột hằng. Cũng không nên thay $S^{-1}$ bằng nghịch đảo giả rồi
+giữ nguyên ngưỡng $F$; đó là một phương pháp khác.}
+
+\input{sections/05_mle}
+
+\subsection{Không chuẩn nhưng mẫu lớn: luật số lớn và CLT}
+Giả sử mẫu iid từ tổng thể bất kỳ, có trung bình $\vmu$ và hiệp phương
+sai hữu hạn $\Sigma$, với $p$ cố định. Khi $n\to\infty$,
+\begin{equation}
+ \Xbar\xrightarrow{P}\vmu,\qquad S\xrightarrow{P}\Sigma.
+ \label{eq:lln}
+\end{equation}
+Ký hiệu $\xrightarrow{P}$ là hội tụ theo xác suất: xác suất sai lệch lớn
+hơn bất kỳ mức dương cho trước tiến về 0.
+\nguon{Chương 4, §4.5, Result 4.12 và công thức (4-26), (4-27), tr.~175}
+
+Định lý giới hạn trung tâm nhiều chiều nói rằng
+\begin{equation}
+ \sqrt n(\Xbar-\vmu)\xrightarrow{d}\N_p(0,\Sigma).
+ \label{eq:clt}
+\end{equation}
+Ký hiệu $\xrightarrow{d}$ là hội tụ về phân phối. Công thức này mô tả
+hình dạng giới hạn của sai lệch đã nhân $\sqrt n$; không nói mỗi quan sát
+$\mathbf X_j$ trở thành chuẩn khi tăng $n$.
+\nguon{Chương 4, §4.5, Result 4.13, tr.~176}
+
+Nếu $\Sigma$ xác định dương, Slutsky cho phép thay $\Sigma$ bằng ước lượng
+nhất quán $S$ trong dạng toàn phương:
+\begin{equation}
+ n(\Xbar-\vmu)'S^{-1}(\Xbar-\vmu)\xrightarrow{d}\chi^2_p.
+ \label{eq:slutsky}
+\end{equation}
+\nguon{Chương 4, §4.5, công thức (4-28), tr.~176; ứng dụng ở Result 5.4, tr.~235}
+
+\hieu{CLT cho hình dạng chuẩn ở giới hạn, luật số lớn cho phép ước lượng
+độ phân tán, và Slutsky nối hai kết quả. Không cần giả thiết chuẩn tổng thể
+cho kết quả giới hạn này, nhưng cần iid, moment hữu hạn và hiệp phương sai
+không suy biến.}
+
+Trong mẫu chuẩn, các kết quả Wishart và độc lập là \emph{chính xác ở mẫu
+hữu hạn}; trong tổng thể bất kỳ, chúng không tự được khôi phục chỉ vì mẫu
+lớn. Ta chỉ dùng kết quả xấp xỉ thích hợp. Cách chọn sẽ được tóm tắt ở
+Phần~\ref{sec:large}.
+
+\kiemtra{Có cần $n-p\ge30$ để $S\xrightarrow{P}\Sigma$ đúng không?
+Không. Hội tụ là phát biểu khi $n\to\infty$; một ngưỡng mẫu hữu hạn không
+phải giả thiết của luật số lớn.}

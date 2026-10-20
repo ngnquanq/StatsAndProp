@@ -1,0 +1,184 @@
+\clearpage
+\section{Phân phối chuẩn nhiều chiều: tâm, hình dạng và khoảng cách}
+\label{sec:normal}
+
+\subsection{Hai tham số đủ mô tả mô hình}
+Trong một chiều, $\N(\mu,\sigma^2)$ có tâm $\mu$ và độ phân tán
+$\sigma^2$. Trong $p$ chiều, vai trò tương ứng thuộc về vectơ $\vmu$ và
+ma trận $\Sigma$:
+\[
+ \mathbf X\sim\N_p(\vmu,\Sigma).
+\]
+Vectơ $\vmu$ đặt tâm của đám mây dữ liệu. Ma trận $\Sigma$ vừa cho độ phân
+tán của từng biến vừa cho cách chúng cùng biến thiên. Vì vậy biết các trung
+bình và các phương sai riêng vẫn chưa đủ: các hiệp phương sai cũng cần được xác định.
+
+\begin{definition}[Chuẩn nhiều chiều không suy biến]
+Với $\vmu\in\R^p$ và $\Sigma$ đối xứng xác định dương, mật độ tại
+$\mathbf x\in\R^p$ là
+\begin{equation}
+ f(\mathbf x)=\frac{1}{(2\pi)^{p/2}|\Sigma|^{1/2}}
+ \exp\!\left\{-\frac12(\mathbf x-\vmu)'\Sigma^{-1}
+ (\mathbf x-\vmu)\right\}.
+ \label{eq:density}
+\end{equation}
+\end{definition}
+\nguon{Chương 4, §4.2, công thức (4-4), tr.~150}
+
+\hieu{Mật độ lớn nhất ở tâm. Càng đi xa tâm theo thước đo có tính đến
+phương sai và tương quan, mật độ càng giảm. Hệ số ở trước hàm mũ làm tổng
+xác suất trên toàn không gian bằng 1.}
+
+Giá trị mật độ không phải xác suất của một điểm. Với biến liên tục,
+$\Prob(\mathbf X=\mathbf x)=0$; xác suất của một vùng $B$ là
+$\int_B f(\mathbf x)\,d\mathbf x$. Trong hai chiều, đây là thể tích dưới
+bề mặt mật độ, trên vùng $B$.
+
+\subsection{Đọc mật độ mà không cần thuộc lòng}
+Hãy tách công thức thành ba thành phần:
+\begin{enumerate}
+ \item $\mathbf x-\vmu$: độ lệch khỏi tâm.
+ \item $\Sigma^{-1}$: hiệu chỉnh độ lệch theo độ phân tán và tương quan.
+ \item $\exp(-D^2/2)$: làm mật độ giảm khi độ lệch chuẩn hóa $D^2$ tăng.
+\end{enumerate}
+Định thức $|\Sigma|$ thường được gọi là \emph{phương sai tổng quát}.
+Nếu độ phân tán theo các hướng tăng, cùng một lượng xác suất trải ra trên
+thể tích lớn hơn và đỉnh mật độ thấp hơn. Tuy nhiên định thức không cho biết
+riêng từng hướng: hai ma trận khác nhau có thể cùng định thức.
+
+Nếu $p=1$, $|\Sigma|=\sigma^2$ và công thức trở lại
+\[
+ f(x)=\frac1{\sqrt{2\pi}\sigma}
+ \exp\left[-\frac12\left(\frac{x-\mu}{\sigma}\right)^2\right].
+\]
+Đây là một kiểm tra hữu ích: công thức nhiều chiều phải thu về công thức
+quen thuộc khi chỉ còn một biến.
+
+\subsection{Khoảng cách Mahalanobis}
+\begin{definition}
+Bình phương khoảng cách Mahalanobis từ $\mathbf x$ đến $\vmu$ là
+\begin{equation}
+ D^2(\mathbf x,\vmu)=(\mathbf x-\vmu)'\Sigma^{-1}(\mathbf x-\vmu).
+ \label{eq:mahalanobis}
+\end{equation}
+\end{definition}
+Nếu $\Sigma=\diag(\sigma_1^2,\ldots,\sigma_p^2)$, thì
+\[
+ D^2=\sum_{i=1}^p\left(\frac{x_i-\mu_i}{\sigma_i}\right)^2.
+\]
+Ta nhận được tổng các bình phương độ lệch chuẩn hóa. Nếu các biến tương
+quan, phép chuẩn hóa còn phải tính đến hướng biến thiên chung.
+
+\begin{example}[Cùng khoảng cách thường, khác mức độ bất thường]
+Lấy $\vmu=(0,0)'$ và $\Sigma=\begin{pmatrix}4&3\\3&4\end{pmatrix}$.
+Hai điểm $\mathbf u=(2,2)'$ và $\mathbf v=(2,-2)'$ đều có khoảng cách
+Euclid $\sqrt8$ đến tâm. Nhưng
+\[
+ D^2(\mathbf u,0)=\frac17(2,2)
+ \begin{pmatrix}4&-3\\-3&4\end{pmatrix}\begin{pmatrix}2\\2\end{pmatrix}
+ =\frac87,
+\]
+\[
+ D^2(\mathbf v,0)=\frac17(2,-2)
+ \begin{pmatrix}4&-3\\-3&4\end{pmatrix}\begin{pmatrix}2\\-2\end{pmatrix}
+ =8.
+\]
+Tương quan ở đây là $3/4$. Hai biến tăng cùng nhau là tình huống thường gặp;
+một biến tăng còn biến kia giảm là hướng ít biến thiên hơn.
+Vì vậy $\mathbf v$ bất thường hơn $\mathbf u$ dù khoảng cách Euclid bằng nhau.
+\end{example}
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}[scale=.75,>=Stealth]
+ \draw[->] (-3.8,0)--(4,0) node[right]{$x_1$};
+ \draw[->] (0,-3.4)--(0,3.6) node[above]{$x_2$};
+ \draw[rotate=45] (0,0) ellipse (3.25 and 1.23);
+ \draw[dashed,rotate=45] (0,0) ellipse (2.1 and .794);
+ \draw[dotted] (-3.2,-3.2)--(3.2,3.2);
+ \fill (0,0) circle (2pt) node[below left]{$\vmu$};
+ \fill (2,2) circle (2.4pt) node[above left]{$\mathbf u$};
+ \fill (2,-2) circle (2.4pt) node[below right]{$\mathbf v$};
+\end{tikzpicture}
+\caption{Đường đồng mức của chuẩn hai chiều với tương quan dương.
+Hướng $x_1=x_2$ biến thiên nhiều hơn hướng $x_1=-x_2$. Các đường được vẽ
+để minh họa hình dạng, không gán mức xác suất cụ thể.}
+\label{fig:correlation}
+\end{figure}
+
+\subsection{Tại sao đường đồng mức là elip?}
+Mật độ giữ nguyên khi $D^2$ giữ nguyên. Do đó các điểm có cùng mật độ nằm trên
+\[
+ (\mathbf x-\vmu)'\Sigma^{-1}(\mathbf x-\vmu)=c^2.
+\]
+Trong hai chiều đây là đường elip, trong nhiều chiều là mặt elipsoid.
+Gọi $\lambda_i$ là trị riêng của $\Sigma$ và $\mathbf e_i$ là vectơ riêng
+đơn vị tương ứng. Trục thứ $i$ đi theo hướng $\mathbf e_i$, với bán trục
+$c\sqrt{\lambda_i}$. Hướng có trị riêng lớn là hướng đám mây trải rộng.
+\nguon{Chương 4, §4.2, công thức (4-7) và Result 4.1 về trị riêng của nghịch đảo, tr.~153}
+
+Bạn có thể hiểu trị riêng ở đây như ``phương sai sau khi xoay hệ trục đúng
+hướng''. Không cần tính trị riêng để làm mọi bài, nhưng ý nghĩa này giúp đọc hình.
+Với ma trận trong ví dụ trên, hai hướng $(1,1)'/\sqrt2$ và $(1,-1)'/\sqrt2$
+có phương sai lần lượt 7 và 1. Tỉ số bán trục là $\sqrt7$.
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}[>=Stealth,scale=.7]
+ \begin{scope}[xshift=-3.2cm]
+ \draw[->] (-2.5,0)--(2.5,0) node[right]{$x_1$};
+ \draw[->] (0,-2.2)--(0,2.2) node[above]{$x_2$};
+ \draw (0,0) circle (1.8);
+ \draw[dashed] (0,0) circle (1);
+ \node[align=center,text width=3.6cm] at (0,-3) {$\rho=0$\\phương sai bằng nhau};
+ \end{scope}
+ \begin{scope}[xshift=3.4cm]
+ \draw[->] (-2.5,0)--(2.5,0) node[right]{$x_1$};
+ \draw[->] (0,-2.2)--(0,2.2) node[above]{$x_2$};
+ \draw[rotate=-45] (0,0) ellipse (2.3 and .8);
+ \draw[dashed,rotate=-45] (0,0) ellipse (1.3 and .452);
+ \node[align=center,text width=3.6cm] at (0,-3) {$\rho<0$\\elip nghiêng xuống};
+ \end{scope}
+\end{tikzpicture}
+\caption{Tương quan quyết định hướng nghiêng; phương sai và tương quan cùng
+quyết định độ dài các trục. Nếu tương quan bằng 0 nhưng phương sai khác nhau,
+đường đồng mức vẫn là elip, không nhất thiết là đường tròn.}
+\end{figure}
+
+\subsection{Từ khoảng cách đến xác suất: phân phối chi-bình phương}
+\begin{result}
+Nếu $\mathbf X\sim\N_p(\vmu,\Sigma)$ và $\Sigma$ xác định dương, thì
+\begin{equation}
+ (\mathbf X-\vmu)'\Sigma^{-1}(\mathbf X-\vmu)\sim\chi^2_p.
+ \label{eq:chisqdistance}
+\end{equation}
+Vì vậy miền
+\[
+ B=\{\mathbf x:D^2(\mathbf x,\vmu)\le\chi^2_{p;1-\alpha}\}
+\]
+chứa một quan sát ngẫu nhiên với xác suất $1-\alpha$.
+\end{result}
+\nguon{Chương 4, §4.2, Result 4.7(a,b), tr.~163--164}
+
+\hieu{Sau khi chuẩn hóa đúng cả độ phân tán lẫn tương quan, ta có $p$
+biến chuẩn độc lập với trung bình 0 và phương sai 1. Tổng bình phương của chúng
+chính là biến chi-bình phương với $p$ bậc tự do.}
+Đây là ý tưởng của phép \emph{làm trắng}; chứng minh được đặt ở
+Phụ lục~\ref{app:whitening}.
+
+\begin{example}[Một vùng xác suất 95\%]
+Trong hai chiều, $\chi^2_{2;0.95}\approx5.9915$.
+Điểm $\mathbf u$ ở ví dụ trên có $D^2=1.1429<5.9915$, còn
+$\mathbf v$ có $D^2=8>5.9915$. Điểm thứ nhất nằm trong elip xác suất 95\%,
+điểm thứ hai nằm ngoài.
+Một điểm nằm ngoài không phải điều bất khả: theo mô hình, khoảng 5\% các
+quan sát nằm ngoài vùng này.
+\end{example}
+
+\luuy{Đây là vùng cho \emph{một quan sát} khi biết $\vmu,\Sigma$.
+Miền tin cậy cho \emph{trung bình tổng thể} khi ước lượng từ mẫu là một bài
+toán khác, có $n$, $S$ và ngưỡng Hotelling. Không đổi tên vùng xác suất này
+thành miền tin cậy cho $\vmu$.}
+
+\kiemtra{Trong hai chiều, chọn ngưỡng 1 thay vì $\chi^2_{2;0.95}$ có cho
+vùng 95\% không? Không: số 1 chỉ ấn định khoảng cách, chưa gắn đúng xác suất.}
