@@ -1,0 +1,1781 @@
+% Included by test_loi_giai_mo_rong.tex; compile the parent with XeLaTeX.
+\clearpage
+% Keep the exercise subsections numbered 10.1 onward without an introductory heading.
+\refstepcounter{section}\label{ot45:start}
+
+\subsection{Phần I.A: Năm bài chứng minh cho KDE}
+
+\subsubsection*{Bài 1.1. KDE là một mật độ xác suất hợp lệ}\label{ot45:kde-density}
+\textbf{Đề bài.} Với $h>0$, $K\geq0$ và $\int_{\R}K=1$, chứng minh
+$\widehat f_h(x)\geq0$ và $\int_{\R}\widehat f_h(x)dx=1$ với mọi mẫu.
+
+\textbf{Điều kiện và công cụ.} Chỉ cần điều kiện về nhân và $h>0$;
+không cần giả thiết mật độ thật trơn, cũng không cần dùng tính độc lập.
+
+\buoc{Bước 1. Kiểm tra tính không âm.}
+Mỗi số $K((x-X_i)/h)$ không âm, hệ số $1/(nh)>0$, nên tổng có trọng số không âm.
+
+\buoc{Bước 2. Tính diện tích của một bản nhân.}
+Giữ $X_i$ cố định, đặt $u=(x-X_i)/h$, $dx=h\,du$.
+Khi $x$ chạy từ $-\infty$ đến $\infty$, $u$ cũng chạy trên toàn trục. Do đó
+\[
+\int_{\R}K\left(\frac{x-X_i}{h}\right)dx=h\int_{\R}K(u)du=h.
+\]
+
+\buoc{Bước 3. Cộng diện tích của $n$ số hạng.}
+Tổng hữu hạn được đổi thứ tự với tích phân:
+\[
+\int_{\R}\widehat f_h(x)dx
+=\frac1{nh}\sum_{i=1}^n\int_{\R}K\left(\frac{x-X_i}{h}\right)dx
+=\frac{nh}{nh}=1.
+\]
+\textbf{Kết luận.} $\boxed{\widehat f_h\geq0,\quad\int\widehat f_h=1.}$
+
+\textbf{Lỗi dễ mắc.} Quên $dx=h\,du$; hoặc chỉ chứng minh tích phân bằng 1 rồi kết luận là mật độ dù nhân có phần âm.
+
+\subsubsection*{Bài 1.2. Khai triển Bias của KDE}\label{ot45:kde-bias}
+\textbf{Đề bài.} Giả sử $f\in C^2(\R)$, $f''$ bị chặn,
+$K\in L^1(\R)$, $\int K=1$, $\int uK(u)du=0$ và
+$\int u^2|K(u)|du<\infty$. Chứng minh tại $x$ cố định:
+\[
+\Bias(\widehat f_h(x))=\frac{h^2}{2}\mu_2(K)f''(x)+o(h^2).
+\]
+Đối xứng là một điều kiện đủ để moment bậc nhất bằng 0, khi moment đó tồn tại.
+
+\textbf{Công cụ.} Tuyến tính kỳ vọng, đổi biến, Taylor dạng phần dư tích phân và hội tụ bị chặn bởi một hàm khả tích.
+
+\buoc{Bước 1. Viết kỳ vọng thành tích phân.}
+Các quan sát cùng phân phối nên
+\[
+\E\widehat f_h(x)=\frac1{nh}\sum_{i=1}^n
+\E K\left(\frac{x-X_i}{h}\right)
+=\frac{n}{nh}\E K\left(\frac{x-X_1}{h}\right).
+\]
+Ở bước này chỉ cần cùng phân phối, chưa cần độc lập.
+Với biến ngẫu nhiên có mật độ $f$, quy tắc $\E g(X)=\int g(t)f(t)dt$ cho
+\begin{align*}
+f_h(x)&=\frac1h\E K\left(\frac{x-X_1}{h}\right)
+=\frac1h\int_{\R}K\left(\frac{x-t}{h}\right)f(t)dt\\
+&=\int_{\R}K(u)f(x-hu)du.
+\end{align*}
+Ở dòng cuối, $u=(x-t)/h$, $dt=-h\,du$; dấu âm biến mất khi đảo cận.
+Chi tiết: $t=x-hu$; khi $t=-\infty$ thì $u=+\infty$,
+khi $t=+\infty$ thì $u=-\infty$. Vì vậy
+\[
+\frac1h\int_{+\infty}^{-\infty}K(u)f(x-hu)(-h)du
+=\int_{-\infty}^{+\infty}K(u)f(x-hu)du.
+\]
+
+\buoc{Bước 2. Khai triển và kiểm soát phần dư.}
+\textbf{Ý tưởng.} Với $u$ cố định và $h$ nhỏ, $x-hu$ gần $x$.
+Taylor diễn tả giá trị tại điểm gần đó bằng giá trị, độ dốc và độ cong tại $x$.
+Công thức quen thuộc là
+$f(x+v)=f(x)+vf'(x)+v^2f''(x)/2+\text{phần dư}$.
+Thay $v=-hu$; khi đó $v^2=h^2u^2$, nên dấu của hạng bậc hai là dấu cộng:
+\[
+f(x-hu)=f(x)-hu f'(x)+\frac{h^2u^2}{2}f''(x)+r_h(u),
+\]
+với
+\[
+r_h(u)=h^2u^2\int_0^1(1-s)\{f''(x-shu)-f''(x)\}ds.
+\]
+\textbf{Phần dư tích phân đến từ đâu?}
+Với một độ dịch cố định $v$, đặt $F(s)=f(x+sv)$ trên $0\leq s\leq1$.
+Quy tắc hàm hợp cho $F'(s)=vf'(x+sv)$, $F''(s)=v^2f''(x+sv)$.
+Tích phân từng phần cho
+\[
+\int_0^1(1-s)F''(s)ds
+=[(1-s)F'(s)]_0^1+\int_0^1F'(s)ds
+=-F'(0)+F(1)-F(0).
+\]
+Chuyển vế, rồi thay lại $F$, được công thức chính xác
+\[
+f(x+v)=f(x)+vf'(x)+v^2\int_0^1(1-s)f''(x+sv)ds.
+\]
+Tách $f''(x+sv)$ thành $f''(x)+[f''(x+sv)-f''(x)]$;
+phần thứ nhất có tích phân $f''(x)/2$.
+Phần thứ hai chính là phần dư ở trên khi thay $v=-hu$.
+
+\textbf{Vì sao phần dư nhỏ sau khi tích phân theo nhân?}
+Với từng $u$ cố định, $r_h(u)/h^2\to0$ do $f''$ liên tục tại $x$.
+Nếu $M=\|f''\|_\infty$, thì
+$|r_h(u)|/h^2\leq Mu^2$.
+Thật vậy, hiệu hai giá trị $f''$ có trị tuyệt đối không quá $2M$ và
+$\int_0^1(1-s)ds=1/2$, nên chặn là $u^2\cdot2M\cdot(1/2)=Mu^2$.
+Vì $Mu^2|K(u)|$ khả tích, định lý hội tụ bị chặn cho
+\[
+\frac1{h^2}\int K(u)r_h(u)du\longrightarrow0.
+\]
+Đây là lý do được đưa phần dư qua dấu tích phân.
+
+\buoc{Bước 3. Dùng các moment của nhân.}
+Nhân từng hạng Taylor với $K(u)$ rồi tích phân theo $u$.
+Các hệ số $f(x),hf'(x),h^2f''(x)/2$ không phụ thuộc $u$:
+\begin{align*}
+f_h(x)&=f(x)\int K-hf'(x)\int uK
++\frac{h^2}{2}f''(x)\int u^2K+o(h^2)\\
+&=f(x)+\frac{h^2}{2}\mu_2(K)f''(x)+o(h^2).
+\end{align*}
+Ba phép thay ở dòng cuối lần lượt là
+$\int K=1$, $\int uK=0$, $\int u^2K=\mu_2(K)$.
+Hạng chứa $f'(x)$ biến mất do moment bậc nhất bằng 0, không phải vì $f'(x)=0$.
+\textbf{Kết luận.} Trừ $f(x)$ thu được công thức đề bài.
+Nếu $f''(x)=0$, hệ số dẫn đầu triệt tiêu và Bias chỉ còn $o(h^2)$.
+
+\textbf{Lỗi dễ mắc.} Viết $O(h^4)$ chỉ từ giả thiết $C^2$;
+hoặc dùng khai triển tại một điểm rồi tích phân phần dư mà không có điều kiện kiểm soát.
+
+\subsubsection*{Bài 1.3. Phương sai chính xác và tiệm cận}\label{ot45:kde-variance}
+\textbf{Đề bài.} Giả sử $f$ bị chặn và liên tục tại $x$,
+$K\in L^1\cap L^2$, $\int K=1$. Chứng minh
+\[
+\Var(\widehat f_h(x))
+=\frac1{nh}\int K(u)^2f(x-hu)du-\frac{f_h(x)^2}{n}
+=\frac{f(x)R(K)}{nh}+o((nh)^{-1}).
+\]
+
+\textbf{Công cụ.} Các quan sát độc lập; $\Var Z=\E Z^2-(\E Z)^2$;
+đổi biến và hội tụ bị chặn.
+
+\buoc{Bước 1. Rút về phương sai của một quan sát.}
+Đặt $Z_i=K((x-X_i)/h)$. Do độc lập,
+ta dùng $\Var(cY)=c^2\Var(Y)$ và
+$\Var(\sum_iZ_i)=\sum_i\Var(Z_i)$.
+Các $Z_i$ cùng phân phối nên tổng cuối có $n$ số hạng bằng nhau:
+\[
+\Var(\widehat f_h(x))=\frac{1}{n^2h^2}\sum_i\Var Z_i
+=\frac{1}{nh^2}\{\E Z_1^2-(\E Z_1)^2\}.
+\]
+
+\buoc{Bước 2. Tính hai moment bằng đổi biến.}
+Đối với moment bậc hai, bình phương $Z_1$ trước khi lấy kỳ vọng:
+\begin{align*}
+\E Z_1^2
+&=\int_{-\infty}^{+\infty}K\left(\frac{x-t}{h}\right)^2f(t)dt\\
+&=\int_{+\infty}^{-\infty}K(u)^2f(x-hu)(-h)du
+=h\int_{\R}K(u)^2f(x-hu)du.
+\end{align*}
+Đổi biến tương tự cho moment bậc nhất:
+\[
+\E Z_1^2=h\int K(u)^2f(x-hu)du,\qquad \E Z_1=hf_h(x).
+\]
+Thế vào Bước 1 và chia từng số hạng:
+\begin{align*}
+\Var(\widehat f_h(x))
+&=\frac1{nh^2}\left[h\int K(u)^2f(x-hu)du-h^2f_h(x)^2\right]\\
+&=\frac1{nh}\int K(u)^2f(x-hu)du-\frac{f_h(x)^2}{n}.
+\end{align*}
+Lưu ý $\E Z_1^2$ và $(\E Z_1)^2$ là hai đại lượng khác nhau.
+
+\buoc{Bước 3. Xác định số hạng chính và phần dư.}
+\textbf{Ý tưởng.} Khi $h\to0$, với mỗi $u$ cố định ta có
+$f(x-hu)\to f(x)$. Ta muốn thay mật độ trong tích phân bằng $f(x)$.
+Chặn khả tích dưới đây cho phép đưa giới hạn qua dấu tích phân.
+Vì $|K(u)^2f(x-hu)|\leq\|f\|_\infty K(u)^2$ khả tích,
+\[
+\int K(u)^2f(x-hu)du=f(x)R(K)+o(1).
+\]
+Mặt khác $|f_h(x)|\leq\|f\|_\infty\|K\|_1$, nên
+\[
+\frac{f_h(x)^2}{n}=O(1/n)=o((nh)^{-1}),
+\qquad\frac{1/n}{1/(nh)}=h\to0.
+\]
+\textbf{Kết luận.} $\boxed{\Var(\widehat f_h(x))=f(x)R(K)/(nh)+o((nh)^{-1}).}$
+Nếu $f(x)=0$, kết luận là $o((nh)^{-1})$, không phải tương đương với một số dương.
+
+\textbf{Lỗi dễ mắc.} Bỏ bình phương của $1/h$ khi lấy phương sai;
+hoặc bỏ $-(\E Z_1)^2$ mà chưa giải thích bậc của nó.
+
+\subsubsection*{Bài 1.4. Tối ưu AMSE, AMISE và tốc độ}\label{ot45:kde-optimal}
+\textbf{Đề bài.} Cho $X_1,\ldots,X_n$ độc lập cùng mật độ $f$ trên $\R$ và
+\[
+\widehat f_h(x)=\frac1{nh}\sum_{i=1}^nK\left(\frac{x-X_i}{h}\right),\qquad
+f_h=\E\widehat f_h,\quad R(g)=\int_{\R}g^2.
+\]
+Giả sử $K\in L^1\cap L^2$, $\int K=1$, $\int uK(u)du=0$,
+$\int u^2|K(u)|du<\infty$ và $\mu_2(K)=\int u^2K(u)du\ne0$.
+Mật độ $f$ bị chặn, thuộc $C^2(\R)\cap W^{2,2}(\R)$, $f''$ bị chặn;
+$h=h_n\to0$, $nh_n\to\infty$. Tại điểm xét, $f(x)>0$, $f''(x)\ne0$.
+\begin{enumerate}[label=(\alph*)]
+\item Từ các số hạng dẫn đầu
+$\Bias(\widehat f_h(x))=h^2\mu_2(K)f''(x)/2+o(h^2)$ và
+$\Var(\widehat f_h(x))=f(x)R(K)/(nh)+o((nh)^{-1})$,
+lập và tối ưu AMSE tại $x$.
+\item Chứng minh phân rã MISE chính xác; kiểm soát phần dư theo $L^2$ để suy ra
+$\AMISE(h)=h^4\mu_2(K)^2R(f'')/4+R(K)/(nh)$.
+Giải thích vì sao AMISE không phải MISE chính xác.
+\item Với $R(f'')>0$, tìm $h_{\mathrm{AMISE},*}$, chứng minh cực tiểu toàn cục,
+tính hằng số của AMISE nhỏ nhất và tốc độ theo $n$.
+\end{enumerate}
+
+\textbf{Công cụ.} Phân rã MSE thành bình phương Bias cộng phương sai;
+đạo hàm hàm $Ah^4+B/(nh)$ với $A,B>0$.
+$W^{2,2}$ nghĩa là $f$ và các đạo hàm yếu đến bậc hai thuộc $L^2$.
+\textbf{Lời giải ý (a).}
+
+\buoc{Bước 1. Tối ưu sai số tại một điểm.}
+\textbf{Từ Bias sang AMSE:} bình phương hạng Bias chính cho
+$[h^2\mu_2(K)f''(x)/2]^2=h^4\mu_2(K)^2[f''(x)]^2/4$,
+rồi cộng hạng phương sai chính. Ta tìm $h>0$ làm tổng này nhỏ nhất.
+Đặt $A_x=\mu_2(K)^2[f''(x)]^2/4$, $B_x=f(x)R(K)$. Khi đó
+\[
+\AMSE_x(h)=A_xh^4+\frac{B_x}{nh},\quad
+\AMSE_x'(h)=4A_xh^3-\frac{B_x}{nh^2}.
+\]
+Để thấy rõ đạo hàm, viết $B_x/(nh)=(B_x/n)h^{-1}$.
+Khi đó $(A_xh^4)'=4A_xh^3$ và $[(B_x/n)h^{-1}]'=-(B_x/n)h^{-2}$.
+Giải phương trình bằng cách nhân hai vế với $h^2>0$:
+\[
+4A_xh^3=\frac{B_x}{nh^2}
+\ \Longleftrightarrow\ 4A_xh^5=\frac{B_x}{n}
+\ \Longleftrightarrow\ h^5=\frac{B_x}{4A_xn}.
+\]
+Lấy căn bậc năm dương và thay $4A_x=\mu_2(K)^2[f''(x)]^2$, được
+\[
+\boxed{h_{x,*}=\left[\frac{f(x)R(K)}{n\mu_2(K)^2[f''(x)]^2}\right]^{1/5}.}
+\]
+Đạo hàm bậc hai $12A_xh^2+2B_x/(nh^3)>0$; hàm tiến ra vô cực khi $h\downarrow0$
+hoặc $h\to\infty$, nên đây là cực tiểu toàn cục của AMSE.
+Đạo hàm bậc hai dương nghĩa là đạo hàm bậc nhất tăng nghiêm ngặt;
+trước nghiệm hàm giảm, sau nghiệm hàm tăng. Vì vậy nghiệm là điểm nhỏ nhất duy nhất.
+
+\buoc{Bước 2. Thế nghiệm để xác định tốc độ và hằng số.}
+Tại nghiệm, $B_x/(nh_{x,*})=4A_xh_{x,*}^4$. Vì vậy
+hai số hạng của AMSE cộng thành $A_xh_{x,*}^4+4A_xh_{x,*}^4=5A_xh_{x,*}^4$.
+Để rút gọn, dùng $(ab)^p=a^pb^p$ và $a^pa^q=a^{p+q}$ với các cơ số dương:
+\[
+5A_x\left(\frac{B_x}{4A_xn}\right)^{4/5}
+=5\,4^{-4/5}A_x^{1/5}B_x^{4/5}n^{-4/5}.
+\]
+Thay $A_x=\mu_2(K)^2[f''(x)]^2/4$ làm hệ số chứa 4 thành
+$4^{-4/5}4^{-1/5}=1/4$, nên
+\[
+\AMSE_x(h_{x,*})=5A_xh_{x,*}^4
+=\frac54\{\mu_2(K)^2[f''(x)]^2\}^{1/5}
+\{f(x)R(K)\}^{4/5}n^{-4/5}.
+\]
+Hai số hạng không bằng nhau: phương sai xấp xỉ bằng bốn lần bình phương Bias.
+
+\textbf{Lời giải ý (b).}
+\buoc{Bước 3. Phân rã MISE chính xác trước khi dùng xấp xỉ.}
+Tại mỗi $x$, viết
+$\widehat f_h-f=(\widehat f_h-f_h)+(f_h-f)$.
+Hạng chéo có kỳ vọng 0 vì $\E(\widehat f_h-f_h)=0$.
+Để thấy rõ, viết $U=\widehat f_h(x)-f_h(x)$ và $b=f_h(x)-f(x)$,
+trong đó $b$ không ngẫu nhiên:
+\[
+\E(U+b)^2=\E U^2+2b\E U+b^2=\Var(\widehat f_h(x))+b^2.
+\]
+Suy ra
+\[
+\E(\widehat f_h(x)-f(x))^2
+=\Var(\widehat f_h(x))+(f_h(x)-f(x))^2.
+\]
+Tonelli cho phép đổi kỳ vọng và tích phân của bình phương không âm:
+\[
+\boxed{\MISE(h)=\E\|\widehat f_h-f\|_2^2
+=\int_{\R}\MSE_x(h)dx
+=\|f_h-f\|_2^2+\int_{\R}\Var(\widehat f_h(x))dx.}
+\]
+
+\buoc{Bước 4. Kiểm soát bình phương chệch trên toàn trục.}
+\textbf{Ý tưởng.} Cần xấp xỉ tốt cho toàn bộ hàm, đo bằng chuẩn $L^2$,
+để sau đó bình phương và tích phân. Ký hiệu $f''(\,\cdot-a)$ nghĩa là
+hàm $x\mapsto f''(x-a)$, tức đường $f''$ được dịch đi một đoạn $a$.
+Taylor dạng tích phân và hai moment đầu của $K$ cho
+\[
+f_h-f=h^2\int u^2K(u)\int_0^1(1-t)f''(\,\cdot-thu)dt\,du.
+\]
+Trừ $h^2\mu_2(K)f''/2$, chia cho $h^2$ và lấy chuẩn $L^2$:
+\begin{align*}
+\left\|\frac{f_h-f}{h^2}-\frac{\mu_2(K)}2f''\right\|_2
+&\leq\int |u|^2|K(u)|\int_0^1(1-t)
+\|f''(\,\cdot-thu)-f''\|_2dt\,du\\
+&\longrightarrow0.
+\end{align*}
+Giới hạn dùng tính liên tục của phép tịnh tiến trong $L^2$;
+chuẩn trong tích phân không vượt $2\|f''\|_2$, còn $u^2|K(u)|$ khả tích.
+Vì vậy có phần dư $r_h$ với $\|r_h\|_2=o(h^2)$ sao cho
+$f_h-f=h^2\mu_2(K)f''/2+r_h$. Khai triển bình phương chuẩn và dùng
+Cauchy--Schwarz cho hạng chéo như sau.
+Đặt $g=\mu_2(K)f''/2$, khi đó
+\[
+\|h^2g+r_h\|_2^2=h^4\|g\|_2^2+2h^2\langle g,r_h\rangle+\|r_h\|_2^2.
+\]
+Vì $|\langle g,r_h\rangle|\leq\|g\|_2\|r_h\|_2$,
+hạng chéo có trị tuyệt đối không quá $2h^2\|g\|_2o(h^2)=o(h^4)$;
+hạng cuối cũng là $o(h^4)$. Do đó
+\[
+\|f_h-f\|_2^2=\frac{h^4}{4}\mu_2(K)^2R(f'')+o(h^4).
+\]
+Đây là điều kiện tích phân thực sự cần; chỉ có khai triển tại từng điểm chưa đủ.
+
+\buoc{Bước 5. Tính phương sai tích phân và nhận diện AMISE.}
+Độc lập của mẫu và đổi biến cho công thức chính xác
+\[
+\Var(\widehat f_h(x))
+=\frac1{nh}\int K(u)^2f(x-hu)du-\frac{f_h(x)^2}{n}.
+\]
+Tích phân hạng đầu dùng Tonelli và $\int f(x-hu)dx=1$, nên
+\[
+\frac1{nh}\int_{\R}\int_{\R}K(u)^2f(x-hu)du\,dx
+=\frac1{nh}\int_{\R}K(u)^2
+\underbrace{\left[\int_{\R}f(x-hu)dx\right]}_{=1}du
+=\frac{R(K)}{nh}.
+\]
+Ở tích phân trong, $t=x-hu$ có $dt=dx$ vì $u$ đang được giữ cố định.
+Vì vậy
+\[
+\int\Var(\widehat f_h(x))dx=\frac{R(K)}{nh}-\frac{R(f_h)}n.
+\]
+Do $\|f_h\|_2\leq\|K\|_1\|f\|_2$, hạng cuối là $O(1/n)$.
+Vì $h\to0$, $1/n=o((nh)^{-1})$. Kết hợp các bước trên:
+\[
+\MISE(h)=\frac{h^4}{4}\mu_2(K)^2R(f'')+\frac{R(K)}{nh}
++o\left(h^4+\frac1{nh}\right).
+\]
+Ta gọi tổng hai số hạng chính là
+\[
+\AMISE(h)=\frac{h^4}{4}\mu_2(K)^2R(f'')+\frac{R(K)}{nh}.
+\]
+Đẳng thức $\int\MSE_x(h)dx=\MISE(h)$ là chính xác;
+thay MSE bằng các số hạng tiệm cận chính mới cho AMISE.
+
+\textbf{Lời giải ý (c).}
+\buoc{Bước 6. Đạo hàm và kiểm tra cực tiểu toàn cục.}
+Đặt $A=\mu_2(K)^2R(f'')/4>0$, $B=R(K)>0$.
+Đây chính là bài toán $Ah^4+(B/n)h^{-1}$ đã giải ở ý (a),
+với $[f''(x)]^2$ được thay bằng tích phân $R(f'')$.
+\[
+\AMISE'(h)=4Ah^3-\frac{B}{nh^2}=0
+\quad\Longleftrightarrow\quad h^5=\frac{B}{4An}.
+\]
+Vì $\AMISE''(h)=12Ah^2+2B/(nh^3)>0$ trên $h>0$ và AMISE
+tiến ra vô cực tại cả hai đầu miền, nghiệm là cực tiểu toàn cục duy nhất:
+\[
+\boxed{h_{\mathrm{AMISE},*}
+=\left[\frac{R(K)}{n\mu_2(K)^2R(f'')}\right]^{1/5},}
+\]
+\buoc{Bước 7. Thế nghiệm để tìm hằng số và tốc độ.}
+Tại nghiệm, $B/(nh_*)=4Ah_*^4$, nên
+\[
+Ah_*^4+\frac{B}{nh_*}=5Ah_*^4
+=5A\left(\frac{B}{4An}\right)^{4/5}
+=5\,4^{-4/5}A^{1/5}B^{4/5}n^{-4/5}.
+\]
+Thay lại $A,B$ như ở ý (a) cho
+\[
+\AMISE(h_{\mathrm{AMISE},*})
+=\frac54\{\mu_2(K)^2R(f'')\}^{1/5}R(K)^{4/5}n^{-4/5}.
+\]
+\textbf{Kết luận.} Cả hai bandwidth đều có bậc $n^{-1/5}$;
+AMSE/AMISE tối ưu có bậc $n^{-4/5}$. Với khai triển MISE ở trên,
+MISE tại bandwidth AMISE cũng đạt $O(n^{-4/5})$.
+Bandwidth tối ưu AMISE không được khẳng định là nghiệm chính xác của MISE hữu hạn mẫu.
+
+\textbf{Lỗi dễ mắc.} Dùng $f''(x)^2$ thay $R(f'')$ khi tối ưu toàn trục;
+áp dụng công thức điểm khi $f''(x)=0$; hoặc viết tốc độ bandwidth thành tốc độ rủi ro.
+
+\subsubsection*{Bài 1.5. Nhân cấp cao và tốc độ tổng quát}\label{ot45:highorder}
+\textbf{Đề bài.} Cho số nguyên $\ell>2$, $K\in L^1\cap L^2$ thỏa
+\[
+\int K=1,\quad\mu_j(K)=0\ (1\leq j<\ell),\quad
+\mu_\ell(K)\ne0,\quad M_\ell:=\int |u|^\ell|K(u)|du<\infty.
+\]
+Chứng minh Bias bậc $h^\ell$, rồi tìm bậc bandwidth và MISE.
+Phần tại điểm dùng $f\in C^\ell$ với $f^{(\ell)}$ bị chặn;
+phần MISE dùng $f\in W^{\ell,2}(\R)$.
+
+\textbf{Công cụ.} Taylor, moment triệt tiêu, bất đẳng thức tam giác tích phân trong $L^2$ và tối ưu hàm hai số hạng.
+
+\buoc{Bước 1. Tính Bias tại một điểm.}
+\textbf{Đọc trường hợp bậc 4 trước.} Nếu $\ell=4$, Taylor có các hạng
+\[
+f(x-hu)=f(x)-hu f'(x)+\frac{h^2u^2}{2}f''(x)
+-\frac{h^3u^3}{6}f^{(3)}(x)+\frac{h^4u^4}{24}f^{(4)}(x)+r_h(u).
+\]
+Sau khi nhân với $K$ và tích phân, ba hạng bậc $1,2,3$ mất đi vì
+$\mu_1=\mu_2=\mu_3=0$. Trừ $f(x)$, chỉ còn hạng bậc 4 và phần dư.
+Đối với bậc tổng quát, cách làm vẫn như vậy; $j!=1\cdot2\cdots j$
+và $f^{(j)}$ là đạo hàm lần thứ $j$.
+Với $x$ cố định, Taylor đến bậc $\ell$ cho
+\[
+f(x-hu)=\sum_{j=0}^{\ell}\frac{(-hu)^j}{j!}f^{(j)}(x)+r_h(u).
+\]
+Ở bậc tổng quát, phần dư có biểu thức
+\[
+r_h(u)=\frac{(-hu)^\ell}{(\ell-1)!}
+\int_0^1(1-t)^{\ell-1}
+\{f^{(\ell)}(x-thu)-f^{(\ell)}(x)\}dt.
+\]
+Nếu $M=\|f^{(\ell)}\|_\infty$, trị tuyệt đối của hiệu trong ngoặc không quá $2M$,
+và $\int_0^1(1-t)^{\ell-1}dt=1/\ell$. Do đó
+$|r_h(u)|/h^\ell\leq 2M|u|^\ell/\ell!$.
+Với mỗi $u$ cố định, tỉ số phần dư tiến về 0 do tính liên tục của $f^{(\ell)}$.
+Nhân chặn với $|K(u)|$ cho một hàm khả tích nhờ $M_\ell<\infty$;
+hội tụ bị chặn cho $\int K(u)r_h(u)du=o(h^\ell)$ như Bài 1.2.
+Vì các moment từ 1 đến $\ell-1$ bằng 0,
+ta có thể viết rõ từng hệ số sau tích phân:
+\[
+f_h(x)-f(x)=\sum_{j=1}^{\ell}
+\frac{(-h)^j}{j!}f^{(j)}(x)\underbrace{\int u^jK(u)du}_{\mu_j(K)}
++o(h^\ell).
+\]
+Trong tổng, chỉ số $j=\ell$ có thể còn lại. Do đó
+\[
+\boxed{\Bias(\widehat f_h(x))
+=\frac{(-1)^\ell\mu_\ell(K)}{\ell!}h^\ell f^{(\ell)}(x)+o(h^\ell)=O(h^\ell).}
+\]
+
+\buoc{Bước 2. Chứng minh một chặn tích phân, thay vì chỉ dùng Bias tại điểm.}
+\textbf{Ý tưởng.} Chặn độ lớn của toàn bộ hàm Bias trước, rồi bình phương
+để chặn sai số tích phân. Khi dịch biến, tích phân trên toàn trục không đổi:
+$\int|f^{(\ell)}(x-a)|^2dx=\int|f^{(\ell)}(y)|^2dy$ với $y=x-a$.
+Taylor dạng tích phân, sau khi tích phân theo $K$ và triệt tiêu các moment, cho
+\[
+f_h-f=\frac{(-h)^\ell}{(\ell-1)!}
+\int_{\R}u^\ell K(u)\int_0^1(1-t)^{\ell-1}
+f^{(\ell)}(\,\cdot-thu)dt\,du.
+\]
+Phép tịnh tiến không đổi chuẩn $L^2$. Lấy chuẩn, dùng bất đẳng thức tam giác
+và $\int_0^1(1-t)^{\ell-1}dt=1/\ell$, được
+\[
+\|f_h-f\|_2\leq\frac{M_\ell}{\ell!}\|f^{(\ell)}\|_2h^\ell=:C_\ell h^\ell.
+\]
+Hệ số giai thừa đến từ
+$1/[(\ell-1)!]\cdot1/\ell=1/\ell!$.
+Bình phương hai vế cho $\|f_h-f\|_2^2\leq C_\ell^2h^{2\ell}$.
+Đây là bước bổ sung cần thiết để suy ra MISE trên toàn trục.
+Kết hợp phương sai tích phân chính xác, có
+\[
+\MISE(h)\leq C_\ell^2h^{2\ell}+\frac{R(K)}{nh}.
+\]
+
+\buoc{Bước 3. Tối ưu chặn trên.}
+Với $C_\ell>0$, đạo hàm vế phải bằng 0 khi
+\[
+2\ell C_\ell^2h^{2\ell-1}-\frac{R(K)}{nh^2}=0,
+\qquad h_*=
+\left[\frac{R(K)}{2\ell C_\ell^2 n}\right]^{1/(2\ell+1)}.
+\]
+Chi tiết giải phương trình: chuyển hạng âm sang vế phải và nhân với $h^2$:
+\[
+2\ell C_\ell^2h^{2\ell+1}=\frac{R(K)}n,
+\qquad h^{2\ell+1}=\frac{R(K)}{2\ell C_\ell^2n}.
+\]
+Hàm chặn có đạo hàm bậc hai
+$2\ell(2\ell-1)C_\ell^2h^{2\ell-2}+2R(K)/(nh^3)>0$,
+nên nghiệm dương trên là cực tiểu duy nhất.
+Viết $h_*=c\,n^{-1/(2\ell+1)}$ với $c>0$ không phụ thuộc $n$.
+Khi đó $h_*^{2\ell}=c^{2\ell}n^{-2\ell/(2\ell+1)}$ và
+\[
+\frac1{nh_*}=c^{-1}n^{-1+1/(2\ell+1)}
+=c^{-1}n^{-2\ell/(2\ell+1)}.
+\]
+Thế nghiệm vào cả hai hạng:
+\[
+h_*^{2\ell}\asymp n^{-2\ell/(2\ell+1)},\quad
+\frac1{nh_*}\asymp n^{-2\ell/(2\ell+1)}.
+\]
+\textbf{Kết luận.} $\boxed{h_*\asymp n^{-1/(2\ell+1)},\quad
+\MISE(h_*)=O(n^{-2\ell/(2\ell+1)}).}$
+Đây là tối ưu của chặn trên vừa chứng minh.
+Tính liên tục của phép tịnh tiến trong $L^2$ còn cho khai triển AMISE với
+$A_\ell=\mu_\ell(K)^2R(f^{(\ell)})/(\ell!)^2$ thay $C_\ell^2$,
+và cùng tốc độ.
+
+\textbf{Ví dụ cụ thể.} Với $\varphi$ là mật độ chuẩn tắc,
+$K_4(u)=(3-u^2)\varphi(u)/2$ có
+$\mu_1=\mu_2=\mu_3=0$, $\mu_4=(3\cdot3-15)/2=-3$.
+Do đó Bias $=-h^4f^{(4)}(x)/8+o(h^4)$ và tốc độ MISE là $n^{-8/9}$.
+Các moment chuẩn $\E Z^2=1$, $\E Z^4=3$, $\E Z^6=15$ cho những phép tính này.
+Để kiểm tra từng moment: $\int K_4=(3-1)/2=1$;
+$\mu_2(K_4)=(3\E Z^2-\E Z^4)/2=(3-3)/2=0$.
+Hai moment lẻ bằng 0 do hàm dưới dấu tích phân là hàm lẻ.
+Hệ số Bias bậc 4 là $\mu_4/4!=-3/24=-1/8$;
+số mũ rủi ro là $2\ell/(2\ell+1)=8/9$ khi $\ell=4$.
+
+\textbf{Lỗi dễ mắc.} Với $\ell>2$, điều kiện $\mu_2=0$ buộc nhân phải có phần âm:
+nếu $K\geq0$, $\int u^2K=0$ buộc $K=0$ hầu khắp nơi ngoài $u=0$, trái $\int K=1$.
+Vì thế KDE cấp cao không tự động là mật độ không âm.
+Nhân đối xứng không thể có moment đầu tiên khác 0 ở bậc lẻ.
+
+\subsection{Phần I.B: Năm bài chứng minh cho ước lượng chiếu}
+Trong nhóm này, miền là $[0,1]$, $f\in L^2([0,1])$.
+$\phi_1,\ldots,\phi_D$ là các hàm thực trực chuẩn theo tích phân Lebesgue,
+$S_D=\operatorname{span}(\phi_1,\ldots,\phi_D)$ và
+\[
+a_j=\int_0^1f\phi_j,\quad \widehat a_j=\frac1n\sum_i\phi_j(X_i),\quad
+f_D=\sum_{j=1}^Da_j\phi_j,\quad \widehat f_D=\sum_{j=1}^D\widehat a_j\phi_j.
+\]
+Giả sử $\E\phi_j(X)^2<\infty$ khi tính phương sai.
+Hai bài 2.2--2.3 phát biểu trên $\R$; bài có miền $[0,1]$ được xem là trường hợp riêng
+bằng cách mở rộng các hàm bằng 0 ngoài miền.
+
+\subsubsection*{Bài 2.1. Hệ số mẫu là ước lượng không chệch}\label{ot45:projection-coeff}
+\textbf{Đề bài.} Chứng minh $\E\widehat a_j=a_j$, tính phương sai
+và giải thích vì sao $\widehat f_D$ vẫn có thể chệch so với $f$.
+
+\textbf{Công cụ.} Kỳ vọng của hàm theo mật độ, tuyến tính kỳ vọng,
+phương sai trung bình các quan sát độc lập.
+
+\buoc{Bước 1. Nhận diện hệ số thật là một kỳ vọng.}
+\[
+\E\phi_j(X_1)=\int_0^1\phi_j(x)f(x)dx=a_j.
+\]
+Tích phân tuyệt đối hữu hạn do Cauchy--Schwarz:
+$\int|\phi_j f|\leq\|\phi_j\|_2\|f\|_2=\|f\|_2$.
+
+\buoc{Bước 2. Lấy kỳ vọng và phương sai của trung bình.}
+Đặt $Y_i=\phi_j(X_i)$ với $j$ cố định.
+Khi đó $\widehat a_j=(Y_1+\cdots+Y_n)/n$.
+Các $Y_i$ độc lập cùng phân phối, nên
+\[
+\Var(\widehat a_j)=\frac1{n^2}\sum_{i=1}^n\Var(Y_i)
+=\frac1n\Var(Y_1)
+=\frac1n\{\E Y_1^2-(\E Y_1)^2\}.
+\]
+Ở đây $\E Y_1=a_j$ và $\E Y_1^2=\int_0^1\phi_j(x)^2f(x)dx$.
+Tương tự, tính tuyến tính cho $\E\widehat a_j=(1/n)\sum_i\E Y_i$. Vì vậy
+\[
+\E\widehat a_j=\frac1n\sum_i a_j=a_j,\qquad
+\Var(\widehat a_j)=\frac1n\left(\int_0^1\phi_j(x)^2f(x)dx-a_j^2\right).
+\]
+
+\buoc{Bước 3. Phân biệt hai đối tượng được ước lượng.}
+\[
+\E\widehat f_D(x)=\sum_{j=1}^Da_j\phi_j(x)=f_D(x).
+\]
+\textbf{Kết luận.} Hệ số mẫu không chệch cho $a_j$;
+$\widehat f_D$ không chệch cho $f_D$, nhưng có chệch $f_D-f$ so với mật độ thật.
+
+\textbf{Lỗi dễ mắc.} Suy từ hệ số không chệch thành $\E\widehat f_D=f$ dù đã cắt chuỗi.
+
+\subsubsection*{Bài 2.2. Tối thiểu hóa hàm tương phản}\label{ot45:contrast}
+\textbf{Đề bài.} Cho mẫu độc lập $X_1,\ldots,X_n$ cùng mật độ $f\in L^2(\R)$,
+không gian $S_D\subset L^2(\R)$ có cơ sở thực trực chuẩn $\phi_1,\ldots,\phi_D$.
+Giả sử $\E\phi_j(X)^2<\infty$. Đặt
+\[
+a_j=\int_{\R}f\phi_j,\quad \widehat a_j=\frac1n\sum_i\phi_j(X_i),\quad
+f_D=\sum_ja_j\phi_j,\quad \widehat f_D=\sum_j\widehat a_j\phi_j,
+\]
+\[
+\gamma_n(g)=\|g\|_2^2-\frac2n\sum_i g(X_i),\qquad
+V_D=\E\|\widehat f_D-f_D\|_2^2.
+\]
+\begin{enumerate}[label=(\alph*)]
+\item Chứng minh nghiệm duy nhất của $\min_{g\in S_D}\gamma_n(g)$ là $\widehat f_D$
+và tìm giá trị tương phản tại nghiệm. Không áp đặt thêm $g\geq0$.
+\item Chứng minh $\E\|\widehat f_D\|_2^2=\|f_D\|_2^2+V_D$.
+Vì sao chỉ thay $-\|f_D\|_2^2$ bằng $-\|\widehat f_D\|_2^2$ làm xuất hiện một độ lạc quan $V_D$?
+\end{enumerate}
+
+\textbf{Công cụ.} Trực chuẩn và hoàn thành bình phương.
+Viết $g$ thay vì $h$ để tránh nhầm hàm ứng viên với bandwidth.
+\textbf{Lời giải ý (a).}
+
+\buoc{Bước 1. Viết tương phản theo các hệ số.}
+\textbf{Vì sao trực chuẩn giúp tính toán?} Trực chuẩn nghĩa là
+$\int\phi_j\phi_k=0$ khi $j\ne k$ và bằng 1 khi $j=k$.
+Khai triển bình phương tổng trước khi tích phân:
+\[
+\left\|\sum_jb_j\phi_j\right\|_2^2
+=\sum_j\sum_k b_jb_k\int\phi_j(x)\phi_k(x)dx
+=\sum_jb_j^2.
+\]
+Các tích chéo $j\ne k$ mất đi nhờ tích phân, không cần các hệ số độc lập.
+Với $g=\sum_{j=1}^D b_j\phi_j$, trực chuẩn cho $\|g\|_2^2=\sum_jb_j^2$;
+đồng thời
+\[
+\frac1n\sum_i g(X_i)=\sum_j b_j\left(\frac1n\sum_i\phi_j(X_i)\right)
+=\sum_jb_j\widehat a_j.
+\]
+
+\buoc{Bước 2. Hoàn thành bình phương.}
+Với hai số $b,a$, ta có $(b-a)^2=b^2-2ba+a^2$,
+nên $b^2-2ba=(b-a)^2-a^2$. Áp dụng riêng cho từng $j$:
+\[
+\gamma_n(g)=\sum_{j=1}^D(b_j^2-2b_j\widehat a_j)
+=\sum_{j=1}^D(b_j-\widehat a_j)^2-\sum_{j=1}^D\widehat a_j^2.
+\]
+Hạng cuối không phụ thuộc $b_j$; tổng bình phương nhỏ nhất bằng 0,
+đạt được duy nhất khi mọi $b_j=\widehat a_j$.
+
+\buoc{Bước 3. Ghi nghiệm và giá trị cực tiểu.}
+\[
+\boxed{\arg\min_{g\in S_D}\gamma_n(g)=\widehat f_D,\qquad
+\gamma_n(\widehat f_D)=-\|\widehat f_D\|_2^2.}
+\]
+\textbf{Kết luận.} Các hệ số tối ưu chính là các trung bình mẫu.
+Kiểm tra thêm bằng đạo hàm: $\partial\gamma_n/\partial b_j=2(b_j-\widehat a_j)$,
+ma trận Hessian là $2I_D$, xác định dương.
+Ở phép kiểm tra này, đạo hàm riêng theo $b_j$ nghĩa là giữ các $b_k$ khác cố định.
+Mỗi số hạng chỉ chứa một $b_j$ và có đạo hàm bậc hai bằng 2;
+do đó mọi hướng thay đổi hệ số khỏi nghiệm đều làm tương phản tăng.
+
+\textbf{Lời giải ý (b).}
+\buoc{Bước 4. Lấy kỳ vọng bình phương chuẩn của ước lượng mẫu.}
+Từ định nghĩa phương sai,
+$\Var(\widehat a_j)=\E\widehat a_j^2-(\E\widehat a_j)^2$,
+nên $\E\widehat a_j^2=\Var(\widehat a_j)+a_j^2$.
+Đây là lý do không thể thay kỳ vọng của bình phương bằng bình phương của kỳ vọng.
+Do trực chuẩn và $\E\widehat a_j=a_j$,
+\[
+\E\|\widehat f_D\|_2^2=\sum_j\E\widehat a_j^2
+=\sum_j\{a_j^2+\Var(\widehat a_j)\}
+=\|f_D\|_2^2+V_D.
+\]
+Vậy $\E[-\|\widehat f_D\|_2^2]=-\|f_D\|_2^2-V_D$:
+tương phản tại mô hình đã khớp mẫu thấp hơn $-\|f_D\|_2^2$ một lượng $V_D$.
+Khi mục tiêu tái cấu trúc là $-\|f_D\|_2^2+V_D$, hiệu chỉnh theo kỳ vọng cần
+$2V_D$, vì
+\[
+\E[-\|\widehat f_D\|_2^2+2V_D]=-\|f_D\|_2^2+V_D.
+\]
+Đây là đồng nhất thức tại $D$ cố định; $V_D$ vẫn chứa phân phối chưa biết.
+Bài \hyperref[ot45:oracle]{III.3} giải thích cách chuyển sang mức phạt từ dữ liệu.
+
+\textbf{Lỗi dễ mắc.} Tối ưu trên tập mật độ không âm rồi dùng ngay nghiệm trên toàn $S_D$;
+hai bài toán có ràng buộc khác nhau.
+
+\subsubsection*{Bài 2.3. Pythagoras, phân rã và tái cấu trúc rủi ro}\label{ot45:pythagoras}
+\textbf{Đề bài.} Cho mật độ $f\in L^2(\R)$, mẫu $X_1,\ldots,X_n$ độc lập cùng mật độ $f$,
+và không gian $D$ chiều $S_D\subset L^2(\R)$ có cơ sở thực trực chuẩn
+$\phi_1,\ldots,\phi_D$. Dùng tích trong $\langle g,q\rangle=\int_{\R}gq$ và đặt
+\[
+a_j=\langle f,\phi_j\rangle,\quad \widehat a_j=\frac1n\sum_i\phi_j(X_i),\quad
+f_D=P_{S_D}f=\sum_ja_j\phi_j,\quad \widehat f_D=\sum_j\widehat a_j\phi_j.
+\]
+Giả sử $\E\phi_j(X)^2<\infty$; ký hiệu
+$V_D=\E\|\widehat f_D-f_D\|_2^2$ và
+$\mathcal R_D=\E\|f-\widehat f_D\|_2^2$.
+\begin{enumerate}[label=(\alph*)]
+\item Chứng minh đẳng thức Pythagoras với từng mẫu; lấy kỳ vọng để suy ra
+phân rã chính xác $\mathcal R_D=\|f-f_D\|_2^2+V_D$. Tính $V_D$ theo các hệ số.
+\item Khai triển theo tích trong để chứng minh
+$\|f-f_D\|_2^2=\|f\|_2^2-\|f_D\|_2^2$.
+Trên một tập ứng viên hữu hạn không rỗng $\mathcal D$, chứng minh
+\[
+\arg\min_{D\in\mathcal D}\mathcal R_D
+=\arg\min_{D\in\mathcal D}\{-\|f_D\|_2^2+V_D\}.
+\]
+\item Nếu thêm $\sup_{x\in\R}\sum_{j\leq D}\phi_j(x)^2\leq\phi_0D$,
+chứng minh $V_D\leq\phi_0D/n$. Phân biệt đẳng thức rủi ro với chặn trên này.
+\item Kiểm chứng bằng mật độ $f(x)=2x\mathbf1_{[0,1]}(x)$,
+histogram hai ô $[0,1/2)$, $[1/2,1]$ và $n=5$:
+tính $\|f\|_2^2$, $\|f_D\|_2^2$, bình phương chệch, $V_D$ và $\mathcal R_D$.
+\end{enumerate}
+
+\textbf{Công cụ.} Trực giao của phần dư chiếu, khai triển bình phương chuẩn,
+phương sai trung bình mẫu và tính chất bỏ hằng số khỏi bài toán tối ưu.
+Miền $[0,1]$ là trường hợp riêng: mở rộng $f$ và các hàm cơ sở bằng 0 ra ngoài miền.
+
+\textbf{Lời giải ý (a).}
+\buoc{Bước 1. Chứng minh phần dư chiếu trực giao với $S_D$.}
+Trực giao của hai hàm nghĩa là tích trong bằng 0.
+Ta kiểm tra trước với từng hàm cơ sở $\phi_k$;
+nếu đúng với tất cả các hàm cơ sở thì đúng với mọi tổ hợp tuyến tính của chúng.
+Với mọi $k\leq D$,
+\[
+\langle f-f_D,\phi_k\rangle
+=a_k-\sum_{j=1}^Da_j\langle\phi_j,\phi_k\rangle=a_k-a_k=0.
+\]
+Vì $f_D-\widehat f_D\in S_D$, nên
+$\langle f-f_D,f_D-\widehat f_D\rangle=0$ với từng mẫu.
+Ví dụ với hai hệ số, $f_D-\widehat f_D=(a_1-\widehat a_1)\phi_1
++(a_2-\widehat a_2)\phi_2$. Tích trong với $f-f_D$ là
+$(a_1-\widehat a_1)\cdot0+(a_2-\widehat a_2)\cdot0=0$.
+
+\buoc{Bước 2. Khai triển bình phương chuẩn và loại hạng chéo.}
+\begin{align*}
+\|f-\widehat f_D\|_2^2
+&=\|(f-f_D)+(f_D-\widehat f_D)\|_2^2\\
+&=\|f-f_D\|_2^2+2\langle f-f_D,f_D-\widehat f_D\rangle
++\|f_D-\widehat f_D\|_2^2\\
+&=\|f-f_D\|_2^2+\|f_D-\widehat f_D\|_2^2.
+\end{align*}
+Đẳng thức này đúng trước khi lấy kỳ vọng.
+
+\buoc{Bước 3. Lấy kỳ vọng và tính phần phương sai.}
+Vì $\E\widehat a_j=a_j$, ta có $\E\widehat f_D=f_D$.
+Bình phương Bias theo $L^2$ do đó chính là $\|f-f_D\|_2^2$.
+Trực chuẩn cho
+\[
+\|f_D-\widehat f_D\|_2^2=\sum_{j=1}^D(\widehat a_j-a_j)^2.
+\]
+Độc lập của các quan sát cho
+\[
+V_D=\sum_j\Var(\widehat a_j)
+=\frac1n\sum_{j=1}^D\left(\int_{\R}\phi_j(x)^2f(x)dx-a_j^2\right).
+\]
+Lấy kỳ vọng trong Bước 2:
+\[
+\boxed{\mathcal R_D=\underbrace{\|f-f_D\|_2^2}_{\text{Bias}^2}
++\underbrace{V_D}_{\text{Variance tích phân}}.}
+\]
+Các hệ số mẫu không cần độc lập; trực chuẩn đã loại hạng chéo khi tích phân.
+
+\phantomsection\label{ot45:risk-reformulation}
+\textbf{Lời giải ý (b): tái cấu trúc Bias--Variance.}
+\buoc{Bước 4. Tính tích trong giữa mật độ và hình chiếu.}
+\[
+\langle f,f_D\rangle
+=\left\langle f,\sum_ja_j\phi_j\right\rangle
+=\sum_ja_j\langle f,\phi_j\rangle
+=\sum_ja_j^2=\|f_D\|_2^2.
+\]
+Tương đương, $f=f_D+(f-f_D)$ và $\langle f-f_D,f_D\rangle=0$.
+
+\buoc{Bước 5. Khai triển bình phương Bias.}
+\begin{align*}
+\|f-f_D\|_2^2
+&=\langle f-f_D,f-f_D\rangle\\
+&=\|f\|_2^2-2\langle f,f_D\rangle+\|f_D\|_2^2\\
+&=\boxed{\|f\|_2^2-\|f_D\|_2^2}.
+\end{align*}
+Dấu trừ không làm kết quả âm vì phép chiếu thỏa $\|f_D\|_2\leq\|f\|_2$.
+
+\buoc{Bước 6. Loại hằng số khỏi bài toán chọn $D$.}
+Thế vào phân rã rủi ro:
+\[
+\mathcal R_D=\|f\|_2^2+Q(D),\qquad Q(D)=-\|f_D\|_2^2+V_D.
+\]
+Với mọi hai ứng viên $D_1,D_2$, ta có
+$\mathcal R_{D_1}-\mathcal R_{D_2}=Q(D_1)-Q(D_2)$.
+Do đó thứ tự so sánh không đổi, kể cả các trường hợp bằng nhau:
+\[
+\boxed{\arg\min_{D\in\mathcal D}\mathcal R_D
+=\arg\min_{D\in\mathcal D}\{-\|f_D\|_2^2+V_D\}.}
+\]
+$Q(D)$ có thể âm vì đã trừ hằng số $\|f\|_2^2$; điều đó không có nghĩa rủi ro âm.
+Biểu thức vẫn cần $f_D,V_D$ chưa biết. Thay bằng đại lượng mẫu cần hiệu chỉnh
+theo Bài \hyperref[ot45:contrast]{2.2} và \hyperref[ot45:oracle]{III.3}.
+
+\textbf{Lời giải ý (c).}
+\buoc{Bước 7. Chặn phương sai bằng kích thước mô hình.}
+Bỏ các số hạng $-a_j^2\leq0$ và dùng giả thiết cơ sở:
+\[
+V_D\leq\frac1n\int_{\R}\left(\sum_j\phi_j(x)^2\right)f(x)dx
+\leq\frac{\phi_0D}{n}\int_{\R}f(x)dx=\frac{\phi_0D}{n}.
+\]
+Vậy $\mathcal R_D\leq\|f-f_D\|_2^2+\phi_0D/n$.
+Chặn này có thể dùng để tối ưu quy mô $D$; không thay $V_D$ bằng $\phi_0D/n$
+trong một đẳng thức hay khẳng định hai bài toán có cùng nghiệm chính xác.
+
+\textbf{Lời giải ý (d).}
+\buoc{Bước 8. Tính các đại lượng cho histogram hai ô.}
+Với $\phi_j=\sqrt2\mathbf1_{B_j}$,
+$p_1=\int_0^{1/2}2x\,dx=1/4$, $p_2=3/4$.
+Do đó $f_D$ có chiều cao $2p_1=1/2$, $2p_2=3/2$.
+Để thấy chiều cao, $a_j=\int f\sqrt2\mathbf1_{B_j}=\sqrt2p_j$;
+trên ô $B_j$ chỉ còn một hàm cơ sở, nên $f_D=a_j\sqrt2=2p_j$.
+Các tích phân đầu tiên tính bằng nguyên hàm của đa thức:
+\[
+p_1=[x^2]_0^{1/2}=\frac14,\qquad
+p_2=[x^2]_{1/2}^1=\frac34,\qquad
+\int_0^14x^2dx=\left[\frac{4x^3}{3}\right]_0^1=\frac43.
+\]
+\[
+\|f\|_2^2=\int_0^1 4x^2dx=\frac43,\qquad
+\|f_D\|_2^2=\frac12\left[\left(\frac12\right)^2+\left(\frac32\right)^2\right]=\frac54.
+\]
+Tính trực tiếp bình phương chệch kiểm chứng phép tái cấu trúc:
+trên ô trái, $(2x-1/2)^2=4x^2-2x+1/4$, nên
+\[
+\int_0^{1/2}(2x-1/2)^2dx
+=\left[\frac43x^3-x^2+\frac x4\right]_0^{1/2}
+=\frac16-\frac14+\frac18=\frac1{24}.
+\]
+Trên ô phải, đặt $y=x-1/2$; cận trở thành $0,1/2$ và
+$2x-3/2=2y-1/2$, nên tích phân cũng bằng $1/24$.
+Tổng hai ô là
+\[
+\int_0^{1/2}(2x-1/2)^2dx+\int_{1/2}^1(2x-3/2)^2dx
+=\frac1{12}=\frac43-\frac54.
+\]
+Vì $\sum_j\phi_j^2=2$ trên miền dữ liệu,
+\[
+V_D=\frac1n\{2-\|f_D\|_2^2\}=\frac15\left(2-\frac54\right)=\frac3{20},
+\]
+\[
+\mathcal R_D=\frac1{12}+\frac3{20}=\frac7{30},\qquad
+Q(D)=-\frac54+\frac3{20}=-\frac{11}{10}.
+\]
+Kiểm tra $\mathcal R_D-\|f\|_2^2=7/30-4/3=-11/10$.
+
+\textbf{Kết luận.} Pythagoras cho phân rã chính xác;
+tái cấu trúc cho cùng bài toán tối ưu sau khi bỏ hằng số.
+Chặn $V_D\leq\phi_0D/n$ là một bước riêng có thêm giả thiết.
+
+\textbf{Lỗi dễ mắc.} Dùng $\langle f,f_D\rangle=0$ thay vì
+$\langle f-f_D,f_D\rangle=0$; hoặc nhầm $V_D$ với phương sai tại một điểm.
+
+\subsubsection*{Bài 2.4. Chọn số chiều tối ưu và hiểu tốc độ minimax}\label{ot45:dimension}
+\textbf{Đề bài.} Giả sử cơ sở phù hợp sao cho
+$\|f-f_D\|_2^2\leq C_f^2D^{-2\alpha}$ với $\alpha,C_f>0$.
+Tối thiểu hóa
+\[
+\psi(D)=C_f^2D^{-2\alpha}+\frac{\phi_0D}{n},\qquad D\in\{1,2,\ldots\}.
+\]
+Giải thích điều kiện để gọi tốc độ thu được là tối ưu minimax.
+
+\textbf{Công cụ.} Tối ưu trên biến liên tục rồi chọn số nguyên;
+không suy ra sai số xấp xỉ chỉ từ tên của một lớp trơn và một cơ sở bất kỳ.
+
+\buoc{Bước 1. Giải bài toán liên tục.}
+Tạm cho số chiều là biến thực $d>0$ để lấy đạo hàm.
+Quy tắc $(d^p)'=pd^{p-1}$ với $p=-2\alpha$ cho
+$[C_f^2d^{-2\alpha}]'=-2\alpha C_f^2d^{-2\alpha-1}$;
+đạo hàm của $\phi_0d/n$ là $\phi_0/n$.
+Với $d>0$,
+\[
+\psi'(d)=-2\alpha C_f^2d^{-2\alpha-1}+\frac{\phi_0}{n}=0
+\quad\Longrightarrow\quad
+d_*=\left(\frac{2\alpha C_f^2n}{\phi_0}\right)^{1/(2\alpha+1)}.
+\]
+Các bước giải phương trình là
+\[
+\frac{\phi_0}{n}=\frac{2\alpha C_f^2}{d^{2\alpha+1}}
+\ \Longleftrightarrow\ d^{2\alpha+1}=\frac{2\alpha C_f^2n}{\phi_0},
+\]
+rồi lấy lũy thừa $1/(2\alpha+1)$ của hai vế dương.
+Đạo hàm bậc hai
+$2\alpha(2\alpha+1)C_f^2d^{-2\alpha-2}>0$;
+hàm giảm trước $d_*$, tăng sau $d_*$.
+
+\buoc{Bước 2. Chọn số chiều nguyên.}
+Nếu $d_*<1$, chọn $D_*=1$.
+Nếu $d_*\geq1$, tính $\psi$ tại $\lfloor d_*\rfloor$ và $\lceil d_*\rceil$,
+chọn giá trị nhỏ hơn; nếu bằng nhau chọn $D$ nhỏ hơn.
+Ví dụ $d_*=3.4$ thì chỉ cần so sánh $\psi(3)$ và $\psi(4)$:
+hàm đang giảm ở phía trái $3.4$ và tăng ở phía phải, nên các số nguyên xa hơn
+không thể tốt hơn cả hai ứng viên này. Không tự động làm tròn theo khoảng cách.
+Nếu đề hạn chế $D\leq D_{\max}$, chặn các ứng viên trong $[1,D_{\max}]$ trước khi so sánh.
+Với các hằng số cố định và $n$ lớn, trên tập toàn bộ số nguyên dương,
+$D_*\asymp n^{1/(2\alpha+1)}$.
+
+\buoc{Bước 3. Thế quy mô nghiệm vào chặn rủi ro.}
+Các hằng số không ảnh hưởng số mũ theo $n$.
+Quy tắc $(n^a)^b=n^{ab}$ và $n^a/n=n^{a-1}$ cho
+\[
+\bigl(n^{1/(2\alpha+1)}\bigr)^{-2\alpha}
+=n^{-2\alpha/(2\alpha+1)},\qquad
+\frac{n^{1/(2\alpha+1)}}n
+=n^{[1-(2\alpha+1)]/(2\alpha+1)}.
+\]
+Vì $1-(2\alpha+1)=-2\alpha$, hai hạng có cùng bậc:
+\[
+D_*^{-2\alpha}\asymp n^{-2\alpha/(2\alpha+1)},\qquad
+\frac{D_*}{n}\asymp n^{-2\alpha/(2\alpha+1)}.
+\]
+\textbf{Kết luận.} $\boxed{\E\|f-\widehat f_{D_*}\|_2^2
+=O(n^{-2\alpha/(2\alpha+1)}).}$
+Tại nghiệm liên tục, hạng phương sai của chặn bằng $2\alpha$ lần hạng xấp xỉ.
+
+\textbf{Vì sao cần giả thiết về cơ sở?} Chẳng hạn, với cơ sở đầy đủ và lớp hệ số
+$\sum_{j\geq1}j^{2\alpha}a_j^2\leq C_f^2$, Parseval cho
+\[
+\|f-f_D\|_2^2=\sum_{j>D}a_j^2
+\leq(D+1)^{-2\alpha}\sum_{j>D}j^{2\alpha}a_j^2
+\leq C_f^2D^{-2\alpha}.
+\]
+Đây là một điều kiện đủ cụ thể. Với cơ sở lượng giác, lớp Sobolev thích hợp
+cần tương thích điều kiện biên/tuần hoàn.
+
+\textbf{Lỗi dễ mắc.} Phép tối ưu trên chỉ chứng minh một cận trên.
+Muốn gọi là tối ưu minimax trên lớp $\mathcal F_\alpha$ còn cần định lý cận dưới
+\[
+\inf_{\widetilde f}\sup_{f\in\mathcal F_\alpha}
+\E_f\|\widetilde f-f\|_2^2\geq c n^{-2\alpha/(2\alpha+1)}.
+\]
+Cận này không được suy ra bằng việc lấy đạo hàm $\psi$.
+
+\subsubsection*{Bài 2.5. Histogram là ước lượng chiếu lên hàm bước}\label{ot45:histogram}
+\textbf{Đề bài.} Chia $[0,1]$ thành $D$ ô $B_j$ có độ rộng $1/D$,
+các ô nửa kín nửa hở và ô cuối chứa 1. Đặt
+$\phi_j(x)=\sqrt D\,\mathbf1_{B_j}(x)$.
+Chứng minh cơ sở này trực chuẩn và phép chiếu mẫu chính là histogram.
+
+\textbf{Công cụ.} Tích phân chỉ báo, đếm quan sát trong ô và công thức hệ số mẫu.
+
+\buoc{Bước 1. Kiểm tra trực chuẩn.}
+Hàm chỉ báo $\mathbf1_{B_j}$ bằng 1 trong ô $B_j$, bằng 0 ngoài ô.
+Do đó tích phân của nó bằng độ dài ô: $\int\mathbf1_{B_j}=|B_j|=1/D$.
+Vì chỉ có giá trị 0 hoặc 1, bình phương của hàm chỉ báo vẫn là chính nó.
+Các ô rời nhau nên $\int\phi_j\phi_k=0$ khi $j\ne k$.
+Với $j=k$, $\int\phi_j^2=D|B_j|=D/D=1$.
+
+\buoc{Bước 2. Tính hệ số và ghép lại.}
+Gọi $N_j=\sum_i\mathbf1_{B_j}(X_i)$. Khi đó
+\[
+\widehat a_j=\frac{\sqrt D\,N_j}{n},\qquad
+\widehat f_D(x)=\sum_j\frac{D N_j}{n}\mathbf1_{B_j}(x).
+\]
+Ở đây $\widehat a_j\phi_j(x)
+=(\sqrt D N_j/n)\sqrt D\mathbf1_{B_j}(x)
+=(DN_j/n)\mathbf1_{B_j}(x)$.
+Nếu $x$ nằm trong ô $B_j$, chỉ hàm chỉ báo của ô đó bằng 1,
+các ô khác đều đóng góp 0.
+Với $x\in B_j$ và $h=1/D$,
+\[
+\boxed{\widehat f_D(x)=\frac{DN_j}{n}=\frac{N_j}{nh},}
+\]
+đúng công thức chiều cao histogram.
+
+\buoc{Bước 3. Kiểm tra bằng mẫu cụ thể.}
+Với $X=(0.1,0.2,0.4,0.8)$ và $D=2$, $N_1=3,N_2=1$.
+Hệ số là $(3\sqrt2/4,\sqrt2/4)$; chiều cao là $(3/2,1/2)$.
+Tổng diện tích $=(3/2)(1/2)+(1/2)(1/2)=1$.
+
+\textbf{Kết luận.} Histogram là trường hợp đặc biệt của phép chiếu.
+Ở cơ sở này, $\sum_j\phi_j(x)^2=D$, nên dùng được $\phi_0=1$.
+
+\textbf{Lỗi dễ mắc.} Coi $\widehat a_j$ là chiều cao ô (còn phải nhân $\sqrt D$);
+hoặc suy rằng histogram đạt $n^{-4/5}$ khi $f$ trơn bậc hai.
+Cơ sở hàm bước thường chỉ có sai số xấp xỉ bình phương bậc $D^{-2}$,
+nên tốc độ thông thường vẫn là $n^{-2/3}$.
+
+\subsection{Phần II: Bài tập tính toán số trực tiếp}
+
+\subsubsection*{Bài II.1. Tính hằng số của bốn nhân}\label{ot45:constants}
+\textbf{Đề bài.} Tính $\mu_2(K)=\int_{\R}u^2K(u)du$ và $R(K)=\int_{\R}K(u)^2du$
+cho các nhân Uniform, Triangular, Epanechnikov và Gaussian.
+Ba nhân đầu bằng 0 ngoài $[-1,1]$; Gaussian có giá đỡ toàn trục.
+
+\textbf{Công cụ.} Tính chẵn của các hàm dưới dấu tích phân;
+$\int_0^1u^kdu=1/(k+1)$; tích phân Gaussian.
+
+\textbf{Trước khi tính: vì sao có hệ số 2?}
+Với hàm chẵn $g$, tức $g(-u)=g(u)$, hai nửa diện tích bằng nhau:
+\[
+\int_{-1}^1g(u)du=\int_{-1}^0g(u)du+\int_0^1g(u)du
+=2\int_0^1g(u)du.
+\]
+Các nhân trong bài đều chẵn, nên $u^2K(u)$ và $K(u)^2$ cũng chẵn.
+Với ba nhân có giá đỡ $[-1,1]$, phần tích phân ngoài khoảng này bằng 0.
+Để tính đa thức, dùng
+$\int_0^1u^kdu=[u^{k+1}/(k+1)]_0^1=1/(k+1)$ với $k\geq0$.
+
+\buoc{Bước 1. Nhân Uniform $K(u)=\frac12\mathbf1_{\{|u|\leq1\}}$.}
+\[
+\mu_2(K)=2\int_0^1\frac{u^2}{2}du=\frac13,\qquad
+R(K)=\int_{-1}^1\frac14du=\frac12.
+\]
+Nhân được chuẩn hóa vì $\int_{-1}^1(1/2)du=1$.
+Chẳng hạn,
+$2\int_0^1u^2/2\,du=[u^3/3]_0^1=1/3$;
+$\int_{-1}^1(1/4)du=[u/4]_{-1}^1=1/4-(-1/4)=1/2$.
+
+\buoc{Bước 2. Nhân Triangular $K(u)=(1-|u|)\mathbf1_{\{|u|\leq1\}}$.}
+Trên $[0,1]$, $|u|=u$, nên
+\[
+u^2K(u)=u^2(1-u)=u^2-u^3,\qquad
+K(u)^2=(1-u)^2=1-2u+u^2.
+\]
+Ta chỉ thay $|u|=u$ sau khi đã chuyển về nửa đoạn dương:
+\begin{align*}
+\mu_2(K)&=2\int_0^1(u^2-u^3)du
+=2\left(\frac13-\frac14\right)=\frac16,\\
+R(K)&=2\int_0^1(1-2u+u^2)du
+=2\left(1-1+\frac13\right)=\frac23.
+\end{align*}
+Kiểm tra chuẩn hóa: $2\int_0^1(1-u)du=1$.
+Viết đầy đủ bước nguyên hàm và thế cận:
+\[
+\mu_2(K)=2\left[\frac{u^3}{3}-\frac{u^4}{4}\right]_0^1
+=2\left(\frac{4-3}{12}\right)=\frac16,
+\]
+\[
+R(K)=2\left[u-u^2+\frac{u^3}{3}\right]_0^1=\frac23.
+\]
+Nếu tính trên cả $[-1,1]$, phải giữ $|u|$ hoặc tách hai nửa:
+\[
+\mu_2(K)=\int_{-1}^0u^2(1+u)du+\int_0^1u^2(1-u)du.
+\]
+Không dùng $u^2(1-u)$ trên nửa âm, vì khi đó $1-|u|=1+u$.
+
+\buoc{Bước 3. Nhân Epanechnikov $K(u)=\frac34(1-u^2)\mathbf1_{\{|u|\leq1\}}$.}
+Trước hết,
+$u^2K(u)=(3/4)(u^2-u^4)$ và
+$K(u)^2=(9/16)(1-2u^2+u^4)$.
+Nhân 2 khi chuyển sang $[0,1]$ tạo các hệ số
+$2\cdot3/4=3/2$ và $2\cdot9/16=9/8$.
+\begin{align*}
+\mu_2(K)&=\frac32\int_0^1(u^2-u^4)du
+=\frac32\left(\frac13-\frac15\right)=\frac15,\\
+R(K)&=\frac98\int_0^1(1-2u^2+u^4)du
+=\frac98\left(1-\frac23+\frac15\right)=\frac35.
+\end{align*}
+Kiểm tra chuẩn hóa: $(3/2)(1-1/3)=1$.
+Các nguyên hàm cần dùng là
+\[
+\mu_2(K)=\frac32\left[\frac{u^3}{3}-\frac{u^5}{5}\right]_0^1,
+\qquad
+R(K)=\frac98\left[u-\frac{2u^3}{3}+\frac{u^5}{5}\right]_0^1.
+\]
+Để kiểm tra phân số cuối: $1/3-1/5=2/15$ và
+$1-2/3+1/5=(15-10+3)/15=8/15$.
+
+\buoc{Bước 4. Nhân Gaussian $K(u)=(2\pi)^{-1/2}e^{-u^2/2}$.}
+Quy tắc hàm hợp cho
+\[
+K'(u)=\frac1{\sqrt{2\pi}}e^{-u^2/2}\left(-\frac{u^2}{2}\right)'
+=-uK(u).
+\]
+Do đó $u^2K(u)=-uK'(u)$.
+Để tích phân từng phần theo $\int a\,db=ab-\int b\,da$,
+chọn $a=u$, $da=du$, $db=K'(u)du$, $b=K(u)$ và giữ dấu trừ ở ngoài.
+Vì $K'(u)=-uK(u)$, tích phân từng phần và $uK(u)\to0$ ở vô cực cho
+\[
+\mu_2(K)=-\int_{\R}uK'(u)du
+=-[uK(u)]_{-\infty}^{\infty}+\int_{\R}K(u)du=1.
+\]
+Bình phương nhân làm số mũ đổi từ $-u^2/2$ thành $-u^2$:
+\[
+R(K)=\frac1{2\pi}\int_{\R}e^{-u^2}du
+=\frac{\sqrt\pi}{2\pi}=\frac1{2\sqrt\pi}.
+\]
+Đây là tích phân trên toàn trục, không phải nguyên hàm:
+$\int_{-\infty}^{+\infty}e^{-u^2}du=\sqrt\pi$ là kết quả tích phân Gauss.
+Hàm $e^{-u^2}$ không có nguyên hàm bằng các hàm sơ cấp.
+Hệ số cuối rút gọn bằng $\pi=\sqrt\pi\sqrt\pi$.
+
+\textbf{Kết luận.}
+\begin{center}
+\begin{tabular}{lcc}
+\toprule Nhân & $\mu_2(K)$ & $R(K)$\\\midrule
+Uniform & $1/3$ & $1/2$\\
+Triangular & $1/6$ & $2/3$\\
+Epanechnikov & $1/5$ & $3/5$\\
+Gaussian & $1$ & $1/(2\sqrt\pi)$\\\bottomrule
+\end{tabular}
+\end{center}
+\textbf{Lỗi dễ mắc.} Với $R(K)$ phải bình phương cả hệ số;
+với Gaussian không được chỉ tích phân trên $[-1,1]$.
+
+\subsubsection*{Bài II.2. Tính KDE trên mẫu bốn điểm}\label{ot45:calculation}
+\textbf{Đề bài.} Cho $X=(1,2,4,5)$, $n=4$, $h=2$, $x_0=3$.
+Tính $\widehat f_2(3)$ với nhân Epanechnikov.
+
+\textbf{Công cụ.} Dùng đúng công thức
+$\widehat f_2(3)=(1/8)\sum_iK((3-X_i)/2)$.
+Giữ phân số đến phép tính cuối.
+
+\buoc{Bước 1. Chuẩn hóa khoảng cách và lập bảng nhân.}
+\begin{center}
+\begin{tabular}{cccc}
+\toprule $X_i$ & $u_i=(3-X_i)/2$ & Thuộc $[-1,1]$? & $K(u_i)$\\\midrule
+1 & $1$ & Có & $\frac34(1-1)=0$\\
+2 & $1/2$ & Có & $\frac34(1-1/4)=9/16$\\
+4 & $-1/2$ & Có & $9/16$\\
+5 & $-1$ & Có & $0$\\\bottomrule
+\end{tabular}
+\end{center}
+
+\buoc{Bước 2. Cộng và chia đúng hệ số.}
+\[
+\sum_iK(u_i)=\frac{18}{16}=\frac98,\qquad nh=4\cdot2=8,
+\]
+\[
+\boxed{\widehat f_2(3)=\frac18\cdot\frac98=\frac9{64}=0.140625.}
+\]
+\textbf{Kết luận.} Giá trị mật độ ước lượng tại 3 là $9/64$;
+đây không phải xác suất $P(X=3)$.
+
+\textbf{Lỗi dễ mắc.} Chỉ chia cho hai điểm có trọng số dương.
+Mẫu vẫn có $n=4$ quan sát; các trọng số bằng 0 không làm thay đổi $n$.
+
+\subsubsection*{Bài II.3. Suy ra quy tắc tham chiếu chuẩn 1.06}\label{ot45:normal-reference}
+\textbf{Đề bài.} Cho mẫu độc lập $X_1,\ldots,X_n$ từ mật độ
+$f(x)=\sigma^{-1}\varphi((x-\mu)/\sigma)$, $\sigma>0$, $n\geq2$,
+với $\varphi(u)=(2\pi)^{-1/2}e^{-u^2/2}$.
+KDE $\widehat f_h(x)=(nh)^{-1}\sum_iK((x-X_i)/h)$ dùng $K=\varphi$,
+$\mu_2(K)=1$, $R(K)=1/(2\sqrt\pi)$.
+\begin{enumerate}[label=(\alph*)]
+\item Tính $f''$ và chứng minh $R(f'')=3/(8\sqrt\pi\sigma^5)$.
+\item Từ $\AMISE(h)=h^4\mu_2(K)^2R(f'')/4+R(K)/(nh)$,
+suy ra công thức chính xác của bandwidth tối ưu, hệ số làm tròn 1.06 và AMISE nhỏ nhất.
+\item Khi $\sigma$ chưa biết, viết quy tắc từ độ lệch chuẩn mẫu $s$.
+Tính bandwidth cho $n=100$, $s=2$, ghi rõ hệ số chính xác hay làm tròn được sử dụng.
+\end{enumerate}
+
+\textbf{Công cụ.} Đạo hàm mật độ chuẩn, đổi biến $z=(x-\mu)/\sigma$ và
+tích phân từng phần cho các moment có trọng số $e^{-z^2}$.
+\textbf{Lời giải ý (a).}
+
+\buoc{Bước 1. Tính đạo hàm bậc hai.}
+\textbf{Ta đang đạo hàm theo biến nào?} Theo $x$; còn $\mu$ và $\sigma$
+là các hằng số. Đặt
+\[
+z=z(x)=\frac{x-\mu}{\sigma},\qquad
+\frac{dz}{dx}=\frac1\sigma,\qquad
+f(x)=\frac1\sigma\varphi(z(x)).
+\]
+Viết $z(x)$ để nhắc rằng $z$ cũng thay đổi khi $x$ thay đổi.
+
+\textbf{Hai quy tắc cần dùng.}
+Đạo hàm hàm hợp: $\frac{d}{dx}g(z(x))=g'(z(x))z'(x)$
+(đạo hàm hàm ngoài rồi nhân đạo hàm hàm trong).
+Đạo hàm tích: $(ab)'=a'b+ab'$.
+
+\textbf{1a. Đạo hàm của $\varphi$ theo đối số $z$.}
+Vì $(e^{v(z)})'=e^{v(z)}v'(z)$ và $(-z^2/2)'=-z$, nên
+\[
+\varphi'(z)
+=\frac1{\sqrt{2\pi}}e^{-z^2/2}(-z)
+=-z\varphi(z).
+\]
+Ở đây $\varphi'(z)$ là đạo hàm \emph{theo $z$}.
+Khi đạo hàm $\varphi(z(x))$ \emph{theo $x$}, phải nhân thêm $z'(x)=1/\sigma$.
+
+\textbf{1b. Đạo hàm lần thứ nhất theo $x$.}
+\begin{align*}
+f'(x)
+&=\frac1\sigma\,\varphi'(z)\,\frac{dz}{dx}\\
+&=\frac1\sigma\,[-z\varphi(z)]\,\frac1\sigma
+=-\frac{z\varphi(z)}{\sigma^2}.
+\end{align*}
+
+\textbf{1c. Đạo hàm lần thứ hai theo $x$.}
+Giữ $-1/\sigma^2$ ở ngoài; bên trong là tích của $z(x)$ và $\varphi(z(x))$:
+\begin{align*}
+f''(x)
+&=-\frac1{\sigma^2}\frac{d}{dx}\bigl[z\varphi(z)\bigr]\\
+&=-\frac1{\sigma^2}
+  \left[\underbrace{\frac1\sigma\varphi(z)}_{z'\,\varphi(z)}
+  +\underbrace{z\,\varphi'(z)\frac1\sigma}_{z\,[\varphi(z(x))]'}\right]\\
+&=-\frac1{\sigma^2}
+  \left[\frac1\sigma\varphi(z)-\frac{z^2}{\sigma}\varphi(z)\right]\\
+&=-\frac1{\sigma^3}(1-z^2)\varphi(z).
+\end{align*}
+Vậy
+\[
+\boxed{f''(x)=\frac{z^2-1}{\sigma^3}\varphi(z),
+\qquad z=\frac{x-\mu}{\sigma}.}
+\]
+\textbf{Tự kiểm tra dấu:} tại tâm $x=\mu$ thì $z=0$, nên
+$f''(\mu)=-\varphi(0)/\sigma^3<0$, phù hợp với đường mật độ cong xuống ở đỉnh.
+\textbf{Điểm dễ quên:} mỗi lần đạo hàm hàm hợp theo $x$ đều có thêm
+$1/\sigma$; còn $z^2-1$ xuất hiện từ quy tắc đạo hàm tích.
+
+\buoc{Bước 2. Bình phương rồi tích phân.}
+Ký hiệu $R(f'')$ nghĩa là lấy \emph{bình phương đạo hàm bậc hai rồi tích phân}:
+\[
+R(f'')=\int_{\R}[f''(x)]^2\,dx,
+\qquad [f''(x)]^2=\frac{(z^2-1)^2}{\sigma^6}\varphi(z)^2.
+\]
+Đổi biến $x=\mu+\sigma z$ cho $dx=\sigma\,dz$.
+Vì vậy $\sigma^{-6}$ nhân với $\sigma$ thành $\sigma^{-5}$.
+Ngoài ra,
+\[
+\varphi(z)^2=\left(\frac1{\sqrt{2\pi}}e^{-z^2/2}\right)^2
+=\frac1{2\pi}e^{-z^2},\qquad (z^2-1)^2=z^4-2z^2+1.
+\]
+Thế vào tích phân:
+\[
+R(f'')=\frac1{2\pi\sigma^5}\int_{\R}(z^4-2z^2+1)e^{-z^2}dz.
+\]
+\textbf{Cách tính ba tích phân còn lại.}
+Đặt $I_k=\int_{\R}z^{2k}e^{-z^2}dz$. Ta cần $I_0,I_1,I_2$.
+Với $I_0$, dùng kết quả tích phân Gauss
+$I_0=\int_{\R}e^{-z^2}dz=\sqrt\pi$; không cần tìm nguyên hàm sơ cấp.
+
+Với $k\geq1$, viết $z^{2k}=z^{2k-1}\cdot z$ rồi tích phân từng phần.
+Trong công thức $\int a\,db=ab-\int b\,da$, chọn
+\[
+a=z^{2k-1},\quad db=ze^{-z^2}dz,
+\qquad da=(2k-1)z^{2k-2}dz,\quad b=-\tfrac12e^{-z^2}.
+\]
+Ta tìm được $b$ vì $(e^{-z^2})'=-2ze^{-z^2}$.
+Do $z^{2k-1}e^{-z^2}\to0$ khi $z\to\pm\infty$, số hạng biên bằng 0:
+\begin{align*}
+I_k
+&=\left[-\tfrac12z^{2k-1}e^{-z^2}\right]_{-\infty}^{+\infty}
+ +\frac{2k-1}{2}\int_{\R}z^{2k-2}e^{-z^2}dz\\
+&=\frac{2k-1}{2}I_{k-1}.
+\end{align*}
+Lần lượt thay $k=1$ và $k=2$:
+\[
+I_1=\frac12 I_0=\frac{\sqrt\pi}{2},\qquad
+I_2=\frac32 I_1=\frac{3\sqrt\pi}{4}.
+\]
+Cuối cùng, tích phân cần tính là $I_2-2I_1+I_0$, nên
+\[
+\boxed{R(f'')=\frac{1}{2\pi\sigma^5}
+\left(\frac34-1+1\right)\sqrt\pi
+=\frac{3}{8\sqrt\pi\sigma^5}.}
+\]
+
+\textbf{Lời giải ý (b).}
+\buoc{Bước 3. Thế vào băng thông AMISE.}
+Với $\mu_2(K)=1$, $R(K)=1/(2\sqrt\pi)$, Bài 1.4 cho
+\begin{align*}
+h_{\mathrm{AMISE},*}
+&=\left[\frac{1/(2\sqrt\pi)}{n\cdot3/(8\sqrt\pi\sigma^5)}\right]^{1/5}\\
+&=\left[\frac1{2\sqrt\pi}\cdot\frac{8\sqrt\pi\sigma^5}{3n}\right]^{1/5}
+=\left[\frac{4\sigma^5}{3n}\right]^{1/5}\\
+&=\left(\frac43\right)^{1/5}\sigma n^{-1/5}
+\simeq1.059224\,\sigma n^{-1/5}.
+\end{align*}
+Đây là bandwidth tối ưu của AMISE dưới mô hình chuẩn.
+Ta đã chia một phân số bằng cách nhân với nghịch đảo;
+hai thừa số $\sqrt\pi$ triệt tiêu và $8/2=4$.
+Vì $\sigma>0$, $(\sigma^5)^{1/5}=\sigma$;
+$n^{-1/5}=1/\sqrt[5]{n}$. Hệ số $(4/3)^{1/5}\simeq1.059224$
+được làm tròn thành $1.06$.
+Tại nghiệm, hạng phương sai gấp bốn lần bình phương chệch, nên
+\[
+\AMISE(h_*)=\frac54
+\left(\frac{3}{8\sqrt\pi\sigma^5}\right)^{1/5}
+\left(\frac1{2\sqrt\pi}\right)^{4/5}n^{-4/5}
+=\frac{5\,3^{1/5}}{2^{17/5}\sqrt\pi\,\sigma}n^{-4/5}.
+\]
+Có thể kiểm tra hệ số cuối theo từng cơ số:
+$8^{1/5}=2^{3/5}$, $2^{4/5}$ từ thừa số thứ hai và $4=2^2$ ở ngoài
+cho $2^{2+3/5+4/5}=2^{17/5}$ ở mẫu;
+$(\sqrt\pi)^{1/5}(\sqrt\pi)^{4/5}=\sqrt\pi$;
+$(\sigma^5)^{1/5}=\sigma$.
+
+\textbf{Lời giải ý (c).}
+\buoc{Bước 4. Thay đại lượng chưa biết bằng ước lượng.}
+Lấy $s^2=(n-1)^{-1}\sum_i(X_i-\overline X)^2$ khi $n\geq2$, ta dùng
+\[
+\boxed{\widehat h_{\mathrm{NR}}\simeq1.06\,s\,n^{-1/5}.}
+\]
+Ví dụ $n=100$, $s=2$ cho $\widehat h_{\mathrm{NR}}\simeq0.84399$
+khi dùng hệ số đã làm tròn $1.06$.
+Chi tiết: $100^{-1/5}=10^{-2/5}\simeq0.398107$,
+nên $1.06\cdot2\cdot0.398107\simeq0.84399$.
+
+\textbf{Kết luận.} Hệ số 1.06 là phiên bản làm tròn của $(4/3)^{1/5}$.
+Thay $\sigma$ bằng $s$ tạo quy tắc từ dữ liệu, không phải đẳng thức với băng thông oracle.
+Phiên bản dùng thang đo bền vững $\min(s,\mathrm{IQR}/1.34)$ và phiên bản hệ số $0.9$
+được phân biệt thêm ở Mục \ref{sec:silverman}; phép suy ra trên trực tiếp cho hệ số 1.0592.
+
+\textbf{Lỗi dễ mắc.} Quên hệ số $\sigma$ trong $dx$, làm sai lũy thừa $\sigma^{-5}$;
+hoặc dùng quy tắc tham chiếu chuẩn như tối ưu cho mọi mật độ nhiều đỉnh.
+
+\subsection{Phần III: Câu hỏi so sánh và lý thuyết có lời giải}
+
+\subsubsection*{Bài III.1. So sánh ba phương pháp ước lượng mật độ}\label{ot45:comparison}
+\textbf{Câu hỏi.} So sánh histogram, KDE và phép chiếu về tham số làm trơn,
+hình dạng, tốc độ MISE và hạn chế. Tại sao histogram là phép chiếu nhưng thường chậm hơn KDE bậc hai?
+
+\textbf{Điều kiện.} Các tốc độ dưới đây là tốc độ thường đạt được khi chọn tham số đúng bậc,
+với điều kiện trơn, nhân, cơ sở và xử lý biên tương ứng.
+
+\buoc{Bước 1. Đối chiếu các đặc điểm.}
+\begin{center}
+\small
+\begin{tabular}{p{.15\textwidth}p{.23\textwidth}p{.24\textwidth}p{.24\textwidth}}
+\toprule Tiêu chí & Histogram & KDE & Phép chiếu\\\midrule
+Tham số & Độ rộng ô $h$ hoặc số ô $D$ & Băng thông $h$ & Số chiều $D$\\
+Tăng chi tiết & Giảm $h$, tăng số ô & Giảm $h$ & Tăng $D$\\
+Hình dạng & Hàm nấc & Theo độ trơn của $K$ & Theo hàm cơ sở; có thể là hàm bước hoặc hàm liên tục\\
+MISE & $O(n^{-2/3})$ thông thường & $O(n^{-4/5})$ cho nhân bậc hai, $f$ đủ trơn & $O(n^{-2\alpha/(2\alpha+1)})$ nếu xấp xỉ bình phương bậc $D^{-2\alpha}$\\
+Hạn chế & Nhạy với gốc chia ô & Chệch biên, nhạy với $h$ & Có thể âm; phụ thuộc cơ sở\\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\buoc{Bước 2. Giải thích khác biệt về tốc độ.}
+\textbf{Cân bằng bậc nghĩa là gì?} Ta tìm quy mô $h$ làm hai hạng sai số
+có cùng bậc theo $n$. Đây là cách tìm số mũ; để tìm hệ số tối ưu chính xác,
+cần đạo hàm như Bài 1.4.
+Histogram có bình phương chệch tích phân thường bậc $h^2$, phương sai bậc $1/(nh)$.
+Cân bằng $h^2\asymp1/(nh)$ cho $h\asymp n^{-1/3}$, MISE bậc $n^{-2/3}$.
+KDE bậc hai có bình phương chệch tích phân bậc $h^4$:
+$h^4\asymp1/(nh)$ cho $h\asymp n^{-1/5}$, MISE bậc $n^{-4/5}$.
+Viết rõ phép biến đổi:
+\begin{align*}
+\text{Histogram: }h^2\asymp\frac1{nh}
+&\ \Longrightarrow\ h^3\asymp n^{-1}
+\ \Longrightarrow\ h\asymp n^{-1/3},\\
+\text{KDE: }h^4\asymp\frac1{nh}
+&\ \Longrightarrow\ h^5\asymp n^{-1}
+\ \Longrightarrow\ h\asymp n^{-1/5}.
+\end{align*}
+Sau đó bình phương $h$ của histogram cho $n^{-2/3}$;
+lấy lũy thừa bậc 4 của $h$ trong KDE cho $n^{-4/5}$.
+Với phép chiếu, bậc xấp xỉ phụ thuộc cơ sở; histogram dùng cơ sở hàm bước nên thường
+chỉ tương ứng số mũ xấp xỉ $\alpha=1$, kể cả khi $f$ trơn hơn.
+
+\textbf{Kết luận.} Với $\alpha=2$ và cơ sở phù hợp, phép chiếu đạt cùng bậc $n^{-4/5}$
+như KDE bậc hai. Không thể gán tốc độ này cho mọi phép chiếu.
+
+\textbf{Lỗi dễ mắc.} Cho rằng phép chiếu luôn liên tục;
+hoặc nhầm số mũ: $n^{-4/5}$ giảm nhanh hơn $n^{-2/3}$ khi $n$ tăng.
+
+\subsubsection*{Bài III.2. Chệch biên và hiệu chỉnh phản xạ}\label{ot45:boundary}
+\textbf{Câu hỏi.} $X\geq0$, $f(0+)>0$, $f$ trơn một phía tại 0.
+Với nhân đối xứng, không âm, tích phân 1, hãy tính chệch KDE tại 0;
+xây dựng ước lượng phản xạ, kiểm tra chuẩn hóa và xác định chệch còn lại.
+
+\textbf{Điều kiện và công cụ.} Giả sử $f$ bị chặn, có đạo hàm phải và đạo hàm bậc hai
+bị chặn trên nửa trục, $\int u^2K(u)du<\infty$.
+Dùng Taylor một phía và chú ý miền tích phân của dữ liệu là $[0,\infty)$.
+
+\buoc{Bước 1. Tính kỳ vọng KDE thông thường tại biên.}
+\textbf{Ý tưởng.} Dữ liệu chỉ ở phía dương, nên tại 0 chỉ có một nửa nhân
+được tích phân khi $h$ nhỏ. Ta tính cụ thể phần diện tích đó.
+Nhờ đối xứng và đổi biến $u=t/h$,
+\[
+\E\widehat f_h(0)=\frac1h\int_0^\infty K(-t/h)f(t)dt
+=\int_0^\infty K(u)f(hu)du.
+\]
+Chi tiết đổi biến: $t=hu$, $dt=h\,du$, cận $0,+\infty$ giữ nguyên;
+$K(-t/h)=K(-u)=K(u)$ do đối xứng và hệ số $h$ triệt tiêu $1/h$.
+Khai triển quanh biên từ bên phải:
+\[
+f(hu)=f(0+)+hu f'(0+)+\rho_h(u),\qquad
+|\rho_h(u)|\leq\frac M2h^2u^2,
+\]
+với $M$ là một chặn của $|f''|$ trên nửa trục.
+Nhân với $K(u)$ rồi tích phân: hạng đầu cho
+$f(0+)\int_0^\infty K=f(0+)/2$; hạng tuyến tính cho
+$h f'(0+)\int_0^\infty uK(u)du$.
+Tích phân phần dư được chặn bởi
+\[
+\left|\int_0^\infty K(u)\rho_h(u)du\right|
+\leq\frac M2h^2\int_0^\infty u^2K(u)du=O(h^2).
+\]
+Đặt $m_{1,+}=\int_0^\infty uK(u)du$. Taylor một phía cho
+\[
+\E\widehat f_h(0)=\frac12f(0+)+h f'(0+)m_{1,+}+O(h^2),
+\]
+\[
+\boxed{\Bias(\widehat f_h(0))=-\frac12f(0+)+O(h).}
+\]
+Giá trị $f(0+)$ được hiểu là giới hạn phải, tránh phụ thuộc cách gán giá trị mật độ tại một điểm.
+Chệch có số hạng hằng khác 0, nên không phải $O(h)$ hay $O(h^2)$.
+Để lấy Bias, phải trừ $f(0+)$ khỏi kỳ vọng:
+$f(0+)/2-f(0+)=-f(0+)/2$.
+
+\buoc{Bước 2. Phản xạ từng quan sát qua 0.}
+Với $x\geq0$, định nghĩa
+\[
+\widehat f_h^{\mathrm{ref}}(x)=\frac1{nh}\sum_i
+\left[K\left(\frac{x-X_i}{h}\right)+K\left(\frac{x+X_i}{h}\right)\right].
+\]
+Với $a=X_i/h\geq0$, hai phép đổi biến cho
+\[
+\int_0^\infty\frac1hK\left(\frac{x-X_i}{h}\right)dx
+=\int_{-a}^\infty K(u)du,
+\qquad
+\int_0^\infty\frac1hK\left(\frac{x+X_i}{h}\right)dx
+=\int_a^\infty K(u)du.
+\]
+Ở phép thứ nhất $x=0$ cho $u=-a$; ở phép thứ hai $x=0$ cho $u=a$.
+Tổng diện tích của hai bản nhân trên nửa trục là
+\[
+\int_{-a}^\infty K(u)du+\int_a^\infty K(u)du=1,
+\]
+vì đối xứng cho $\int_{-\infty}^{-a}K=\int_a^\infty K$.
+Lấy trung bình trên $i$ suy ra
+$\int_0^\infty\widehat f_h^{\mathrm{ref}}(x)dx=1$;
+tính không âm cũng được bảo toàn.
+
+\buoc{Bước 3. Xác định bậc chệch sau phản xạ.}
+Tại 0, hai bản nhân có giá trị bằng nhau:
+\[
+\E\widehat f_h^{\mathrm{ref}}(0)=2\int_0^\infty K(u)f(hu)du.
+\]
+Taylor cho
+\[
+\boxed{\Bias(\widehat f_h^{\mathrm{ref}}(0))
+=2h f'(0+)m_{1,+}+O(h^2).}
+\]
+So với KDE thường, nhân 2 làm hạng đầu của kỳ vọng thành $f(0+)$.
+Khi trừ mật độ thật, hạng đó triệt tiêu; hạng tuyến tính được nhân đôi,
+và $2O(h^2)$ vẫn là $O(h^2)$.
+Vậy phản xạ loại bỏ chệch hằng; thông thường còn $O(h)$.
+Nếu $f'(0+)=0$ thì đạt $O(h^2)$ dưới các điều kiện đã nêu.
+
+\buoc{Bước 4. Kiểm tra bằng mật độ mũ và nhân Uniform.}
+Với $f(t)=e^{-t}$ trên $t\geq0$, $f(0+)=1$, $f'(0+)=-1$,
+$m_{1,+}=\int_0^1u/2\,du=1/4$.
+Với nhân Uniform, $K(u)=1/2$ trên $[0,1]$ và bằng 0 khi $u>1$,
+nên
+\[
+\E\widehat f_h(0)=\frac12\int_0^1e^{-hu}du
+=\frac12\left[-\frac1h e^{-hu}\right]_0^1
+=\frac{1-e^{-h}}{2h}.
+\]
+Taylor của hàm mũ là $e^{-h}=1-h+h^2/2+O(h^3)$.
+Vì vậy $1-e^{-h}=h-h^2/2+O(h^3)$;
+chia cho $2h$ cho $1/2-h/4+O(h^2)$.
+Các biểu thức chính xác và khai triển tương ứng là
+\[
+\E\widehat f_h(0)=\frac{1-e^{-h}}{2h}=\frac12-\frac h4+O(h^2),
+\]
+\[
+\E\widehat f_h^{\mathrm{ref}}(0)=\frac{1-e^{-h}}h=1-\frac h2+O(h^2).
+\]
+Do đó chệch thường tiến về $-1/2$, chệch sau phản xạ bằng $-h/2+O(h^2)$.
+
+\textbf{Kết luận.} Nêu rõ đang xét KDE thường hay đã hiệu chỉnh khi nói về chệch biên.
+Để đạt bậc hai mà không cần $f'(0+)=0$, có thể dùng nhân biên triệt tiêu moment bậc nhất;
+xem Mục \ref{sec:boundary}.
+
+\textbf{Lỗi dễ mắc.} Dùng $1/(2nh)$ cho công thức phản xạ trên nửa trục:
+KDE chuẩn hóa của mẫu mở rộng $2n$ điểm chỉ có một nửa khối lượng ở nửa trục dương;
+cần nhân đôi khi dùng làm mật độ trên $[0,\infty)$.
+
+\subsubsection*{Bài III.3. Oracle, tiêu chuẩn phạt và tính thích ứng}\label{ot45:oracle}
+\textbf{Đề bài.} Cho mẫu độc lập $X_1,\ldots,X_n$ cùng mật độ $f\in L^2(\R)$, $n\geq2$,
+và họ hữu hạn không rỗng các không gian $S_D$ có cơ sở thực trực chuẩn
+$\phi_1,\ldots,\phi_D$. Giả sử $\E\phi_j(X)^2<\infty$. Đặt
+\[
+a_j=\int f\phi_j,\quad \widehat a_j=\frac1n\sum_i\phi_j(X_i),\quad
+f_D=\sum_ja_j\phi_j,\quad \widehat f_D=\sum_j\widehat a_j\phi_j,
+\]
+\[
+V_D=\E\|\widehat f_D-f_D\|_2^2,\quad
+\mathcal R_D=\E\|f-\widehat f_D\|_2^2,\quad
+\gamma_n(g)=\|g\|_2^2-\frac2n\sum_i g(X_i).
+\]
+\begin{enumerate}[label=(\alph*)]
+\item Từ $\mathcal R_D-\|f\|_2^2=-\|f_D\|_2^2+V_D$,
+chứng minh $\E[-\|\widehat f_D\|_2^2+2V_D]=\mathcal R_D-\|f\|_2^2$.
+Giải thích vì sao cần hiệu chỉnh $2V_D$.
+\item Xây dựng một ước lượng không chệch $\widehat V_D$ từ phương sai mẫu của các
+$\phi_j(X_i)$. Viết tiêu chuẩn phạt từ dữ liệu và nêu giới hạn của tính không chệch sau khi chọn mô hình.
+\item Với bất đẳng thức oracle cho dưới đây, sai số xấp xỉ
+$\|f-f_D\|_2^2\leq C_f^2D^{-2\alpha}$, $C_f,\alpha>0$, và một ứng viên
+$D_n\asymp n^{1/(2\alpha+1)}$, suy ra tốc độ thích ứng.
+Giải thích vì sao quy tắc chọn mô hình không cần nhập $\alpha$.
+\end{enumerate}
+
+\textbf{Điều kiện và công cụ.} Xét họ mô hình ứng viên hữu hạn $\mathcal D_n$.
+Khi dùng phạt theo chiều, $\phi_0>0$ là hằng số kiểm soát cơ sở qua
+$\sup_x\sum_{j\leq D}\phi_j(x)^2\leq\phi_0D$.
+Sử dụng Bài 2.2, Bài 2.4 và một định lý chọn mô hình có dạng
+\[
+\E\|\widehat f_{\widehat D}-f\|_2^2
+\leq C\inf_{D\in\mathcal D_n}
+\left\{\|f-f_D\|_2^2+\frac{\phi_0D}{n}\right\}+\frac{C'}n.
+\]
+Các hằng số $C,C'$ không phụ thuộc $n$.
+Định lý này là giả thiết được sử dụng trong bài, không phải kết quả cần chứng minh từ đầu.
+Nó phải được bảo đảm cho chính quy tắc phạt đang xét; tính không chệch ở ý (b)
+không tự chứng minh bất đẳng thức này.
+
+\textbf{Lời giải ý (a).}
+\buoc{Bước 1. Xác định phần thông tin không quan sát được.}
+Bài 2.4 cho $d_*=(2\alpha C_f^2n/\phi_0)^{1/(2\alpha+1)}$.
+Muốn dùng trực tiếp cần biết $\alpha$ và $C_f$, trong khi mẫu không cho sẵn các đại lượng đó.
+Đường $f_D$ và sai số $\|f-f_D\|_2^2$ cũng phụ thuộc mật độ thật.
+Oracle là chuẩn so sánh lý tưởng giả định biết những thông tin này.
+Để chuyển sang dữ liệu, trực chuẩn và tính không chệch hệ số cho
+\[
+\E\|\widehat f_D\|_2^2=\sum_j\{a_j^2+\Var(\widehat a_j)\}
+=\|f_D\|_2^2+V_D.
+\]
+Vì vậy
+\begin{align*}
+\E[-\|\widehat f_D\|_2^2+2V_D]
+&=-\|f_D\|_2^2-V_D+2V_D\\
+&=-\|f_D\|_2^2+V_D=\mathcal R_D-\|f\|_2^2.
+\end{align*}
+Nếu chỉ cộng $V_D$, kỳ vọng còn $-\|f_D\|_2^2$, thiếu hạng phương sai của rủi ro.
+$2V_D$ là hiệu chỉnh theo kỳ vọng tại mô hình cố định, vẫn chưa tính được khi chưa biết $f$.
+
+\textbf{Lời giải ý (b).}
+\buoc{Bước 2. Suy ra một tiêu chuẩn chỉ dùng dữ liệu.}
+\textbf{Ý tưởng.} Phương sai của trung bình mẫu bằng phương sai một quan sát
+chia cho $n$. Vì thế ta ước lượng phương sai từng $\phi_j(X)$ bằng phương sai mẫu,
+chia cho $n$, rồi cộng trên $j$.
+Theo Bài 2.2, $\gamma_n(\widehat f_D)=-\|\widehat f_D\|_2^2$.
+Với từng $j$, phương sai mẫu
+\[
+s_j^2=\frac1{n-1}\sum_{i=1}^n(\phi_j(X_i)-\widehat a_j)^2
+\]
+có kỳ vọng $\Var(\phi_j(X))$. Thật vậy,
+đặt $Y_i=\phi_j(X_i)$, $m=\E Y_i$, $v=\Var(Y_i)$ và $\overline Y=\widehat a_j$.
+Viết $Y_i-\overline Y=(Y_i-m)-(\overline Y-m)$, bình phương rồi cộng:
+\begin{align*}
+\sum_i(Y_i-\overline Y)^2
+&=\sum_i(Y_i-m)^2
+-2(\overline Y-m)\sum_i(Y_i-m)+n(\overline Y-m)^2\\
+&=\sum_i(Y_i-m)^2-n(\overline Y-m)^2.
+\end{align*}
+Dòng cuối dùng $\sum_i(Y_i-m)=n(\overline Y-m)$.
+Lấy kỳ vọng: hạng đầu bằng $nv$; hạng bị trừ bằng
+$n\E(\overline Y-m)^2=n\Var(\overline Y)=n(v/n)=v$.
+Tổng còn $(n-1)v$; chia cho $n-1$ cho $\E s_j^2=v$.
+Vì $\Var(\widehat a_j)=\Var(\phi_j(X))/n$, ta được
+\[
+\widehat V_D=\frac1n\sum_{j=1}^Ds_j^2
+=\frac1{n(n-1)}\sum_{i=1}^n\sum_{j=1}^D(\phi_j(X_i)-\widehat a_j)^2,
+\qquad\E\widehat V_D=V_D.
+\]
+Đặt $\widehat Q(D)=-\|\widehat f_D\|_2^2+2\widehat V_D$. Tuy hai hạng dùng cùng mẫu,
+tuyến tính kỳ vọng vẫn cho $\E\widehat Q(D)=\mathcal R_D-\|f\|_2^2$ tại từng $D$ cố định.
+Đó là một cách xây dựng mức phạt tính được từ dữ liệu.
+Viết tổng quát với $\operatorname{pen}(D)$:
+\[
+\boxed{\widehat D\in\arg\min_{D\in\mathcal D_n}
+\left\{-\sum_{j=1}^D\widehat a_j^2+\operatorname{pen}(D)\right\}.}
+\]
+Một dạng phạt thường xét là $\operatorname{pen}(D)=\kappa\phi_0D/n$.
+Chọn $D$ nhỏ nhất nếu bằng điểm. $\kappa$ phải được hiệu chỉnh theo định lý hoặc được đề bài cho.
+Trong mô hình lồng nhau, phần âm giảm khi thêm các hệ số;
+mức phạt giúp kiểm soát xu hướng chọn mô hình quá lớn.
+Phạt $2\widehat V_D$ và phạt $\kappa\phi_0D/n$ là hai cách khác nhau;
+không đồng nhất chúng như một công thức chính xác.
+Sau khi lấy $\widehat D$ tối thiểu hóa điểm số,
+$\widehat Q(\widehat D)$ không tự động là ước lượng không chệch cho rủi ro mô hình đã chọn.
+Đánh giá chất lượng lựa chọn cần kiểm soát ngẫu nhiên đồng thời trên họ mô hình.
+
+\textbf{Kiểm chứng với ví dụ histogram hai ô.} Với $f(x)=2x\mathbf1_{[0,1]}(x)$,
+$n=5$, đặt $N$ là số quan sát trong ô trái; $N\sim\operatorname{Binomial}(5,1/4)$.
+Khi $N=k$, chuẩn bình phương mẫu và ước lượng phương sai là
+\[
+T_k=\|\widehat f_D\|_2^2=2\left[\left(\frac k5\right)^2+
+\left(\frac{5-k}{5}\right)^2\right],\qquad
+\widehat V_D=\frac{2-T_k}{4}.
+\]
+Công thức sau được suy ra từ $\sum_i\sum_j\phi_j(X_i)^2=2n$ và
+$\sum_i\sum_j(\phi_j(X_i)-\widehat a_j)^2=n(2-\|\widehat f_D\|_2^2)$.
+Để kiểm tra đẳng thức này, khai triển từng bình phương rồi cộng theo $i$:
+\[
+\sum_i(\phi_j(X_i)-\widehat a_j)^2
+=\sum_i\phi_j(X_i)^2-2\widehat a_j\underbrace{\sum_i\phi_j(X_i)}_{n\widehat a_j}
++n\widehat a_j^2
+=\sum_i\phi_j(X_i)^2-n\widehat a_j^2.
+\]
+Cộng theo $j$ cho $2n-nT_k$; chia cho $n(n-1)$ được
+$(2-T_k)/(n-1)=(2-T_k)/4$.
+Nếu muốn kiểm tra bằng sáu trường hợp, dùng bảng sau;
+các xác suất có mẫu số chung $4^5=1024$, nên hàng cuối ghi $1024P(N=k)$:
+\[
+\begin{array}{c|rrrrrr}
+k&0&1&2&3&4&5\\\hline
+25T_k&50&34&26&26&34&50\\
+1024P(N=k)&243&405&270&90&15&1
+\end{array}
+\]
+Ở mỗi cột, điểm số là $-T_k+2(2-T_k)/4=1-3T_k/2$.
+Kỳ vọng hữu hạn cho
+\[
+\sum_{k=0}^5\binom5k\left(\frac14\right)^k\left(\frac34\right)^{5-k}
+\left[-T_k+2\frac{2-T_k}{4}\right]
+=-\frac{11}{10}=\mathcal R_D-\|f\|_2^2.
+\]
+
+\textbf{Lời giải ý (c).}
+\buoc{Bước 3. Dùng bất đẳng thức oracle để chứng minh tốc độ.}
+Giả sử trên lớp mật độ xét có chặn đều
+$\|f-f_D\|_2^2\leq C_f^2D^{-2\alpha}$,
+và họ ứng viên chứa một $D_n\asymp n^{1/(2\alpha+1)}$.
+Vì infimum không lớn hơn giá trị tại $D_n$,
+ta có thể thay bài toán tìm giá trị nhỏ nhất bằng giá trị của riêng ứng viên này
+để lấy một chặn trên. Với $D_n\asymp n^{1/(2\alpha+1)}$,
+\[
+D_n^{-2\alpha}\asymp n^{-2\alpha/(2\alpha+1)},\qquad
+\frac{D_n}{n}\asymp n^{1/(2\alpha+1)-1}
+=n^{-2\alpha/(2\alpha+1)}.
+\]
+Thế hai bậc đó vào bất đẳng thức oracle:
+\begin{align*}
+\E\|\widehat f_{\widehat D}-f\|_2^2
+&\leq C\left(C_f^2D_n^{-2\alpha}+\frac{\phi_0D_n}{n}\right)+\frac{C'}n\\
+&=O(n^{-2\alpha/(2\alpha+1)})+O(n^{-1})\\
+&=O(n^{-2\alpha/(2\alpha+1)}).
+\end{align*}
+Dòng cuối dùng $2\alpha/(2\alpha+1)<1$.
+Đặt $p=2\alpha/(2\alpha+1)$; khi đó $n^{-1}/n^{-p}=n^{p-1}\to0$.
+Vì vậy số hạng $C'/n$ nhỏ hơn về bậc và được gộp vào $O(n^{-p})$.
+Quy tắc tính $\widehat D$ không nhập $\alpha$, nhưng vẫn đạt bậc ứng với độ trơn thật:
+đó là tính thích ứng trong các lớp mà định lý bảo đảm.
+
+\buoc{Bước 4. Minh họa phép tính điểm số.}
+Giả sử $n=100$, $\phi_0=1$, mức phạt đề cho $\kappa=2$,
+ứng viên $D\in\{2,4,8\}$ và các chuẩn bình phương mẫu lần lượt là $1.10,1.17,1.20$.
+Điểm số là
+\[
+\begin{array}{c|ccc}
+D&2&4&8\\\hline
+-\|\widehat f_D\|_2^2+2D/100&-1.06&-1.09&-1.04
+\end{array}
+\]
+Chọn $\widehat D=4$ vì $-1.09$ nhỏ nhất.
+Ví dụ tính số này không khẳng định $\kappa=2$ đủ cho mọi định lý oracle.
+
+\textbf{Kết luận.} Tính thích ứng suy ra từ một bảo đảm oracle đã được chứng minh
+cho đúng họ mô hình và đúng mức phạt.
+Thảo luận về hiệu chỉnh phạt và các bất đẳng thức oracle xem
+\href{https://arxiv.org/abs/0910.1654}{Lerasle, \emph{Optimal model selection in density estimation}}.
+
+\textbf{Lỗi dễ mắc.} Tuyên bố mọi $\kappa>0$ đều cho tính thích ứng;
+hoặc coi phân rã Pythagoras đã chứng minh bất đẳng thức oracle cho $\widehat D$ phụ thuộc dữ liệu.
+
+\subsubsection*{Bài III.4. LOOCV cho KDE: suy ra tiêu chuẩn}\label{ot45:loocv}
+\textbf{Đề bài.} Cho mẫu $X_1,\ldots,X_n$ độc lập cùng mật độ
+$f\in L^2(\R)$, $n\geq2$. Nhân $K\in L^1\cap L^2$ đối xứng, $\int K=1$.
+Với $h>0$ cố định, đặt
+\[
+\widehat f_h(x)=\frac1{nh}\sum_iK\left(\frac{x-X_i}{h}\right),\quad
+\widehat f_{h,-i}(x)=\frac1{(n-1)h}\sum_{j\ne i}K\left(\frac{x-X_j}{h}\right).
+\]
+Giữ nguyên $h$ khi bỏ từng quan sát, gọi $f_h=\E\widehat f_h$ và $R(f)=\|f\|_2^2$.
+Xét điểm số $\widehat J(h)=\int\widehat f_h^2-(2/n)\sum_i\widehat f_{h,-i}(X_i)$.
+\begin{enumerate}[label=(\alph*)]
+\item Khai triển rủi ro $\MISE(h)=\E\|\widehat f_h-f\|_2^2$ và nhận diện hạng không phụ thuộc $h$.
+\item Tính kỳ vọng có điều kiện của $\widehat f_{h,-i}(X_i)$ theo mẫu còn lại.
+Chứng minh $\E\widehat f_{h,-i}(X_i)=\E\int\widehat f_h f$;
+biện luận việc đổi tích phân và kỳ vọng.
+\item Chứng minh $\E\widehat J(h)=\MISE(h)-R(f)$.
+Giải thích đúng ý nghĩa không chệch và giới hạn khi chọn $\widehat h$ từ dữ liệu.
+\item Viết tiêu chuẩn dưới dạng tổng đôi, chỉ rõ tổng nào chứa đường chéo $i=j$.
+\end{enumerate}
+
+\textbf{Công cụ.} Khai triển bình phương chuẩn, độc lập giữa điểm bỏ ra và mẫu còn lại,
+kỳ vọng có điều kiện, Fubini và Cauchy--Schwarz.
+Trong lời giải, $\mathrm{CV}(h)$ và $\widehat J(h)$ chỉ cùng một điểm số.
+
+\textbf{Lời giải ý (a).}
+\buoc{Bước 1. Khai triển sai số rồi lấy kỳ vọng.}
+\[
+\|\widehat f_h-f\|_2^2
+=\int\widehat f_h^2-2\int\widehat f_h f+R(f).
+\]
+Lấy kỳ vọng hai vế:
+\[
+\MISE(h)=\E\int\widehat f_h^2-2\E\int\widehat f_h f+R(f).
+\]
+Hạng $R(f)$ không đổi theo $h$. Hạng đầu tính được từ mẫu;
+hạng chứa $f$ được ước lượng bằng trung bình đánh giá trên các điểm bỏ ra.
+
+\textbf{Lời giải ý (b).}
+\buoc{Bước 2. Chứng minh trung bình leave-one-out có đúng kỳ vọng.}
+\textbf{Ý tưởng bằng lời.} Tạm giữ nguyên $n-1$ điểm dùng dựng đường KDE,
+chỉ cho điểm bị bỏ ra $X_i$ thay đổi. Điểm đó độc lập với đường đã dựng,
+nên trung bình giá trị đường tại $X_i$ là tích phân đường nhân mật độ $f$.
+Sau đó mới lấy trung bình tiếp trên $n-1$ điểm đã giữ cố định.
+Gọi $\mathcal F_{-i}=\sigma(X_j:j\ne i)$.
+Ở đây $\mathcal F_{-i}$ ký hiệu toàn bộ thông tin của mẫu còn lại;
+ký hiệu $\sigma(\cdot)$ trong dòng này chỉ một tập thông tin, không phải độ lệch chuẩn.
+Khi điều kiện theo $\mathcal F_{-i}$, hàm $\widehat f_{h,-i}$ đã cố định,
+còn $X_i$ vẫn có mật độ $f$ do độc lập. Vì vậy
+\[
+\E[\widehat f_{h,-i}(X_i)\mid\mathcal F_{-i}]
+=\int\widehat f_{h,-i}(x)f(x)dx.
+\]
+Với mỗi $x$, tính tuyến tính và các quan sát cùng phân phối cho
+\[
+\E\widehat f_{h,-i}(x)
+=\frac{n-1}{(n-1)h}\E K\left(\frac{x-X_1}{h}\right)
+=\int K(u)f(x-hu)du=f_h(x).
+\]
+Chỉ số 1 ở đây đại diện một quan sát có cùng phân phối, không yêu cầu nó nằm trong mẫu còn lại.
+Mẫu kích thước $n-1$ và mẫu kích thước $n$ có cùng kỳ vọng KDE vì đã chuẩn hóa đúng.
+
+\buoc{Bước 3. Biện luận khả tích và lấy kỳ vọng lần nữa.}
+\textbf{Mục đích của bước kỹ thuật.} Ta sắp đổi thứ tự kỳ vọng và tích phân.
+Để làm vậy ngay cả khi $K$ có phần âm, cần chứng minh tích phân của trị tuyệt đối
+có kỳ vọng hữu hạn. Nếu chỉ muốn theo dõi cách xây dựng CV,
+có thể đọc kết quả của chặn dưới đây rồi sang Bước 4.
+Đặt $K_h(t)=K(t/h)/h$. Do $f\in L^2$,
+ký hiệu tích chập $(|K_h|*f)(x)$ nghĩa là
+$\int |K_h(x-t)|f(t)dt$.
+Bất đẳng thức Cauchy--Schwarz chặn tích phân tích hai hàm bằng tích hai chuẩn;
+bất đẳng thức Young cho $\||K_h|*f\|_2\leq\|K_h\|_1\|f\|_2$
+và đổi biến cho $\|K_h\|_1=\|K\|_1$. Cụ thể,
+Young và Cauchy--Schwarz cho
+\[
+\int f(x)(|K_h|*f)(x)dx
+\leq\|f\|_2\,\||K_h|*f\|_2
+\leq\|K\|_1\|f\|_2^2<\infty.
+\]
+Mặt khác $\E|\widehat f_{h,-i}(x)|\leq(|K_h|*f)(x)$,
+nên $\E\int|\widehat f_{h,-i}(x)|f(x)dx<\infty$.
+Ước lượng đủ mẫu có cùng chặn. Fubini áp dụng được kể cả khi $K$ có dấu.
+Tính lặp của kỳ vọng có điều kiện dẫn đến
+\begin{align*}
+\E\widehat f_{h,-i}(X_i)
+&=\E\int\widehat f_{h,-i}(x)f(x)dx\\
+&=\int\E\widehat f_{h,-i}(x)f(x)dx\\
+&=\int f_h(x)f(x)dx
+=\E\int\widehat f_h(x)f(x)dx.
+\end{align*}
+Hạng bình phương cũng khả tích: do bất đẳng thức bình phương trung bình,
+\[
+\|\widehat f_h\|_2^2
+\leq\frac1n\sum_i\|K_h(\,\cdot-X_i)\|_2^2=\frac{R(K)}h<\infty.
+\]
+
+\textbf{Lời giải ý (c).}
+\buoc{Bước 4. Thế đẳng thức kỳ vọng vào điểm số.}
+\[
+\boxed{\mathrm{CV}(h)=\int\widehat f_h(x)^2dx
+-\frac2n\sum_i\widehat f_{h,-i}(X_i),}
+\]
+\begin{align*}
+\E\widehat J(h)
+&=\E\int\widehat f_h^2-\frac2n\sum_i\E\widehat f_{h,-i}(X_i)\\
+&=\E\int\widehat f_h^2-2\E\int\widehat f_h f\\
+&=\boxed{\E\|\widehat f_h-f\|_2^2-\|f\|_2^2}.
+\end{align*}
+Vì vậy có thể chọn $\widehat h$ tối thiểu hóa $\mathrm{CV}(h)$ trên một lưới bandwidth dương.
+Điểm số không chệch cho $\MISE(h)-R(f)$, chứ không cho chính MISE khi chưa cộng lại $R(f)$.
+Điểm số có thể âm do đã bỏ hằng số này.
+Tính không chệch này đúng với từng $h$ cố định;
+không kết luận giá trị nhỏ nhất sau khi chọn $\widehat h$ vẫn là ước lượng không chệch của rủi ro được chọn.
+
+\textbf{Lời giải ý (d).}
+\buoc{Bước 5. Biến đổi thành tổng đôi tính được.}
+Đặt $C_K(v)=\int K(u)K(u+v)du$ là tự tương quan của nhân.
+\textbf{Từ bình phương một tổng sang tổng đôi.}
+Quy tắc $(\sum_i a_i)^2=\sum_i\sum_j a_ia_j$ cho
+\[
+\int\widehat f_h(x)^2dx
+=\frac1{n^2h^2}\sum_i\sum_j
+\int K\left(\frac{x-X_i}{h}\right)K\left(\frac{x-X_j}{h}\right)dx.
+\]
+Với từng cặp $(i,j)$, đặt $u=(x-X_i)/h$, $x=X_i+hu$, $dx=h\,du$.
+Đối số của nhân thứ hai trở thành
+\[
+\frac{x-X_j}{h}=u+\frac{X_i-X_j}{h}.
+\]
+Cận vẫn là toàn trục. Tích phân của tích hai nhân bằng
+$hC_K((X_i-X_j)/h)$; nhân với $1/(n^2h^2)$ còn $1/(n^2h)$.
+Vì vậy
+\[
+\int\widehat f_h^2=\frac1{n^2h}\sum_{i,j}C_K\left(\frac{X_i-X_j}{h}\right).
+\]
+Với nhân đối xứng, $C_K=K*K$.
+Thật vậy, đổi biến $t=-u$ cho
+$C_K(v)=\int K(-t)K(v-t)dt=\int K(t)K(v-t)dt$.
+Thế trực tiếp định nghĩa leave-one-out vào hạng còn lại:
+\[
+\boxed{\mathrm{CV}(h)=\frac1{n^2h}\sum_{i,j}C_K\left(\frac{X_i-X_j}{h}\right)
+-\frac{2}{n(n-1)h}\sum_{i\ne j}K\left(\frac{X_i-X_j}{h}\right).}
+\]
+Tổng đầu có đường chéo $i=j$, tổng thứ hai loại đường chéo;
+mọi tổng đều tính theo cặp có thứ tự.
+Ví dụ $n=3$, tổng thứ hai gồm sáu cặp
+$(1,2),(1,3),(2,1),(2,3),(3,1),(3,2)$.
+Tổng đầu gồm cả sáu cặp này và ba cặp $(1,1),(2,2),(3,3)$.
+Với $i=j$, $C_K(0)=\int K^2=R(K)$, nên riêng phần đường chéo
+của hạng đầu bằng $nR(K)/(n^2h)=R(K)/(nh)$.
+
+\textbf{Kết luận.} Tiêu chuẩn không cần biết $f$.
+Với Gaussian, $C_K(v)=(2\sqrt\pi)^{-1}e^{-v^2/4}$, tức mật độ chuẩn phương sai 2,
+nên cả hai tổng đều tính trực tiếp được.
+Để thấy công thức Gaussian của $C_K$, hoàn thành bình phương trong số mũ:
+\[
+u^2+(u+v)^2=2(u+v/2)^2+v^2/2.
+\]
+Vì vậy
+\[
+C_K(v)=\frac{e^{-v^2/4}}{2\pi}
+\int_{\R}e^{-(u+v/2)^2}du
+=\frac{e^{-v^2/4}}{2\pi}\sqrt\pi
+=\frac1{2\sqrt\pi}e^{-v^2/4}.
+\]
+Tích phân ở giữa dùng $w=u+v/2$, $dw=du$ và tích phân Gauss trên toàn trục.
+
+\textbf{Lỗi dễ mắc.} Dùng $n$ thay $n-1$ trong ước lượng bỏ một điểm;
+hoặc chỉ giữ hạng tích chập và hiệu chỉnh $K(0)$ mà làm mất tổng đôi thứ hai.
+Mục \ref{sec:cv} có thêm ví dụ tính tay LOOCV bằng phân số.

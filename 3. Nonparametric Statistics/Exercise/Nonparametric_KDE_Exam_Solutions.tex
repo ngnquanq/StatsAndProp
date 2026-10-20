@@ -1,0 +1,1376 @@
+% !TeX program = xelatex
+% Build: latexmk -xelatex -interaction=nonstopmode -halt-on-error Nonparametric_KDE_Exam_Solutions.tex
+\documentclass[11pt,a4paper]{article}
+\usepackage{fontspec,polyglossia}
+\setdefaultlanguage{vietnamese}
+\setotherlanguage{english}
+\setmainfont{texgyretermes}[Extension=.otf,UprightFont=*-regular,BoldFont=*-bold,ItalicFont=*-italic,BoldItalicFont=*-bolditalic]
+\setsansfont{texgyreheros}[Extension=.otf,UprightFont=*-regular,BoldFont=*-bold,ItalicFont=*-italic,BoldItalicFont=*-bolditalic]
+\usepackage{amsmath,amsthm,unicode-math}
+\setmathfont{texgyretermes-math.otf}
+\usepackage[a4paper,margin=1.9cm,headheight=15pt]{geometry}
+\usepackage{microtype,booktabs,longtable,array,enumitem,xcolor}
+\usepackage[most]{tcolorbox}
+\usepackage{fancyhdr,titlesec,hyperref,bookmark}
+\hypersetup{colorlinks=true,linkcolor=black,urlcolor=blue,pdftitle={Thống kê phi tham số: lời giải và tra nhanh KDE},pdfauthor={}}
+\pagestyle{fancy}\fancyhf{}
+\fancyhead[L]{\small Thống kê phi tham số \textbar\ Trọng tâm KDE}
+\fancyhead[R]{\small Tài liệu tra cứu}\fancyfoot[C]{\thepage}
+\setlength{\parindent}{0pt}\setlength{\parskip}{5pt}
+\setlist{nosep,leftmargin=*}\allowdisplaybreaks
+\setcounter{tocdepth}{2}
+\titleformat{\section}{\Large\bfseries}{\thesection.}{.5em}{}
+\titleformat{\subsection}{\large\bfseries}{\thesubsection.}{.5em}{}
+\newtcolorbox{result}{breakable,colback=black!2,colframe=black!55,boxrule=.5pt,arc=1mm,left=6pt,right=6pt,top=4pt,bottom=4pt}
+\newtcolorbox{caution}{breakable,colback=white,colframe=black!45,boxrule=.4pt,arc=0mm,title={Điểm cần phân biệt},fonttitle=\bfseries}
+\newcommand{\E}{\mathbb E}\newcommand{\Pp}{\mathbb P}
+\newcommand{\R}{\mathbb R}\newcommand{\1}{\mathbf 1}
+\DeclareMathOperator{\Var}{Var}\DeclareMathOperator{\Cov}{Cov}
+\DeclareMathOperator{\Bias}{Bias}\DeclareMathOperator{\MSE}{MSE}
+\DeclareMathOperator{\MISE}{MISE}\DeclareMathOperator{\AMISE}{AMISE}
+\DeclareMathOperator{\tr}{tr}\DeclareMathOperator{\se}{se}
+\newcommand{\Fh}{\widehat F_n}\newcommand{\fh}{\widehat f_h}
+\newcommand{\rh}{\widehat r_h}\newcommand{\ph}{\widehat p}
+\newcommand{\dto}{\xrightarrow{d}}\newcommand{\pto}{\xrightarrow{P}}
+\newcommand{\asto}{\xrightarrow{\mathrm{a.s.}}}
+\newcommand{\norm}[1]{\left\lVert#1\right\rVert}
+\newcommand{\src}[1]{\textit{Nguồn đối chiếu: #1.}}
+\newcommand{\prob}[3]{\subsection{Bài #1. #2}\label{b:#1}\textbf{Yêu cầu.} #3\par}
+\newcommand{\supp}[3]{\subsection{#1. #2}\label{s:#1}\textbf{Đề diễn giải.} #3\par}
+\begin{document}
+\begin{center}
+{\LARGE\bfseries THỐNG KÊ PHI THAM SỐ}\\[5pt]
+{\Large Ước lượng nhân: tra nhanh và lời giải}\\[5pt]
+{\normalsize 29 bài trong danh sách ôn tập + bài liên quan của Wasserman}
+\end{center}
+\textbf{Cách dùng trong bài kiểm tra 25 phút.} Tra công thức ở bốn trang đầu; nếu cần chứng minh, tìm đúng mã bài gốc qua mục lục. Ưu tiên Bài 2.2--2.5, 3.2--3.5, 3.8--3.9. Phần bổ sung nằm sau 29 bài chính, có bảng đối chiếu với sách.
+
+\textbf{Nguồn.} Larry Wasserman, \emph{All of Nonparametric Statistics}, Springer, 2006; đối chiếu bản PDF trong thư mục Books (272 trang PDF). ``Tr.'' luôn chỉ số trang \emph{in trong sách}; số trang PDF được ghi riêng khi cần. Danh sách gốc: \texttt{possible\_exercise.md}. Các đề dưới đây được diễn đạt lại và bổ sung giả thiết; lời giải được biên soạn cho tài liệu này. Các bài thực hành được cung cấp hướng giải, không trình bày số liệu chưa chạy.
+
+\section*{Tra nhanh 1/4: ký hiệu, EDF và nguyên tắc chung}
+\addcontentsline{toc}{section}{Tra nhanh 1/4: ký hiệu, EDF và nguyên tắc chung}
+\textbf{Quy ước.} $X_1,\ldots,X_n$ i.i.d.; $F$ là CDF, $f$ là mật độ; $h>0$.
+$R(g)=\int g^2$, $\mu_j(K)=\int u^jK(u)\,du$, $\mu_2(K)=\sigma_K^2$.
+$z_q=\Phi^{-1}(q)$: dùng $z_{1-\alpha/2}$, khác quy ước đuôi trên trong sách.
+\begin{result}
+\begin{align*}
+\MSE(\widehat\theta)&=\Bias(\widehat\theta)^2+\Var(\widehat\theta),\\
+\MISE(\fh)&=\E\int(\fh-f)^2=\int\Bias(\fh)^2+\int\Var(\fh).
+\end{align*}
+Với $A,B>0$, $g(h)=Ah^{2\beta}+B/(nh)$:
+\[
+h_* =\left(\frac{B}{2\beta An}\right)^{1/(2\beta+1)},\qquad
+g(h_*)=(2\beta+1)A h_*^{2\beta}\asymp n^{-2\beta/(2\beta+1)}.
+\]
+\end{result}
+\begin{align*}
+\Fh(x)&=n^{-1}\sum_i\1_{\{X_i\le x\}},& n\Fh(x)&\sim\operatorname{Bin}(n,F(x)),\\
+\E\Fh(x)&=F(x),&\Var\Fh(x)&=F(x)(1-F(x))/n,\\
+\Cov(\Fh(x),\Fh(y))&=\{F(\min(x,y))-F(x)F(y)\}/n.
+\end{align*}
+\[
+\sqrt n(\Fh(x)-F(x))\dto N(0,F(x)(1-F(x))).
+\]
+\textbf{DKW và băng tin cậy đồng thời:}
+\[
+\Pp(\norm{\Fh-F}_\infty>\varepsilon)\le2e^{-2n\varepsilon^2},\quad
+\varepsilon_{n,\alpha}=\sqrt{\frac{\log(2/\alpha)}{2n}}.
+\]
+\[
+F(x)\in[\max(0,\Fh(x)-\varepsilon_{n,\alpha}),\min(1,\Fh(x)+\varepsilon_{n,\alpha})]
+\quad\text{cho mọi }x
+\]
+với xác suất ít nhất $1-\alpha$. Tại một điểm, Hoeffding cho cùng bán kính; Wald dùng
+$z_{1-\alpha/2}\sqrt{\Fh(x)(1-\Fh(x))/n}$ và chỉ là xấp xỉ.
+
+\textbf{Plug-in:} $\int a\,d\Fh=n^{-1}\sum_i a(X_i)$; phương sai plug-in chia $n$, phương sai không chệch chia $n-1$. Phân vị thực nghiệm lấy $X_{(\lceil np\rceil)}$ với $0<p<1$.
+
+\textbf{Mẫu chứng minh 5 bước:} viết ước lượng thành trung bình $n^{-1}\sum Z_i$; tính $\E Z_i$; tính $\E Z_i^2$; đổi biến và Taylor; ghép bias--variance rồi tối ưu. Với histogram, thay Taylor của nhân bằng tích phân trên bin.
+\clearpage
+\section*{Tra nhanh 2/4: histogram và KDE}
+\addcontentsline{toc}{section}{Tra nhanh 2/4: histogram và KDE}
+\textbf{Histogram trên $[0,1]$.} Bin $B_j=[(j-1)h,jh)$, $h=1/m$, bin cuối chứa 1;
+$p_j=\Pp(X\in B_j)$, $\ph_j=N_j/n$, $c_j=(j-1/2)h$.
+\begin{align*}
+\widehat f_H(x)&=\ph_j/h\quad(x\in B_j),&\E\widehat f_H(x)&=p_j/h,\\
+\Bias\widehat f_H(x)&=f'(x)(c_j-x)+O(h^2),&\Var\widehat f_H(x)&=\frac{p_j(1-p_j)}{nh^2},\\
+\int\Var\widehat f_H&=\frac{1-\sum_jp_j^2}{nh},&\AMISE_H&=\frac{h^2}{12}R(f')+\frac1{nh}.
+\end{align*}
+\[
+h_{H,*}=\left(\frac6{nR(f')}\right)^{1/3},\quad
+\AMISE_H(h_{H,*})=\left(\frac34\right)^{2/3}R(f')^{1/3}n^{-2/3}.
+\]
+\textbf{KDE tại điểm trong miền:} $\fh(x)=(nh)^{-1}\sum_iK((x-X_i)/h)$.
+\begin{result}
+\begin{align*}
+\E\fh(x)&=\int K(u)f(x-hu)\,du,\\
+\Var\fh(x)&=\frac1{nh}\int K^2(u)f(x-hu)\,du-\frac1n(\E\fh(x))^2,\\
+\Bias\fh(x)&=\tfrac12h^2\mu_2(K)f''(x)+o(h^2),\\
+\Var\fh(x)&=\frac{f(x)R(K)}{nh}+o((nh)^{-1}),\\
+\AMISE(h)&=\tfrac14h^4\mu_2(K)^2R(f'')+\frac{R(K)}{nh},\\
+h_*&=\left[\frac{R(K)}{\mu_2(K)^2R(f'')n}\right]^{1/5},\\
+\AMISE(h_*)&=\tfrac54\{\mu_2(K)^2R(f'')\}^{1/5}R(K)^{4/5}n^{-4/5}.
+\end{align*}
+\end{result}
+Các khai triển cần độ trơn và khả tích nêu tại Bài 3.2--3.4. Không áp dụng máy móc công thức điểm trong ở biên giá của mật độ.
+\begin{center}\begin{tabular}{lll}
+\toprule Nhân $K(u)$ & $\mu_2(K)$ & $R(K)$\\\midrule
+$\frac12\1_{\{|u|\le1\}}$ & $1/3$ & $1/2$\\
+$(1-|u|)\1_{\{|u|\le1\}}$ & $1/6$ & $2/3$\\
+$\frac34(1-u^2)\1_{\{|u|\le1\}}$ & $1/5$ & $3/5$\\
+$\phi(u)=(2\pi)^{-1/2}e^{-u^2/2}$ & $1$ & $1/(2\sqrt\pi)$\\
+$\1_{\{|u|<1/2\}}$ (boxcar của W6.2) & $1/12$ & $1$\\\bottomrule
+\end{tabular}\end{center}
+\textbf{Normal reference:} $R(f'')=3/(8\sqrt\pi\sigma^5)$ cho $f=N(\mu,\sigma^2)$,
+$h_*= (4/3)^{1/5}\sigma n^{-1/5}\simeq1.0592\sigma n^{-1/5}$.
+Thực hành thay $\sigma$ bằng $\min(s,\mathrm{IQR}/1.34)$ theo sách.
+\clearpage
+\section*{Tra nhanh 3/4: CV, CLT và các bẫy quan trọng}
+\addcontentsline{toc}{section}{Tra nhanh 3/4: CV, CLT và các bẫy quan trọng}
+\textbf{Density CV, $h$ và lưới bin cố định trước khi bỏ từng điểm:}
+\[
+\widehat J(h)=\int\fh^2-\frac2n\sum_i\widehat f_{(-i),h}(X_i),\qquad
+\E\widehat J(h)=\MISE(h)-R(f).
+\]
+\begin{result}
+Histogram:
+\[
+\widehat J_H(h)=\frac2{(n-1)h}-\frac{n+1}{(n-1)h}\sum_j\ph_j^2.
+\]
+KDE với $K$ đối xứng, $K^{(2)}=K*K$:
+\[
+\widehat J_K(h)=\frac1{n^2h}\sum_{i,j}K^{(2)}\!\left(\frac{X_i-X_j}{h}\right)
+-\frac2{n(n-1)h}\sum_{i\ne j}K\!\left(\frac{X_i-X_j}{h}\right).
+\]
+Nhân Gaussian: $K^{(2)}(z)=(4\pi)^{-1/2}e^{-z^2/4}$.
+\end{result}
+\textbf{Nhất quán KDE:} $h\to0$, $nh\to\infty$ cùng các điều kiện nhân, mật độ thích hợp.
+Nếu $f(x)>0$, $K$ bị chặn và thỏa các điều kiện chuẩn, thì
+\[
+\sqrt{nh}\{\fh(x)-\E\fh(x)\}\dto N(0,f(x)R(K)).
+\]
+Nếu thêm $nh^5\to\lambda\in[0,\infty)$,
+\[
+\sqrt{nh}\{\fh(x)-f(x)\}\dto
+N\!\left(\tfrac12\sqrt\lambda\,\mu_2(K)f''(x),\ f(x)R(K)\right).
+\]
+\textbf{Khoảng tin cậy điểm cho $f(x)$:} khi undersmoothing $nh^5\to0$,
+\[
+\fh(x)\ \pm\ z_{1-\alpha/2}\sqrt{\frac{\fh(x)R(K)}{nh}}.
+\]
+Không tự đổi ``tại một điểm'' thành ``đồng thời mọi điểm''; bandwidth chọn bằng dữ liệu cần xét thêm tính ngẫu nhiên khi làm suy luận.
+
+\textbf{Các lỗi cần tránh.}
+\begin{enumerate}
+\item $f''\in L_2$ chưa đủ để kết luận phần dư bias điểm là $O(h^4)$; cần độ trơn mạnh hơn.
+\item KDE-CV phải có số hạng âm chứa $K$. Không thay $K*K-2K$ bằng $K*K$.
+\item $\int\Var(\widehat f_H)=1/(nh)-R(f)/n+o(1/n)$, không bỏ $-R(f)/n$ rồi vẫn ghi phần dư $o(1/n)$.
+\item Nhân bậc $\ell>2$ triệt tiêu moment bậc hai phải đổi dấu; KDE tương ứng có thể âm.
+\item $h\asymp n^{-1/5}$ tối ưu MISE nhưng thường không đủ cho CI bỏ qua bias.
+\item Local linear sửa sai lệch \emph{bậc một} tại biên, không khiến bias bằng 0.
+\item KDE tại biên 0 của giá $[0,\infty)$, với nhân đối xứng: $\E\fh(0)\to f(0)/2$; bias thường $O(1)$.
+\end{enumerate}
+\clearpage
+\section*{Tra nhanh 4/4: hồi quy, phép chiếu và kiểm định}
+\addcontentsline{toc}{section}{Tra nhanh 4/4: hồi quy, phép chiếu và kiểm định}
+Đặt $w_i=K((X_i-x)/h)$, $S_j=\sum_iw_i(X_i-x)^j$, $T_j=\sum_iw_i(X_i-x)^jY_i$.
+\begin{result}
+\[
+\widehat r_{NW}(x)=\frac{T_0}{S_0},\qquad
+\widehat r_{LL}(x)=\frac{S_2T_0-S_1T_1}{S_0S_2-S_1^2}.
+\]
+Với mật độ thiết kế $f_X(x)>0$, tại điểm trong:
+\[
+\Bias_{NW,\mathrm{smooth}}=\frac{h^2\mu_2(K)}2\left[r''+2r'\frac{f_X'}{f_X}\right]+o(h^2),
+\qquad
+\Bias_{LL}=\frac{h^2\mu_2(K)}2r''+o_P(h^2).
+\]
+\[
+\Var(\widehat r(x)\mid\mathbf X)\simeq\frac{\sigma^2(x)R(K)}{nh f_X(x)}.
+\]
+Với smoother có đồng nhất thức bỏ-một-điểm (NW, local polynomial, spline thích hợp):
+\[
+CV(h)=\frac1n\sum_i\left(\frac{Y_i-\widehat Y_i}{1-L_{ii}}\right)^2,
+\qquad GCV(h)=\frac{n^{-1}\norm{(I-L)Y}^2}{(1-\tr(L)/n)^2}.
+\]
+\end{result}
+\textbf{Phép chiếu trong $L_2$.}
+\[
+\widehat a_j=n^{-1}\sum_i\varphi_j(X_i),\quad
+\widehat f_D=\sum_{j=1}^D\widehat a_j\varphi_j,\quad
+\MISE(\widehat f_D)=\sum_{j>D}a_j^2+\frac1n\sum_{j\le D}\Var(\varphi_j(X)).
+\]
+Trên lớp trơn thích hợp: bias bình phương $O(D^{-2\beta})$, variance $O(D/n)$;
+$D_*\asymp n^{1/(2\beta+1)}$, risk $O(n^{-2\beta/(2\beta+1)})$.
+
+\textbf{Goodness-of-fit, $F_0$ liên tục và biết hoàn toàn.} Đặt $U_{(i)}=F_0(X_{(i)})$:
+\begin{align*}
+D_n&=\max_i\left\{i/n-U_{(i)},\ U_{(i)}-(i-1)/n\right\},\\
+W_n^2&=\frac1{12n}+\sum_i\left(U_{(i)}-\frac{2i-1}{2n}\right)^2,\\
+A_n^2&=-n-\frac1n\sum_i(2i-1)\{\log U_{(i)}+\log(1-U_{(n+1-i)})\}.
+\end{align*}
+KS xét sai lệch lớn nhất; CvM tích lũy bình phương sai lệch; AD tăng trọng số phần đuôi. Không có kiểm định nào luôn mạnh nhất. Nếu ước lượng tham số của $F_0$ bằng chính mẫu, phân phối chuẩn của các thống kê trên thay đổi.
+
+\textbf{Phân bổ thao tác khi làm bài.} Đọc rõ mục tiêu điểm hay tích phân; ghi giả thiết và định nghĩa; chọn phép đổi biến/Bernoulli/Taylor phù hợp; giữ hằng số tới cuối; đóng khung kết quả và ghi điều kiện bandwidth. Các tốc độ là cho \emph{MSE/MISE}, không phải sai số chưa bình phương.
+\clearpage
+\tableofcontents
+\clearpage
+\section{Hàm phân phối thực nghiệm và statistical functionals}
+\prob{1.1}{Kỳ vọng, phương sai, MSE và phân phối của EDF}{Tính các đại lượng tại điểm $x_0$ cố định.}
+Đặt $p=F(x_0)$, $I_i=\1_{\{X_i\le x_0\}}$. Khi đó $I_i$ độc lập, cùng phân phối Bernoulli$(p)$ và $\Fh(x_0)=n^{-1}\sum I_i$. Bởi vậy
+\[
+\E\Fh=p,\qquad \Var(\Fh)=n^{-2}\sum_i p(1-p)=\frac{p(1-p)}n.
+\]
+Bias bằng 0, nên $\MSE=\Var=p(1-p)/n$. Tổng $n\Fh=\sum I_i$ có phân phối nhị thức $\operatorname{Bin}(n,p)$. Khi $p=0$ hoặc 1, các biến suy biến và phương sai bằng 0.
+\src{Wasserman, Định lý 2.4, tr.14; W2.2, tr.24}
+
+\prob{1.2}{Không chệch, nhất quán và chuẩn tiệm cận của EDF}{Chứng minh ba tính chất tại $x_0$.}
+Không chệch đã có ở Bài 1.1. Luật số lớn mạnh áp dụng cho $I_i$ vì $\E|I_i|\le1$:
+$\Fh(x_0)\asto p$, do đó cũng hội tụ theo xác suất. Ngoài ra, Chebyshev cho chặn trực tiếp
+$\Pp(|\Fh-p|>\varepsilon)\le p(1-p)/(n\varepsilon^2)\to0$.
+Theo CLT,
+\[
+\sqrt n(\Fh(x_0)-p)\dto N(0,p(1-p)).
+\]
+Nếu $0<p<1$, Slutsky cho
+$\sqrt n(\Fh-p)/\sqrt{\Fh(1-\Fh)}\dto N(0,1)$.
+Ở $p=0,1$ không chia cho phương sai bằng 0; giới hạn chưa chuẩn hóa là hằng 0.
+
+\prob{1.3}{Hiệp phương sai của EDF}{Tính $\Cov(\Fh(x),\Fh(y))$ khi $x<y$.}
+Các số hạng khác chỉ số độc lập. Với cùng chỉ số, $\1_{X_i\le x}\1_{X_i\le y}=\1_{X_i\le x}$. Vì vậy
+\begin{align*}
+\Cov(\Fh(x),\Fh(y))
+&=n^{-2}\sum_i\{\E\1_{X_i\le x}-F(x)F(y)\}\\
+&=\frac{F(x)(1-F(y))}{n}.
+\end{align*}
+Công thức tổng quát là $[F(\min(x,y))-F(x)F(y)]/n$; không thể coi các giá trị EDF ở các điểm khác nhau là độc lập.
+\src{W2.6, tr.24}
+
+\prob{1.4}{Glivenko--Cantelli và DKW}{Phát biểu hội tụ đều và bất đẳng thức xác suất.}
+Glivenko--Cantelli: $\norm{\Fh-F}_\infty\asto0$. DKW: với mọi $\varepsilon>0$,
+\[
+\Pp(\norm{\Fh-F}_\infty>\varepsilon)\le2e^{-2n\varepsilon^2}.
+\]
+Đây là định lý áp dụng cho mọi CDF $F$, không cần mật độ hay phân phối liên tục. DKW là kết quả nền, không suy ra bằng cách cộng Hoeffding trên vô hạn điểm.
+
+\textbf{Suy ra Glivenko--Cantelli từ DKW.} Với $\varepsilon$ cố định,
+$\sum_{n\ge1}2e^{-2n\varepsilon^2}<\infty$. Borel--Cantelli suy ra
+$\norm{\Fh-F}_\infty>\varepsilon$ chỉ xảy ra hữu hạn lần, hầu chắc chắn. Lấy giao các biến cố xác suất 1 với $\varepsilon=1/k$, $k\in\mathbb N$, được hội tụ đều hầu chắc chắn. Phần này dùng DKW như một định lý đã biết; không phải chứng minh độc lập bất đẳng thức DKW sắc với hằng số 2.
+
+\prob{1.5}{Băng tin cậy CDF và so sánh Wald--Hoeffding}{Xây dựng mức $1-\alpha$ và phân biệt bảo đảm đồng thời với bảo đảm tại điểm.}
+Giải $2e^{-2n\varepsilon^2}=\alpha$ cho $\varepsilon=\sqrt{\log(2/\alpha)/(2n)}$. Trên biến cố $\norm{\Fh-F}_\infty\le\varepsilon$, với mọi $x$,
+$\Fh(x)-\varepsilon\le F(x)\le\Fh(x)+\varepsilon$. Cắt về $[0,1]$ không mất độ phủ vì CDF nằm trong khoảng đó.
+
+Tại một điểm, Hoeffding cho các Bernoulli $I_i$ có cùng chặn $2e^{-2n\varepsilon^2}$ nên cùng bán kính. Khác biệt: DKW bảo đảm cả đường CDF cùng lúc. Wald có bán kính
+$z_{1-\alpha/2}\sqrt{\Fh(1-\Fh)/n}$, phụ thuộc dữ liệu và chỉ xấp xỉ khi $0<F(x)<1$.
+Với $\alpha=.05$, DKW có bán kính $1.3581/\sqrt n$; bán kính Wald không quá $0.9800/\sqrt n$. Gần $p=0,1$, Wald có thể quá hẹp hoặc suy biến; DKW vẫn có bảo đảm hữu hạn mẫu.
+
+\prob{1.6}{Nguyên lý plug-in}{Phân biệt functional tuyến tính và phi tuyến; suy ra công thức plug-in tuyến tính.}
+Phân phối thực nghiệm là độ đo $\widehat P_n=n^{-1}\sum_i\delta_{X_i}$. Do đó
+\[
+T(\Fh)=\int a(x)\,d\Fh(x)=\frac1n\sum_i\int a(x)\,d\delta_{X_i}(x)=\frac1n\sum_i a(X_i).
+\]
+Tuyến tính theo độ đo nghĩa là $T(tF+(1-t)G)=tT(F)+(1-t)T(G)$, $0\le t\le1$ (với $a$ cố định). Trung bình và moment thô là ví dụ. Phương sai $\int x^2dF-(\int x\,dF)^2$, tương quan và phân vị là phi tuyến. Với $\E a(X)^2<\infty$, plug-in tuyến tính không chệch và có phương sai $\Var(a(X))/n$.
+
+\prob{1.7}{Các ước lượng plug-in cụ thể}{Viết công thức cho trung bình, phương sai, skewness, correlation và quantile.}
+Đặt $\bar X=n^{-1}\sum X_i$, $m_k=n^{-1}\sum(X_i-\bar X)^k$.
+\begin{align*}
+\widehat\mu&=\bar X,&\widehat\sigma^2&=m_2,&\widehat\kappa&=m_3/m_2^{3/2}.
+\end{align*}
+Skewness chỉ xác định nếu $m_2>0$; đây là plug-in trực tiếp, không phải các phiên bản hiệu chỉnh hữu hạn mẫu.
+Với mẫu cặp $(X_i,Y_i)$,
+\[
+\widehat\rho=\frac{n^{-1}\sum_i(X_i-\bar X)(Y_i-\bar Y)}{\sqrt{\{n^{-1}\sum_i(X_i-\bar X)^2\}\{n^{-1}\sum_i(Y_i-\bar Y)^2\}}},
+\]
+với hai phương sai mẫu dương. Các hệ số $1/n$ triệt tiêu.
+Với $0<p<1$, dùng nghịch đảo tổng quát:
+\[
+\widehat q_p=\inf\{x:\Fh(x)\ge p\}=X_{(\lceil np\rceil)}.
+\]
+Khi $n$ chẵn, median theo định nghĩa này là quan sát giữa phía dưới; quy ước trung bình hai quan sát giữa là một quy ước khác, cần ghi rõ khi tính.
+
+\prob{1.8}{Phương sai plug-in và phương sai hiệu chỉnh}{So sánh mẫu số $n$ và $n-1$.}
+Khai triển quanh trung bình thật $\mu$:
+\[
+\sum_i(X_i-\bar X)^2=\sum_i(X_i-\mu)^2-n(\bar X-\mu)^2.
+\]
+Lấy kỳ vọng cho $n\sigma^2-n\sigma^2/n=(n-1)\sigma^2$. Vì vậy
+\[
+\E\widehat\sigma^2=\frac{n-1}{n}\sigma^2,\quad
+\Bias\widehat\sigma^2=-\frac{\sigma^2}{n},\quad
+S^2=\frac{n}{n-1}\widehat\sigma^2,\quad \E S^2=\sigma^2.
+\]
+Nếu $\E X^2<\infty$, cả hai nhất quán. Không chệch không đồng nghĩa MSE nhỏ nhất: khi mẫu chuẩn,
+$\MSE(\widehat\sigma^2)=(2n-1)\sigma^4/n^2$, còn $\MSE(S^2)=2\sigma^4/(n-1)$, nên plug-in có MSE nhỏ hơn dù chệch.
+\clearpage
+\section{Ước lượng mật độ bằng histogram}
+Trong phần này $f$ có giá $[0,1]$, các bin cố định đều rộng $h=1/m$ phủ toàn bộ giá; $N_j=\sum_i\1_{X_i\in B_j}$, $p_j=\int_{B_j}f$, $\ph_j=N_j/n$. Để khai triển đơn giản, giả sử $f\in C^2[0,1]$. Các công thức tích phân cũng đúng dưới những điều kiện yếu hơn trong sách.
+
+\prob{2.1}{Histogram là mật độ}{Chứng minh không âm và tích phân bằng 1.}
+Vì $N_j\ge0$, $\widehat f_H=\sum_j\ph_j\1_{B_j}/h\ge0$. Các bin phân hoạch giá mẫu nên $\sum N_j=n$, do đó
+\[
+\int\widehat f_H(x)dx=\sum_j\frac{N_j}{nh}\int_{B_j}dx=\sum_jN_j/n=1.
+\]
+Nếu chỉ vẽ một đoạn chứa một phần dữ liệu mà không tính các bin còn lại thì diện tích có thể nhỏ hơn 1; giả thiết phủ toàn bộ giá là cần thiết cho lập luận này.
+
+\prob{2.2}{Bias và integrated squared bias}{Dùng Taylor suy ra bias tại điểm và hằng số $1/12$.}
+Với $x,u\in B_j$, Taylor đều cho $f(u)=f(x)+f'(x)(u-x)+O(h^2)$. Vì $\E\widehat f_H(x)=p_j/h$,
+\[
+\Bias\widehat f_H(x)=\frac1h\int_{B_j}[f(u)-f(x)]du
+=f'(x)(c_j-x)+O(h^2),\quad c_j=(j-1/2)h.
+\]
+Số hạng chính $O(h)$, nhưng tại đúng tâm bin nó triệt tiêu. Bình phương cho
+$b(x)^2=f'(x)^2(c_j-x)^2+O(h^3)$ đều trên $[0,1]$. Do $f'$ liên tục đều, thay $f'(x)$ bằng $f'(c_j)$ trong mỗi bin gây sai số tổng $o(h^2)$. Mà
+\[
+\int_{B_j}(c_j-x)^2dx=\int_{-h/2}^{h/2}t^2dt=h^3/12.
+\]
+Suy ra
+\begin{result}
+\[
+\int_0^1b(x)^2dx=\frac{h^2}{12}\sum_jh f'(c_j)^2+o(h^2)
+=\frac{h^2}{12}\int_0^1f'(x)^2dx+o(h^2).
+\]
+\end{result}
+\src{Định lý 6.11 và phụ lục chương 6, tr.129, 140--142}
+
+\prob{2.3}{Phương sai histogram}{Tính chính xác, rồi lấy số hạng chính tại điểm và khi tích phân.}
+$N_j\sim\operatorname{Bin}(n,p_j)$, do đó
+\[
+\Var\widehat f_H(x)=\frac{p_j(1-p_j)}{nh^2}.
+\]
+Với $p_j=hf(x)+O(h^2)$, phương sai là $f(x)/(nh)+O(1/n)$ khi $f$ trơn bị chặn. Tích phân chính xác:
+\begin{align*}
+\int\Var\widehat f_H(x)dx
+&=\sum_jh\frac{p_j(1-p_j)}{nh^2}
+=\frac1{nh}\left(1-\sum_jp_j^2\right)\\
+&=\frac1{nh}-\frac{R(f)}n+o(1/n).
+\end{align*}
+Bước cuối dùng $\sum_jp_j^2/h\to\int f^2$. Số hạng $-R(f)/n$ nhỏ hơn $1/(nh)$ khi $h\to0$, nhưng không phải $o(1/n)$. Đây là chỗ cần hiệu chỉnh cách viết phần dư trong bản sách đang dùng.
+
+\prob{2.4}{Độ rộng bin và tốc độ tối ưu}{Lập AMISE, tìm $h_*$ và risk nhỏ nhất.}
+Đặt $A=R(f')/12>0$. Từ hai bài trên,
+\[
+\MISE(h)=Ah^2+\frac1{nh}+o(h^2)+O(1/n).
+\]
+Cực tiểu hóa số hạng chính $g(h)=Ah^2+1/(nh)$:
+\[
+g'(h)=2Ah-\frac1{nh^2}=0\ \Longleftrightarrow\ h^3=\frac1{2An}.
+\]
+Vì $g''(h)=2A+2/(nh^3)>0$, đây là cực tiểu duy nhất. Tại đó $1/(nh_*)=2Ah_*^2$, nên
+\[
+h_*=(6/(nR(f')))^{1/3},\qquad
+g(h_*)=3Ah_*^2=(3/4)^{2/3}R(f')^{1/3}n^{-2/3}.
+\]
+Trong histogram thực tế, $m$ phải nguyên: so sánh các $m$ nguyên gần $1/h_*$ hoặc dùng CV. Nếu $R(f')=0$ như mật độ đều trên $[0,1]$, công thức suy biến; với một bin $h=1$, ước lượng đúng bằng mật độ thật và MISE bằng 0.
+
+\prob{2.5}{Leave-one-out CV cho histogram}{Dẫn ra công thức theo tần suất bin.}
+Với lưới bin giữ nguyên, nếu $X_i\in B_j$ thì
+$\widehat f_{(-i)}(X_i)=(N_j-1)/((n-1)h)$. Vì có $N_j$ điểm trong bin,
+\[
+\frac1n\sum_i\widehat f_{(-i)}(X_i)
+=\frac{\sum_jN_j(N_j-1)}{n(n-1)h}
+=\frac{n\sum_j\ph_j^2-1}{(n-1)h}.
+\]
+Mặt khác, $\int\widehat f_H^2=\sum_j\ph_j^2/h$. Trừ hai lần biểu thức trên:
+\begin{result}
+\[
+\widehat J_H(h)=\frac2{(n-1)h}-\frac{n+1}{(n-1)h}\sum_j\ph_j^2.
+\]
+\end{result}
+Điểm CV có thể âm vì ước lượng MISE trừ hằng số $R(f)$. Không cần CV dương. Tính không chệch của tiêu chuẩn được chứng minh thêm ở Bài W6.3.
+\clearpage
+\section{Ước lượng mật độ bằng nhân (KDE)}
+\prob{3.1}{KDE là mật độ}{Với $K\ge0$, $\int K=1$, $h>0$, chứng minh $\fh\ge0$ và $\int\fh=1$.}
+Mỗi số hạng $K((x-X_i)/h)/(nh)$ không âm. Đổi biến $u=(x-X_i)/h$, $dx=h\,du$:
+\[
+\int\fh(x)dx=\frac1n\sum_i\int\frac1hK\left(\frac{x-X_i}{h}\right)dx
+=\frac1n\sum_i\int K(u)du=1.
+\]
+Đối xứng không cần cho tính chất mật độ; nó cần cho moment bậc một bằng 0. Với nhân đổi dấu, tích phân vẫn bằng 1 nhưng tính không âm có thể mất.
+
+\prob{3.2}{Chứng minh bias của KDE}{Tính $\E\fh(x)$ và khai triển đến bậc hai; xác định điều kiện để phần dư là $O(h^4)$.}
+Đặt $Z_i=h^{-1}K((x-X_i)/h)$. Nhờ i.i.d., $\E\fh(x)=\E Z_1$. Đổi biến $u=(x-t)/h$:
+\[
+\E Z_1=\int\frac1hK\left(\frac{x-t}{h}\right)f(t)dt
+=\int K(u)f(x-hu)du.
+\]
+Giả sử $\int K=1$, $\mu_1(K)=0$, $\int u^2|K(u)|du<\infty$, $f$ có đạo hàm hai liên tục bị chặn (đủ để khống chế phần dư dưới tích phân). Taylor:
+\[
+f(x-hu)=f(x)-hu f'(x)+\tfrac12h^2u^2 f''(x)+h^2u^2\eta_h(u),
+\]
+trong đó $\eta_h(u)\to0$ với mỗi $u$ và bị chặn. Hội tụ bị chặn cho $\int u^2K(u)\eta_h(u)du=o(1)$. Do đó
+\begin{result}
+\[
+\Bias\fh(x)=\tfrac12h^2\mu_2(K)f''(x)+o(h^2).
+\]
+\end{result}
+Nếu $K$ đối xứng, $\int |u|^4|K(u)|du<\infty$ và $f$ có đạo hàm bậc bốn bị chặn liên tục, khai triển đến bậc ba có dư bị chặn bởi $C h^4|u|^4$. Các moment bậc một và ba bằng 0; vì thế có thể thay $o(h^2)$ bằng $O(h^4)$. Nếu $f^{(4)}$ liên tục và điều kiện khống chế thích hợp,
+\[
+\Bias\fh(x)=\frac{h^2\mu_2(K)}2 f''(x)+\frac{h^4\mu_4(K)}{24}f^{(4)}(x)+o(h^4).
+\]
+\textbf{Sửa giả thiết của đề gốc:} chỉ biết $f''\in L_2$ không đảm bảo khai triển điểm với phần dư $O(h^4)$; điều kiện $L_2$ phù hợp hơn cho khai triển bias trong chuẩn $L_2$.
+
+\prob{3.3}{Chứng minh phương sai KDE}{Tính phương sai chính xác và suy ra số hạng $f(x)R(K)/(nh)$.}
+Do độc lập,
+\[
+\Var\fh(x)=\frac1n\Var Z_1=\frac1n\{\E Z_1^2-(\E Z_1)^2\}.
+\]
+Đổi biến như trên,
+\[
+\E Z_1^2=\frac1h\int K^2(u)f(x-hu)du.
+\]
+Do đó công thức chính xác là
+\[
+\Var\fh(x)=\frac1{nh}\int K^2(u)f(x-hu)du-\frac1n\left[\int K(u)f(x-hu)du\right]^2.
+\]
+Nếu $f$ bị chặn, liên tục tại $x$, $K\in L_1\cap L_2$, thì tích phân thứ nhất hội tụ đến $f(x)R(K)$; tích phân trong ngoặc bị chặn. Vì $h\to0$,
+\[
+\Var\fh(x)=\frac{f(x)R(K)}{nh}+o((nh)^{-1}).
+\]
+Để có dư $O(1/n)$ như đề gốc, một điều kiện đủ là $f$ Lipschitz và $\int |u|K^2(u)du<\infty$: chênh lệch trong tích phân đầu là $O(h)$. Với nhân đối xứng, $f''$ bị chặn và $\int u^2K^2<\infty$, còn có
+\[
+\Var\fh(x)=\frac{f(x)R(K)}{nh}-\frac{f(x)^2}{n}+O(h/n)+O(h^2/n).
+\]
+
+\prob{3.4}{AMISE của KDE}{Ghép integrated squared bias và integrated variance.}
+Không chỉ tích phân một phần dư điểm mà chưa kiểm soát nó. Dùng điều kiện đủ: $f,f''\in L_2(\R)$, đạo hàm yếu thích hợp, $K\in L_1\cap L_2$, $\int K=1$, $\mu_1(K)=0$, $\int u^2|K|<\infty$. Khai triển Taylor trong chuẩn $L_2$ cho
+\[
+\norm{K_h*f-f-\tfrac12h^2\mu_2(K)f''}_2=o(h^2).
+\]
+Có thể thấy điều này qua $f(x-hu)-f(x)+hu f'(x)=h^2u^2\int_0^1(1-t)f''(x-thu)dt$ và tính liên tục của phép tịnh tiến trong $L_2$. Bởi vậy
+\[
+\int\Bias\fh(x)^2dx=\tfrac14h^4\mu_2(K)^2R(f'')+o(h^4).
+\]
+Tích phân công thức phương sai chính xác, dùng Fubini/Tonelli cho số hạng bình phương không âm và $\int f(x-hu)dx=1$:
+\[
+\int\Var\fh(x)dx=\frac{R(K)}{nh}-\frac1nR(K_h*f).
+\]
+Theo Young, $\norm{K_h*f}_2\le\norm K_1\norm f_2$, nên số hạng cuối là $O(1/n)$. Nếu $h\to0$, $nh\to\infty$ thì
+\begin{result}
+\[
+\MISE(h)=\underbrace{\tfrac14h^4\mu_2(K)^2R(f'')+\frac{R(K)}{nh}}_{\AMISE(h)}
++o(h^4)+O(1/n).
+\]
+\end{result}
+\textbf{Nhớ:} $\sigma_K^4=(\sigma_K^2)^2=\mu_2(K)^2$, không phải moment $\mu_4(K)$.
+
+\prob{3.5}{Bandwidth tối ưu và tốc độ hội tụ}{Tối thiểu hóa AMISE và so sánh với histogram.}
+Đặt $A=\mu_2(K)^2R(f'')/4>0$, $B=R(K)>0$. Với $g(h)=Ah^4+B/(nh)$,
+\[
+g'(h)=4Ah^3-B/(nh^2)=0\ \Longleftrightarrow\ h^5=B/(4An).
+\]
+$g''(h)>0$, nên
+\[
+h_* =\left[\frac{R(K)}{\mu_2(K)^2R(f'')}\right]^{1/5}n^{-1/5}.
+\]
+Tại cực tiểu, variance chính $B/(nh_*)=4Ah_*^4$ bằng bốn lần squared bias chính, \emph{không phải bằng nhau về hằng số}. Thay lại,
+\[
+g(h_*)=5Ah_*^4=\frac54\{\mu_2(K)^2R(f'')\}^{1/5}R(K)^{4/5}n^{-4/5}.
+\]
+Histogram có bias bậc $h$, variance bậc $(nh)^{-1}$ nên risk tối ưu $n^{-2/3}$; KDE nhân bậc hai có bias bậc $h^2$, cùng bậc variance nên risk $n^{-4/5}$. So sánh cần mật độ đủ trơn và xử lý biên thích hợp. Không kết luận KDE luôn tốt hơn với mọi cỡ mẫu hoặc mật độ không trơn.
+\src{Định lý 6.28, công thức 6.30 và Định lý 6.31, tr.133--135}
+
+\prob{3.6}{Nhân bậc cao}{Suy ra bias $O(h^\ell)$ và tốc độ MISE.}
+Định nghĩa nhân bậc $\ell$: $\mu_0=1$, $\mu_1=\cdots=\mu_{\ell-1}=0$, $\mu_\ell\ne0$. Giả sử $\int|u|^\ell|K(u)|du<\infty$, $R(K)<\infty$ và $f$ đủ trơn bậc $\ell$; dùng điều kiện $L_2$ tương ứng để tích phân. Khai triển
+\[
+\E\fh(x)-f(x)=\sum_{j=1}^{\ell}\frac{(-h)^j\mu_j(K)}{j!}f^{(j)}(x)+o(h^\ell)
+=\frac{(-h)^\ell\mu_\ell(K)}{\ell!}f^{(\ell)}(x)+o(h^\ell).
+\]
+Vậy $\AMISE=A_\ell h^{2\ell}+R(K)/(nh)$ với
+$A_\ell=\mu_\ell(K)^2R(f^{(\ell)})/(\ell!)^2$. Theo bổ đề tra nhanh,
+\[
+h_*\asymp n^{-1/(2\ell+1)},\qquad \MISE(h_*)=O(n^{-2\ell/(2\ell+1)}).
+\]
+Nếu $\ell>2$, $\int u^2K(u)du=0$ buộc $K$ đổi dấu: với $K\ge0$, $u^2K(u)\ge0$ và tích phân bằng 0 chỉ khi $K=0$ hầu khắp ngoài $u=0$, trái với $\int K=1$. Nhân đối xứng không thể có moment lẻ đầu tiên khác 0.
+
+\textbf{Ví dụ bậc 4.} $K(u)=\tfrac12(3-u^2)\phi(u)$. Dùng $\E Z^2=1$, $\E Z^4=3$, $\E Z^6=15$:
+$\mu_0=1$, $\mu_2=(3-3)/2=0$, moment lẻ bằng 0 và $\mu_4=(9-15)/2=-3$.
+Bias $=-h^4f^{(4)}(x)/8+o(h^4)$ và risk $O(n^{-8/9})$. Đây là nhân bậc 4 theo quy ước moment đầu tiên khác 0, dù một số tài liệu gọi theo số moment triệt tiêu.
+
+\prob{3.7}{Dẫn ra quy tắc Normal reference}{Tính hằng số $1.06$ cho nhân Gaussian và mật độ chuẩn.}
+Với $z=(x-\mu)/\sigma$, $f(x)=\phi(z)/\sigma$ và
+$f''(x)=(z^2-1)\phi(z)/\sigma^3$. Do $dx=\sigma dz$,
+\begin{align*}
+R(f'')&=\frac1{2\pi\sigma^5}\int(z^4-2z^2+1)e^{-z^2}dz\\
+&=\frac1{2\pi\sigma^5}\left(\frac{3\sqrt\pi}{4}-2\frac{\sqrt\pi}{2}+\sqrt\pi\right)
+=\frac3{8\sqrt\pi\sigma^5}.
+\end{align*}
+Nhân Gaussian có $\mu_2=1$, $R(K)=1/(2\sqrt\pi)$. Thay vào Bài 3.5,
+\[
+h_*^5=\frac{1/(2\sqrt\pi)}{n\,3/(8\sqrt\pi\sigma^5)}=\frac{4\sigma^5}{3n},\qquad
+h_*=(4/3)^{1/5}\sigma n^{-1/5}\simeq1.0592\sigma n^{-1/5}.
+\]
+Đây là kết quả \emph{oracle} với $\sigma$ thật. Sách đề nghị thay bằng $\widehat\sigma=\min(s,\mathrm{IQR}/1.34)$, vì IQR của chuẩn là $2\Phi^{-1}(.75)\sigma\simeq1.349\sigma$; $1.34$ là làm tròn theo sách. Không có phép chứng minh khiến bandwidth plug-in này trở thành tối ưu chính xác cho mọi mẫu, mọi mật độ. Quy tắc thường gọi Silverman với hệ số $0.9$ là một biến thể khác; không trộn hai hệ số.
+
+\prob{3.8}{LOOCV KDE: không chệch và công thức tổng đôi}{Chứng minh tiêu chuẩn ước lượng $\E[J(h)]$ và sửa công thức trong đề gốc.}
+Cố định $h$ độc lập với dữ liệu. Với $K_h(x)=K(x/h)/h$,
+$\fh(x)=n^{-1}\sum_jK_h(x-X_j)$ và
+$\widehat f_{(-i)}(X_i)=(n-1)^{-1}\sum_{j\ne i}K_h(X_i-X_j)$.
+Theo độc lập, với $X,Y$ độc lập cùng mật độ $f$,
+\[
+\E\left[\frac1n\sum_i\widehat f_{(-i)}(X_i)\right]
+=\E K_h(X-Y)=\E\int\fh(x)f(x)dx.
+\]
+Vì số hạng $\int\fh^2$ giữ nguyên,
+$\E\widehat J(h)=\E[\int\fh^2-2\int\fh f]=\E J(h)$.
+
+Để tính số hạng bình phương, đổi biến $u=(x-X_i)/h$:
+\[
+\int K_h(x-X_i)K_h(x-X_j)dx
+=\frac1h\int K(u)K\left(u+\frac{X_i-X_j}{h}\right)du.
+\]
+Với $K$ đối xứng, tích phân là $(K*K)((X_i-X_j)/h)/h$. Suy ra
+\begin{result}
+\[
+\widehat J(h)=\frac1{n^2h}\sum_{i,j}(K*K)\!\left(\frac{X_i-X_j}{h}\right)
+-\frac2{n(n-1)h}\sum_{i\ne j}K\!\left(\frac{X_i-X_j}{h}\right).
+\]
+\end{result}
+Nếu $K$ không đối xứng, dùng tự tương quan $\int K(u)K(u+z)du$ thay cho $K*K$.
+
+\textbf{Liên hệ công thức 6.35 của sách.} Đặt $S=\sum_{i,j}K((X_i-X_j)/h)$, $A=\sum_{i,j}(K*K)((X_i-X_j)/h)$. Vì $\sum_{i\ne j}K=S-nK(0)$,
+\[
+\widehat J=\frac{A-2S}{n^2h}+\frac{2K(0)}{nh}
+-\frac{2(S-nK(0))}{n^2(n-1)h}.
+\]
+Hai số hạng đầu dùng $K^*=K*K-2K$; số hạng cuối là hiệu chỉnh hữu hạn mẫu chính xác. Không được bỏ $-2K$. Với $h$ cố định và dữ liệu thông thường, hiệu chỉnh có thể bậc $1/n$, nên không mặc nhiên sử dụng ký hiệu dư $O(n^{-2})$ in tại (6.35). Tài liệu này dùng công thức chính xác để tránh vấn đề ấy.
+
+\prob{3.9}{Nhất quán và chuẩn tiệm cận của KDE}{Nêu điều kiện, chứng minh nhất quán và tìm giới hạn khi $nh^5\to\lambda$.}
+Một bộ điều kiện đủ dễ dùng: $K$ bị chặn, $K\in L_1\cap L_2$, $\int K=1$; $f$ bị chặn, liên tục tại $x$; $h=h_n\to0$, $nh_n\to\infty$. Hội tụ bị chặn cho
+$\E\fh(x)\to f(x)$, còn $\Var\fh(x)\le \norm f_\infty R(K)/(nh)\to0$. Vậy MSE $\to0$ và Chebyshev cho $\fh(x)\pto f(x)$.
+
+Nếu thêm $f(x)>0$, xét $Z_{ni}=h^{-1}K((x-X_i)/h)$. Với $s_n^2=\Var(Z_{n1})\sim f(x)R(K)/h$, tính bị chặn của $K$ cho
+\[
+\frac{\max_i|Z_{ni}-\E Z_{ni}|}{\sqrt n\,s_n}
+\le\frac{C}{\sqrt{nh}}\longrightarrow0.
+\]
+Do đó điều kiện Lindeberg của mảng tam giác được thỏa; CLT suy ra
+$\sqrt{nh}(\fh-\E\fh)\dto N(0,f(x)R(K))$.
+Dưới giả thiết bias bậc hai của Bài 3.2,
+\begin{align*}
+\sqrt{nh}(\fh-f)
+&=\sqrt{nh}(\fh-\E\fh)+\sqrt{nh}(\E\fh-f),\\
+\sqrt{nh}(\E\fh-f)
+&=\tfrac12\sqrt{nh^5}\mu_2(K)f''(x)+o(\sqrt{nh^5}).
+\end{align*}
+Nếu $nh^5\to\lambda<\infty$, Slutsky cho
+\[
+\sqrt{nh}(\fh(x)-f(x))\dto N\left(\tfrac12\sqrt\lambda\mu_2(K)f''(x),f(x)R(K)\right).
+\]
+$\lambda=0$ cho giới hạn tâm 0; $\lambda>0$ thường có lệch tâm. Nếu $\lambda=\infty$ và hệ số bias khác 0, không có giới hạn chuẩn hữu hạn khi tâm hóa tại $f$. Ở $f(x)=0$ không dùng phép chuẩn hóa phương sai dương trên.
+\clearpage
+\section{Hồi quy phi tham số}
+Giả sử $(X_i,Y_i)$ độc lập cùng phân phối, $Y_i=r(X_i)+\varepsilon_i$, $\E(\varepsilon_i\mid X_i)=0$, $\Var(\varepsilon_i\mid X_i)=\sigma^2(X_i)$. Đối với thiết kế cố định, các kỳ vọng và phương sai dưới đây được hiểu có điều kiện theo $\mathbf X$. Dùng nhân không âm cho bài toán bình phương tối thiểu.
+
+\prob{4.1}{Nadaraya--Watson, design bias và boundary bias}{Giải bài toán hằng số cục bộ và giải thích hai loại bias.}
+Đặt $w_i=K((X_i-x)/h)$, $S_0=\sum_iw_i>0$. Hàm mục tiêu
+$Q(a)=\sum_iw_i(Y_i-a)^2$ có $Q'(a)=-2\sum_iw_i(Y_i-a)$, $Q''(a)=2S_0>0$. Do đó
+\[
+\widehat r_{NW}(x)=\frac{\sum_iw_iY_i}{\sum_iw_i}.
+\]
+Nếu $S_0=0$, không có nghiệm ước lượng xác định duy nhất; cần bandwidth lớn hơn hoặc bỏ điểm đánh giá đó.
+
+\textbf{Design bias tại điểm trong.} Đặt $g=f_X$, $g(x)>0$. Đối tượng làm trơn ở cấp tổng thể là
+\[
+r_h(x)=\frac{\int K(u)(rg)(x+hu)du}{\int K(u)g(x+hu)du}.
+\]
+Với $r,g\in C^2$ gần $x$, nhân đối xứng có moment hai hữu hạn,
+\[
+r_h(x)=\frac{rg+\frac12h^2\mu_2(K)(rg)''+o(h^2)}{g+\frac12h^2\mu_2(K)g''+o(h^2)}.
+\]
+Dùng $(a+\delta)/(b+\eta)=a/b+\delta/b-a\eta/b^2+o(|\delta|+|\eta|)$,
+\begin{align*}
+r_h-r&=\frac{h^2\mu_2(K)}2\left[\frac{(rg)''}{g}-\frac{r g''}{g}\right]+o(h^2)\\
+&=\frac{h^2\mu_2(K)}2\left[r''+2r'\frac{g'}g\right]+o(h^2).
+\end{align*}
+$2r'g'/g$ là design bias: vùng có mật độ thiết kế lớn hơn nhận nhiều trọng số. Đây là khai triển của tỷ số \emph{kỳ vọng tổng thể}, không phải đồng nhất thức $\E(A/B)=\E A/\E B$. Để chuyển thành bias có điều kiện của ước lượng với cùng dư $o_P(h^2)$ ở điểm trong, có thể thêm $nh^3\to\infty$ cùng các điều kiện chính quy; tại $h\asymp n^{-1/5}$ điều này được thỏa.
+
+\textbf{Ở biên trái 0.} Nếu giá thiết kế là $[0,1]$, đặt $\nu_j=\int_0^\infty u^jK(u)du$. Khi $g(0)>0$,
+\[
+r_h(0)=\frac{rg\nu_0+h(rg)'\nu_1+O(h^2)}{g\nu_0+hg'\nu_1+O(h^2)}
+=r(0)+h r'(0)\frac{\nu_1}{\nu_0}+O(h^2).
+\]
+Moment một phía không triệt tiêu, nên bias thường bậc $h$. Khác KDE mật độ không hiệu chỉnh, NW có mẫu số giúp triệt tiêu sai lệch bậc 0.
+
+\prob{4.2}{Local linear regression}{Giải hệ chuẩn và chứng minh loại bỏ design bias bậc hai, giảm bias biên xuống $O(h^2)$.}
+Đặt $t_i=X_i-x$, $S_j=\sum_iw_it_i^j$, $T_j=\sum_iw_it_i^jY_i$. Đạo hàm bài toán $\sum_iw_i(Y_i-a_0-a_1t_i)^2$ cho
+\[
+\begin{pmatrix}S_0&S_1\\S_1&S_2\end{pmatrix}
+\begin{pmatrix}\widehat a_0\\\widehat a_1\end{pmatrix}
+=\begin{pmatrix}T_0\\T_1\end{pmatrix}.
+\]
+Khi $\Delta=S_0S_2-S_1^2>0$ (có ít nhất hai giá trị thiết kế khác nhau với trọng số dương),
+\[
+\widehat r_{LL}(x)=\widehat a_0=\frac{S_2T_0-S_1T_1}{\Delta}
+=\sum_i\ell_i(x)Y_i,\quad
+\ell_i=\frac{w_i(S_2-S_1t_i)}\Delta.
+\]
+Trực tiếp cộng các trọng số:
+\[
+\sum_i\ell_i=1,\qquad\sum_i\ell_it_i=0.
+\]
+Hai đồng nhất thức đúng cả ở biên. Taylor $r(X_i)=r(x)+r'(x)t_i+\frac12r''(x)t_i^2+o(t_i^2)$ cho
+\[
+\E(\widehat r_{LL}\mid\mathbf X)-r(x)
+=\tfrac12r''(x)\sum_i\ell_it_i^2+o_P(h^2),
+\quad
+\sum_i\ell_it_i^2=\frac{S_2^2-S_1S_3}{\Delta}.
+\]
+Ở điểm trong, luật số lớn cục bộ cho $S_j/(nh^{j+1})\pto g(x)\mu_j(K)$.
+Với nhân đối xứng, $\mu_1=\mu_3=0$ và $\mu_0=1$, suy ra
+\[
+\frac{S_2^2-S_1S_3}{\Delta}=h^2\mu_2(K)+o_P(h^2).
+\]
+Bias chính chỉ còn $h^2\mu_2(K)r''/2$; không có $r'g'/g$ vì moment một của trọng số bằng 0 \emph{chính xác}.
+Ở biên, thay $\mu_j$ bằng $\nu_j=\int_0^\infty u^jK(u)du$:
+\[
+\Bias(\widehat r_{LL}(0)\mid\mathbf X)
+=\frac{h^2r''(0)}2\frac{\nu_2^2-\nu_1\nu_3}{\nu_0\nu_2-\nu_1^2}+o_P(h^2).
+\]
+Mẫu số dương với nhân một phía không suy biến. Đây là sửa bias bậc $h$ thành bậc $h^2$, không phải không chệch tuyệt đối. Trọng số $\ell_i$ có thể âm, nhất là ở biên; tính không âm của $K$ không buộc mọi trọng số local linear không âm.
+\src{Định lý 5.60, tr.77; W5.7, tr.121}
+
+\prob{4.3}{Công thức LOOCV nhanh cho hồi quy}{Chứng minh công thức residual chia $1-L_{ii}$ và nêu phạm vi áp dụng.}
+Giữ bandwidth, thiết kế và quy tắc fit cố định khi bỏ từng quan sát. Với các smoother có tính chất bỏ-một-điểm thích hợp,
+\[
+\widehat r_{(-i)}(X_i)=\frac{\widehat Y_i-L_{ii}Y_i}{1-L_{ii}},\quad L_{ii}\ne1.
+\]
+Suy ra bằng phép trừ
+\[
+Y_i-\widehat r_{(-i)}(X_i)=\frac{Y_i-\widehat Y_i}{1-L_{ii}},\quad
+CV(h)=\frac1n\sum_i\left(\frac{Y_i-\widehat Y_i}{1-L_{ii}}\right)^2.
+\]
+\textbf{Chứng minh đồng nhất thức cho local polynomial.} Tại đích $X_i$, đặt ma trận thiết kế $V$, trọng số $W$, $A=V^TWV$, $b=V^TWY$. Hàng thiết kế tại đích là $v_i=e_1$, $\widehat\beta=A^{-1}b$, $L_{ii}=w_i e_1^TA^{-1}e_1$. Bỏ quan sát $i$ thay $A$ bằng $A-w_iv_iv_i^T$, $b$ bằng $b-w_iv_iY_i$. Công thức Sherman--Morrison cho
+\[
+\widehat\beta_{(-i)}=\widehat\beta-
+\frac{A^{-1}w_iv_i(Y_i-v_i^T\widehat\beta)}{1-w_iv_i^TA^{-1}v_i}.
+\]
+Nhân $e_1^T$, thu được đồng nhất thức cần chứng minh. NW là trường hợp bậc 0. Ridge/smoothing spline với penalty cố định cũng có lập luận tương tự.
+
+\begin{caution}
+Chỉ biết $\widehat Y=LY$ chưa đủ để áp dụng công thức cho \emph{mọi} thuật toán tuyến tính: cần quy tắc fit sau khi bỏ điểm tương thích. Nếu mỗi fold chọn lại bandwidth, đổi knots hoặc đổi cách chuẩn hóa penalty theo số mẫu, phải xét lại. $L_{ii}=1$ thường báo fit nội suy hoặc leave-one-out không xác định.
+\end{caution}
+\src{Định lý 5.34; W5.2 và W5.6 trùng đề trong bản sách, tr.120--121; W5.19, tr.122}
+
+\prob{4.4}{Generalized cross-validation}{Thay các leverage bằng leverage trung bình.}
+Đặt $\nu=\tr(L)=\sum_iL_{ii}$, gọi là bậc tự do hiệu dụng. Thay $L_{ii}$ trong LOOCV bằng $\nu/n$:
+\[
+GCV(h)=\frac1n\sum_i\left(\frac{Y_i-\widehat Y_i}{1-\nu/n}\right)^2
+=\frac{n^{-1}\norm{(I-L)Y}^2}{(1-\nu/n)^2}.
+\]
+GCV xấp xỉ CV, bằng CV khi mọi $L_{ii}$ bằng nhau và công thức LOOCV hợp lệ. Không đồng nhất $\tr(L)$ với $\tr(L^TL)$; hai đại lượng chỉ bằng nhau trong các trường hợp như ma trận chiếu trực giao. Mẫu số gần 0 làm tiêu chuẩn không ổn định.
+
+\section{Ước lượng chiếu và kiểm định}
+\prob{5.1}{Hệ số chiếu không chệch; histogram là phép chiếu}{Cho cơ sở trực chuẩn trong $L_2$ theo độ đo Lebesgue, xây dựng ước lượng và nhận dạng histogram.}
+Giả sử $f\in L_2$, $a_j=\int f(x)\varphi_j(x)dx=\E\varphi_j(X)$. Khi các tích phân tồn tại,
+\[
+\widehat a_j=\frac1n\sum_i\varphi_j(X_i),\quad\E\widehat a_j=a_j,\quad
+\Var\widehat a_j=\frac1n\left[\int\varphi_j^2f-a_j^2\right].
+\]
+Với các bin rời nhau rộng $h$ trên $[0,1]$, chọn $\varphi_j=h^{-1/2}\1_{B_j}$. Khi đó
+$\int\varphi_j\varphi_k=\delta_{jk}$ và $\widehat a_j=N_j/(n\sqrt h)$. Do vậy
+\[
+\sum_{j=1}^m\widehat a_j\varphi_j(x)=\sum_j\frac{N_j}{nh}\1_{B_j}(x)=\widehat f_H(x).
+\]
+Đây là phép chiếu lên không gian hữu hạn các hàm hằng trên từng bin; không cần khẳng định riêng $m$ hàm này là cơ sở của toàn bộ $L_2[0,1]$.
+
+\prob{5.2}{So sánh KDE và ước lượng chiếu}{Giải thích tham số làm mịn, risk và cách tính.}
+Nhờ trực chuẩn và Parseval,
+\[
+\norm{\widehat f_D-f}_2^2=\sum_{j\le D}(\widehat a_j-a_j)^2+\sum_{j>D}a_j^2.
+\]
+Lấy kỳ vọng:
+\begin{result}
+\[
+\MISE(\widehat f_D)=\underbrace{\sum_{j>D}a_j^2}_{\text{sai số cắt cụt}}+
+\underbrace{\frac1n\sum_{j\le D}\left(\int\varphi_j^2f-a_j^2\right)}_{\text{variance}}.
+\]
+\end{result}
+Không cần các $\widehat a_j$ độc lập: số hạng chéo mất nhờ trực chuẩn theo $x$.
+Nếu $\sum_jj^{2\beta}a_j^2\le C$ và $f\le M$, thì
+\[
+\sum_{j>D}a_j^2\le C(D+1)^{-2\beta},\qquad
+\sum_{j\le D}\Var\widehat a_j\le MD/n.
+\]
+Cân bằng $D^{-2\beta}$ và $D/n$ cho $D_*\asymp n^{1/(2\beta+1)}$, risk $O(n^{-2\beta/(2\beta+1)})$. Với $\beta=2$, cùng tốc độ $n^{-4/5}$ như KDE bậc hai.
+\begin{center}\begin{tabular}{>{\raggedright\arraybackslash}p{3cm}>{\raggedright\arraybackslash}p{5.4cm}>{\raggedright\arraybackslash}p{5.4cm}}
+\toprule & KDE & Phép chiếu\\\midrule
+Làm trơn hơn & tăng $h$ & giảm $D$\\
+Ít bias, nhiều variance & giảm $h$ & tăng $D$\\
+Cách tính & cộng $n$ nhân tại mỗi điểm & tính $D$ hệ số, cộng $D$ hàm cơ sở\\
+Mật độ hợp lệ & có nếu $K\ge0$, $\int K=1$ & có thể âm; cần kiểm tra chuẩn hóa\\
+Kiểu xấp xỉ & cục bộ, dùng lân cận & phụ thuộc cơ sở, thường toàn cục\\\bottomrule
+\end{tabular}\end{center}
+Nếu cơ sở chứa $\varphi_1\equiv1$ trên $[0,1]$ và giữ hệ số này, tích phân bằng 1, nhưng chưa chắc không âm. Có thể lấy phần dương rồi chuẩn hóa; khi đó phải phân tích lại risk của ước lượng đã sửa.
+\src{Mục 8.4--8.5, tr.192--193}
+
+\prob{5.3}{KS, Cramér--von Mises và Anderson--Darling}{So sánh thống kê, cách dùng và power.}
+Xét $H_0:F=F_0$, với $F_0$ liên tục và biết hoàn toàn. Ba thống kê là
+\begin{align*}
+T_{KS}&=\sqrt n\sup_x|\Fh(x)-F_0(x)|,\\
+T_{CvM}&=n\int(\Fh-F_0)^2\,dF_0,\\
+T_{AD}&=n\int\frac{(\Fh-F_0)^2}{F_0(1-F_0)}\,dF_0.
+\end{align*}
+Dưới $H_0$, $U_i=F_0(X_i)\sim U(0,1)$. Các thống kê chỉ phụ thuộc EDF của $U_i$, nên phân phối không phụ thuộc $F_0$. Sắp thứ tự $U_{(i)}$; công thức tính đã ghi ở trang tra nhanh 4. KS lấy cực đại ở hai phía của mỗi bước nhảy. CvM và AD thu được bằng tích phân trên từng khoảng giữa hai quan sát liên tiếp.
+
+Với quá trình cầu Brown $B(t)$, định lý giới hạn quá trình thực nghiệm cho các giới hạn quen thuộc
+\[
+T_{KS}\dto\sup_{0\le t\le1}|B(t)|,\quad
+T_{CvM}\dto\int_0^1B(t)^2dt,\quad
+T_{AD}\dto\int_0^1\frac{B(t)^2}{t(1-t)}dt.
+\]
+Bác bỏ khi thống kê lớn hơn phân vị mức $1-\alpha$ tương ứng. Một cách kiểm định KS bảo thủ hữu hạn mẫu từ DKW là bác bỏ khi
+$T_{KS}>\sqrt{\log(2/\alpha)/2}$.
+
+\textbf{Power.} KS phản ánh sai lệch cực đại; CvM cộng sai lệch trên toàn miền nên có thể mạnh hơn trước sai khác phân tán. AD tăng trọng số gần 0 và 1, thường hữu ích khi quan tâm đuôi như xác suất giá trị cực đoan. Không có thứ tự power phổ quát: phải chỉ rõ đối thuyết, cỡ mẫu và cách hiệu chuẩn. Nếu $F_0$ chứa tham số ước lượng bằng mẫu, các phân vị distribution-free chuẩn không còn dùng nguyên trạng; cần phân phối hiệu chỉnh hoặc bootstrap có ước lượng lại tham số. Nếu $F_0$ rời rạc, cũng phải hiệu chuẩn phù hợp.
+
+\textit{Nguồn của mục này: Bài 5.3 trong danh sách ôn tập; đây không phải một bài KS/CvM/AD được đánh số trong sách Wasserman đang dùng. Mục 10.9 của sách nói về lý thuyết kiểm định khác, không phải ba phép kiểm định EDF này.}
+
+\clearpage
+\section{Bản đồ bài tập Wasserman và phạm vi rà soát}
+\label{sec:map}
+Ký hiệu \textbf{W$c$.$k$} nghĩa là bài $k$ trong mục Exercises của chương $c$; không phải số định lý. Dùng số trang in trong sách để tránh nhầm với số trang trình đọc PDF. Các câu \textbf{T1--T6} ở phần sau là câu hỏi lý thuyết biên soạn, không phải bài tập được đánh số trong sách.
+
+Đã rà mục bài tập của cả 10 chương và tìm các nội dung EDF, functional, histogram, kernel, local regression, cross-validation, projection. Tiêu chí chọn: phục vụ trực tiếp một trong 5 phần của danh sách hoặc là kiến thức nền cần cho lời giải. Có bổ sung các bài CI của chương 1, IF skewness và phần plug-in/Delta của chương 3, cùng W7.3 để sửa và giải W8.5--6. Các bài chuyên biệt về bootstrap/jackknife, minimax nâng cao, wavelet và sai số đo được để ngoài phạm vi đã chốt. Các bài W8.5--6 và W8.12 chỉ cần đọc sau phần chính.
+
+\begingroup\small
+\begin{longtable}{>{\raggedright\arraybackslash}p{2.15cm}>{\raggedright\arraybackslash}p{2.05cm}>{\raggedright\arraybackslash}p{7.4cm}>{\raggedright\arraybackslash}p{2.3cm}}
+\toprule Bài sách & Tr. sách / PDF & Nội dung và cách xử lý & Lời giải ở đây\\\midrule\endhead
+W1.1--1.5 & 10--11 / 23--24 & CI Wald, Hoeffding, chuẩn và trung bình & \pageref{s:W1.1--2}--\pageref{s:W1.5}\\
+W2.1 & 24 / 36 & Functional tuyến tính và hàm ảnh hưởng & \pageref{s:W2.1}\\
+W2.2 & 24 / 36 & EDF; dùng DKW làm định lý nền, suy ra GC & Bài 1.1--1.4\\
+W2.3 & 24 / 36 & Mô phỏng độ phủ DKW & \pageref{s:W2.3}\\
+W2.4--2.5 & 24 / 36 & Delta method căn EDF; functional Lipschitz & \pageref{s:W2.4}, \pageref{s:W2.5}\\
+W2.6 & 24 / 36 & Hiệp phương sai EDF & Bài 1.3\\
+W2.7--2.10 & 24--25 / 36--37 & Bernoulli; xác suất khoảng; IF tương quan, phân vị & \pageref{s:W2.7}--\pageref{s:W2.10}\\
+W2.11--2.13 & 25 / 37 & Fiji, geyser, cloud seeding: hướng giải & \pageref{s:W2.11--13}\\
+W2.15 & 25 / 37 & Histogram MLE và giới hạn EDF & \pageref{s:W2.15}\\
+W3.1 & 39 / 50 & Hàm ảnh hưởng skewness & \pageref{s:W3.1}\\
+W3.2, W3.12 & 39, 41 / 50, 52 & Phần plug-in/Delta; hướng giải bootstrap hiệu tỷ lệ & \pageref{s:W3.2, W3.12}\\
+W4.1--4.4 & 59 / 69 & MLE mật độ, phân rã risk, risk chuẩn, KL & \pageref{s:W4.1}--\pageref{s:W4.4}\\
+W5.1 & 120 / 130 & Regressogram và bậc tự do & \pageref{s:W5.1}\\
+W5.2, W5.6 & 120--121 / 130--131 & Cùng yêu cầu chứng minh Định lý 5.34 & Bài 4.3\\
+W5.5, W5.8 & 121 / 131 & Ước lượng variance của nhiễu & \pageref{s:W5.5}, \pageref{s:W5.8}\\
+W5.7 & 121 / 131 & Trọng số local linear, Định lý 5.60 & Bài 4.2\\
+W5.16--5.17 & 122 / 132 & Tái tạo đa thức; bias lớp Lipschitz & \pageref{s:W5.16}, \pageref{s:W5.17}\\
+W5.19 & 122 / 132 & Dạng trọng số, công thức bỏ một điểm & \pageref{s:W5.19}, Bài 4.3\\
+W5.20--5.21 & 122 / 132 & Độ dài đường trọng số; CI đạo hàm & \pageref{s:W5.20}, \pageref{s:W5.21}\\
+W5.3--4, 9, 12, 14 & 120--121 / 130--131 & Bài dữ liệu liên quan NW/local linear/CV & \pageref{s:W5-data}\\
+W6.1 & 142 / 151 & Nhất quán KDE, Định lý 6.27 & Bài 3.9\\
+W6.2 & 142--143 / 151--152 & Boxcar, kỳ vọng, variance, nhất quán & \pageref{s:W6.2}\\
+W6.3 & 143 / 152 & Tính không chệch density CV & \pageref{s:W6.3}, Bài 3.8\\
+W6.4 & 143 / 152 & Công thức 6.35; dùng dạng chính xác & Bài 3.8\\
+W6.5--6.7 & 143 / 152 & CEO, glass, độ nhạy bandwidth & \pageref{s:W6.5--7}\\
+W6.8 & 143 / 152 & Local likelihood bậc 0 bằng KDE & \pageref{s:W6.8}\\
+W6.9--6.10 & 143--144 / 152--153 & Local density, Bart Simpson: hướng giải & \pageref{s:W6.9}, \pageref{s:W6.10}\\
+W7.3 & 181 / 190 & Variance tần số cao, dùng giải W8.5--6 & \pageref{s:W8.5--6}\\
+W8.1--8.2 & 194 / 203 & Tail Sobolev và risk phép co hệ số & \pageref{s:W8.1}, \pageref{s:W8.2}\\
+W8.3--8.6 & 194 / 203 & Hoàn bình phương, variance và hiệu chỉnh lỗi & \pageref{s:W8.3}--\pageref{s:W8.5--6}\\
+W8.7--8.11 & 194--195 / 203--204 & So sánh local linear/KDE với phép chiếu & \pageref{s:W8-data}\\
+W8.12 & 195 / 204 & Chọn hệ số co và rủi ro quá khớp & \pageref{s:W8.12}\\\bottomrule
+\end{longtable}
+\endgroup
+Không chọn W2.14 (VC dimension), W5.10--11,13 (bài riêng về spline), W5.15 (penalty), W5.18 (quantile regression), W5.22--24 (hồi quy nhiều biến/kiểm định bỏ biến), W8.13--14 (tensor product nhiều biến). W5.3 có phần spline: chỉ nêu nó như đối chứng trong hướng giải, không phát triển thành chương riêng.
+
+\section{Bổ sung từ chương 2: EDF và functionals}
+\supp{W2.1}{Hàm ảnh hưởng của functional tuyến tính}{Chứng minh các kết luận của Định lý 2.22 (tr.18).}
+Đặt $T(F)=\int a\,dF$ và $F_\epsilon=(1-\epsilon)F+\epsilon\delta_x$. Khi đó
+$T(F_\epsilon)=(1-\epsilon)T(F)+\epsilon a(x)$, nên
+\[
+L_F(x)=\left.\frac d{d\epsilon}T(F_\epsilon)\right|_{0}=a(x)-T(F).
+\]
+Suy ra $\int L_F\,dF=0$ và, với $G$ bất kỳ,
+$T(F)+\int L_F\,dG=T(F)+T(G)-T(F)=T(G)$.
+Nếu $\tau^2=\Var(a(X))<\infty$, CLT cho
+$\sqrt n\{T(\Fh)-T(F)\}\dto N(0,\tau^2)$.
+Hàm ảnh hưởng thực nghiệm là $\widehat L(x)=a(x)-\overline a$, $\overline a=n^{-1}\sum_i a(X_i)$, do đó
+\[
+\widehat\tau^2=n^{-1}\sum_i(a(X_i)-\overline a)^2\pto\tau^2,
+\quad\widehat{\se}=\widehat\tau/\sqrt n.
+\]
+Luật số lớn áp dụng cho $a$ và $a^2$ chứng minh tính nhất quán; nếu $\tau>0$ thì $\widehat{\se}/\se\pto1$. CI xấp xỉ là $\overline a\pm z_{1-\alpha/2}\widehat\tau/\sqrt n$.
+
+\supp{W2.3}{Thí nghiệm độ phủ DKW}{Nêu quy trình cho $n=100$, 1.000 lần lặp, phân phối chuẩn rồi Cauchy.}
+Mỗi lần sinh mẫu, tính $D_n=\sup|\Fh-F|$ bằng công thức KS theo các $F(X_{(i)})$, rồi ghi $I_b=\1_{D_n\le\sqrt{\log40/200}}$. Tỷ lệ độ phủ thực nghiệm là $\widehat c=1000^{-1}\sum_bI_b$; sai số Monte Carlo ước tính $\sqrt{\widehat c(1-\widehat c)/1000}$.
+Theo DKW, độ phủ thật ít nhất .95 với cả hai phân phối. Hơn nữa vì hai CDF đều liên tục, phân phối $D_n$ giống nhau dưới biến đổi PIT. Cauchy không có trung bình hữu hạn nhưng điều này không ảnh hưởng DKW. Không kiểm tra chỉ trên lưới thưa rồi gọi đó là độ phủ trên toàn trục. Không có kết quả mô phỏng số được khẳng định ở đây.
+
+\supp{W2.4}{Delta method cho căn EDF}{Tìm phân phối giới hạn của $\sqrt{\Fh(x)}$, có tâm hóa và chuẩn hóa thích hợp.}
+Đặt $p=F(x)$. Hội tụ chưa chuẩn hóa là $\sqrt{\Fh(x)}\pto\sqrt p$, tức phân phối suy biến tại $\sqrt p$. Khi $0<p<1$, áp dụng Delta với $g(t)=\sqrt t$, $g'(p)=1/(2\sqrt p)$:
+\[
+\sqrt n\{\sqrt{\Fh(x)}-\sqrt p\}\dto N(0,(1-p)/4).
+\]
+CI cho $\sqrt p$ là $\sqrt{\Fh(x)}\pm z_{1-\alpha/2}\sqrt{(1-\Fh(x))/(4n)}$, cắt về $[0,1]$ nếu cần. Nếu muốn CI cho $p$, bình phương hai đầu mút sau khi cắt vì phép bình phương đơn điệu trên $[0,1]$. Khi $p=0$ hoặc 1, $\Fh=p$ hầu chắc chắn; không dùng đạo hàm vô hạn tại 0 để kết luận một giới hạn chuẩn sai.
+
+\supp{W2.5}{Functional Lipschitz và tính nhất quán}{Nếu $|T(F)-T(G)|\le C\norm{F-G}_\infty$, chứng minh nhất quán mạnh; xét trung bình với $|X|\le M$.}
+Bởi Glivenko--Cantelli,
+$|T(\Fh)-T(F)|\le C\norm{\Fh-F}_\infty\asto0$.
+Với $F,G$ có giá trong $[-M,M]$, công thức tích phân từng phần cho
+\[
+\int x\,dF(x)=M-\int_{-M}^{M}F(t)dt,
+\quad
+\left|\int x\,dF-\int x\,dG\right|\le2M\norm{F-G}_\infty.
+\]
+Vậy lấy $C=2M$. Không có chặn Lipschitz này với hằng số chung cho mọi phân phối trên trục thực: một khối lượng rất nhỏ ở rất xa có thể làm trung bình đổi lớn.
+
+\supp{W2.7}{Plug-in Bernoulli và hiệu hai tỷ lệ}{Lập SE và CI 90\% cho $p$, rồi $p-q$ từ hai mẫu độc lập cỡ $n,m$.}
+$\widehat p=\bar X$, $\widehat q=\bar Y$,
+\[
+\widehat{\se}(\widehat p)=\sqrt{\widehat p(1-\widehat p)/n},\qquad
+\widehat{\se}(\widehat p-\widehat q)=\sqrt{\frac{\widehat p(1-\widehat p)}n+\frac{\widehat q(1-\widehat q)}m}.
+\]
+CI 90\% tương ứng là $\widehat p\pm1.64485\,\widehat{\se}(\widehat p)$ và
+$(\widehat p-\widehat q)\pm1.64485\,\widehat{\se}(\widehat p-\widehat q)$.
+Phương sai cộng được nhờ hai mẫu độc lập. Đây là Wald, cần cỡ mẫu đủ lớn và xác suất không sát biên; cắt về miền tham số chỉ để tôn trọng miền, không sửa mọi vấn đề độ phủ.
+
+\supp{W2.8}{Xác suất của một khoảng}{Cho $\theta=F(b)-F(a)=\Pp(a<X\le b)$, tìm IF, SE và CI.}
+Với $a(x)=\1_{a<x\le b}$, W2.1 cho $L_F(x)=\1_{a<x\le b}-\theta$. Đặt
+$\widehat\theta=n^{-1}\sum_i\1_{a<X_i\le b}$. Khi đó
+\[
+\Var\widehat\theta=\theta(1-\theta)/n,\quad
+\widehat{\se}=\sqrt{\widehat\theta(1-\widehat\theta)/n},\quad
+CI:\ \widehat\theta\pm z_{1-\alpha/2}\widehat{\se}.
+\]
+Đừng cộng hai phương sai EDF mà bỏ covariance. Cách khác dùng băng DKW: $|\widehat\theta-\theta|\le2\varepsilon$ đồng thời với các khoảng, rồi cắt về $[0,1]$; cách này bảo thủ hơn.
+
+\supp{W2.9}{Hàm ảnh hưởng của tương quan}{Xác minh công thức trong Ví dụ 2.34, tr.20--21.}
+Đặt $c=\Cov(X,Y)$, $v_X=\sigma_X^2$, $v_Y=\sigma_Y^2$, $\rho=c/(\sigma_X\sigma_Y)$. Dưới nhiễm tại $(x,y)$,
+\[
+L_c=(x-\mu_X)(y-\mu_Y)-c,\quad
+L_{v_X}=(x-\mu_X)^2-v_X,\quad L_{v_Y}=(y-\mu_Y)^2-v_Y.
+\]
+Quy tắc dây chuyền cho
+\[
+L_\rho=\frac{L_c}{\sigma_X\sigma_Y}-\frac\rho2\left(\frac{L_{v_X}}{v_X}+\frac{L_{v_Y}}{v_Y}\right)
+=uv-\frac\rho2(u^2+v^2),
+\]
+trong đó $u=(x-\mu_X)/\sigma_X$, $v=(y-\mu_Y)/\sigma_Y$. Các hằng số $-\rho+\rho/2+\rho/2$ triệt tiêu. Thay các tham số bằng plug-in cho $\widehat L_i$, SE xấp xỉ $\sqrt{n^{-2}\sum_i\widehat L_i^2}$. Cần phương sai dương và moment đủ (chẳng hạn moment bậc bốn hữu hạn) cho CLT của functional.
+
+\supp{W2.10}{Hàm ảnh hưởng của phân vị}{Tìm IF của $q_p=F^{-1}(p)$ khi $f(q_p)>0$.}
+Giả sử $f$ liên tục, dương gần $q=q_p$. Với $x\ne q$, nhiễm $F_\epsilon=(1-\epsilon)F+\epsilon\delta_x$ và $q_\epsilon=T(F_\epsilon)$ cho ở bậc một
+\[
+0=\left.\frac d{d\epsilon}F_\epsilon(q_\epsilon)\right|_0
+=-p+f(q)q'_0+\1_{x\le q}.
+\]
+Vậy $L_F(x)=(p-\1_{x\le q})/f(q)$. Giá trị tại $x=q$ không ảnh hưởng các tích phân khi $F$ liên tục. Từ $\Var(\1_{X\le q})=p(1-p)$,
+\[
+\sqrt n(\widehat q_p-q_p)\dto N\left(0,\frac{p(1-p)}{f(q_p)^2}\right),\qquad
+\widehat{\se}(\widehat q_p)=\frac{\sqrt{p(1-p)}}{\sqrt n\,\widehat f(\widehat q_p)}.
+\]
+Có thể dùng KDE nhất quán tại phân vị để ước lượng mẫu số; mật độ nhỏ làm SE lớn. Tại median, $\se\simeq1/(2\sqrt n f(q_{.5}))$.
+
+\supp{W2.11--13}{Ba bài dữ liệu về EDF, trung bình và median}{Đưa quy trình cho Fiji earthquakes, Old Faithful và cloud seeding.}
+\textbf{W2.11 (Fiji).} Từ magnitude, vẽ EDF và băng DKW 95\%. Đếm $k=\#\{4.3<X_i\le4.9\}$; $\widehat\theta=k/n$, CI xấp xỉ $\widehat\theta\pm1.96\sqrt{\widehat\theta(1-\widehat\theta)/n}$ theo W2.8.
+
+\textbf{W2.12 (Old Faithful).} Với waiting time, báo $\bar X$, $S/\sqrt n$ và CI 90\% $\bar X\pm1.64485S/\sqrt n$. Median dùng nghịch đảo EDF như Bài 1.7. Nếu được yêu cầu SE median thì dùng W2.10, không dùng SE trung bình.
+
+\textbf{W2.13 (cloud seeding).} Hai nhóm độc lập có $n_1=n_2=26$, ước lượng $\widehat\theta=\widehat q_1-\widehat q_2$. Dùng KDE riêng mỗi nhóm tại median:
+\[
+\widehat{\se}(\widehat\theta)=\sqrt{\frac1{4n_1\widehat f_1(\widehat q_1)^2}+\frac1{4n_2\widehat f_2(\widehat q_2)^2}},\quad
+CI_{.95}=\widehat\theta\pm1.96\widehat{\se}.
+\]
+Cỡ mẫu nhỏ và ước lượng mật độ tại median làm xấp xỉ nhạy; cần báo cách chọn bandwidth. Không suy diễn tác động từ chênh lệch thô mà quên thiết kế thử nghiệm. Đây là hướng giải, chưa tải và tính các dữ liệu.
+
+\supp{W2.15}{MLE histogram tiến về EDF}{Chia $[0,1]$ thành bin rộng $\Delta$; tìm MLE trên lớp mật độ hằng trong bin và mô tả giới hạn CDF.}
+Gọi xác suất bin là $p_j$, $\sum p_j=1$. Bỏ hằng số, log-likelihood là $\sum_jN_j\log p_j$. Lagrange cho $N_j/p_j=\lambda$, nên $\widehat p_j=N_j/n$ (bin rỗng nhận 0). MLE mật độ là histogram $\widehat f_\Delta=N_j/(n\Delta)$.
+
+CDF $\widehat F_\Delta(x)$ khớp EDF ở các mép bin, và nội suy tuyến tính trong bin. Với mẫu cố định, mỗi khối lượng quan sát được trải trên bin có đường kính $\Delta\to0$; vì vậy các độ đo hội tụ yếu đến $\widehat P_n$. Cụ thể, với hàm liên tục bị chặn $g$, tính liên tục đều trên $[0,1]$ cho
+\[
+\left|\int g\widehat f_\Delta-\frac1n\sum_i g(X_i)\right|
+\le\sup_{|s-t|\le\Delta}|g(s)-g(t)|\to0.
+\]
+Suy ra $\widehat F_\Delta(x)\to\Fh(x)$ tại các điểm liên tục của EDF. Không khẳng định hội tụ đều đến một CDF có bước nhảy, hoặc hội tụ tại mọi điểm nhảy với lưới tùy ý: phần khối lượng bên trái $X_i$ trong bin có thể không tiến đến 1.
+\section{Bổ sung từ chương 4: risk và làm trơn}
+\supp{W4.1}{Vì sao MLE mật độ không ràng buộc là bài toán không tốt?}{Xét likelihood $\prod_i f(X_i)$ trên lớp tất cả mật độ.}
+Chọn mật độ $K\ge0$ với $K(0)>0$ và đặt $f_\epsilon(x)=(n\epsilon)^{-1}\sum_iK((x-X_i)/\epsilon)$. Đây là mật độ hợp lệ và
+$f_\epsilon(X_i)\ge K(0)/(n\epsilon)$, nên
+\[
+L_n(f_\epsilon)=\prod_i f_\epsilon(X_i)\ge\{K(0)/(n\epsilon)\}^n\longrightarrow\infty.
+\]
+Không có MLE hữu hạn, có ý nghĩa trên lớp mật độ không ràng buộc; có thể dựng các đỉnh nhọn tùy ý tại dữ liệu. Hơn nữa, giá trị mật độ tại một tập hữu hạn có độ đo 0 không được xác định duy nhất bởi phân phối. Cần điều kiện độ trơn, giới hạn lớp mô hình hoặc penalty. Điều này không mâu thuẫn MLE xác suất bin trong W2.15, nơi lớp bị ràng buộc.
+
+\supp{W4.2}{Phân rã risk}{Chứng minh công thức 4.10.}
+Viết $\widehat\theta-\theta=(\widehat\theta-\E\widehat\theta)+(\E\widehat\theta-\theta)$. Bình phương rồi lấy kỳ vọng; số hạng chéo bằng 0 vì $\E(\widehat\theta-\E\widehat\theta)=0$. Vậy
+\[
+\E(\widehat\theta-\theta)^2=\Var(\widehat\theta)+(\E\widehat\theta-\theta)^2.
+\]
+Áp dụng tại mỗi $x$, tích phân hai vế; Tonelli cho $\E\int(\fh-f)^2=\int\E(\fh-f)^2$ vì hàm không âm. Khi hữu hạn, được MISE bằng integrated squared bias cộng integrated variance. Đây là nền của cả Bài 2.4 và 3.4.
+
+\supp{W4.3}{Risk chính xác của mật độ chuẩn plug-in}{$X_i\sim N(\theta,1)$, $\widehat f(x)=\phi(x-\bar X)$; tính integrated squared risk.}
+Đặt $\delta=\bar X-\theta\sim N(0,1/n)$. Hai mật độ đều có bình phương tích phân $1/(2\sqrt\pi)$, còn tích phân tích là
+\[
+\int\phi(x-a)\phi(x-b)dx=\frac1{2\sqrt\pi}e^{-(a-b)^2/4}.
+\]
+Do đó ISE $=(1/\sqrt\pi)(1-e^{-\delta^2/4})$. Với $Z\sim N(0,v)$, tích phân Gaussian cho $\E e^{-tZ^2}=(1+2tv)^{-1/2}$. Thay $t=1/4$, $v=1/n$:
+\[
+\MISE=\frac1{\sqrt\pi}\left[1-\left(1+\frac1{2n}\right)^{-1/2}\right]
+=\frac1{4\sqrt\pi\,n}+O(n^{-2}).
+\]
+Tốc độ $n^{-1}$ không trái với tốc độ phi tham số $n^{-4/5}$: ở đây đã biết mật độ thuộc họ chuẩn với phương sai 1, chỉ ước lượng một tham số.
+
+\supp{W4.4}{KL và Fisher information}{Chứng minh $D(f_\theta,f_\psi)=\frac12I(\theta)(\psi-\theta)^2+o((\psi-\theta)^2)$ trong mô hình chính quy.}
+Gọi $\ell_\psi(x)=\log f_\psi(x)$. Khai triển quanh $\theta$ và lấy kỳ vọng dưới $f_\theta$:
+\[
+D(f_\theta,f_\psi)=-\E_\theta[\ell_\psi(X)-\ell_\theta(X)]
+=-(\psi-\theta)\E_\theta\ell'_\theta-\tfrac12(\psi-\theta)^2\E_\theta\ell''_\theta+o((\psi-\theta)^2).
+\]
+Với giá chung và đủ điều kiện đổi đạo hàm--tích phân, $\E_\theta\ell'_\theta=0$ và
+$-\E_\theta\ell''_\theta=I(\theta)$. Kết quả theo ngay. Đây là liên hệ cục bộ giữa KL và sai số \emph{tham số} bình phương, không phải đồng nhất thức với $\int(f_\psi-f_\theta)^2$.
+
+\section{Bổ sung từ chương 5: local regression và variance}
+\supp{W5.1}{Ma trận regressogram}{Lập ma trận làm trơn và chứng minh $\tr(L)=m$.}
+Sắp quan sát theo bin, bin $j$ có $k_j>0$ điểm. Khối ma trận trong bin là
+$L_j=\1_{k_j}\1_{k_j}^T/k_j$; các khối chéo khác bằng 0. Vì $L_j^2=L_j$,
+$\tr L_j=k_j/k_j=1$, nên $\tr L=\sum_{j=1}^m1=m$. Nếu có bin rỗng, bậc tự do tính trên dữ liệu là số bin \emph{không rỗng}; dự báo trong bin rỗng cần một quy tắc khác.
+
+\supp{W5.5}{Ước lượng variance bằng sai phân liên tiếp}{Chứng minh tính nhất quán của $\widehat\sigma_R^2=\{2(n-1)\}^{-1}\sum_{i=1}^{n-1}(Y_{i+1}-Y_i)^2$.}
+Giả sử $x_i$ được sắp tăng trong đoạn hữu hạn, $\max_i(x_{i+1}-x_i)\to0$, $r$ liên tục đều; nhiễu i.i.d., trung bình 0, variance $\sigma^2$, moment bậc bốn hữu hạn. Đặt $d_i=r(x_{i+1})-r(x_i)$ và $e_i=\varepsilon_{i+1}-\varepsilon_i$.
+\[
+\widehat\sigma_R^2=\frac1{2(n-1)}\sum_i d_i^2+
+\frac1{n-1}\sum_id_ie_i+\frac1{2(n-1)}\sum_ie_i^2.
+\]
+Số hạng đầu không quá $\max d_i^2/2\to0$. Với số hạng cuối, $\E e_i^2=2\sigma^2$; $e_i^2$ và $e_j^2$ độc lập khi $|i-j|>1$, nên variance của trung bình là $O(1/n)$. Suy ra số hạng cuối $\pto\sigma^2$. Cauchy--Schwarz chặn trị tuyệt đối số hạng giữa bởi
+\[
+\left(\frac1{n-1}\sum d_i^2\right)^{1/2}
+\left(\frac1{n-1}\sum e_i^2\right)^{1/2}\pto0.
+\]
+Vậy $\widehat\sigma_R^2\pto\sigma^2$. Kỳ vọng chính xác là
+$\sigma^2+\sum d_i^2/[2(n-1)]$, cho thấy bias không âm.
+
+\supp{W5.8}{Ước lượng variance qua residual của smoother}{Cho điều kiện đủ để công thức 5.86 nhất quán.}
+Đặt $A=(I-L)^T(I-L)$, $d=\tr A=n-2\tr L+\tr(L^TL)$ và
+$\widehat\sigma^2=Y^TAY/d$. Với thiết kế cố định và nhiễu Gaussian $N(0,\sigma^2I)$:
+\[
+\E\widehat\sigma^2=\sigma^2+\frac{r^TAr}{d},\quad
+\Var(\widehat\sigma^2)=\frac{2\sigma^4\tr(A^2)+4\sigma^2r^TA^2r}{d^2}.
+\]
+Các điều kiện đủ cụ thể:
+$d\asymp n$, $\norm A_{\mathrm{op}}=O(1)$, $r^TAr=o(n)$.
+Khi đó $\tr(A^2)\le\norm A_{\mathrm{op}}\tr A=O(n)$ và
+$r^TA^2r\le\norm A_{\mathrm{op}}r^TAr=o(n)$; bias và variance đều tiến 0. Ví dụ, $\tr L,\tr(L^TL)=o(n)$ bảo đảm $d\sim n$, và $n^{-1}\norm{(I-L)r}^2\to0$ là điều kiện bias. Không thể chỉ nói ``$r$ trơn'' mà không kiểm soát bandwidth và độ ổn định của $L$.
+
+\supp{W5.16}{Local polynomial tái tạo đa thức}{Chứng minh smoother bậc $p$ khớp chính xác một đa thức bậc không quá $p$ khi không có nhiễu.}
+Với $v_i=(1,t_i,\ldots,t_i^p)^T$, đặt $V$ có hàng $v_i^T$. Nếu $r$ là đa thức bậc $\le p$, tồn tại $\beta$ sao cho $Y=V\beta$. Khi $V^TWV$ khả nghịch,
+\[
+\widehat\beta=(V^TWV)^{-1}V^TWY=(V^TWV)^{-1}V^TWV\beta=\beta.
+\]
+Do đó $\widehat r(x)=e_1^T\widehat\beta=r(x)$, kể cả ở biên. Tương đương trọng số thỏa
+$\sum_i\ell_i=1$, $\sum_i\ell_i(X_i-x)^k=0$ với $1\le k\le p$.
+Với nhiễu có kỳ vọng 0, đây là tính không chệch có điều kiện trên lớp đa thức đó.
+
+\supp{W5.17}{Bias lớn nhất trên lớp Lipschitz}{Giả sử $|r(u)-r(v)|\le L|u-v|$; tìm bias của kernel regression với trọng số không âm chuẩn hóa.}
+Với $\ell_i(x)\ge0$, $\sum_i\ell_i=1$,
+\[
+|\E(\rh(x)\mid\mathbf X)-r(x)|
+=\left|\sum_i\ell_i[r(X_i)-r(x)]\right|
+\le L\sum_i\ell_i|X_i-x|.
+\]
+Chặn này đạt được bởi $r(u)=L|u-x|$ (hoặc âm của nó), nên là supremum chính xác tại đích $x$ trên lớp Lipschitz. Nếu $K$ có giá $[-1,1]$, nó không quá $Lh$. Nếu nhân không có giá hữu hạn thì dùng tổng moment khoảng cách; không tự khẳng định $Lh$. Với trọng số có dấu, một chặn an toàn là $L\sum_i|\ell_i||X_i-x|$ nhưng không nhất thiết đạt được.
+
+\supp{W5.19}{Trọng số là nhân nhân đa thức}{Dẫn ra dạng trọng số local polynomial và tính chất bỏ một điểm.}
+Đặt $A=\sum_iw_iv_iv_i^T$. Ước lượng tại $x$ là
+$e_1^TA^{-1}\sum_iw_iv_iY_i$, nên
+\[
+\ell_i(x)=w_i e_1^TA^{-1}v_i
+=K((X_i-x)/h)\sum_{k=0}^p c_k(x)(X_i-x)^k.
+\]
+Đó là nhân nhân một đa thức bậc $\le p$; các hệ số phụ thuộc đích và toàn bộ thiết kế. Khi đích chính là quan sát bị bỏ $X_i$, Sherman--Morrison trong Bài 4.3 cho trọng số trên các $j\ne i$ bằng $L_{ij}/(1-L_{ii})$, dẫn tới LOOCV nhanh. Không cần giả định trọng số local linear luôn dương.
+
+\supp{W5.20}{Hằng số độ dài đường trọng số}{Với thiết kế đều và bỏ qua biên, chứng minh $\kappa_0\simeq(b-a)\norm{K'}_2/(h\norm K_2)$.}
+Đặt $\ell_i(x)=K((x-x_i)/h)$, $T(x)=\ell(x)/\norm{\ell(x)}_2$ và
+$\kappa_0=\int_a^b\norm{T'(x)}_2dx$. Gọi $q$ là số điểm trên một đơn vị chiều dài. Xấp xỉ tổng Riemann:
+\[
+\norm\ell^2\simeq qh R(K),\quad
+\norm{\ell'}^2\simeq\frac qhR(K'),\quad
+\langle\ell,\ell'\rangle\simeq q\int KK'=0.
+\]
+Đẳng thức cuối cần $K$ đủ trơn và triệt tiêu ở hai đầu hoặc vô cực. Từ đạo hàm của vector chuẩn hóa,
+\[
+\norm{T'}^2=\frac{\norm{\ell'}^2}{\norm\ell^2}-\frac{\langle\ell,\ell'\rangle^2}{\norm\ell^4}
+\simeq\frac{R(K')}{h^2R(K)}.
+\]
+Tích phân theo $x$ cho kết quả. Nhân boxcar không khả vi cổ điển ở mép nên không dùng trực tiếp công thức này.
+
+\supp{W5.21}{Băng tin cậy cho đạo hàm hồi quy}{Dùng tính tuyến tính của ước lượng $\widehat r^{(k)}$.}
+Với cơ sở Taylor $v_i=(1,t_i,t_i^2/2!,\ldots,t_i^p/p!)$, đặt
+\[
+a_i^{(k)}(x)=e_{k+1}^T(V^TWV)^{-1}v_iw_i,\quad
+\widehat r^{(k)}(x)=\sum_i a_i^{(k)}(x)Y_i.
+\]
+Khi nhiễu độc lập homoskedastic, $\Var(\widehat r^{(k)}\mid\mathbf X)=\sigma^2\sum_i(a_i^{(k)})^2$. Trên lưới $M$ điểm cố định, Bonferroni cho băng Gaussian mức ít nhất $1-\alpha$ (với $\sigma$ biết):
+\[
+\widehat r^{(k)}(x_j)\pm z_{1-\alpha/(2M)}\sigma\norm{a^{(k)}(x_j)}_2.
+\]
+Băng này cho kỳ vọng có điều kiện của ước lượng tại các điểm lưới. Thay $\sigma$ bằng ước lượng nhất quán cho xấp xỉ tiệm cận. Để có băng liên tục trên $[a,b]$, đặt
+$T_k(x)=a^{(k)}(x)/\norm{a^{(k)}(x)}_2$, $\kappa_k=\int_a^b\norm{T'_k(x)}_2dx$; chọn $c$ theo xấp xỉ tube của sách:
+\[
+2\{1-\Phi(c)\}+\frac{\kappa_k}{\pi}e^{-c^2/2}=\alpha.
+\]
+Dùng $c$ thay phân vị Bonferroni. Để bao phủ $r^{(k)}$ thật, cần bias không đáng kể hoặc hiệu chỉnh bias. Đạo hàm của đường fitted $\rh(x)$ không nhất thiết bằng hệ số local polynomial dùng để ước lượng đạo hàm.
+
+\supp{W5-data}{Hướng giải các bài dữ liệu hồi quy liên quan}{W5.3, W5.4, W5.9, W5.12 và W5.14, tr.120--121.}
+\textbf{Quy trình chung.} Vẽ $(X_i,Y_i)$; chọn một lưới bandwidth dương; tính NW và local linear; chọn $h$ cực tiểu LOOCV (Bài 4.3) hoặc GCV (Bài 4.4); ước lượng variance bằng residual hoặc sai phân; báo rõ CI điểm hay băng đồng thời, và đích là đường trung bình đã làm trơn hay $r$ thật. Không chọn độ trơn bằng mắt rồi coi kết quả là tối ưu risk.
+
+\textbf{W5.3 (glass).} $Y$ là refractive index, $x$ là aluminium (biến thứ tư theo đề). So sánh regressogram, NW, local linear; spline chỉ là đối chứng thêm bằng bài toán $\min_g\sum_i(Y_i-g(x_i))^2+\lambda\int(g'')^2$. Mỗi phương pháp chọn độ trơn riêng bằng CV. Effective kernel tại đích là các trọng số $\ell_i(x)$: vẽ trọng số theo $x_i$ để thấy local linear có thể âm và khác ở biên. Lập băng bằng W5.21 với $k=0$.
+
+\textbf{W5.4 (motorcycle).} Dùng time dự báo acceleration bằng local linear; loại bandwidth khiến hệ chuẩn suy biến hoặc $L_{ii}=1$. Đề không cho phép giả định variance hằng tự động: nếu residual cho thấy thay đổi theo thời gian, dùng $\sum_i\widehat\sigma_i^2\ell_i(x)^2$ cho variance.
+
+\textbf{W5.9.} Giữ cùng dữ liệu glass, vẽ các đường theo nhiều $h$ và các băng tương ứng. Đỉnh biến mất khi $h$ tăng là kết quả làm trơn; chưa đủ để kết luận có/không một đặc trưng thật. Nếu kiểm tra nhiều bandwidth cùng lúc, phải điều chỉnh tính nhiều lần, chẳng hạn Bonferroni trên lưới $h$ hữu hạn.
+
+\textbf{W5.12 (Doppler).} Dùng $r(x)=\sqrt{x(1-x)}\sin(2.1\pi/(x+.05))$, $x_i=i/n$, $n=1000$, nhiễu chuẩn với $\sigma=.1,1,3$. Với mỗi bộ dữ liệu, chọn bandwidth bằng CV rồi lập băng; so sánh khả năng giữ dao động nhỏ khi nhiễu tăng. Đây là mục tiêu cần quan sát, không phải kết quả mô phỏng đã chạy.
+
+\textbf{W5.14 (air quality).} Dùng ozone theo temperature; so sánh CV, GCV,
+$C_p(h)=\norm{(I-L)Y}^2/n+2\widehat\sigma^2\tr(L)/n$ (có thể trừ thêm hằng $\widehat\sigma^2$) và bandwidth plug-in từ công thức bias--variance hồi quy. Không dùng thẳng quy tắc $1.06s_X n^{-1/5}$ cho hồi quy: bandwidth hồi quy còn phụ thuộc $r''$, variance nhiễu và mật độ thiết kế.
+\section{Bổ sung từ chương 6: đủ 10 bài về density estimation}
+W6.1 đã giải ở Bài 3.9; W6.4 đã giải ở Bài 3.8, bao gồm hiệu chỉnh công thức 6.35. Dưới đây là các bài còn lại; các bài dữ liệu có hướng giải, không có kết quả số giả định.
+
+\supp{W6.2}{Nhân boxcar của Wasserman}{Với $K(u)=\1_{\{|u|<1/2\}}$, tính kỳ vọng, variance và chứng minh nhất quán.}
+Đặt $p_h(x)=\Pp(x-h/2<X<x+h/2)=\int_{x-h/2}^{x+h/2}f(t)dt$.
+Vì $nh\fh(x)=\sum_i\1_{\{|X_i-x|<h/2\}}\sim\operatorname{Bin}(n,p_h)$,
+\[
+\E\fh(x)=\frac{p_h(x)}h,\quad
+\Var\fh(x)=\frac{p_h(x)(1-p_h(x))}{nh^2}.
+\]
+Nếu $f$ liên tục tại $x$, $p_h/h\to f(x)$ và $p_h=O(h)$, nên bias $\to0$ và variance $O((nh)^{-1})\to0$ khi $h\to0$, $nh\to\infty$.
+Chebyshev hoàn tất chứng minh nhất quán. Với $f\in C^2$,
+$\mu_2(K)=1/12$ và bias $h^2f''(x)/24+o(h^2)$; chú ý khác uniform kernel trên $[-1,1]$ có bias $h^2f''/6$.
+
+\supp{W6.3}{Tính không chệch của CV cho histogram và KDE}{Chứng minh $\E\widehat J(h)=\E J(h)$ cho $h$ cố định.}
+Phần KDE đã chứng minh ở Bài 3.8. Với histogram, $\E\widehat f_H(x)=p_j/h$ trên $B_j$, do đó
+\[
+\E\int\widehat f_H f=\sum_j\frac{p_j}h\int_{B_j}f=\frac1h\sum_jp_j^2.
+\]
+Mặt khác, $\E[N_j(N_j-1)]=n(n-1)p_j^2$ vì là tổng các cặp chỉ thị độc lập khác chỉ số. Bởi vậy
+\[
+\E\left[\frac1n\sum_i\widehat f_{H,(-i)}(X_i)\right]
+=\frac1{n(n-1)h}\sum_j\E[N_j(N_j-1)]=\frac1h\sum_jp_j^2.
+\]
+Hai số hạng tích chéo có cùng kỳ vọng; số hạng bình phương giữ nguyên nên có kết quả. Đây là không chệch \emph{cho từng bandwidth cố định}. Sau khi tối thiểu hóa nhiều tiêu chuẩn và lấy $\widehat h$, không suy ra $\widehat J(\widehat h)$ không chệch cho risk của thủ tục đã chọn; có hiệu ứng lựa chọn.
+
+\supp{W6.5--7}{CEO, glass và độ nhạy bandwidth}{W6.5: lương CEO; W6.6: refractive index; W6.7: khảo sát nhiều bandwidth.}
+\textbf{W6.5.} Với biến lương $X>0$, tính histogram theo một lưới bin phủ dữ liệu, chọn binwidth bằng Bài 2.5; tính KDE với CV chính xác ở Bài 3.8 và với normal reference ở Bài 3.7. So sánh đường ước lượng trên cùng trục và cùng đơn vị. Nếu đổi biến $Y=\log X$, khi trở lại phải dùng
+$\widehat f_X(x)=\widehat f_Y(\log x)/x$, $x>0$. Việc đổi log thay đổi cách làm trơn nên phải ghi rõ.
+
+\textbf{W6.6.} Dùng biến đầu tiên refractive index của glass. So sánh histogram và KDE, mỗi phương pháp chọn độ trơn riêng; thử Gaussian, uniform, triangular, Epanechnikov. Khi đổi dạng nhân, chọn lại bandwidth hoặc quy đổi theo độ rộng hiệu dụng $h\sqrt{\mu_2(K)}$; giữ cùng con số $h$ không đồng nghĩa cùng độ trơn.
+
+\textbf{Băng histogram.} Với lưới $m$ bin cố định, một lựa chọn hữu hạn mẫu đơn giản là Bonferroni--Hoeffding cho các xác suất bin:
+\[
+\delta=\sqrt{\frac{\log(2m/\alpha)}{2n}},\qquad
+p_j/h\in\left[\frac{\max(0,\ph_j-\delta)}h,\frac{\min(1,\ph_j+\delta)}h\right]\quad\forall j.
+\]
+Đây là băng cho $\E\widehat f_H$, không tự động cho $f$ tại từng điểm trong bin. Lựa chọn xấp xỉ hẹp hơn của Định lý 6.20 dùng căn bậc hai, trình bày ở T5.
+
+\textbf{Băng KDE.} Tại một điểm dùng Bài 3.9 nếu undersmoothing; để xử lý nhiều điểm và nhiều $h$, dùng lưới cố định và Bonferroni trên các so sánh hoặc một thủ tục bootstrap băng đồng thời đã kiểm soát bias. Cách chuyển mật độ thành hồi quy ở W6.10 cũng là phương pháp sách gợi ý. Phân biệt băng cho $f_h=\E\fh$ với băng cho $f$.
+
+\textbf{W6.7.} Vẽ $\fh$ và băng theo từng $h$ trên một lưới định trước. Một đỉnh thấy bằng mắt chưa đủ chứng minh một mode thật. Nếu băng đồng thời có $L(x_\mathrm{peak})>U(x_\mathrm{valley})$, có chứng cứ cho sự giảm giữa hai vị trí ở mức phân giải đang xét; xác nhận dấu đạo hàm hai phía bằng băng đạo hàm sẽ trực tiếp hơn. Phần SiZer nâng cao trong đề là tùy chọn, không triển khai ở tài liệu ôn thi này.
+
+\supp{W6.8}{Local likelihood bậc 0 chính là KDE}{Chứng minh phát biểu 6.46, dùng định nghĩa 6.43.}
+Với $p=0$, xấp xỉ $\log f(u)=a_0$. Đặt $w_i=K((X_i-x)/h)$. Trên toàn trục thực,
+\[
+L_x(a_0)=a_0\sum_iw_i-ne^{a_0}\int K((u-x)/h)du
+=a_0\sum_iw_i-nhe^{a_0}.
+\]
+Đạo hàm: $L'_x=\sum_iw_i-nhe^{a_0}$; đạo hàm hai $=-nhe^{a_0}<0$. Nếu tổng trọng số dương, cực đại duy nhất cho
+\[
+\widehat f(x)=e^{\widehat a_0}=\frac1{nh}\sum_iK((X_i-x)/h),
+\]
+chính là KDE với nhân đối xứng. Nếu tổng trọng số bằng 0, supremum đạt khi $a_0\to-\infty$, cho mật độ ước lượng 0. Khi giới hạn tích phân vào một giá đã biết, hệ số chuẩn hóa không nhất thiết bằng $h$, nên xuất hiện hiệu chỉnh biên.
+
+\supp{W6.9}{Hướng giải local polynomial density trên glass}{Áp dụng local likelihood và đối chiếu KDE.}
+Tại mỗi $x$, đặt $v_i=(1,X_i-x,\ldots,(X_i-x)^p/p!)$ và $v(u)$ tương tự. Tối đa hóa
+\[
+L_x(a)=\sum_iw_i a^Tv_i-n\int K((u-x)/h)e^{a^Tv(u)}du.
+\]
+Phương trình score và Hessian:
+\begin{align*}
+\nabla L_x(a)&=\sum_iw_iv_i-n\int K((u-x)/h)e^{a^Tv(u)}v(u)du,\\
+\nabla^2L_x(a)&=-n\int K((u-x)/h)e^{a^Tv(u)}v(u)v(u)^Tdu.
+\end{align*}
+Giải số khi tích phân hữu hạn và Hessian không suy biến, lấy $\widehat f(x)=e^{\widehat a_0}$. Nhân có giá hữu hạn giúp tránh tích phân phân kỳ khi đa thức log-mật độ tăng nhanh. So sánh $p=0$ với $p=1,2$, đặc biệt vùng biên; chọn bandwidth bằng tiêu chuẩn phù hợp và kiểm tra tích phân tổng thể. Local likelihood đảm bảo không âm nhưng không tự đảm bảo đường ghép các fit cục bộ có tích phân đúng 1; có thể chuẩn hóa sau và ghi rõ.
+
+\supp{W6.10}{Bart Simpson và chuyển density thành regression}{So sánh KDE và phương pháp mục 6.6 cho $n=25,50,100,1000$.}
+Mật độ đề bài là
+\[
+f(x)=\tfrac12\phi(x;0,1)+\tfrac1{10}\sum_{j=0}^4\phi(x;j/2-1,1/10),
+\]
+ở đây đối số cuối của $\phi(\cdot;\mu,\sigma)$ là \emph{độ lệch chuẩn}. Sinh chỉ số thành phần với xác suất $1/2,1/10,\ldots,1/10$, rồi sinh chuẩn của thành phần đó. Fit KDE, chọn $h$ bằng CV.
+
+\textbf{Phương pháp hồi quy.} Trên một miền bin cố định, binwidth $\Delta$, midpoint $t_j$, số đếm $N_j$, đặt
+\[
+Y_j=\sqrt{\frac{N_j+1/4}{n\Delta}}\simeq\sqrt{f(t_j)}+\varepsilon_j,\qquad
+\Var\varepsilon_j\simeq\frac1{4n\Delta}.
+\]
+Lý do: $N_j$ gần Poisson với trung bình $n\Delta f(t_j)$; Delta cho $\Var\sqrt{N_j}\simeq1/4$. Fit local linear cho $(t_j,Y_j)$, thu $\widehat r$; đặt $r_+=\max(\widehat r,0)$ và
+\[
+\widehat f_{reg}(x)=\frac{r_+(x)^2}{\int r_+(u)^2du}.
+\]
+Trên $[0,1]$, chọn $k$ bin thì $\Delta=1/k$, công thức đúng với (6.49). Với hỗn hợp chuẩn có giá toàn trục, phải chọn miền đủ rộng hoặc biến đổi biến; báo phần xác suất đuôi ngoài miền, không mặc nhiên coi dữ liệu thật có giá $[0,1]$. So sánh ISE bằng tích phân số vì $f$ thật biết, số mode, khả năng giữ năm đỉnh hẹp và độ nhạy bandwidth. Ở $n$ nhỏ, Poisson--Gaussian approximation và số đếm ít là hạn chế rõ rệt. Việc chuẩn hóa sau khi bình phương cũng ảnh hưởng băng tin cậy; không đơn giản bình phương rồi chuẩn hóa hai đầu băng riêng và mặc nhiên giữ độ phủ.
+
+\section{Bổ sung từ chương 8: phép chiếu và risk}
+\supp{W8.1}{Chặn phần đuôi Sobolev}{Chứng minh Bổ đề 8.4.}
+Giả sử $\sum_{j\ge1}j^{2m}\theta_j^2\le c^2$. Với $j>N$, $j^{2m}\ge(N+1)^{2m}$, nên
+\[
+B_N=\sum_{j>N}\theta_j^2\le(N+1)^{-2m}\sum_{j>N}j^{2m}\theta_j^2
+\le c^2(N+1)^{-2m}.
+\]
+Chặn đều trên cả ellipsoid. Khi $m>1/2$, $N^{-2m}=o(N^{-1})$. Với quy ước Sobolev dùng trọng số tương đương $j^{2m}$, chỉ thay hằng số. Đây cũng là bước cốt lõi trong Bài 5.2.
+
+\supp{W8.2}{Risk của hệ số co cố định}{Trong mô hình $Z_j=\theta_j+\sigma\varepsilon_j/\sqrt n$, chứng minh Định lý 8.13.}
+Đặt $v=\sigma^2/n$ và $b_j\in[0,1]$ cố định. Bias $b_jZ_j-\theta_j$ có kỳ vọng $(b_j-1)\theta_j$; variance $b_j^2v$. Do đó
+\[
+R(b)=\sum_j(1-b_j)^2\theta_j^2+v\sum_jb_j^2.
+\]
+Vì $\E(Z_j^2-v)=\theta_j^2$, một ước lượng không chệch cho $b$ cố định, $v$ biết là
+\[
+\widehat R_0(b)=\sum_j(1-b_j)^2(Z_j^2-v)+v\sum_jb_j^2.
+\]
+Thay $v$ bằng $\widehat\sigma^2/n$ và thay $Z_j^2-v$ bằng phần dương cho tiêu chuẩn modified SURE của sách; không còn gọi nó không chệch chính xác. Nếu $b$ được chọn từ chính $Z$, công thức risk với $b$ cố định không tự động là risk của thủ tục thích nghi: cần phân tích lựa chọn thêm.
+
+\supp{W8.3}{Hoàn bình phương tiêu chuẩn risk}{Kiểm tra công thức 8.19 và phân biệt phiên bản có phần dương.}
+Với tiêu chuẩn chưa lấy phần dương, đặt $g_j=(Z_j^2-v)/Z_j^2$ khi $Z_j\ne0$.
+Một phép khai triển cho
+\[
+(Z_j^2-v)(1-b_j)^2+vb_j^2=Z_j^2(b_j-g_j)^2+vg_j.
+\]
+Cộng theo $j$ cho (8.19). Tuy nhiên công thức này không đúng nguyên trạng nếu vế trái dùng $(Z_j^2-v)_+$ như (8.15). Với $A_j=(Z_j^2-v)_+$, dạng đúng là
+\[
+A_j(1-b_j)^2+vb_j^2
+=(A_j+v)\left(b_j-\frac{A_j}{A_j+v}\right)^2+\frac{A_jv}{A_j+v}.
+\]
+Đó là bình phương tối thiểu có trọng số $A_j+v$, đích $A_j/(A_j+v)$; nếu thêm ràng buộc đơn điệu thì giải bằng isotonic regression. Khi $Z_j=0$, dùng biểu thức gốc, không chia cho 0.
+
+\supp{W8.4}{Chuẩn vector trọng số của phép chiếu}{Chứng minh công thức 8.26 dưới trực chuẩn rời rạc xấp xỉ.}
+Từ $\ell_i(x)=n^{-1}\sum_jb_j\varphi_j(x)\varphi_j(x_i)$,
+\[
+\sum_i\ell_i(x)^2=\frac1{n^2}\sum_{j,k}b_jb_k\varphi_j(x)\varphi_k(x)
+\sum_i\varphi_j(x_i)\varphi_k(x_i).
+\]
+Nếu $n^{-1}\sum_i\varphi_j(x_i)\varphi_k(x_i)\simeq\delta_{jk}$, kết quả là
+$\norm{\ell(x)}^2\simeq n^{-1}\sum_jb_j^2\varphi_j(x)^2$. Đẳng thức chính xác nếu cơ sở trực chuẩn theo tích vô hướng rời rạc của thiết kế; trực chuẩn liên tục không tự đảm bảo chính xác trên mọi lưới. Nếu $b$ được chọn từ $Y$, không xem đường fit sau lựa chọn là một smoother tuyến tính cố định khi lập băng mà bỏ qua bất định lựa chọn.
+
+\supp{W8.5--6}{Nhất quán của ước lượng variance tần số cao}{Giải hai bài sau khi sửa hệ số chuẩn hóa sai trong (8.12); đối chiếu W7.3, tr.181.}
+Với mô hình $Z_j\sim N(\theta_j,\sigma^2/n)$ độc lập, lấy $J=J_n$ hệ số cuối và dùng
+\[
+\widehat\sigma^2=\frac nJ\sum_{j=n-J+1}^n Z_j^2.
+\]
+Hệ số này đúng với W7.3. Biểu thức in ở (8.12), $[1/(n-J)]\sum_{j=n-J+1}^nZ_j^2$, không nhất quán như được khẳng định: ngay tại $\theta=0$, kỳ vọng là $J\sigma^2/[n(n-J)]$, tiến 0 khi $J\asymp n$ và $n-J\asymp n$. Vì thế không thể chứng minh phát biểu nguyên văn ấy.
+
+Với hệ số đã sửa, đặt $k=n-J+1$. Tính chính xác:
+\[
+\E\widehat\sigma^2=\sigma^2+\frac nJ\sum_{j=k}^n\theta_j^2,\qquad
+\Var\widehat\sigma^2=\frac{2\sigma^4}{J}+\frac{4n\sigma^2}{J^2}\sum_{j=k}^n\theta_j^2.
+\]
+Nếu $\sum j^{2m}\theta_j^2\le c^2$, thì tổng đuôi không quá $c^2 k^{-2m}$. Điều kiện đủ rõ ràng:
+$J\to\infty$ và $(n/J)k^{-2m}\to0$. Khi đó bias và variance tiến 0 \emph{đều} trên ellipsoid, nên Chebyshev cho nhất quán đều và kéo theo nhất quán điểm. Lựa chọn $J=\lfloor n/4\rfloor$ thỏa điều kiện với mọi $m>0$, đặc biệt $m>1/2$ của W7.3. Chỉ biết $J\to\infty$, $n-J\to\infty$ mà không xét tốc độ của đuôi có thể chưa đủ.
+
+\supp{W8.12}{Hệ số co oracle và nguy cơ tối thiểu hóa quá rộng}{Tìm $b^*$ tối ưu risk trên mọi vector $b\in[0,1]^n$, rồi giải thích việc thay bằng ước lượng.}
+Với $v=\sigma^2/n$, mỗi tọa độ tối thiểu hóa
+$\theta_j^2(1-b)^2+vb^2$. Đạo hàm bằng 0 cho
+\[
+b_j^*=\frac{\theta_j^2}{\theta_j^2+v},\qquad
+R(b^*)=\sum_j\frac{v\theta_j^2}{\theta_j^2+v}.
+\]
+Nhưng $\theta_j$ không biết. Tối thiểu hóa $\widehat R_0$ trên từng tọa độ cho
+$\widehat b_j=(1-v/Z_j^2)_+$ (với 0 nếu $Z_j=0$). Có tới $n$ quyết định từ $n$ tọa độ nhiễu nên dễ chọn theo nhiễu; tính không chệch với $b$ cố định không bảo đảm xấp xỉ đều trên lớp lớn.
+
+\textbf{Ví dụ rõ nhất:} khi $\theta=0$, oracle $b^*=0$ có risk bằng 0. Nhưng với $Z_j=\sqrt v\varepsilon_j$, thủ tục plug-in giữ các tọa độ $|\varepsilon_j|>1$. Risk của nó bằng
+\[
+\sum_jv\E\left[\varepsilon^2(1-1/\varepsilon^2)_+^2\right]
+=\sigma^2\E\left[\varepsilon^2(1-1/\varepsilon^2)_+^2\right]>0,
+\]
+không tiến 0. Hạn chế lớp về các mô hình cắt cụt lồng nhau hoặc hệ số co đơn điệu giúp kiểm soát việc lựa chọn, thay vì tối ưu hoàn toàn độc lập từng tọa độ.
+
+\supp{W8-data}{Hướng giải so sánh phương pháp trực chuẩn}{W8.7--8.11: glass, motorcycle, Doppler, nhiễu Cauchy và hỗn hợp chuẩn.}
+\textbf{W8.7--8.9.} Với cùng dữ liệu hoặc cùng mẫu mô phỏng, so sánh local linear với $\widehat r_D=\sum_{j\le D}Z_j\varphi_j$. Chọn $D$ bằng ước lượng risk có xét lớp mô hình; chọn $h$ bằng CV. Với thiết kế không đều, không mặc nhiên dùng trực chuẩn rời rạc; hồi quy trên ma trận cơ sở hoặc biến đổi thiết kế phù hợp. Dùng cùng định nghĩa loss và cùng mức tin cậy khi so sánh.
+
+W8.8 yêu cầu thêm confidence ball. Trong mô hình hệ số Gaussian trực chuẩn, $D$ cố định, $\sigma$ biết, một quả cầu minh họa là
+$\sum_{j\le D}(\theta_j-Z_j)^2\le(\sigma^2/n)\chi^2_{D,1-\alpha}$; nó cho phần chiếu, cần cộng chặn đuôi nếu muốn toàn hàm. Có thể hiển thị bằng các đường lấy từ quả cầu hoặc bằng envelope $\sum Z_j\varphi_j(x)\pm s\sqrt{\sum_{j\le D}\varphi_j(x)^2}$; envelope là hình ảnh của ball, không phải mọi đường nằm trong envelope đều thuộc ball. Với $D$ hoặc hệ số co chọn bằng dữ liệu, dùng thủ tục confidence set thích nghi phù hợp, không áp dụng nguyên xi quả cầu cố định.
+
+\textbf{W8.10 (Cauchy).} Nhiễu Cauchy không có variance hữu hạn; risk bình phương và băng Gaussian dựa $\sigma^2$ mất nền tảng. Cần đổi sang loss bền vững, chẳng hạn hồi quy median cục bộ, và suy luận tương ứng; không chỉ thay một bộ sinh nhiễu rồi vẫn dùng các công thức Gaussian.
+
+\textbf{W8.11.} Sinh $n=1000$ từ $.5N(0,1)+.5N(\mu,1)$ cho $\mu=0,1,2,3,4,5$. So sánh KDE với phương pháp mật độ trực chuẩn ở mục 8.4 bằng ISE, độ trơn và số mode. Với cơ sở trên $[0,1]$, cần biến đổi miền hoặc dùng cơ sở trên toàn trục; không bỏ phần đuôi rồi coi mật độ vẫn chuẩn hóa. Nếu projection âm, lấy phần dương và chuẩn hóa, rồi đánh giá đúng phiên bản đã sửa. Đây là hướng thực hiện, không phải kết quả số đã chạy.
+\section{Các bài nền liên quan ở chương 1 và 3}
+Các bài dưới đây được tìm thấy khi rà toàn sách: chúng liên quan trực tiếp CI và statistical functionals trong Phần 1, dù không thuộc chương density. Phần bootstrap chuyên biệt chỉ được nêu ở mức liên hệ.
+
+\supp{W1.1--2}{Wald và Hoeffding: điểm theo tham số và đều theo tham số}{Tr.10 (PDF 23), đối chiếu Ví dụ 1.17 tr.7.}
+Với Bernoulli$(p)$ và $0<p<1$ cố định, CLT--Slutsky cho độ phủ Wald tiến $1-\alpha$. Với $p=0,1$, khoảng suy biến vẫn chứa đúng tham số. Hoeffding cho
+$\sup_{p\in[0,1]}\Pp_p(|\widehat p-p|>\varepsilon)\le2e^{-2n\varepsilon^2}$,
+nên khoảng Hoeffding có bảo đảm hữu hạn mẫu đều theo $p$, kéo theo bảo đảm tiệm cận đều.
+
+Wald không đều trên toàn $[0,1]$: chọn $p_n=1/n^2$. Với xác suất $(1-p_n)^n\to1$, không quan sát được thành công nào, Wald là $[0,0]$ và không chứa $p_n>0$; độ phủ tiến 0. ``Pointwise asymptotic'' ở đây là cố định \emph{phân phối/tham số}, khác với ``CI tại một điểm $x$'' khi ước lượng hàm.
+
+W1.2 yêu cầu mô phỏng $p=.2$, $\alpha=.05$ theo nhiều $n$. Có thể tính \emph{chính xác} độ phủ Wald bằng
+\[
+\sum_{k=0}^n\binom nk p^k(1-p)^{n-k}
+\1\left\{|k/n-p|\le1.959964\sqrt{(k/n)(1-k/n)/n}\right\}.
+\]
+Độ dài kỳ vọng cũng là tổng nhị thức của $2z\sqrt{(k/n)(1-k/n)/n}$ (hoặc độ dài sau cắt nếu chọn cắt). Hoeffding chưa cắt có độ dài cố định $2\sqrt{\log40/(2n)}$. Không có một $n$ ``đủ chính xác'' duy nhất nếu chưa định nghĩa sai số độ phủ chấp nhận; độ phủ còn dao động do tính rời rạc.
+
+\supp{W1.3--4}{CI trung bình chuẩn: hữu hạn mẫu hay tiệm cận?}{Tr.10 (PDF 23).}
+\textbf{W1.3.} Với $N(\mu,1)$, $\sqrt n(\bar X-\mu)\sim N(0,1)$ đúng ở mọi $n$. Vì vậy $\bar X\pm z_{1-\alpha/2}/\sqrt n$ có độ phủ chính xác $1-\alpha$, đều theo $\mu$.
+
+\textbf{W1.4.} Với variance chưa biết và $S^2$ chia $n-1$,
+$\sqrt n(\bar X-\mu)/S\sim t_{n-1}$. Dùng phân vị chuẩn $z$ cho độ phủ $2F_{t_{n-1}}(z)-1<1-\alpha$ khi $n$ hữu hạn, nên không có bảo đảm hữu hạn mẫu mức đã ghi. Nhưng độ phủ không phụ thuộc $\mu,\sigma$ và tiến $1-\alpha$: khoảng là tiệm cận đều trên họ chuẩn. Thay $z$ bằng $t_{n-1,1-\alpha/2}$ được khoảng chính xác hữu hạn mẫu.
+
+\supp{W1.5}{CI trung bình phi tham số và điều kiện moment}{Tr.10--11 (PDF 23--24): CI Wald, thiếu tính đều và CI khi $|X|\le B$.}
+\textbf{(a)} Nếu $0<\Var_F(X)<\infty$, CLT và luật số lớn cho variance mẫu suy ra CI Wald tiệm cận điểm theo $F$. Chỉ ``trung bình tồn tại'' như câu chữ trong đề chưa đủ bảo đảm phép chứng minh CLT chuẩn này; cần thêm điều kiện moment hoặc một định lý studentization mạnh hơn với giả thiết thích hợp.
+
+\textbf{(b)} Không đều trên mọi phân phối có variance hữu hạn. Lấy $F=N(0,1)$,
+$G_n=(1-n^{-2})F+n^{-2}\delta_{n^3}$. Trung bình của $G_n$ là $n$. Xác suất mẫu cỡ $n$ không thấy điểm nhiễm là $(1-n^{-2})^n\to1$. Trên biến cố ấy dữ liệu như mẫu chuẩn, khoảng nằm gần 0 với bán kính $O_P(n^{-1/2})$, nên hầu như không chứa trung bình $n$. Mỗi $G_n$ vẫn có variance hữu hạn, nhưng không được chặn đều.
+
+\textbf{(c)} Nếu $|X|\le B$ với $B$ biết, $|X-\mu|\le2B$ và $\Var X\le B^2$. Bernstein cho
+\[
+\Pp(|\bar X-\mu|>t)\le2\exp\left\{-\frac{nt^2}{2(B^2+2Bt/3)}\right\}.
+\]
+Đặt $L=\log(2/\alpha)$. Giải phương trình ở số mũ cho bán kính
+\[
+t_{n,\alpha}=\frac{2BL}{3n}+\sqrt{\frac{2B^2L}{n}+\frac{4B^2L^2}{9n^2}}.
+\]
+Vậy $\bar X\pm t_{n,\alpha}$ (cắt về $[-B,B]$) là CI hữu hạn mẫu. Hoeffding cũng cho lựa chọn đơn giản $B\sqrt{2\log(2/\alpha)/n}$.
+
+\supp{W3.1}{Hàm ảnh hưởng của skewness}{Tr.39 (PDF 50): bổ sung trực tiếp cho Bài 1.7.}
+Đặt $m_3=\E(X-\mu)^3$, $v=\sigma^2>0$, $\kappa=m_3/\sigma^3$, $z=(x-\mu)/\sigma$.
+Khi nhiễm phân phối tại $x$, các đạo hàm là
+\[
+L_\mu=x-\mu,\quad L_v=(x-\mu)^2-v,\quad
+L_{m_3}=(x-\mu)^3-m_3-3v(x-\mu).
+\]
+Số hạng $-3v(x-\mu)$ xuất hiện vì trung bình dùng để định tâm cũng thay đổi. Theo quy tắc dây chuyền,
+\[
+L_\kappa(x)=\frac{L_{m_3}}{\sigma^3}-\frac{3\kappa}{2v}L_v
+=z^3-3z-\frac{3\kappa}{2}z^2+\frac\kappa2.
+\]
+Kiểm tra $\E L_\kappa=\kappa-0-3\kappa/2+\kappa/2=0$. Muốn suy ra SE từ IF cần $\E L_\kappa^2<\infty$; moment bậc sáu hữu hạn là điều kiện đủ.
+
+\supp{W3.2, W3.12}{Các phần plug-in và Delta của bài dữ liệu}{Tr.39 và 41 (PDF 50, 52); phần bootstrap/jackknife nằm ngoài trọng tâm.}
+\textbf{W3.2.} Với 15 cặp LSAT--GPA in trong sách, tính tương quan theo Bài 1.7; tính IF và SE theo W2.9. Đây là cách giải phần (i); các phần jackknife, bootstrap và studentized bootstrap đòi hỏi lấy mẫu lại, nên chỉ ghi dẫn chiếu, không coi là bài KDE.
+
+\textbf{W3.12(a).} Hai nhóm độc lập cùng cỡ 50 có tỷ lệ cải thiện $30/50=.6$, $40/50=.8$. Hiệu ước lượng $\widehat\tau=.2$. SE Delta là
+\[
+\sqrt{.6(.4)/50+.8(.2)/50}=\sqrt{.008}\simeq.089443.
+\]
+CI 90\% $=.2\pm1.64485(.089443)\simeq[.05288,.34712]$.
+Phần (b) bootstrap: lấy mẫu lại độc lập trong từng nhóm, tính hiệu tỷ lệ ở mỗi lần, lấy độ lệch chuẩn các hiệu làm SE; không gộp hai nhóm rồi resample chung vì sẽ thay đổi mô hình đang ước lượng.
+
+\section{Câu hỏi lý thuyết bổ sung, bám sát histogram và KDE}
+Các mục T1--T6 dưới đây là bài biên soạn từ nội dung sách, slide và các công thức đã chứng minh; không gán số bài tập Wasserman cho chúng.
+
+\supp{T1}{Vì sao Epanechnikov tối ưu về dạng nhân?}{Tính moment của các nhân và cực tiểu hóa $R(K)$ với variance nhân cố định.}
+Các moment trong bảng tra nhanh tính bằng tích phân trên giá. Ví dụ Epanechnikov:
+\[
+\int_{-1}^1\tfrac34(1-u^2)du=1,\quad
+\mu_2=\tfrac34(2/3-2/5)=1/5,\quad
+R(K)=\tfrac9{16}(2-4/3+2/5)=3/5.
+\]
+Sau tối ưu $h$, hằng số AMISE phụ thuộc dạng nhân qua $\mu_2(K)^{2/5}R(K)^{4/5}$, tương đương tối ưu $R(K)\sqrt{\mu_2(K)}$. Vì có thể đổi thang $K_a(u)=a^{-1}K(u/a)$ mà tích này không đổi, cố định $\mu_2=v>0$ rồi tối thiểu $R(K)$ trên các mật độ nhân không âm có moment hai đó.
+
+Ứng viên từ Lagrange có dạng $K_*(u)=(a-bu^2)_+$, $a,b>0$. Chuẩn hóa cho
+\[
+K_*(u)=\frac3{4c}\left(1-\frac{u^2}{c^2}\right)\1_{|u|\le c},\quad
+\mu_2(K_*)=c^2/5=v,\quad c=\sqrt{5v}.
+\]
+\textbf{Chứng minh cực tiểu toàn cục.} Với $q(u)=a-bu^2$ và mọi nhân hợp lệ $K$, các ràng buộc cho $\int q(K-K_*)=0$. Ngoài $[-c,c]$, $q\le0$, $K\ge0$, nên
+$\int K_*(K-K_*)=-\int_{|u|>c}q(u)K(u)du\ge0$.
+Vậy
+\[
+R(K)-R(K_*)=\int(K-K_*)^2+2\int K_*(K-K_*)\ge0.
+\]
+Nhận $c=1$ được Epanechnikov thường dùng. Đây là tối ưu trong lớp nhân không âm với moment cố định; bandwidth thường có ảnh hưởng thực hành lớn hơn khác biệt nhỏ giữa các nhân tốt.
+
+\supp{T2}{KDE ở biên và phép phản xạ}{Giá mật độ là $[0,\infty)$, $f(0)>0$, nhân đối xứng.}
+Ở $x=0$,
+\[
+\E\fh(0)=\int_0^\infty\frac1h K(-t/h)f(t)dt
+=\int_0^\infty K(u)f(hu)du\longrightarrow\tfrac12 f(0).
+\]
+Vậy bias $\to-f(0)/2$, bậc $O(1)$; không phải $O(h)$ như một ghi chú trong tài liệu đề xuất bài tập. KDE không hiệu chỉnh không nhất quán tại biên này.
+
+Phản xạ qua 0:
+\[
+\widehat f_{ref}(x)=\frac1{nh}\sum_i\left[K\left(\frac{x-X_i}{h}\right)+K\left(\frac{x+X_i}{h}\right)\right],\quad x\ge0.
+\]
+Đối xứng cho mỗi cặp có tích phân trên nửa trục bằng 1; ước lượng là mật độ trên $[0,\infty)$. Tại 0,
+\[
+\E\widehat f_{ref}(0)=2\int_0^\infty K(u)f(hu)du
+=f(0)+2hf'(0)\int_0^\infty uK(u)du+O(h^2).
+\]
+Phản xạ sửa bias $O(1)$ thành $O(h)$ nói chung; chỉ khi $f'(0)=0$ hoặc có hiệu chỉnh thêm mới đạt $O(h^2)$. Không đồng nhất phản xạ mật độ với hiệu chỉnh biên local linear hồi quy.
+
+\supp{T3}{MISE chính xác khi mật độ và nhân đều Gaussian}{Dùng kết quả để kiểm tra khai triển AMISE.}
+Cho $f=N(\mu,\sigma^2)$, $K=\phi$. Khi đó $f_h=\E\fh=N(\mu,\sigma^2+h^2)$, bởi tổng hai chuẩn độc lập cộng variance. Từ Bài 3.4,
+\[
+\MISE(h)=\frac1{2\sqrt\pi nh}+(1-1/n)R(f_h)-2\int f_hf+R(f).
+\]
+Các tích phân Gaussian cho
+\begin{result}
+\[
+\MISE(h)=\frac1{2\sqrt\pi nh}
++\frac{1-1/n}{2\sqrt\pi\sqrt{\sigma^2+h^2}}
+-\frac2{\sqrt{2\pi}\sqrt{2\sigma^2+h^2}}
++\frac1{2\sqrt\pi\sigma}.
+\]
+\end{result}
+Khai triển theo $h\to0$ làm số hạng bias hằng và $h^2$ triệt tiêu, để lại
+$3h^4/(32\sqrt\pi\sigma^5)+1/(2\sqrt\pi nh)+O(h^6)+O(1/n)$, đúng với $\mu_2^2R(f'')/4$.
+Normal reference tối ưu số hạng chính này, không phải tối ưu chính xác biểu thức hữu hạn mẫu cho mọi $n$.
+
+\supp{T4}{Bổ đề cân bằng và ví dụ histogram tính tay}{Tối thiểu hóa $Ah^{2\beta}+B/(nh)$; tính cụ thể cho $f(x)=2x$ trên $[0,1]$.}
+Đạo hàm bằng 0 cho $2\beta Ah^{2\beta-1}=B/(nh^2)$, nên
+$h_*^{2\beta+1}=B/(2\beta An)$. Tại nghiệm, variance chính bằng $2\beta$ lần squared bias chính. Thay vào cho $g(h_*)=(2\beta+1)Ah_*^{2\beta}$.
+
+Với $f(x)=2x$, $R(f')=4$, histogram có $\E\widehat f_H(x)=2c_j$, bias chính xác $2(c_j-x)$. Vì thế integrated squared bias chính xác là $h^2/3$. Đồng thời
+$p_j=(2j-1)h^2$, $\sum_jp_j^2=4h/3-h^3/3$ (dùng $m=1/h$). MISE chính xác:
+\[
+\MISE(h)=\frac{h^2}{3}+\frac1{nh}-\frac4{3n}+\frac{h^2}{3n}.
+\]
+Nếu tạm cho $h$ liên tục, cực tiểu tại $h^3=3/[2(n+1)]$; AMISE bỏ số hạng nhỏ cho $h_*^3=3/(2n)$. Sau đó chọn $m$ nguyên. Ví dụ này kiểm tra được cả hằng số $1/12$ lẫn hiệu chỉnh variance.
+Với $f=6x(1-x)$ (Beta$(2,2)$), $f'=6-12x$, $R(f')=12$, nên $h_{H,*}=(1/(2n))^{1/3}$.
+
+\supp{T5}{Băng histogram bằng biến đổi căn}{Diễn giải Định lý 6.20, tr.130--131.}
+Với các bin có $np_j$ đủ lớn, $\ph_j\approx N(p_j,p_j(1-p_j)/n)$. Delta cho
+$\sqrt{\ph_j}-\sqrt{p_j}\approx N(0,(1-p_j)/(4n))$; khi $p_j$ nhỏ, variance gần $1/(4n)$.
+Bonferroni trên $m$ bin (không cần độc lập giữa các bin) gợi ý bán kính
+$c=z_{1-\alpha/(2m)}/(2\sqrt{nh})$ trên thang căn mật độ. Do đó
+\[
+L(x)=\{\max(\sqrt{\widehat f_H(x)}-c,0)\}^2,\qquad
+U(x)=\{\sqrt{\widehat f_H(x)}+c\}^2.
+\]
+Đây là băng xấp xỉ cho $\overline f_H(x)=p_j/h$ trên bin. Điều kiện tăng số bin và đủ số đếm cần được kiểm soát; chẳng hạn mật độ bị chặn trên/dưới dương cùng $m\log n/n\to0$ giúp tránh bin quá thưa. Không coi xấp xỉ chuẩn là bảo đảm hữu hạn mẫu; nếu cần bảo đảm đơn giản, dùng Bonferroni--Hoeffding ở W6.5--7.
+
+\supp{T6}{Ba dạng trả lời nhanh thường gặp}{Các câu mẫu ngắn dựa trên kết quả đã chứng minh.}
+\textbf{(i) Vì sao không lấy $h$ thật nhỏ?} Bias giảm nhưng variance $\asymp1/(nh)$ tăng. Nếu $nh$ không tiến vô hạn, KDE có thể không nhất quán. Nếu giữ $h$ cố định khi $n\to\infty$, variance mất nhưng còn bias của $K_h*f$.
+
+\textbf{(ii) Nhân đều trên $[-1,1]$, tìm $h_*$.} $\mu_2=1/3$, $R(K)=1/2$, nên
+$h_*=[9/(2nR(f''))]^{1/5}$. Nếu dùng boxcar trên $[-1/2,1/2]$, kết quả là $[144/(nR(f''))]^{1/5}$; bandwidth của boxcar bằng hai lần bandwidth uniform để có cùng cửa sổ thực tế.
+
+\textbf{(iii) Với $h_n=n^{-a}$, khi nào nhất quán và khi nào bỏ bias trong CLT?} Nhất quán cần $0<a<1$. CLT tâm hóa tại $f(x)$ có bias biến mất nếu $nh_n^5=n^{1-5a}\to0$, tức $1/5<a<1$. Tại $a=1/5$, bias chuẩn hóa thường không mất. Các kết luận giả sử $f(x)>0$, nhân và mật độ đủ chính quy như Bài 3.9.
+
+\section{Chỉ dẫn nguồn và bảng kiểm cuối}
+\textbf{Nguồn chính để đối chiếu.}
+\begin{enumerate}
+\item Larry Wasserman, \emph{All of Nonparametric Statistics}, Springer, 2006, bản PDF trong thư mục Books. Chương 2: EDF/functionals; chương 4: risk/kernels; chương 5: local regression; chương 6: density; mục 8.4: orthogonal density.
+\item Trang sách của tác giả, có liên kết dữ liệu: \href{https://stat.cmu.edu/~larry/all-of-nonpar/index.html}{All of Nonparametric Statistics -- CMU}.
+\item Bài 5.3 được đối chiếu thêm với \href{https://itl.nist.gov/div898/software/dataplot/refman1/auxillar/kstest.htm}{NIST: kiểm định KS} và \href{https://itl.nist.gov/div898/handbook/eda/section3/eda3e.htm}{NIST: kiểm định Anderson--Darling}. NIST lưu ý việc ước lượng tham số thay đổi hiệu chuẩn KS và AD đặt trọng số lớn hơn ở phần đuôi.
+\end{enumerate}
+
+\textbf{Những chỗ được hiệu chỉnh trong tài liệu này.}
+\begin{itemize}
+\item Bài 3.2 gốc: thêm điều kiện cho dư $O(h^4)$; ghi phiên bản $o(h^2)$ dưới điều kiện yếu hơn.
+\item Bài 3.8 gốc và (6.35): giữ số hạng $-2K$ và hệ số $n(n-1)$ chính xác.
+\item Histogram: giữ số hạng $-R(f)/n$ khi cần khai triển chính xác đến bậc $1/n$.
+\item Bài 4.2: ``sửa bias biên'' nghĩa là giảm bậc, không loại bỏ mọi bias.
+\item W2.15: giới hạn histogram CDF đến EDF theo hội tụ yếu, không tự động đều qua các bước nhảy.
+\item (8.12): sửa chuẩn hóa variance thành $n/J$ theo mô hình và W7.3; (8.19): phân biệt tiêu chuẩn có/không lấy phần dương.
+\item W1.5: bổ sung điều kiện variance hữu hạn cho chứng minh CLT--Slutsky.
+\end{itemize}
+
+\textbf{Kiểm tra một lời giải trước khi nộp.}
+\begin{enumerate}
+\item $p_j$ là xác suất thật, $\widehat p_j$ là tần suất mẫu; $f$ là mật độ, $F$ là CDF.
+\item $\sigma_K^4$ có nghĩa là $\mu_2(K)^2$; $R(K)=\int K^2$.
+\item Mọi phép đổi biến đều có hệ số Jacobian $h$; variance KDE phải có $1/(nh)$.
+\item Điều kiện $h\to0$, $nh\to\infty$ đi kèm kết luận nhất quán.
+\item Cực tiểu hóa \emph{AMISE} cho bandwidth tiệm cận, không phải nghiệm MISE chính xác.
+\item CI cho $f$ thật khác CI cho $f_h=\E\fh$; CI điểm khác băng đồng thời.
+\item Không khẳng định đã có kết quả dữ liệu hoặc mô phỏng khi mới đưa quy trình.
+\end{enumerate}
+\end{document}

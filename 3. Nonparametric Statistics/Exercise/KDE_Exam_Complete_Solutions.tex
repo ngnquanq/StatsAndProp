@@ -1,0 +1,2276 @@
+% !TeX program = xelatex
+%==============================================================================
+%  KDE: bài tập và lời giải chi tiết (slide Chap2 + Wasserman ch.6 + Tsybakov ch.1)
+%  Theo template HMMT của repo: templates/hmmt-solution-template.tex
+%  Biên dịch: xelatex KDE_Exam_Complete_Solutions.tex (chạy 2 lần)
+%==============================================================================
+\documentclass[11pt,a4paper]{article}
+
+% --- Ngôn ngữ và font: Latin Modern ----------------------------------------
+\usepackage{fontspec}
+\usepackage{polyglossia}
+\setdefaultlanguage{vietnamese}
+\setotherlanguage{english}
+\setmainfont{lmroman10-regular.otf}[
+  BoldFont       = lmroman10-bold.otf,
+  ItalicFont     = lmroman10-italic.otf,
+  BoldItalicFont = lmroman10-bolditalic.otf
+]
+
+% --- Toán học ---------------------------------------------------------------
+\usepackage{amsmath, amssymb, amsthm}
+\usepackage{unicode-math}
+\setmathfont{latinmodern-math.otf}
+\allowdisplaybreaks
+
+% --- Khổ trang --------------------------------------------------------------
+\usepackage[a4paper, top=3.0cm, bottom=3.0cm, left=3.2cm, right=3.2cm]{geometry}
+\usepackage{enumitem}
+\setlist{itemsep=2pt, topsep=2pt, parsep=0pt, partopsep=0pt, leftmargin=1.6em}
+\usepackage{booktabs, longtable, array}
+\usepackage[hidelinks]{hyperref}
+
+\setlength{\parindent}{1.5em}
+\setlength{\parskip}{2pt}
+\setlength{\abovedisplayskip}{5pt plus 1pt minus 2pt}
+\setlength{\belowdisplayskip}{5pt plus 1pt minus 2pt}
+\setlength{\abovedisplayshortskip}{2pt plus 1pt}
+\setlength{\belowdisplayshortskip}{2pt plus 1pt}
+\pagestyle{plain}
+\emergencystretch=3em
+
+% --- Thông tin tài liệu -----------------------------------------------------
+\newcommand{\coursename}{Nonparametric Statistics}
+\newcommand{\docdate}{\today}
+\newcommand{\doctitle}{KDE: tính tay và chứng minh}
+\newcommand{\studentname}{Nguyễn Quang}
+
+% --- Đề bài / lời giải / định lý -------------------------------------------
+% Keep room for an exercise heading and its setup without extra packages.
+\newcommand{\giuNoiDung}[1]{\par\begingroup
+  \dimen0=\pagegoal\advance\dimen0 by -\pagetotal
+  \ifdim\dimen0<#1\relax\newpage\fi\endgroup}
+\newcounter{prob}
+\makeatletter
+\newenvironment{problem}[1][]{%
+  \par\giuNoiDung{12\baselineskip}\medskip\noindent
+  \def\@tempa{#1}%
+  \ifx\@tempa\@empty\refstepcounter{prob}\textbf{\theprob.}\else\textbf{#1}\fi
+  \ \ignorespaces
+}{\par}
+\makeatother
+\newcounter{solstep}
+\newcommand{\giaimuc}[1]{\par\medskip\noindent\textbf{#1}\par\nopagebreak\noindent}
+\newcommand{\buoc}[1]{\par\smallskip\stepcounter{solstep}\noindent\textbf{Bước \arabic{solstep}. #1.}\par\nopagebreak\noindent}
+\newenvironment{solution}{%
+  \par\setcounter{solstep}{0}\noindent\textbf{Lời giải}\par\ignorespaces
+}{\par}
+\theoremstyle{definition}
+\newtheorem{thm}{Định lý}
+\newtheorem{dfn}{Định nghĩa}
+\newcommand{\answer}[1]{\boxed{#1}}
+
+% Tiêu đề nhóm bài: đậm, canh giữa, không đánh số (không dùng \section cho từng bài)
+\newcommand{\nhom}[1]{\par\bigskip\begin{center}\bfseries #1\end{center}\pdfbookmark[1]{#1}{#1}\nopagebreak}
+
+% --- Ký hiệu ---------------------------------------------------------------
+\newcommand{\E}{\mathbb E}\newcommand{\Pp}{\mathbb P}
+\newcommand{\R}{\mathbb R}\newcommand{\1}{\mathbf 1}
+\DeclareMathOperator{\Var}{Var}\DeclareMathOperator{\Cov}{Cov}
+\DeclareMathOperator{\Bias}{Bias}\DeclareMathOperator{\MSE}{MSE}
+\DeclareMathOperator{\MISE}{MISE}\DeclareMathOperator{\AMISE}{AMISE}
+\DeclareMathOperator{\se}{se}
+\newcommand{\Fh}{\widehat F_n}\newcommand{\fh}{\widehat f_h}
+\newcommand{\dto}{\xrightarrow{d}}\newcommand{\pto}{\xrightarrow{P}}
+\newcommand{\asto}{\xrightarrow{\mathrm{a.s.}}}
+\newcommand{\norm}[1]{\left\lVert#1\right\rVert}
+\newcommand{\muK}{\mu_2(K)}
+
+\begin{document}
+
+\begin{center}
+  {\bfseries\coursename}\\
+  \docdate\\
+  \doctitle: \textbf{\studentname}
+\end{center}
+\vspace{0.5em}
+
+\noindent\textbf{Cách dùng.} Phần \emph{Tra nhanh} đầu tài liệu dùng để tra công thức; mỗi bài KDE-$NN$ dùng cùng năm mục: \textbf{Mục tiêu; Công cụ và điều kiện; Giải từng bước; Kết luận; Lỗi dễ mắc}. Đọc mục 2 để biết vì sao được dùng công thức, theo các bước ở mục 3, rồi dùng mục 4 để kiểm tra đáp số. Nguồn chính: slide \emph{Chapter 2: Density Estimation} (ký hiệu S$j$), Wasserman (2006), \emph{All of Nonparametric Statistics} (W6.$k$ là bài $k$ cuối chương 6), Tsybakov (2009) (T). Mã KDE-01--53 là cách tổ chức lại cho ôn thi, không phải mã bài gốc.
+
+
+\nhom{Cách đọc một lời giải trong tài liệu này}
+\noindent Tất cả bài dùng cùng năm mục. \textbf{Mục tiêu} nói rõ phải tìm gì.
+\textbf{Công cụ và điều kiện} cho biết công thức nào được dùng và vì sao dùng được.
+\textbf{Giải từng bước} đánh số các phép biến đổi theo thứ tự; mỗi bước có tên nêu việc đang làm.
+\textbf{Kết luận} là đáp số hoặc mệnh đề cuối cùng. \textbf{Lỗi dễ mắc} chỉ ra một chỗ cần kiểm tra trước khi nộp.
+
+Nếu một bước dùng kết quả bài trước, tài liệu ghi mã bài để tra. Với bài tính số, nên giữ phân số hoặc căn thức tới cuối rồi mới làm tròn. Với bài chứng minh, sau mỗi dấu bằng hoặc bất đẳng thức hãy tự hỏi: do định nghĩa, đổi biến, độc lập, hay một giả thiết về độ trơn?
+
+\begin{center}\begin{tabular}{p{3.1cm}p{9cm}}
+\toprule Ký hiệu & Cách đọc và ý nghĩa\\\midrule
+$f(x)$ & Mật độ thật tại $x$; coi là một số cố định khi phân phối đã cho.\\
+$\widehat f_h(x)$ & Ước lượng từ mẫu; thay mẫu thì giá trị có thể thay đổi.\\
+$f_h(x)=\E\widehat f_h(x)$ & Trung bình của ước lượng qua các mẫu lặp lại; không phải luôn bằng $f(x)$.\\
+$b_h(x)=f_h(x)-f(x)$ & Bias: độ lệch có hệ thống. Bình phương bias khác variance.\\
+$R(g)=\int g^2$ & Bình phương chuẩn $L_2$; không phải $\int g$.\\
+$\|g\|_\infty$ & Cận trên thiết yếu của $|g|$; với hàm liên tục bị chặn, là supremum của $|g(x)|$.\\
+$r_h=O(h^q)$ & Tồn tại hằng số $C$ sao cho $|r_h|\le Ch^q$ khi $h$ đủ nhỏ.\\
+$r_h=o(h^q)$ & $r_h/h^q\to0$: phần dư nhỏ hơn bậc $h^q$.\\
+$\asymp$ & Hai vế cùng bậc: tỷ số bị chặn trên và dưới bởi các hằng số dương.\\
+$W^{q,2}$ & Hàm và các đạo hàm yếu đến bậc $q$ có bình phương khả tích; dùng để kiểm soát sai số trên toàn trục.\\\bottomrule
+\end{tabular}\end{center}
+Ba quy tắc lặp lại nhiều nhất: $\E(cZ)=c\E Z$; $\Var(cZ)=c^2\Var Z$; nếu $Z_i$ độc lập thì $\Var(\sum_i Z_i)=\sum_i\Var Z_i$.
+\clearpage
+\nhom{Tra nhanh 1/3: công thức nền và bảng nhân}
+$X_i\overset{\mathrm{iid}}\sim f$; $h>0$; $K_h(t)=h^{-1}K(t/h)$; $R(g)=\int g^2$;
+$\mu_j(K)=\int u^jK(u)du$; $\sigma_K^2=\mu_2(K)$, $\sigma_K^4=\mu_2(K)^2$.
+\begin{align*}
+\fh(x)&=\frac1{nh}\sum_iK((x-X_i)/h),\\
+f_h(x)&=\E\fh(x)=(K_h*f)(x),\\
+\Var\fh(x)&=\frac1{nh}\int K^2(u)f(x-hu)du-\frac1n f_h(x)^2,\\
+\Bias\fh(x)&=\tfrac12h^2\muK f''(x)+o(h^2),\\
+\Var\fh(x)&=\frac{f(x)R(K)}{nh}+o((nh)^{-1}),\\
+\MSE_x(h)&\simeq \tfrac14\muK^2 f''(x)^2h^4+\frac{f(x)R(K)}{nh},\\
+h_{x,*}&=\left[\frac{f(x)R(K)}{\muK^2f''(x)^2n}\right]^{1/5}.
+\end{align*}
+Các khai triển cần giả thiết nhân và độ trơn trong KDE-08--14; công thức bandwidth điểm cần $f(x)>0$, $f''(x)\ne0$.
+\begin{align*}
+\int\Var\fh&=\frac{R(K)}{nh}-\frac1nR(f_h)\quad\text{(chính xác)},\\
+\AMISE(h)&=\tfrac14\muK^2R(f'')h^4+\frac{R(K)}{nh},\\
+h_*&=\left[\frac{R(K)}{\muK^2R(f'')n}\right]^{1/5},\\
+\AMISE(h_*)&=\tfrac54\{\muK^2R(f'')\}^{1/5}R(K)^{4/5}n^{-4/5}.
+\end{align*}
+\begin{center}\begin{tabular}{lll}
+\toprule $K(u)$ & $\mu_2(K)$ & $R(K)$\\\midrule
+$\frac12\1_{|u|\le1}$ & $1/3$ & $1/2$\\
+$\1_{|u|<1/2}$ (W6.2) & $1/12$ & $1$\\
+$(1-|u|)_+$ & $1/6$ & $2/3$\\
+$\frac34(1-u^2)\1_{|u|\le1}$ & $1/5$ & $3/5$\\
+$\phi(u)=(2\pi)^{-1/2}e^{-u^2/2}$ & $1$ & $1/(2\sqrt\pi)$\\
+$\frac{70}{81}(1-|u|^3)^3\1_{|u|\le1}$ & $35/243$ & $175/247$\\\bottomrule
+\end{tabular}\end{center}
+\textbf{Normal reference:} $R(f'')=3/(8\sqrt\pi\sigma^5)$ cho mật độ chuẩn;
+$h_*=(4/3)^{1/5}\sigma n^{-1/5}\simeq1.0592\sigma n^{-1/5}$.
+Thực hành theo sách: $\widehat\sigma=\min(s,\mathrm{IQR}/1.34)$.
+\nhom{Tra nhanh 2/3: Hölder, nhân bậc cao và CV}
+\textbf{Quy ước đúng theo Tsybakov/slide 22.} Đặt $\ell=\lceil\beta\rceil-1$, $\alpha=\beta-\ell\in(0,1]$.
+$\Sigma(\beta,L)$ gồm các hàm có $\ell$ đạo hàm và
+$|f^{(\ell)}(x)-f^{(\ell)}(y)|\le L|x-y|^\alpha$.
+Nhân ``order $\ell$'' theo Tsybakov triệt tiêu moment $1,\ldots,\ell$.
+Nhân Gaussian triệt tiêu moment 1: order 1 theo Tsybakov, thường gọi \emph{nhân bậc hai} theo quy ước moment đầu tiên khác 0.
+Với $\norm f_\infty\le M$, $K\in L_2$:
+\[
+\Var\fh(x)\le\frac{C_1}{nh},\quad C_1=MR(K).
+\]
+Với $f\in\Sigma(\beta,L)$, $K$ triệt tiêu moment $1,\ldots,\ell$:
+\[
+|\Bias\fh(x)|\le C_2h^\beta,\quad
+C_2=\frac L{\ell!}\int|u|^\beta|K(u)|du.
+\]
+\[
+\MSE_x(h)\le C_2^2h^{2\beta}+\frac{C_1}{nh},\quad
+h_{\mathrm{bound}}=\left(\frac{C_1}{2\beta C_2^2n}\right)^{1/(2\beta+1)}.
+\]
+Tốc độ MSE $n^{-2\beta/(2\beta+1)}$; tốc độ căn MSE $n^{-\beta/(2\beta+1)}$.
+\textbf{Nhân bậc cao cụ thể.} $K_4(u)=\tfrac12(3-u^2)\phi(u)$:
+$\mu_1=\mu_2=\mu_3=0$, $\mu_4=-3$, $R(K_4)=27/(32\sqrt\pi)$.
+Nếu $f$ đủ trơn, bias $=-h^4 f^{(4)}(x)/8+o(h^4)$, MISE tối ưu $O(n^{-8/9})$.
+
+\textbf{Density leave-one-out CV}, với $h$ cố định khi bỏ quan sát:
+\[
+\widehat J(h)=\int\fh^2-\frac2n\sum_i\widehat f_{(-i),h}(X_i),\qquad
+\E\widehat J(h)=\MISE(h)-R(f).
+\]
+Với $K$ đối xứng, đặt $C=K*K$:
+\[
+\widehat J(h)=\frac1{n^2h}\sum_{i,j}C\!\left(\frac{X_i-X_j}{h}\right)
+-\frac2{n(n-1)h}\sum_{i\ne j}K\!\left(\frac{X_i-X_j}{h}\right).
+\]
+Với Gaussian, $C(z)=\phi_{\sqrt2}(z)=e^{-z^2/4}/\sqrt{4\pi}$.
+\textbf{Bẫy CV.} Tích phân bình phương tạo hệ số $1/h$, không phải $1/h^2$. Số hạng thứ hai phải âm. Tổng thứ nhất gồm $i=j$; tổng leave-one-out loại $i=j$. CV có thể âm. Không chệch với $h$ cố định không tự chuyển thành không chệch tại $\widehat h$ đã tối ưu từ dữ liệu.
+
+\textbf{Tối ưu dạng nhân.} Sau tối ưu bandwidth, tối thiểu hằng số tương đương tối thiểu
+$R(K)\sqrt{\mu_2(K)}$; hoặc cố định $\mu_2$ rồi tối thiểu $R(K)$. Nghiệm trong lớp nhân không âm là Epanechnikov sau đổi thang.
+\nhom{Tra nhanh 3/3: hội tụ, CI, biên và tìm lời giải}
+\textbf{Nhất quán điểm:} $h_n\to0$, $nh_n\to\infty$, cùng điều kiện chính quy:
+$\fh(x)\pto f(x)$.
+\[
+\sqrt{nh}\{\fh(x)-\E\fh(x)\}\dto N(0,f(x)R(K)).
+\]
+Nếu thêm $nh^5\to\lambda\in[0,\infty)$ và bias bậc hai,
+\[
+\sqrt{nh}\{\fh(x)-f(x)\}\dto
+N\left(\tfrac12\sqrt\lambda\,\muK f''(x),f(x)R(K)\right).
+\]
+Với undersmoothing $nh^5\to0$, $f(x)>0$, nhân không âm:
+\[
+CI_{1-\alpha}(x):\quad\fh(x)\pm z_{1-\alpha/2}\sqrt{\frac{\fh(x)R(K)}{nh}}.
+\]
+Ở đây $z_q=\Phi^{-1}(q)$, khác quy ước đuôi trên trong sách.
+\textbf{Nếu $h_n=n^{-a}$:}
+\begin{center}\begin{tabular}{ll}
+\toprule Mục tiêu & Điều kiện điển hình\\\midrule
+Nhất quán điểm & $0<a<1$\\
+Tối ưu MSE/MISE với nhân bậc hai & $a=1/5$\\
+Bỏ bias trong CLT tâm hóa tại $f(x)$ & $1/5<a<1$\\
+Nhân có bias $h^q$, bỏ bias trong CLT & $nh^{2q+1}\to0$\\\bottomrule
+\end{tabular}\end{center}
+\textbf{Tại biên 0 của giá $[0,\infty)$.} Nhân đối xứng, $f(0)>0$:
+$\E\fh(0)\to f(0)/2$, nên bias không tiến 0. Phản xạ sửa bias xuống $O(h)$ nói chung; đạt $O(h^2)$ khi thêm $f'(0)=0$. Không áp dụng công thức điểm trong ở biên.
+
+\textbf{Tìm bài theo dạng đề.}
+\begin{center}\begin{tabular}{>{\raggedright\arraybackslash}p{10cm}l}
+\toprule Dạng đề & Mã bài\\\midrule
+Định nghĩa, cửa sổ, tính KDE với vài quan sát & 01--04\\
+Tính moment, đổi thang, nhân tối ưu & 05--07\\
+Bias, variance, MSE tại điểm & 08--14\\
+MISE, bandwidth, Gaussian, hệ số 1.06 & 15--19\\
+Hölder, proof sketch slide 22--25, nhân bậc cao & 20--26\\
+Cross-validation, tổng đôi và ví dụ số & 27--30\\
+Nhất quán, CLT, CI, chọn số mũ bandwidth & 31--35\\
+Biên, phản xạ, local likelihood, giải thích lý thuyết & 36--40\\
+Tính tay mở rộng; ba đề tự luyện có đáp án & 41--53; H\\\bottomrule
+\end{tabular}\end{center}
+\textbf{Cách chọn công cụ trong mục 2.} Viết thành trung bình các biến độc lập; tính kỳ vọng; tính moment hai; đổi biến; Taylor và triệt tiêu moment; ghép risk, tối ưu hoặc chuẩn hóa. Ghi rõ giả thiết, nhất là điểm trong/biên và loss điểm/toàn cục.
+\nhom{Bản đồ nguồn và những hiệu chỉnh cần nhớ}
+Trong tài liệu, \textbf{S$j$} là slide $j$ của \emph{Chap2\_Density\_estimation (handout).pdf}; \textbf{W6.$k$} là bài $k$ cuối chương 6 của Wasserman, không phải số định lý. \textbf{T} là Tsybakov. Trang sách là số \emph{in trên trang}, không phải thứ tự trang PDF. Các bài KDE-01--53 là cách tổ chức lại cho ôn thi; tên và mã này không phải mã bài gốc.
+\begin{longtable}{>{\raggedright\arraybackslash}p{4.5cm}>{\raggedright\arraybackslash}p{6.3cm}p{2.2cm}}
+\toprule Nguồn & Nội dung & Bài ở đây\\\midrule\endhead
+S6--8; W4.1, tr.50--55 & Loss, risk, bias--variance, trực giác bandwidth & 14,17,40\\
+S9--10; S22--25; T tr.4--9 & Lớp Hölder, chặn bias/variance, risk đều & 20--26\\
+S11, S27; W6.1, tr.126--127 & Định nghĩa và suy ra CV & 27--30\\
+S19; W6.25, tr.132 & Định nghĩa KDE & 01--04\\
+S20; W4.2, tr.55--56 & Các dạng nhân, tối ưu nhân & 05--07\\
+S21; W6.28, tr.133--134 & Bias, variance và risk & 08--17\\
+S26--27; W6.30, tr.134--135 & Bandwidth, AMISE, normal reference & 17--19\\
+S28; W6.27, tr.133 & Nhất quán và CLT & 31--35\\
+S29, S35--36 & Ảnh hưởng bandwidth, biên, so sánh tốc độ & 26,35--37,40\\
+W6.1, tr.142 (PDF 151) & Chứng minh nhất quán & 31\\
+W6.2, tr.142--143 (PDF 151--152) & Boxcar, kỳ vọng, variance, nhất quán & 03,31\\
+W6.3, tr.143 (PDF 152) & CV không chệch; phần KDE & 27\\
+W6.4, tr.143 (PDF 152) & Công thức 6.35 & 28\\
+W6.5--6.7, tr.143 (PDF 152) & Bài dữ liệu; chỉ luyện các phép tính KDE/CV & 41--43,50\\
+W6.8, tr.143 (PDF 152) & Local likelihood bậc 0 & 38\\
+W6.9, tr.143 (PDF 152) & Chuyển sang suy ra công thức local likelihood & 53\\
+W6.10, tr.144 (PDF 153) & Chỉ lấy hỗn hợp Bart Simpson để tính tay & 52\\\bottomrule
+\end{longtable}
+\textbf{Hiệu chỉnh có ảnh hưởng trực tiếp tới bài làm.}
+\begin{enumerate}
+\item S20: biểu thức tối ưu dạng nhân sau tối ưu $h$ là $R(K)\sqrt{\mu_2(K)}$, tương đương lũy thừa của nó; không phải tích $R(K)\sigma_K^4$ không ràng buộc đổi thang.
+\item S21: $f''\in L_2$ chưa đủ cho dư bias \emph{tại điểm} $O(h^4)$. KDE-08,09,16 phân biệt các bộ giả thiết.
+\item S22: ký hiệu $\lfloor\beta\rfloor$ của Tsybakov được tác giả định nghĩa là số nguyên lớn nhất \emph{nhỏ hơn} $\beta$. Dùng $\ell=\lceil\beta\rceil-1$ trong tài liệu này; riêng $\beta=2$ thì $\ell=1$.
+\item S25: để lấy supremum theo $f$, phải chứng minh hằng số $f_{\max}$ có thể chọn chung cho lớp mật độ, không chỉ từng $f$.
+\item S26: $n^{-4/5}=o(n^{-2/3})$; số mũ $4/5$ lớn hơn nhưng sai số nhỏ hơn.
+\item S27: công thức đúng có $1/(n^2h)$ và số hạng âm leave-one-out; xem KDE-28.
+\item S28: Theorem 2.1 của Tsybakov là công cụ cận dưới qua kiểm định hai điểm, không phải tự nó là phát biểu KDE đạt tốc độ $n^{-4/5}$. Tối ưu cận trên AMISE chưa chứng minh cận dưới minimax.
+\end{enumerate}
+Tài liệu tập trung KDE một chiều của slide. Các phần hồi quy kernel, KDE nhiều chiều và sai số đo trong sách không phải bài tập ôn chính ở đây. Theo phạm vi thi đã xác nhận, bản này chỉ có tính tay và chứng minh. Không đưa code, đồ thị dữ liệu hay kết quả mô phỏng vào bản ôn chính. W6.5--6.7, W6.9--6.10 vốn có yêu cầu thực nghiệm: ở đây chỉ rút ra các phép tính và lập luận liên quan; không nhận là đã giải phần thực nghiệm trong bản này. Các bài 41--53 và ba đề tự luyện là bài tự biên soạn có ghi rõ nguồn ý tưởng. Phụ lục giải thích minimax và Stone ở mức phát biểu, điều kiện và lập luận, không nhận là chứng minh đầy đủ hai kết quả sâu này.
+\nhom{A. Định nghĩa, tính tay và các dạng nhân}
+\begin{problem}[KDE-01. Khi nào KDE là một mật độ?]\label{k:01}
+\textit{(Nguồn: S19; W6.25, tr.132.)} Cho $\fh(x)=(nh)^{-1}\sum_{i=1}^nK((x-X_i)/h)$. Chứng minh không âm và tích phân bằng 1. Đối xứng có cần thiết không?
+\end{problem}
+\begin{solution}
+\giaimuc{1. Mục tiêu}
+Chứng minh hai điều riêng: $\widehat f_h(x)\ge0$ và $\int\widehat f_h=1$.
+\giaimuc{2. Công cụ và điều kiện}
+$h>0$, $K\ge0$, $\int K=1$; dùng tính tuyến tính của tích phân và đổi biến.
+\giaimuc{3. Giải từng bước}
+\buoc{Chứng minh tính không âm và tính tích phân của một thành phần}
+Nếu $K\ge0$, $\int K=1$, $h>0$, mọi số hạng không âm. Với từng $i$, đổi biến $u=(x-X_i)/h$, $dx=h\,du$:
+\[
+\begin{aligned}
+\int_{\R}\frac1hK\left(\frac{x-X_i}{h}\right)dx
+&=\int_{\R}\frac1hK(u)\,h\,du &&(x=X_i+hu)\\
+&=\int_{\R}K(u)du=1. &&\text{(nhân đã chuẩn hóa)}
+\end{aligned}
+\]
+
+\buoc{Cộng các thành phần và kiểm tra điều kiện}
+Cộng $n$ số hạng rồi chia $n$ cho $\int\fh=1$. Đây là tính chất với \emph{mọi mẫu}, không cần lấy kỳ vọng. Đối xứng và moment một bằng 0 không cần cho tính hợp lệ của mật độ; chúng dùng để giảm bias. Nếu $K$ đổi dấu, vẫn có $\int\fh=1$ nhưng có thể $\fh<0$. Nếu tích phân chỉ trên một đoạn chứa một phần khối lượng nhân, kết quả có thể nhỏ hơn 1 dù mọi $X_i$ nằm trong đoạn ấy.
+\giaimuc{4. Kết luận}
+$K\ge0$ và $\int K=1$ suy ra $\widehat f_h\ge0$ và $\int\widehat f_h=1$ với mọi mẫu, $h>0$. Không cần giả thiết đối xứng cho kết luận này.
+\giaimuc{5. Lỗi dễ mắc}
+Không cần nhân đối xứng cho riêng tính hợp lệ của mật độ; $\widehat f_h(x)$ không bị buộc nhỏ hơn 1.
+\end{solution}
+\begin{problem}[KDE-02. Dạng tích chập và kỳ vọng của KDE.]\label{k:02}
+\textit{(Nguồn: S19,21; W6.28.)} Viết KDE theo phân phối thực nghiệm và chứng minh $\E\fh=K_h*f$. Giải thích ý nghĩa làm trơn.
+\end{problem}
+\begin{solution}
+\giaimuc{1. Mục tiêu}
+Biến tổng KDE thành tích phân, rồi tìm kỳ vọng của ước lượng.
+\giaimuc{2. Công cụ và điều kiện}
+$K_h(t)=K(t/h)/h$; $X_i$ i.i.d. có mật độ $f$; kỳ vọng của $g(X)$ là $\int g(t)f(t)dt$ khi khả tích.
+\giaimuc{3. Giải từng bước}
+\buoc{Viết tổng dưới dạng tích phân theo phân phối thực nghiệm}
+Gọi $\widehat P_n=n^{-1}\sum_i\delta_{X_i}$. Theo tích phân đối với độ đo rời rạc,
+$\fh(x)=\int K_h(x-t)d\widehat P_n(t)$.
+
+\buoc{Lấy kỳ vọng và đổi biến}
+Tính tuyến tính cho phép đưa kỳ vọng vào tổng; i.i.d. làm cả $n$ kỳ vọng bằng nhau:
+\[
+ \E\widehat f_h(x)=\frac1n\sum_{i=1}^n\E K_h(x-X_i)
+ =\frac1n\,n\E K_h(x-X_1)=\E K_h(x-X_1).
+\]
+Sau đó mới dùng mật độ của $X_1$ để biến kỳ vọng thành tích phân:
+\begin{align*}
+\E\fh(x)&=\E K_h(x-X_1)=\int K_h(x-t)f(t)dt\\
+&=\int K(u)f(x-hu)du=(K_h*f)(x).
+\end{align*}
+
+\buoc{Giải thích dấu đổi biến và ý nghĩa của kỳ vọng}
+Vì đổi biến $u=(x-t)/h$ đảo chiều cận, hai dấu âm triệt tiêu; Jacobian cuối là $h$.
+Nếu dùng quy ước $K((X_i-x)/h)$, kỳ vọng là $\int K(u)f(x+hu)du$. Hai quy ước cho cùng ước lượng khi $K$ đối xứng; khi $K$ không đối xứng, chúng dùng hai nhân phản chiếu nhau.
+$\fh$ là trung bình các ``khối mật độ'' rộng cỡ $h$ đặt tại dữ liệu. Kỳ vọng $f_h$ là mật độ thật bị làm trơn. Với $h$ cố định, tăng $n$ chỉ làm $\fh$ gần $f_h$, không tự xóa bias $f_h-f$.
+\giaimuc{4. Kết luận}
+$\widehat f_h=K_h*\widehat P_n$ và $\E\widehat f_h(x)=f_h(x)=(K_h*f)(x)$. Đích của kỳ vọng là mật độ đã làm trơn; muốn bias mất đi còn cần $h\to0$ cùng các điều kiện thích hợp.
+\giaimuc{5. Lỗi dễ mắc}
+Trong kỳ vọng phải tích phân theo phân phối thật của $X$; không thay $X_i$ bằng $\E X_i$ trong hàm nhân.
+\end{solution}
+\begin{problem}[KDE-03. Bài boxcar: phân phối chính xác và liên hệ EDF.]\label{k:03}
+\textit{(Nguồn: W6.2(a,b), tr.142--143; Ví dụ 4.16.)} Lấy $K(u)=\1_{|u|<1/2}$. Tìm phân phối, kỳ vọng và variance của $\fh(x)$; viết bằng EDF và chứng minh nhất quán.
+\end{problem}
+\begin{solution}
+\giaimuc{1. Mục tiêu}
+Tìm phân phối, kỳ vọng, variance và điều kiện hội tụ của KDE boxcar.
+\giaimuc{2. Công cụ và điều kiện}
+Biến chỉ báo có phân phối Bernoulli; tổng $n$ biến chỉ báo độc lập cùng xác suất có phân phối nhị thức.
+\giaimuc{3. Giải từng bước}
+\buoc{Đếm số quan sát trong cửa sổ}
+Đặt $a=x-h/2$, $b=x+h/2$, $p_h=\Pp(a<X<b)=\int_a^bf(t)dt$. Với $f$ là mật độ và $x,h$ cố định, xác suất trúng đầu mút bằng 0. Khi đó
+\[
+N_x=\sum_i\1_{a<X_i<b}\sim\operatorname{Bin}(n,p_h),\qquad \fh(x)=N_x/(nh).
+\]
+
+\buoc{Tính kỳ vọng và variance của biến đếm đã chia tỷ lệ}
+Với $N_x\sim\operatorname{Bin}(n,p_h)$, ta biết $\E N_x=np_h$ và $\Var N_x=np_h(1-p_h)$. Vì $\widehat f=N_x/(nh)$,
+\[
+ \E\widehat f=\frac{np_h}{nh},\qquad
+ \Var\widehat f=\frac{np_h(1-p_h)}{n^2h^2}.
+\]
+Rút gọn được
+\[
+\E\fh=p_h/h,\qquad \Var\fh=p_h(1-p_h)/(nh^2).
+\]
+
+\buoc{Viết theo EDF và giữ đúng đầu mút}
+Công thức luôn đúng với quy ước khoảng mở là
+$N_x=n\{\Fh(b^-)-\Fh(a)\}$. Nếu không có dữ liệu bằng đầu mút, có thể viết $\fh(x)=\{\Fh(b)-\Fh(a)\}/h$. Đây là \emph{sai phân} CDF, không phải đạo hàm thông thường của EDF (vốn bằng 0 ngoài các bước nhảy).
+
+\buoc{Chứng minh nhất quán và tìm bias khi trơn hơn}
+Nếu $f$ liên tục tại $x$, trung bình tích phân $p_h/h\to f(x)$ khi $h\to0$. Khi ấy $p_h=O(h)$, nên $\Var\fh=O((nh)^{-1})\to0$ nếu $nh\to\infty$. MSE tiến 0 kéo theo hội tụ theo xác suất. Nếu $f\in C^2$ gần $x$,
+\[
+p_h=hf(x)+h^3f''(x)/24+o(h^3),\quad \Bias\fh=h^2f''(x)/24+o(h^2).
+\]
+\giaimuc{4. Kết luận}
+$nh\widehat f_h(x)\sim\mathrm{Bin}(n,p_h)$, với $p_h=\int_{x-h/2}^{x+h/2}f(t)dt$. Kỳ vọng $p_h/h$, variance $p_h(1-p_h)/(nh^2)$; nếu $f$ liên tục tại $x$, $h\to0$, $nh\to\infty$ thì $\widehat f_h(x)\pto f(x)$.
+\giaimuc{5. Lỗi dễ mắc}
+Nhân này có cửa sổ rộng $h$, không phải $2h$; variance của $cN$ bằng $c^2\Var N$.
+\end{solution}
+\begin{problem}[KDE-04. Tính KDE trên mẫu ba điểm.]\label{k:04}
+\textit{(Nguồn: Bài tính tay biên soạn từ S19--20.)} Cho $X=(-1,0,1)$, $h=1$, $x_0=1/4$. Tính KDE với uniform trên $[-1,1]$, triangular, Epanechnikov và Gaussian.
+\end{problem}
+\begin{solution}
+\giaimuc{1. Mục tiêu}
+Tính bốn KDE tại cùng $x_0$ từ ba quan sát.
+\giaimuc{2. Công cụ và điều kiện}
+$n=3$, $h=1$, $x_0=1/4$; công thức tổng $(nh)^{-1}\sum_iK((x_0-X_i)/h)$.
+\giaimuc{3. Giải từng bước}
+\buoc{Tính đối số nhân và hệ số phía trước}
+Các đối số nhân là $(x_0-X_i)/h=(5/4,1/4,-3/4)$. Cụ thể, $u_1=(1/4-(-1))/1=5/4$, $u_2=(1/4-0)/1=1/4$, $u_3=(1/4-1)/1=-3/4$.
+Vì $nh=3$, chỉ cần cộng ba giá trị nhân rồi chia 3. Ví dụ Epanechnikov: $|u_1|>1$ nên $K(u_1)=0$; $K(u_2)=\frac34(1-1/16)=45/64$; $K(u_3)=\frac34(1-9/16)=21/64$. Tổng $66/64=33/32$, rồi chia 3 thành $11/32$.
+
+\buoc{Thay vào từng nhân và cộng}
+\begin{center}\begin{tabular}{llll}
+\toprule Nhân & Ba giá trị & Tổng & $\fh(1/4)$\\\midrule
+Uniform & $0,1/2,1/2$ & $1$ & $1/3$\\
+Triangular & $0,3/4,1/4$ & $1$ & $1/3$\\
+Epanechnikov & $0,45/64,21/64$ & $33/32$ & $11/32$\\
+Gaussian & $\phi(5/4),\phi(1/4),\phi(3/4)$ & $\simeq.870455$ & $\simeq.290152$\\\bottomrule
+\end{tabular}\end{center}
+
+\buoc{Kiểm tra và diễn giải kết quả}
+Uniform và triangular tình cờ bằng nhau tại điểm này; không phải hai đường KDE bằng nhau. Khi $h$ đổi, phải đổi cả đối số lẫn hệ số phía trước. Mật độ tại một điểm có thể lớn hơn 1, miễn tích phân toàn trục bằng 1.
+\giaimuc{4. Kết luận}
+Theo thứ tự uniform, tam giác, Epanechnikov và Gaussian, đáp số là $1/3$, $1/3$, $11/32$, và $(\phi(5/4)+\phi(1/4)+\phi(3/4))/3\approx0.290152$.
+\giaimuc{5. Lỗi dễ mắc}
+Kiểm tra giá của từng nhân trước khi thay công thức đa thức; ngoài giá, giá trị nhân bằng 0.
+\end{solution}
+\begin{problem}[KDE-05. Chuẩn hóa, moment và bình phương tích phân của sáu nhân.]\label{k:05}
+\textit{(Nguồn: S20; W4.2, tr.55--56.)} Tính $\int K$, $\mu_1$, $\mu_2$, $R(K)$ cho các nhân trong bảng tra nhanh.
+\end{problem}
+\begin{solution}
+\giaimuc{1. Mục tiêu}
+Tính $\int K$, $\mu_2(K)$ và $R(K)$ cho từng nhân.
+\giaimuc{2. Công cụ và điều kiện}
+$\mu_2(K)=\int u^2K(u)du$; $R(K)=\int K(u)^2du$; hàm chẵn có tích phân bằng hai lần tích phân nửa trục.
+\giaimuc{3. Giải từng bước}
+\buoc{Dùng đối xứng và tính các nhân hằng}
+Tất cả sáu nhân đều đối xứng, nên $\mu_1=0$ khi moment tuyệt đối tồn tại. Với nhân có giá $[-1,1]$, tính tích phân chẵn bằng hai lần tích phân từ 0 đến 1.
+\textbf{Uniform:} $\int K=2(1/2)=1$,
+$\mu_2=\int_{-1}^1u^2/2\,du=1/3$, $R(K)=\int_{-1}^1(1/2)^2du=1/2$.
+\textbf{Boxcar W6.2:} độ dài giá bằng 1, nên $\int K=R(K)=1$; $\mu_2=\int_{-1/2}^{1/2}u^2du=1/12$.
+
+\buoc{Tính nhân tam giác và Epanechnikov}
+\textbf{Triangular:}
+\[
+\int K=2\int_0^1(1-u)du=1,\quad
+\mu_2=2(1/3-1/4)=1/6,\quad
+R(K)=2\int_0^1(1-u)^2du=2/3.
+\]
+\textbf{Epanechnikov:}
+\[
+\int K=\tfrac34(2-2/3)=1,\quad
+\mu_2=\tfrac34(2/3-2/5)=1/5,\quad
+R(K)=\tfrac9{16}(2-4/3+2/5)=3/5.
+\]
+
+\buoc{Tính nhân Gaussian}
+\textbf{Gaussian:} $\int\phi=1$, $\mu_2=\E Z^2=1$, và
+$R(\phi)=(2\pi)^{-1}\int e^{-u^2}du=1/(2\sqrt\pi)$.
+
+\buoc{Khai triển đa thức cho tricube}
+\textbf{Tricube:} $K(u)=\frac{70}{81}(1-|u|^3)^3\1_{|u|\le1}$. Khai triển đa thức:
+\begin{align*}
+\int K&=\frac{140}{81}(1-3/4+3/7-1/10)=1,\\
+\mu_2&=\frac{140}{81}(1/3-3/6+3/9-1/12)=\frac{35}{243},\\
+R(K)&=2\left(\frac{70}{81}\right)^2\sum_{j=0}^6\frac{(-1)^j\binom6j}{3j+1}=\frac{175}{247}.
+\end{align*}
+
+\buoc{Phân biệt các tích phân vừa tính}
+$\mu_2$ là tích phân $u^2K$, còn $R(K)$ là tích phân $K^2$; hai phép toán hoàn toàn khác nhau. Với nhân đổi dấu, phải dùng moment \emph{tuyệt đối} trong điều kiện khả tích, không chỉ sự tồn tại do triệt tiêu.
+\giaimuc{4. Kết luận}
+Các cặp $(\mu_2,R)$ lần lượt: uniform $(1/3,1/2)$; boxcar W6.2 $(1/12,1)$; tam giác $(1/6,2/3)$; Epanechnikov $(1/5,3/5)$; Gaussian $(1,1/(2\sqrt\pi))$; tricube $(35/243,175/247)$. Tất cả có $\int K=1$.
+\giaimuc{5. Lỗi dễ mắc}
+Bình phương toàn bộ $K(u)$, kể cả hằng số chuẩn hóa, khi tính $R(K)$.
+\end{solution}
+\begin{problem}[KDE-06. Đổi thang nhân và hai loại boxcar.]\label{k:06}
+\textit{(Nguồn: S20; W4.2 và W6.2.)} Cho $K_a(u)=a^{-1}K(u/a)$ với $a>0$. Tìm moment, $R(K_a)$ và bandwidth tương đương.
+\end{problem}
+\begin{solution}
+\giaimuc{1. Mục tiêu}
+Tìm ảnh hưởng của việc giãn nhân đến moment, risk và bandwidth tương đương.
+\giaimuc{2. Công cụ và điều kiện}
+$K_a(u)=a^{-1}K(u/a)$, $a>0$; đặt $u=av$ trong mỗi tích phân.
+\giaimuc{3. Giải từng bước}
+\buoc{Đổi biến để tính moment và tích phân bình phương}
+Đổi biến $u=av$:
+\[
+\int K_a=1,\quad \mu_j(K_a)=a^j\mu_j(K),\quad R(K_a)=R(K)/a.
+\]
+
+\buoc{Thế vào KDE để nhận ra bandwidth tương đương}
+Hơn nữa
+\[
+\frac1hK_a\left(\frac{x-X_i}h\right)=\frac1{ah}K\left(\frac{x-X_i}{ah}\right).
+\]
+KDE dùng $K_a$ và $h$ bằng KDE dùng $K$ và bandwidth $ah$. Do đó $R(K_a)\sqrt{\mu_2(K_a)}=R(K)\sqrt{\mu_2(K)}$; đây là đại lượng không phụ thuộc cách ghi thang nhân.
+
+\buoc{Áp dụng cho hai quy ước boxcar}
+Uniform $U(u)=\frac12\1_{|u|\le1}$ cho boxcar $B(u)=\1_{|u|\le1/2}=U_{1/2}(u)$. Vì thế $B$ dùng $h_B$ tương đương $U$ dùng $h_U=h_B/2$. Hai công thức bandwidth tối ưu khác nhau hệ số 2 nhưng cho cùng đường KDE.
+\giaimuc{4. Kết luận}
+$\mu_j(K_a)=a^j\mu_j(K)$, $R(K_a)=R(K)/a$, $\widehat f_{K_a,h}=\widehat f_{K,ah}$. Boxcar rộng 1 dùng $h_B$ tương đương uniform rộng 2 dùng $h_U=h_B/2$.
+\giaimuc{5. Lỗi dễ mắc}
+Giữ nguyên con số $h$ trong khi đổi thang nhân không giữ nguyên mức làm trơn.
+\end{solution}
+\begin{problem}[KDE-07. Chứng minh nhân Epanechnikov tối ưu.]\label{k:07}
+\textit{(Nguồn: S20, hiệu chỉnh phát biểu tối ưu.)} Trong lớp $K\ge0$, $\int K=1$, $\int u^2K=v>0$ cố định, tối thiểu hóa $R(K)$.
+\end{problem}
+\begin{solution}
+\giaimuc{1. Mục tiêu}
+Chứng minh Epanechnikov là nghiệm tối ưu, không chỉ đoán dạng của nghiệm.
+\giaimuc{2. Công cụ và điều kiện}
+Cố định $\int K=1$, $\int u^2K=v>0$, $K\ge0$; so $R(K)$ với một ứng viên $K_*$.
+\giaimuc{3. Giải từng bước}
+\buoc{Tìm ứng viên từ ràng buộc moment}
+Tại nghiệm nội miền, biến phân của $\int K^2-\lambda_0\int K-\lambda_2\int u^2K$ cho một đa thức bậc hai; điều kiện $K\ge0$ gợi ý $K_*=(a-bu^2)_+$. Chuẩn hóa nó dưới dạng
+\[
+K_*(u)=\frac3{4c}(1-u^2/c^2)\1_{|u|\le c},\quad
+\mu_2(K_*)=c^2/5,\quad c=\sqrt{5v}.
+\]
+
+\buoc{So sánh ứng viên với một nhân bất kỳ}
+Đây mới là ứng viên; cần chứng minh cực tiểu toàn cục. Đặt $q(u)=a-bu^2$, $K_*=q_+$. Các ràng buộc cho $\int(K-K_*)=0$ và $\int u^2(K-K_*)=v-v=0$. Vì vậy
+\[
+ \int q(K-K_*)=a\int(K-K_*)-b\int u^2(K-K_*)=a\cdot0-b\cdot0=0.
+\]
+Đây là lý do phải so các nhân có cùng chuẩn hóa và cùng moment hai. Ngoài $[-c,c]$, $q\le0$, $K\ge0$. Vì vậy
+\[
+\int K_*(K-K_*)=-\int_{|u|>c}q(u)K(u)du\ge0.
+\]
+Suy ra $R(K)-R(K_*)=\int(K-K_*)^2+2\int K_*(K-K_*)\ge0$, đẳng thức chỉ khi $K=K_*$ hầu khắp. Đặt $v=1/5$ thu nhân thường dùng $3(1-u^2)_+/4$.
+
+\buoc{Quay lại hằng số AMISE sau tối ưu bandwidth}
+Sau tối ưu $h$, hằng số AMISE phụ thuộc $K$ qua
+\[\mu_2(K)^{2/5}R(K)^{4/5}=\{R(K)\sqrt{\mu_2(K)}\}^{4/5}.\]
+Tối ưu biểu thức này tương đương bài toán vừa giải sau đổi thang. Tích $R(K)\sigma_K^4$ ghi ở S20 không bất biến theo thang, nên không phải tiêu chuẩn đúng nếu không cố định moment. Trong lớp nhân không âm với moment hai hữu hạn, không cần áp đặt sẵn compact support: nghiệm tối ưu tự có giá hữu hạn.
+\giaimuc{4. Kết luận}
+Với $\mu_2=v$ cố định, nghiệm tối ưu là $K_*(u)=3(1-u^2/c^2)_+/(4c)$, $c=\sqrt{5v}$; $v=1/5$ cho Epanechnikov chuẩn. Sau tối ưu bandwidth, tiêu chuẩn bất biến là $R(K)\sqrt{\mu_2(K)}$.
+\giaimuc{5. Lỗi dễ mắc}
+Đạo hàm biến phân chỉ gợi ý ứng viên; cần bất đẳng thức so với mọi nhân khả thi để chứng minh tối ưu.
+\end{solution}
+\nhom{B. Bias, variance và risk: chứng minh từ đầu}
+\begin{problem}[KDE-08. Bias bậc hai với phần dư đúng.]\label{k:08}
+\textit{(Nguồn: S21; W6.28; bài 3.2 của danh sách cũ.)} Chứng minh $\Bias\fh(x)=\frac12h^2\mu_2(K)f''(x)+o(h^2)$ dưới một bộ điều kiện đủ cụ thể.
+\end{problem}
+\begin{solution}
+\giaimuc{1. Mục tiêu}
+Tách bias thành số hạng $h^2$ và phần dư $o(h^2)$.
+\giaimuc{2. Công cụ và điều kiện}
+Nhân chuẩn hóa có moment một 0 và moment hai tuyệt đối hữu hạn; $f\in C^2$ với $f''$ bị chặn; dùng Taylor và hội tụ bị chặn.
+\giaimuc{3. Giải từng bước}
+\buoc{Viết bias dưới dạng tích phân}
+Giả sử $\int K=1$, $\int uK(u)du=0$, $\int u^2|K(u)|du<\infty$, và $f\in C^2(\R)$ có $f''$ bị chặn. Từ KDE-02,
+\[
+b_h(x)=\int K(u)[f(x-hu)-f(x)]du.
+\]
+
+\buoc{Khai triển Taylor và tách phần dư}
+Taylor dạng tích phân cho
+\[
+f(x-hu)-f(x)=-hu f'(x)+h^2u^2\int_0^1(1-t)f''(x-thu)dt.
+\]
+Để biết hệ số $1/2$ đến từ đâu, viết
+\[
+ \int_0^1(1-t)f''(x-thu)dt
+ =f''(x)\underbrace{\int_0^1(1-t)dt}_{1/2}
+ +\int_0^1(1-t)[f''(x-thu)-f''(x)]dt.
+\]
+Thế vào tích phân bias và dùng $\int u^2K=\mu_2(K)$, được
+\[
+b_h(x)=\tfrac12h^2\muK f''(x)+h^2\int u^2K(u)\int_0^1(1-t)[f''(x-thu)-f''(x)]dt\,du.
+\]
+
+\buoc{Dùng moment và kiểm soát phần dư}
+Số hạng $-hu f'(x)$ mất vì moment một bằng 0. Sau chia $h^2$, phần dư tiến 0 theo dominated convergence: với mỗi $u,t$, tính liên tục cho hiệu đạo hàm tiến 0; trị tuyệt đối bị chặn bởi $2\norm{f''}_\infty u^2|K(u)|(1-t)$ khả tích. Cụ thể, gọi phần dư là $r_h(x)$. Ta vừa chứng minh $r_h(x)/h^2\to0$, và đó chính là định nghĩa $r_h(x)=o(h^2)$. Vì vậy thu được khai triển cần chứng minh.
+
+\buoc{Xác định phạm vi áp dụng}
+Nếu $K$ có compact support, chỉ cần độ trơn trên lân cận điểm $x$ cho $h$ đủ nhỏ. Kết quả là \emph{tại một điểm}; chưa được tích phân phần dư trên toàn trục mà thiếu chặn $L_2$.
+\giaimuc{4. Kết luận}
+Dưới các giả thiết đã kiểm tra, $\Bias\widehat f_h(x)=h^2\mu_2(K)f''(x)/2+o(h^2)$. Đây là khai triển tại một điểm, chưa phải khai triển trong chuẩn $L_2$.
+\giaimuc{5. Lỗi dễ mắc}
+Đối xứng loại moment lẻ, không tự cung cấp độ trơn của mật độ hay tốc độ phần dư.
+\end{solution}
+\begin{problem}[KDE-09. Khi nào được ghi phần dư bias là $O(h^4)$?]\label{k:09}
+\textit{(Nguồn: S21; W6.28; hiệu chỉnh giả thiết.)} Nâng khai triển ở KDE-08 lên bậc bốn và phân biệt $O(h^4)$ với $o(h^2)$.
+\end{problem}
+\begin{solution}
+\giaimuc{1. Mục tiêu}
+Xác định giả thiết cho phép thay phần dư $o(h^2)$ bằng $O(h^4)$.
+\giaimuc{2. Công cụ và điều kiện}
+$K$ đối xứng, $\int|u|^4|K|<\infty$; $f\in C^4$, $f^{(4)}$ bị chặn.
+\giaimuc{3. Giải từng bước}
+\buoc{Viết Taylor với chặn rõ ràng cho phần dư}
+Giả sử thêm $K$ đối xứng, $\int|u|^4|K(u)|du<\infty$, $f\in C^4(\R)$ và $f^{(4)}$ bị chặn. Taylor đến bậc ba có remainder
+\[
+f(x-hu)=f(x)-hu f'(x)+\tfrac12h^2u^2f''(x)-\tfrac16h^3u^3f'''(x)+R_4,
+\quad |R_4|\le\frac{\norm{f^{(4)}}_\infty}{24}h^4|u|^4.
+\]
+
+\buoc{Tích phân và triệt tiêu các bậc lẻ}
+Moment lẻ bằng 0, nên
+$|b_h(x)-\frac12h^2\muK f''(x)|\le h^4\norm{f^{(4)}}_\infty\int|u|^4|K|/24=O(h^4)$.
+Với tính liên tục và khống chế trên, còn thu được
+\[
+b_h(x)=\tfrac12h^2\muK f''(x)+\tfrac1{24}h^4\mu_4(K)f^{(4)}(x)+o(h^4).
+\]
+
+\buoc{Đối chiếu với giả thiết yếu hơn}
+Giả thiết $f''\in L_2$ kiểm soát năng lượng đạo hàm nhưng không tự cho đạo hàm bậc bốn bị chặn hoặc remainder điểm bậc bốn. Vì vậy S21 cần thêm điều kiện khi dùng $O(h^4)$. Ngoài ra, $\mu_4(K)$ khác $\mu_2(K)^2$: Gaussian có $\mu_4=3$ nhưng $\mu_2^2=1$.
+\giaimuc{4. Kết luận}
+Với giả thiết bậc bốn, $b_h=h^2\mu_2f''/2+O(h^4)$; cụ thể hơn, $b_h=h^2\mu_2f''/2+h^4\mu_4f^{(4)}/24+o(h^4)$. Riêng $f''\in L_2$ chưa đủ để kết luận này đúng tại điểm.
+\giaimuc{5. Lỗi dễ mắc}
+$f''\in L_2$ không kéo theo $f^{(4)}$ tồn tại; không dùng giả thiết của MISE để suy ra Taylor điểm bậc bốn.
+\end{solution}
+\begin{problem}[KDE-10. Nếu nhân không đối xứng hoặc moment một khác 0.]\label{k:10}
+\textit{(Nguồn: Biến thể từ S19--21.)} Tìm bias khi $\mu_1(K)\ne0$. Đối xứng có phải điều kiện cần cho bias bậc hai không?
+\end{problem}
+\begin{solution}
+\giaimuc{1. Mục tiêu}
+Theo dõi bias khi moment một không bằng 0 và suy ra tốc độ risk.
+\giaimuc{2. Công cụ và điều kiện}
+Taylor của $f(x-hu)$; đủ độ trơn và moment; để có số hạng $h$ khác 0 cần $\mu_1(K)f'(x)\ne0$.
+\giaimuc{3. Giải từng bước}
+\buoc{Tích phân Taylor mà giữ moment một}
+Với quy ước $K((x-X_i)/h)$ và đủ độ trơn,
+\[
+b_h(x)=-h\mu_1(K)f'(x)+\tfrac12h^2\mu_2(K)f''(x)+o(h^2).
+\]
+
+\buoc{Cân bằng bias và variance}
+Nếu $\mu_1f'(x)\ne0$, bias bậc $h$, squared bias bậc $h^2$. Variance vẫn bậc $1/(nh)$, nên bandwidth điểm tối ưu bậc $n^{-1/3}$ và MSE bậc $n^{-2/3}$, thay vì $n^{-4/5}$. Đổi sang quy ước $K((X_i-x)/h)$ làm dấu số hạng lẻ đổi.
+
+\buoc{Phân biệt điều kiện đủ với điều kiện cần}
+Đối xứng là \emph{đủ} để moment một bằng 0, không phải cần. Một nhân không đối xứng vẫn có thể có trung bình 0. Nếu $\mu_1=0$ nhưng $\mu_3\ne0$, bias có thể chứa số hạng $-h^3\mu_3 f'''/6$; không được tự ghi remainder $O(h^4)$.
+\giaimuc{4. Kết luận}
+$b_h(x)=-h\mu_1(K)f'(x)+h^2\mu_2(K)f''(x)/2+o(h^2)$. Nếu hệ số bậc một khác 0, bandwidth điểm tối ưu bậc $n^{-1/3}$ và MSE bậc $n^{-2/3}$ dưới giả thiết variance không suy biến.
+\giaimuc{5. Lỗi dễ mắc}
+Đối xứng là điều kiện đủ, không phải cần, để $\mu_1(K)=0$.
+\end{solution}
+\begin{problem}[KDE-11. Mật độ Gaussian và điểm có $f''(x)=0$.]\label{k:11}
+\textit{(Nguồn: Biến thể kiểm tra giả thiết của W6.28--6.30.)} Cho $f=N(\mu,\sigma^2)$, nhân Gaussian. Tính kỳ vọng KDE; phân tích tại $x=\mu$ và $x=\mu\pm\sigma$.
+\end{problem}
+\begin{solution}
+\giaimuc{1. Mục tiêu}
+Tính bias ở đỉnh Gaussian và ở hai điểm có đạo hàm bậc hai bằng 0.
+\giaimuc{2. Công cụ và điều kiện}
+Tích chập Gaussian cộng phương sai; $z=(x-\mu)/\sigma$; Gaussian chuẩn có $\mu_4=3$.
+\giaimuc{3. Giải từng bước}
+\buoc{Tính kỳ vọng bằng tích chập}
+Tích chập hai mật độ chuẩn cho
+\[
+f_h(x)=\frac1{\sqrt{2\pi(\sigma^2+h^2)}}\exp\left[-\frac{(x-\mu)^2}{2(\sigma^2+h^2)}\right].
+\]
+
+\buoc{Tính đạo hàm bậc hai và xét đỉnh}
+Đặt $z=(x-\mu)/\sigma$. Đạo hàm $f''(x)=\sigma^{-2}(z^2-1)f(x)$, nên tại $x=\mu$, bias chính $=-h^2f(\mu)/(2\sigma^2)$: làm trơn hạ thấp đỉnh.
+
+\buoc{Xét điểm suy biến và khai triển tới bậc bốn}
+Tại $x=\mu\pm\sigma$, $f''(x)=0$, vì vậy công thức $h_{x,*}$ chứa $1/f''(x)^2$ không dùng được. Ta có
+$f^{(4)}(x)=\sigma^{-4}(z^4-6z^2+3)f(x)=-2f(x)/\sigma^4$ tại hai điểm ấy. Gaussian có $\mu_4=3$, do đó
+\[
+b_h(x)=-\frac{f(x)}{4\sigma^4}h^4+o(h^4).
+\]
+
+\buoc{Tối ưu risk tại điểm đặc biệt}
+MSE điểm có số hạng chính $A h^8+B/(nh)$ với $A=f(x)^2/(16\sigma^8)>0$, $B=f(x)/(2\sqrt\pi)>0$; tối ưu cho $h\asymp n^{-1/9}$ và MSE $n^{-8/9}$. Đây là cải thiện tại \emph{hai điểm đặc biệt}, không đổi MISE toàn cục của nhân Gaussian về $n^{-8/9}$.
+\giaimuc{4. Kết luận}
+$f_h=N(\mu,\sigma^2+h^2)$. Tại $\mu$, bias chính $-h^2f(\mu)/(2\sigma^2)$. Tại $\mu\pm\sigma$, bias chính $-h^4f(x)/(4\sigma^4)$, nên bandwidth điểm tối ưu bậc $n^{-1/9}$ và MSE điểm bậc $n^{-8/9}$.
+\giaimuc{5. Lỗi dễ mắc}
+Không thế $f''(x)=0$ vào mẫu số của công thức bandwidth tối ưu rồi kết luận bandwidth vô hạn.
+\end{solution}
+\begin{problem}[KDE-12. Variance chính xác và khai triển tiệm cận.]\label{k:12}
+\textit{(Nguồn: S21; W6.28.)} Chứng minh công thức variance và cho điều kiện để remainder là $O(1/n)$.
+\end{problem}
+\begin{solution}
+\giaimuc{1. Mục tiêu}
+Tính variance chính xác trước, sau đó mới khai triển tiệm cận.
+\giaimuc{2. Công cụ và điều kiện}
+Độc lập cho $\Var(n^{-1}\sum Z_i)=\Var(Z_1)/n$; $\Var Z=\E Z^2-(\E Z)^2$.
+\giaimuc{3. Giải từng bước}
+\buoc{Đưa về variance của một số hạng}
+Đặt $Z_i=h^{-1}K((x-X_i)/h)$. Do độc lập, các covariance giữa $Z_i,Z_j$ với $i\ne j$ bằng 0. Do cùng phân phối, các variance bằng nhau. Viết đủ hai bước:
+\[
+ \Var\widehat f_h=\Var\left(\frac1n\sum_i Z_i\right)
+ =\frac1{n^2}\sum_i\Var Z_i
+ =\frac{n}{n^2}\Var Z_1=\frac1n\Var Z_1.
+\]
+Chú ý hệ số $1/n$ trong trung bình phải được bình phương trước khi tính variance. Tính moment hai bằng đổi biến:
+\[
+\E Z_1^2=\frac1{h^2}\int K^2((x-t)/h)f(t)dt
+=\frac1h\int K^2(u)f(x-hu)du.
+\]
+
+\buoc{Ghép công thức variance chính xác}
+Trừ bình phương kỳ vọng, thu
+\[
+\Var\fh(x)=\frac1{nh}\int K^2(u)f(x-hu)du-\frac{f_h(x)^2}n.
+\]
+
+\buoc{Lấy số hạng chính khi bandwidth nhỏ}
+Nếu $f$ bị chặn, liên tục tại $x$ và $K\in L_1\cap L_2$, dominated convergence cho tích phân đầu $=f(x)R(K)+o(1)$; $f_h$ bị chặn. Khi $h\to0$,
+$\Var\fh=f(x)R(K)/(nh)+o((nh)^{-1})$.
+
+\buoc{Tìm điều kiện cho phần dư mạnh hơn}
+Để có remainder $O(1/n)$, một bộ điều kiện đủ là $f$ Lipschitz bị chặn và $\int|u|K^2(u)du<\infty$:
+\[
+\left|\int K^2(u)[f(x-hu)-f(x)]du\right|
+\le Lh\int|u|K^2(u)du=O(h).
+\]
+Chia $nh$ thành $O(1/n)$; số hạng $-f_h^2/n$ cũng bậc đó. Nếu chỉ liên tục, không khẳng định một tốc độ dư mạnh hơn mà chưa chứng minh.
+\giaimuc{4. Kết luận}
+$\Var\widehat f_h(x)=(nh)^{-1}\int K^2(u)f(x-hu)du-f_h(x)^2/n$. Dưới giả thiết liên tục và khả tích đã nêu, số hạng chính là $f(x)R(K)/(nh)$; thêm Lipschitz và moment của $K^2$ cho phần dư $O(1/n)$.
+\giaimuc{5. Lỗi dễ mắc}
+Phải trừ bình phương kỳ vọng; $1/h^2$ trước đổi biến chỉ còn $1/h$ sau đổi biến.
+\end{solution}
+\begin{problem}[KDE-13. Chứng minh đầy đủ Proposition 1.1.]\label{k:13}
+\textit{(Nguồn: S23; T tr.4--5.)} Giả sử $f\le M$ và $R(K)<\infty$. Chứng minh $\Var\fh(x)\le MR(K)/(nh)$ cho mọi $x,h,n$.
+\end{problem}
+\begin{solution}
+\giaimuc{1. Mục tiêu}
+Chứng minh một chặn variance đúng cho mọi cỡ mẫu và bandwidth.
+\giaimuc{2. Công cụ và điều kiện}
+$f\le M$, $K\in L_2$; dùng $\Var Z\le\E Z^2$ và tính không âm của $K^2$.
+\giaimuc{3. Giải từng bước}
+\buoc{Bỏ số hạng không dương rồi chặn mật độ}
+Từ công thức chính xác hoặc bất đẳng thức $\Var Z\le\E Z^2$,
+\[
+\Var\fh(x)\le\frac1{nh}\int K^2(u)f(x-hu)du
+\le\frac{M}{nh}\int K^2(u)du.
+\]
+
+\buoc{Kiểm tra điều kiện và ý nghĩa của chặn}
+Đây là chặn \emph{hữu hạn mẫu}, không phải ký hiệu xấp xỉ tiệm cận. Không cần $\int K=1$, moment một bằng 0, hay độ trơn của $f$ cho riêng chặn variance này; cần các điều kiện ấy cho bias hoặc tính chất mật độ. Độc lập của $X_i$ cần để variance tổng bằng tổng variance. Nếu muốn chặn đều trên một lớp mật độ, $M$ phải là hằng chung của lớp, không phải tùy mỗi $f$; bước này được chứng minh ở KDE-23.
+\giaimuc{4. Kết luận}
+$\Var\widehat f_h(x)\le MR(K)/(nh)$ cho mọi $x,h>0,n\ge1$ khi $f\le M$. Không cần xấp xỉ tiệm cận cho bất đẳng thức này.
+\giaimuc{5. Lỗi dễ mắc}
+Nếu chặn trên cả lớp mật độ, $M$ phải dùng chung cho lớp; một $M$ riêng cho mỗi $f$ chưa đủ.
+\end{solution}
+\begin{problem}[KDE-14. MSE tại điểm và bandwidth tối ưu tại điểm.]\label{k:14}
+\textit{(Nguồn: S6--7,21; W6.28.)} Phân rã MSE và tối thiểu hóa biểu thức chính tại $x_0$.
+\end{problem}
+\begin{solution}
+\giaimuc{1. Mục tiêu}
+Phân rã MSE và tìm bandwidth tối ưu tại một điểm cố định.
+\giaimuc{2. Công cụ và điều kiện}
+Bias bậc hai và variance chính; điểm trong có $f(x)>0,f''(x)\ne0$; tối ưu $Ah^4+B/(nh)$.
+\giaimuc{3. Giải từng bước}
+\buoc{Phân rã sai số thành phần ngẫu nhiên và bias}
+Với mọi ước lượng có moment hai hữu hạn,
+\[
+\widehat\theta-\theta=(\widehat\theta-\E\widehat\theta)+(\E\widehat\theta-\theta).
+\]
+
+\buoc{Lấy kỳ vọng và xác định hai hằng số}
+Đặt $U=\widehat\theta-\E\widehat\theta$, $b=\E\widehat\theta-\theta$; $b$ là một số cố định khi đã cố định phân phối và $h$.
+Bình phương rồi lấy kỳ vọng:
+\[
+ \E(U+b)^2=\E U^2+2b\E U+b^2
+ =\Var\widehat\theta+0+b^2,
+\]
+vì $\E U=\E\widehat\theta-\E\widehat\theta=0$. Suy ra MSE $=$ variance $+$ squared bias. Áp dụng KDE tại điểm trong, đặt
+$A_x=\muK^2f''(x)^2/4$, $B_x=f(x)R(K)$, được MSE chính $g_x(h)=A_xh^4+B_x/(nh)$.
+
+\buoc{Giải phương trình đạo hàm}
+Khi $A_x,B_x>0$,
+\[
+g'_x(h)=4A_xh^3-B_x/(nh^2)=0
+\Longleftrightarrow h_{x,*}^5=\frac{B_x}{4A_xn}.
+\]
+
+\buoc{Kiểm tra cực tiểu và thế nghiệm}
+$g_x''=12A_xh^2+2B_x/(nh^3)>0$, nên nghiệm là cực tiểu duy nhất. Thay lại:
+\[
+\answer{g_x(h_{x,*})=\frac54\{\muK^2f''(x)^2\}^{1/5}\{f(x)R(K)\}^{4/5}n^{-4/5}}.
+\]
+
+\buoc{Diễn giải tỷ lệ hai thành phần}
+Ở cực tiểu, variance chính bằng \emph{bốn lần} squared bias chính; ``cân bằng'' nghĩa là cùng bậc, không nhất thiết cùng hằng số. Nếu $f(x)=0$ hoặc $f''(x)=0$, phải phân tích riêng. Bandwidth tại điểm chứa $f(x)$; bandwidth MISE không chứa thừa số $f(x)$ này.
+\giaimuc{4. Kết luận}
+$h_{x,*}=[f(x)R(K)/(n\mu_2(K)^2f''(x)^2)]^{1/5}$ tại điểm không suy biến. MSE chính tại nghiệm bậc $n^{-4/5}$; variance chính bằng 4 lần squared bias chính.
+\giaimuc{5. Lỗi dễ mắc}
+Tại tối ưu, variance bằng 4 lần squared bias, không bằng nhau về hằng số.
+\end{solution}
+\begin{problem}[KDE-15. Integrated variance chính xác.]\label{k:15}
+\textit{(Nguồn: S26; suy ra từ W6.28.)} Chứng minh $\int\Var\fh=R(K)/(nh)-R(K_h*f)/n$.
+\end{problem}
+\begin{solution}
+\giaimuc{1. Mục tiêu}
+Tích phân variance theo toàn trục mà vẫn giữ số hạng hiệu chỉnh hữu hạn mẫu.
+\giaimuc{2. Công cụ và điều kiện}
+Tonelli cho hàm không âm; $\int f(x-hu)dx=1$; bất đẳng thức Young để kiểm tra tính hữu hạn.
+\giaimuc{3. Giải từng bước}
+\buoc{Đổi thứ tự tích phân của phần không âm}
+Giả sử $K\in L_1\cap L_2$, $f$ là mật độ. Tích phân phần moment hai là không âm, nên Tonelli cho đổi thứ tự mà không phải giả sử trước tính hữu hạn:
+\[
+\int\int K^2(u)f(x-hu)du\,dx
+=\int K^2(u)\underbrace{\int f(x-hu)dx}_{1}du=R(K).
+\]
+
+\buoc{Viết công thức chính xác}
+Do $f_h=K_h*f$, tích phân variance chính xác là
+\[
+\int\Var\fh(x)dx=\frac{R(K)}{nh}-\frac{R(f_h)}n.
+\]
+
+\buoc{Kiểm tra hữu hạn và khai triển thêm}
+$R(f_h)$ hữu hạn, chẳng hạn theo Young $\norm{K_h*f}_2\le\norm{K_h}_2\norm f_1$. Nếu thêm $f\in L_2$, dùng $\norm{K_h*f}_2\le\norm K_1\norm f_2$ để có $R(f_h)=O(1)$ khi $h\to0$. Khi $\int K=1$, approximate identity trong $L_2$ cho $R(f_h)\to R(f)$, nên
+\[
+\int\Var\fh=\frac{R(K)}{nh}-\frac{R(f)}n+o(1/n).
+\]
+
+\buoc{Đọc đúng dấu của hiệu chỉnh}
+Giữ số hạng âm làm integrated variance nhỏ hơn $R(K)/(nh)$. Không ghi $R(K)/(nh)+o(1/n)$ vì còn $-R(f)/n$.
+\giaimuc{4. Kết luận}
+$\int\Var\widehat f_h=R(K)/(nh)-R(f_h)/n$. Nếu thêm $f\in L_2$ và nhân tạo approximate identity thì bằng $R(K)/(nh)-R(f)/n+o(1/n)$.
+\giaimuc{5. Lỗi dễ mắc}
+Không bỏ $-R(f_h)/n$ nếu đề yêu cầu công thức chính xác.
+\end{solution}
+\begin{problem}[KDE-16. Integrated squared bias: vì sao không chỉ tích phân Taylor tại điểm?]\label{k:16}
+\textit{(Nguồn: S26; W6.28.)} Chứng minh $\norm{f_h-f}_2^2=\frac14h^4\muK^2R(f'')+o(h^4)$.
+\end{problem}
+\begin{solution}
+\giaimuc{1. Mục tiêu}
+Chứng minh integrated squared bias với phần dư được kiểm soát trên toàn trục.
+\giaimuc{2. Công cụ và điều kiện}
+$f\in W^{2,2}$; moment hai tuyệt đối của $K$ hữu hạn; Minkowski, liên tục tịnh tiến trong $L_2$ và Cauchy--Schwarz.
+\giaimuc{3. Giải từng bước}
+\buoc{Viết Taylor trong chuẩn bình phương tích phân}
+Dùng một bộ giả thiết đủ: $f\in W^{2,2}(\R)$, $K\in L_1$, $\int K=1$, $\int uK=0$, $\int u^2|K(u)|du<\infty$. Taylor tích phân trong chuẩn $L_2$ cho
+\[
+f_h-f=\frac{h^2\muK}2f''+r_h,
+\quad r_h=h^2\int u^2K(u)\int_0^1(1-t)[f''(\cdot-thu)-f'']dt\,du.
+\]
+
+\buoc{Chặn chuẩn của phần dư}
+Bất đẳng thức Minkowski cho
+\[
+\frac{\norm{r_h}_2}{h^2}\le\int u^2|K(u)|\int_0^1(1-t)\norm{f''(\cdot-thu)-f''}_2dt\,du.
+\]
+
+\buoc{Chứng minh phần dư nhỏ hơn bậc hai}
+Phép tịnh tiến liên tục trong $L_2$ nên chuẩn bên trong tiến 0 với từng $u,t$; bị chặn bởi $2\norm{f''}_2$. Dominated convergence suy ra $\norm{r_h}_2=o(h^2)$.
+
+\buoc{Bình phương chuẩn và kiểm soát số hạng chéo}
+Đặt $a=\muK f''/2$. Khi bình phương chuẩn,
+\[
+\norm{h^2a+r_h}_2^2=h^4\norm a_2^2+2h^2\langle a,r_h\rangle+\norm{r_h}_2^2.
+\]
+Cauchy--Schwarz cho $|\langle a,r_h\rangle|\le\|a\|_2\|r_h\|_2$.
+Vì $\|r_h\|_2=h^2\varepsilon_h$ với $\varepsilon_h\to0$, hai số hạng cần kiểm soát là
+\[
+ 2h^2|\langle a,r_h\rangle|\le2h^4\|a\|_2\varepsilon_h=o(h^4),\qquad
+ \|r_h\|_2^2=h^4\varepsilon_h^2=o(h^4).
+\]
+Chỉ còn $h^4\|a\|_2^2=h^4\mu_2(K)^2R(f'')/4$ ở bậc chính. Lập luận này kiểm soát remainder trên \emph{toàn trục}; chỉ biết $r_h(x)=o(h^2)$ với mỗi $x$ không đủ.
+\giaimuc{4. Kết luận}
+$\|f_h-f\|_2^2=h^4\mu_2(K)^2R(f'')/4+o(h^4)$. Bước quyết định là chứng minh phần dư nhỏ trong chuẩn $L_2$, không chỉ nhỏ tại mỗi điểm.
+\giaimuc{5. Lỗi dễ mắc}
+Từ $r_h(x)=o(h^2)$ tại từng $x$ không được tự suy ra $\int r_h(x)^2dx=o(h^4)$.
+\end{solution}
+\begin{problem}[KDE-17. AMISE, bandwidth toàn cục và hằng số tối ưu.]\label{k:17}
+\textit{(Nguồn: S26; W6.30, tr.134.)} Lập MISE từ hai thành phần, tối ưu AMISE, giải thích tốc độ $n^{-4/5}$.
+\end{problem}
+\begin{solution}
+\giaimuc{1. Mục tiêu}
+Ghép hai thành phần MISE, tối ưu AMISE và kiểm tra phần dư.
+\giaimuc{2. Công cụ và điều kiện}
+Kết quả integrated bias và variance; $R(f'')>0$, $\mu_2(K)>0$, $R(K)>0$.
+\giaimuc{3. Giải từng bước}
+\buoc{Ghép integrated bias và integrated variance}
+MSE phân rã điểm; Tonelli cho $\MISE=\int\Bias^2+\int\Var$. Theo KDE-15--16,
+\[
+\MISE(h)=\frac14\muK^2R(f'')h^4+\frac{R(K)}{nh}+o(h^4)+O(1/n).
+\]
+
+\buoc{Đạo hàm AMISE để tìm bandwidth}
+Đặt $A=\muK^2R(f'')/4>0$, $B=R(K)>0$. Đặt $g(h)=Ah^4+B/(nh)$. Tính từng đạo hàm:
+\[
+ (Ah^4)'=4Ah^3,\qquad (Bh^{-1}/n)'=-Bh^{-2}/n.
+\]
+Do đó $g'(h)=0$ tương đương $4Ah^3=B/(nh^2)$. Nhân hai vế với $h^2$ được $4Ah^5=B/n$. Vì $g''(h)=12Ah^2+2B/(nh^3)>0$, nghiệm là cực tiểu duy nhất. Lấy căn bậc năm cho
+\[
+h_*=(B/(4An))^{1/5}
+=\left[\frac{R(K)}{\muK^2R(f'')n}\right]^{1/5}.
+\]
+
+\buoc{Tính giá trị cực tiểu}
+Tại đó $\AMISE(h_*)=5Ah_*^4$, tức
+\[
+\answer{\AMISE(h_*)=\frac54\{\muK^2R(f'')\}^{1/5}R(K)^{4/5}n^{-4/5}}.
+\]
+
+\buoc{Kiểm tra phần dư dọc bandwidth tối ưu}
+$h_*\to0$, $nh_*\asymp n^{4/5}\to\infty$; remainder $O(1/n)=o(n^{-4/5})$, còn $o(h_*^4)=o(n^{-4/5})$, nên MISE có cùng số hạng chính dọc bandwidth này. Đây là tối ưu \emph{tiệm cận} trên các bandwidth, chưa phải chứng minh cận dưới trên mọi ước lượng.
+
+\buoc{So sánh tốc độ và giới hạn kết luận}
+Histogram có risk tối ưu $n^{-2/3}$ dưới giả thiết thích hợp. Vì $n^{-4/5}/n^{-2/3}=n^{-2/15}\to0$, KDE bậc hai có tốc độ sai số nhanh hơn trên lớp mật độ đủ trơn.
+\giaimuc{4. Kết luận}
+$h_*=[R(K)/(n\mu_2(K)^2R(f''))]^{1/5}$. AMISE tối ưu bằng
+\[\frac54\{\mu_2(K)^2R(f'')\}^{1/5}R(K)^{4/5}n^{-4/5}.\]
+ MISE dọc bandwidth này có cùng số hạng chính dưới các giả thiết đã nêu.
+\giaimuc{5. Lỗi dễ mắc}
+Bandwidth toàn cục dùng $R(f'')$; bandwidth tại điểm dùng $f''(x)^2$ và thêm $f(x)$.
+\end{solution}
+\begin{problem}[KDE-18. MISE Gaussian chính xác ở hữu hạn mẫu.]\label{k:18}
+\textit{(Nguồn: Bài kiểm chứng biên soạn từ W6.28.)} Cho $f=N(\mu,\sigma^2)$ và $K=\phi$. Tính MISE không dùng ký hiệu xấp xỉ.
+\end{problem}
+\begin{solution}
+\giaimuc{1. Mục tiêu}
+Tính MISE hữu hạn mẫu chính xác cho mật độ và nhân Gaussian.
+\giaimuc{2. Công cụ và điều kiện}
+$f_h=N(\mu,\sigma^2+h^2)$; khai triển bình phương chuẩn $L_2$ và tích phân tích hai Gaussian.
+\giaimuc{3. Giải từng bước}
+\buoc{Phân rã MISE thành các tích phân Gaussian}
+Dùng $f_h=N(\mu,\sigma^2+h^2)$ từ KDE-11. Vì
+$\MISE=R(f_h-f)+R(K)/(nh)-R(f_h)/n$,
+\[
+\MISE=\frac{R(K)}{nh}+(1-1/n)R(f_h)-2\int f_hf+R(f).
+\]
+
+\buoc{Tính tích phân tích hai Gaussian}
+Với hai mật độ chuẩn cùng trung bình, độ lệch chuẩn $a,b$,
+\[
+\int\phi_a(x-\mu)\phi_b(x-\mu)dx=\frac1{\sqrt{2\pi}\sqrt{a^2+b^2}}.
+\]
+Để tự tính công thức này, đặt $t=x-\mu$ và $c=a^{-2}+b^{-2}$. Khi đó
+\[
+ \int\phi_a(t)\phi_b(t)dt
+ =\frac1{2\pi ab}\int e^{-ct^2/2}dt
+ =\frac1{2\pi ab}\sqrt{\frac{2\pi}{c}}
+ =\frac1{\sqrt{2\pi}\sqrt{a^2+b^2}},
+\]
+vì $ab\sqrt{a^{-2}+b^{-2}}=\sqrt{a^2+b^2}$. Thay các độ lệch chuẩn tương ứng:
+\[
+\MISE(h)=\frac1{2\sqrt\pi nh}
++\frac{1-1/n}{2\sqrt\pi\sqrt{\sigma^2+h^2}}
+-\frac2{\sqrt{2\pi}\sqrt{2\sigma^2+h^2}}
++\frac1{2\sqrt\pi\sigma}.
+\]
+
+\buoc{Đối chiếu với AMISE}
+Khai triển $(1+t)^{-1/2}=1-t/2+3t^2/8+O(t^3)$ làm các số hạng bias bậc 0 và $h^2$ triệt tiêu; còn
+$3h^4/(32\sqrt\pi\sigma^5)+1/(2\sqrt\pi nh)+O(h^6)+O(1/n)$.
+
+\buoc{Thay số vào công thức đóng}
+Ví dụ $\sigma=1$, $n=100$, $h=0.4$: MISE chính xác $\answer{0.005555}$, trong khi AMISE $=0.008406$. Chênh lệch chủ yếu do số hạng $-R(f_h)/n\approx-0.0028$ mà AMISE bỏ qua; bandwidth cực tiểu MISE chính xác là $0.445$, gần $h_*=(4/3)^{1/5}100^{-1/5}=0.422$. Các số thập phân chỉ là giá trị gần đúng; đáp án chính xác là biểu thức đóng ở trên.
+\giaimuc{4. Kết luận}
+MISE chính xác là tổng bốn số hạng Gaussian ở bước 2; khi $\sigma=1,n=100,h=0.4$, giá trị xấp xỉ $0.005555$. AMISE ở cùng $h$ xấp xỉ $0.008406$, khác vì đã bỏ các hiệu chỉnh hữu hạn mẫu.
+\giaimuc{5. Lỗi dễ mắc}
+AMISE là xấp xỉ; không thay nó cho MISE chính xác trong câu hỏi hữu hạn mẫu.
+\end{solution}
+\begin{problem}[KDE-19. Dẫn ra hệ số 1.06 và hiểu đúng quy tắc thực hành.]\label{k:19}
+\textit{(Nguồn: S27; W tr.135.)} Tính $R(f'')$ cho mật độ chuẩn, suy ra normal-reference bandwidth và phân biệt với bandwidth plug-in.
+\end{problem}
+\begin{solution}
+\giaimuc{1. Mục tiêu}
+Suy ra hệ số 1.06 từ phép tính $R(f'')$, rồi mới thay ước lượng độ lệch chuẩn.
+\giaimuc{2. Công cụ và điều kiện}
+Mật độ tham chiếu Gaussian; $\int e^{-z^2}dz=\sqrt\pi$ và các moment Gaussian.
+\giaimuc{3. Giải từng bước}
+\buoc{Đổi biến để tính tích phân đạo hàm bình phương}
+Đặt $z=(x-\mu)/\sigma$. Vì $f''(x)=\sigma^{-3}(z^2-1)\phi(z)$ và $dx=\sigma dz$,
+\begin{align*}
+R(f'')&=\frac1{2\pi\sigma^5}\int(z^4-2z^2+1)e^{-z^2}dz\\
+&=\frac1{2\pi\sigma^5}(3\sqrt\pi/4-\sqrt\pi+\sqrt\pi)
+=\frac3{8\sqrt\pi\sigma^5}.
+\end{align*}
+
+\buoc{Thay các hằng số vào bandwidth AMISE}
+Các tích phân dùng ở bước trên có thể kiểm tra bằng tích phân từng phần:
+\[
+ I_0=\sqrt\pi,\quad I_2=\tfrac12 I_0,\quad I_4=\tfrac32 I_2=\tfrac34\sqrt\pi,
+ \qquad I_j=\int_{\R}z^j e^{-z^2}dz.
+\]
+Ví dụ lấy $dv=z e^{-z^2}dz$, $v=-e^{-z^2}/2$; số hạng biên bằng 0 vì hàm mũ giảm nhanh hơn đa thức. Từ đó $I_j=(j-1)I_{j-2}/2$ cho $j$ chẵn.
+Nhân Gaussian có $R(K)=1/(2\sqrt\pi)$, $\muK=1$. Vậy
+\[
+h_*^5=\frac{1/(2\sqrt\pi)}{n\,3/(8\sqrt\pi\sigma^5)}=\frac{4\sigma^5}{3n},\quad
+\answer{h_*=(4/3)^{1/5}\sigma n^{-1/5}\simeq1.059224\,\sigma n^{-1/5}}.
+\]
+
+\buoc{Thay độ lệch chuẩn bằng ước lượng thực hành}
+Với $N(\mu,\sigma^2)$, IQR $=2\Phi^{-1}(.75)\sigma\simeq1.34898\sigma$; Wasserman dùng hệ số làm tròn 1.34. Quy tắc thực hành thay $\sigma$ bằng $\min(s,\mathrm{IQR}/1.34)$. Ví dụ $n=100$, $s=2$, IQR $=2.68$ thì $\widehat\sigma=2$, bandwidth theo hệ số 1.06 là $1.06\cdot2\cdot100^{-1/5}\simeq.84399$.
+
+\buoc{Nêu phạm vi tối ưu của quy tắc}
+Công thức này tối ưu AMISE \emph{khi mật độ tham chiếu là chuẩn}; không là nghiệm tối ưu hữu hạn mẫu cho mọi mật độ. Mật độ nhiều đỉnh có thể bị làm trơn quá mức. Biến thể Silverman hệ số .9 là một quy tắc khác, không thay tùy tiện vào bài chứng minh 1.06.
+\giaimuc{4. Kết luận}
+$R(f'')=3/(8\sqrt\pi\sigma^5)$ và $h_*=(4/3)^{1/5}\sigma n^{-1/5}\approx1.059224\sigma n^{-1/5}$. Quy tắc sách thay $\sigma$ bằng $\min(s,\mathrm{IQR}/1.34)$ và làm tròn hệ số thành 1.06.
+\giaimuc{5. Lỗi dễ mắc}
+Quy tắc normal reference không tối ưu cho mọi mật độ; phân biệt bản dùng $s$ và bản robust dùng $\min(s,\mathrm{IQR}/1.34)$.
+\end{solution}
+
+\nhom{C. Lớp Hölder, các chặn của Tsybakov và nhân bậc cao}
+\begin{problem}[KDE-20. Lớp Hölder và quy ước chỉ số $\ell$.]\label{k:20}
+\textit{(Nguồn: S9, S22; T Def.~1.2.)} Định nghĩa $\Sigma(\beta,L)$. Với $\beta=1,2$, lớp này gồm những hàm nào? Xét xem mật độ chuẩn $N(0,1)$, mật độ tam giác $(1-|x|)_+$, mật độ Laplace $\tfrac12e^{-|x|}$ và mật độ đều $U[0,1]$ thuộc lớp nào.
+\end{problem}
+\begin{solution}
+\giaimuc{1. Mục tiêu}
+Đọc đúng lớp Hölder và xét từng mật độ có thỏa điều kiện hay không.
+\giaimuc{2. Công cụ và điều kiện}
+$\ell=\lceil\beta\rceil-1$, $\beta-\ell\in(0,1]$; Lipschitz của hàm hoặc của đạo hàm.
+\giaimuc{3. Giải từng bước}
+\buoc{Đọc định nghĩa và xác định chỉ số đạo hàm}
+Đặt $\ell=\lceil\beta\rceil-1$ (số nguyên lớn nhất \emph{nhỏ hơn hẳn} $\beta$, đúng quy ước của Tsybakov). $\Sigma(\beta,L)$ là tập các $f$ khả vi $\ell$ lần trên $\R$ với
+\[
+|f^{(\ell)}(x)-f^{(\ell)}(x')|\le L|x-x'|^{\beta-\ell},\qquad \forall x,x'.
+\]
+Vì $\beta-\ell\in(0,1]$, điều kiện luôn có nghĩa. Với $\beta=1$: $\ell=0$, $f$ Lipschitz hằng $L$. Với $\beta=2$: $\ell=1$, $f'$ Lipschitz hằng $L$; nếu $f\in C^2$ thì điều này tương đương $\norm{f''}_\infty\le L$. Nếu dùng $r=\lfloor\beta\rfloor$ như S9 thì với $\beta=1$ điều kiện thành $|f'(x)-f'(y)|\le L$, một lớp khác hẳn (đòi $f$ khả vi); đó là lý do tài liệu này dùng $\ell=\lceil\beta\rceil-1$.
+
+\buoc{Kiểm tra mật độ Gaussian}
+\emph{Chuẩn $N(0,1)$:} $\phi''(x)=(x^2-1)\phi(x)$ và $\phi'''(x)=x(3-x^2)\phi(x)$, nên $|\phi''|$ đạt cực đại tại $0$ (giá trị $\phi(0)$) hoặc $\pm\sqrt3$ (giá trị $2\phi(\sqrt3)\approx0.179<\phi(0)$). Vậy $\phi\in\Sigma(2,1/\sqrt{2\pi})$; thực ra $\phi$ thuộc $\Sigma(\beta,L_\beta)$ với mọi $\beta$.
+
+\buoc{Kiểm tra các mật độ có góc hoặc bước nhảy}
+\emph{Tam giác:} Lipschitz hằng 1 nên thuộc $\Sigma(1,1)$; $f'$ nhảy tại $0,\pm1$ nên không thuộc $\Sigma(\beta,L)$ nào với $\beta>1$.
+\emph{Laplace:} $|f'|\le\tfrac12$ ngoài $0$, nên thuộc $\Sigma(1,\tfrac12)$; không khả vi tại 0.
+\emph{Đều:} gián đoạn tại $0,1$, không thuộc $\Sigma(\beta,L)$ nào; mọi chặn bias đều của Tsybakov không áp dụng được và KDE có bias $O(1)$ tại hai đầu mút (xem KDE-36).
+\[
+\answer{\phi\in\Sigma(2,1/\sqrt{2\pi}),\quad (1-|x|)_+\in\Sigma(1,1),\quad \tfrac12e^{-|x|}\in\Sigma(1,\tfrac12),\quad \1_{[0,1]}\notin\textstyle\bigcup\Sigma(\beta,L).}
+\]
+\giaimuc{4. Kết luận}
+Dùng $\ell=\lceil\beta\rceil-1$: $\beta=1$ yêu cầu $f$ Lipschitz; $\beta=2$ yêu cầu $f'$ Lipschitz. Gaussian thuộc lớp trơn bậc 2 phù hợp; tam giác và Laplace chỉ có độ trơn toàn cục đến bậc 1; mật độ đều có bước nhảy nên không thuộc lớp Hölder toàn trục với $\beta>0$.
+\giaimuc{5. Lỗi dễ mắc}
+Ở $\beta$ nguyên, không dùng quy ước phần nguyên thông thường thay cho quy ước của Tsybakov.
+\end{solution}
+
+\begin{problem}[KDE-21. Nhân bậc $\ell$ và cách xây dựng.]\label{k:21}
+\textit{(Nguồn: S22; T Def.~1.3, Prop.~1.3.)} (a) Chứng minh nhân không âm có bậc tối đa là 1. (b) Chứng minh nhân đối xứng bậc chẵn $2m$ tự động có bậc $2m+1$. (c) Với $\{\varphi_m\}$ là đa thức Legendre trực chuẩn trên $[-1,1]$, chứng minh $K(u)=\sum_{m=0}^{\ell}\varphi_m(0)\varphi_m(u)\1_{|u|\le1}$ là nhân bậc $\ell$ và tính cụ thể với $\ell=1,2$.
+\end{problem}
+\begin{solution}
+\giaimuc{1. Mục tiêu}
+Chứng minh các tính chất moment và xây dựng nhân bằng cơ sở Legendre.
+\giaimuc{2. Công cụ và điều kiện}
+Nhân bậc $\ell$ triệt tiêu moment 1 đến $\ell$; đa thức bậc không quá $\ell$ khai triển được theo cơ sở trực chuẩn.
+\giaimuc{3. Giải từng bước}
+\buoc{Nhắc quy ước bậc của nhân}
+Nhắc lại: $K$ có bậc $\ell$ nếu $u\mapsto u^jK(u)$ khả tích với $j\le\ell$ và $\int K=1$, $\int u^jK=0$ với $j=1,\ldots,\ell$.
+
+\buoc{Chứng minh trở ngại của nhân không âm}
+(a) Nếu $K\ge0$ và $\int K=1$ thì $\int u^2K(u)du>0$, vì $u^2K(u)\ge0$ và bằng 0 hầu khắp chỉ khi $K$ tập trung tại $0$, trái với $\int K=1$. Vậy moment bậc 2 không thể triệt tiêu: bậc $\le1$. Muốn bậc $\ge2$ thì $K$ phải nhận giá trị âm.
+
+\buoc{Dùng đối xứng để triệt tiêu moment lẻ}
+(b) Nếu $K$ đối xứng, mọi moment lẻ (tồn tại) bằng 0. Bậc $2m$ nghĩa là moment $1,\ldots,2m$ bằng 0; moment $2m+1$ lẻ nên cũng bằng 0, tức bậc $2m+1$. Đặc biệt nhân đối xứng thông thường (Gaussian, Epanechnikov) có bậc 1; nhân đối xứng có $\mu_2=0$ có bậc 3.
+
+\buoc{Chứng minh công thức Legendre và thay bậc cụ thể}
+(c) Mọi đa thức $Q$ bậc $\le\ell$ khai triển được $Q=\sum_{m\le\ell}\langle Q,\varphi_m\rangle\varphi_m$ trên $[-1,1]$. Do đó
+\[
+\int_{-1}^1Q(u)K(u)du=\sum_{m=0}^\ell\varphi_m(0)\langle Q,\varphi_m\rangle=Q(0).
+\]
+Lấy $Q(u)=u^j$: vế phải là $1$ nếu $j=0$ và $0$ nếu $1\le j\le\ell$. Vậy $K$ có bậc $\ell$. Với $\varphi_0=1/\sqrt2$, $\varphi_1=\sqrt{3/2}\,u$, $\varphi_2=\sqrt{5/2}\,(3u^2-1)/2$: $\ell=1$ cho $\varphi_1(0)=0$ nên $K=\tfrac12\1_{|u|\le1}$ (nhân đều). $\ell=2$ cho
+\[
+K(u)=\tfrac12-\tfrac58(3u^2-1)=\answer{\tfrac38(3-5u^2)\1_{|u|\le1}},
+\]
+kiểm tra: $\int K=\frac{18-10}{8}=1$, $\int u^2K=\frac38(2-2)=0$. Theo (b), nhân này thực ra có bậc 3 và âm khi $|u|>\sqrt{3/5}$.
+\giaimuc{4. Kết luận}
+Theo quy ước Tsybakov, nhân không âm có bậc không vượt 1; đối xứng loại các moment lẻ tồn tại. Công thức Legendre tái tạo $Q(0)$ và cho nhân đúng bậc; $\ell=1$ cho $K=1/2$ trên $[-1,1]$, $\ell=2$ cho $K=3(3-5u^2)/8$ trên cùng giá.
+\giaimuc{5. Lỗi dễ mắc}
+Moment lẻ tự bằng 0 chỉ khi nó tồn tại; nhân triệt tiêu moment hai phải nhận giá trị âm.
+\end{solution}
+
+\begin{problem}[KDE-22. Chứng minh đầy đủ Proposition 1.2 (chặn bias).]\label{k:22}
+\textit{(Nguồn: S24; T Prop.~1.2.)} Cho $p\in\mathcal P(\beta,L)$, $K$ bậc $\ell=\lceil\beta\rceil-1$ với $\int|u|^\beta|K(u)|du<\infty$. Chứng minh $|b(x_0)|\le C_2h^\beta$ với mọi $x_0,h,n$, trong đó $C_2=\frac{L}{\ell!}\int|u|^\beta|K(u)|du$.
+\end{problem}
+\begin{solution}
+\giaimuc{1. Mục tiêu}
+Chứng minh chặn bias $C_2h^\beta$ đúng đều theo điểm.
+\giaimuc{2. Công cụ và điều kiện}
+Lớp Hölder, nhân bậc $\ell=\lceil\beta\rceil-1$; tách $\ell=0$ khỏi trường hợp cần Taylor.
+\giaimuc{3. Giải từng bước}
+\buoc{Viết bias theo đúng quy ước dấu}
+Theo quy ước của Tsybakov $\widehat p_n(x_0)=\frac1{nh}\sum K((X_i-x_0)/h)$, đổi biến $u=(z-x_0)/h$ cho
+\[
+b(x_0)=\int K(u)\{p(x_0+uh)-p(x_0)\}du .
+\]
+
+\buoc{Xử lý độ trơn không vượt quá một}
+\emph{Trường hợp $\ell=0$ ($0<\beta\le1$).} Trực tiếp $|p(x_0+uh)-p(x_0)|\le L|uh|^\beta$, nên $|b|\le Lh^\beta\int|u|^\beta|K|$.
+
+\buoc{Taylor và trừ các hệ số tại điểm gốc}
+\emph{Trường hợp $\ell\ge1$.} Taylor bậc $\ell$ với phần dư Lagrange:
+$p(x_0+uh)=\sum_{k=0}^{\ell-1}\frac{(uh)^k}{k!}p^{(k)}(x_0)+\frac{(uh)^\ell}{\ell!}p^{(\ell)}(x_0+\tau uh)$, $\tau\in[0,1]$. Cộng và trừ $\frac{(uh)^\ell}{\ell!}p^{(\ell)}(x_0)$:
+\[
+p(x_0+uh)-p(x_0)=\sum_{k=1}^{\ell}\frac{(uh)^k}{k!}p^{(k)}(x_0)+\frac{(uh)^\ell}{\ell!}\{p^{(\ell)}(x_0+\tau uh)-p^{(\ell)}(x_0)\}.
+\]
+
+\buoc{Triệt tiêu đa thức và áp dụng Hölder}
+Mỗi số hạng đa thức khi nhân $K$ và tích phân cho
+\[
+ \int K(u)\frac{(uh)^k}{k!}p^{(k)}(x_0)du
+ =\frac{h^k p^{(k)}(x_0)}{k!}\underbrace{\int u^kK(u)du}_{0},\quad 1\le k\le\ell.
+\]
+Nhân với $K(u)$ rồi tích phân: tổng thứ nhất mất vì $\int u^kK=0$ với $1\le k\le\ell$ (đây là chỗ dùng bậc của nhân, và cũng là lý do cần các moment tới $\ell$ khả tích). Với phần còn lại, điều kiện Hölder cho $|p^{(\ell)}(x_0+\tau uh)-p^{(\ell)}(x_0)|\le L|\tau uh|^{\beta-\ell}\le L|uh|^{\beta-\ell}$. Vậy
+\[
+|b(x_0)|\le\int|K(u)|\frac{|uh|^\ell}{\ell!}L|uh|^{\beta-\ell}du=\answer{\frac{L}{\ell!}\int|u|^\beta|K(u)|du\;h^\beta=C_2h^\beta.}
+\]
+
+\buoc{Kiểm tra tính đều và hằng số}
+Chặn đúng với mọi $h>0$, không cần $h\to0$, và không phụ thuộc $n$ (bias không phụ thuộc cỡ mẫu). Để tránh câu hỏi $\tau=\tau(u)$ có đo được hay không, dùng phần dư tích phân $\frac{(uh)^\ell}{(\ell-1)!}\int_0^1(1-t)^{\ell-1}\{p^{(\ell)}(x_0+tuh)-p^{(\ell)}(x_0)\}dt$; cách này còn cho hằng số tốt hơn. Ví dụ $\beta=2$, Epanechnikov: công thức slide cho $C_2=L\int u^2K=L/5$; phần dư tích phân cho $L\int_0^1t\,dt\int u^2K=L/10$, khớp với bias tiệm cận $\tfrac12\mu_2|f''|h^2\le Lh^2/10$.
+\giaimuc{4. Kết luận}
+$|b(x_0)|\le C_2h^\beta$ với $C_2=L\int|u|^\beta|K(u)|du/\ell!$. Chặn đúng cho mọi $x_0,h>0$ và không phụ thuộc $n$.
+\giaimuc{5. Lỗi dễ mắc}
+Lấy trị tuyệt đối của nhân trong chặn, vì nhân bậc cao có thể âm.
+\end{solution}
+
+\begin{problem}[KDE-23. Chặn đều trên lớp mật độ và Theorem 1.1.]\label{k:23}
+\textit{(Nguồn: S25; T Thm.~1.1.)} Để lấy $\sup_{p\in\mathcal P(\beta,L)}$ trong chặn MSE, cần $p_{\max}$ chung cho cả lớp. Chứng minh điều đó với $\beta\le1$ và $\beta=2$, rồi suy ra $\sup_{x_0}\sup_{p}\E_p(\widehat p_n(x_0)-p(x_0))^2\le Cn^{-2\beta/(2\beta+1)}$ khi $h=\alpha n^{-1/(2\beta+1)}$.
+\end{problem}
+\begin{solution}
+\giaimuc{1. Mục tiêu}
+Tìm hằng số chặn chiều cao mật độ dùng chung cho cả lớp, rồi chặn MSE đều.
+\giaimuc{2. Công cụ và điều kiện}
+Mật độ không âm có tích phân 1; điều kiện Hölder; chặn bias và variance từ KDE-13,22.
+\giaimuc{3. Giải từng bước}
+\buoc{Chặn chiều cao khi độ trơn không vượt một}
+\emph{$\beta\le1$.} Lấy $x_0$ bất kỳ, $a=p(x_0)$. Vì $p$ Hölder, $p(x)\ge a-L|x-x_0|^\beta$. Đặt $\delta=(a/L)^{1/\beta}$ (tại đó vế phải bằng 0). Vì $p\ge0$ và $\int p=1$,
+\[
+1\ge\int_{|x-x_0|\le\delta}(a-L|x-x_0|^\beta)dx=2a\delta-\frac{2L\delta^{\beta+1}}{\beta+1}=\frac{2\beta}{\beta+1}a\delta
+=\frac{2\beta}{\beta+1}a^{1+1/\beta}L^{-1/\beta}.
+\]
+Suy ra $a\le\{(\beta+1)L^{1/\beta}/(2\beta)\}^{\beta/(\beta+1)}$; với $\beta=1$: $\norm p_\infty\le\sqrt L$. Mật độ tam giác ($L=1$, đỉnh 1) cho thấy chặn này đạt dấu bằng.
+
+\buoc{Chặn chiều cao khi đạo hàm Lipschitz}
+\emph{$\beta=2$.} $p'$ là $L$-Lipschitz nên $p(x_0+t)\ge a+tp'(x_0)-Lt^2/2$. Chọn chiều của $t$ cùng dấu với $p'(x_0)$ (tùy ý nếu $p'(x_0)=0$), khi đó $tp'(x_0)\ge0$ và $p(x_0+t)\ge a-Lt^2/2$ trên một nửa đường thẳng. Với $\delta=\sqrt{2a/L}$,
+\[
+1\ge\int_0^\delta\Big(a-\frac{Lt^2}2\Big)dt=a\delta-\frac{L\delta^3}6=\frac23a\delta=\frac23a\sqrt{\frac{2a}L}
+\;\Longrightarrow\; \norm p_\infty\le\Big(\frac{9L}8\Big)^{1/3}.
+\]
+Kiểm tra với $N(0,\sigma^2)$: $L=\phi(0)/\sigma^3$, chặn $\approx0.766/\sigma\ge0.399/\sigma$.
+
+\buoc{Hoàn tất chặn chiều cao cho độ trơn bất kỳ}
+\emph{Mọi $\beta>0$: hoàn tất bước chặn đều, không bỏ qua trường hợp còn lại.}
+Chọn một nhân phụ $K_*$ bị chặn, giá $[-1,1]$, có $\int K_*=1$ và $\int u^jK_*(u)du=0$, $j=1,\ldots,\ell$, $\ell=\lceil\beta\rceil-1$.
+Một cách xây dựng là đặt $K_*=(\sum_{j=0}^\ell c_ju^j)\1_{[-1,1]}$ và giải $Mc=e_0$, $M_{ij}=\int_{-1}^1u^{i+j}du$. Ma trận $M$ xác định dương vì $v^TMv=\int_{-1}^1(\sum_jv_ju^j)^2du>0$ với $v\ne0$, nên nghiệm tồn tại.
+Áp dụng chặn bias KDE-22 với bandwidth $1$ (bất đẳng thức này đúng cho mọi $h>0$):
+\[
+ |p(x)-(K_* *p)(x)|\le C_*:=\frac{L}{\ell!}\int |u|^\beta|K_*(u)|du.
+\]
+Mặt khác $|(K_* *p)(x)|\le\|K_*\|_\infty\int p=\|K_*\|_\infty$. Do đó
+\[
+ \sup_{p\in\mathcal P(\beta,L)}\|p\|_\infty\le C_*+\|K_*\|_\infty<\infty.
+\]
+Nhân phụ có thể đổi dấu; nó chỉ dùng để chứng minh chặn, không bắt buộc là nhân của ước lượng đang xét.
+
+\buoc{Thế bandwidth và lấy hai supremum}
+\emph{Ghép lại.} Với $p_{\max}=p_{\max}(\beta,L)$ vừa tìm, KDE-13 và KDE-22 cho, với mọi $x_0$ và mọi $p\in\mathcal P(\beta,L)$,
+$\MSE\le C_2^2h^{2\beta}+p_{\max}R(K)/(nh)$. Thay $h=\alpha n^{-1/(2\beta+1)}$: $h^{2\beta}=\alpha^{2\beta}n^{-2\beta/(2\beta+1)}$ và $1/(nh)=\alpha^{-1}n^{-2\beta/(2\beta+1)}$, nên
+\[
+\sup_{x_0}\sup_{p\in\mathcal P(\beta,L)}\MSE\le\answer{\big(C_2^2\alpha^{2\beta}+p_{\max}R(K)/\alpha\big)\,n^{-2\beta/(2\beta+1)}},
+\]
+hằng số chỉ phụ thuộc $\beta,L,\alpha,K$ như S25 phát biểu.
+\giaimuc{4. Kết luận}
+Có hằng $M_{\beta,L}<\infty$ chặn chung chiều cao mọi mật độ trong lớp. Với $h=\alpha n^{-1/(2\beta+1)}$, $\sup_{x_0}\sup_p\MSE\le(C_2^2\alpha^{2\beta}+M_{\beta,L}R(K)/\alpha)n^{-2\beta/(2\beta+1)}$.
+\giaimuc{5. Lỗi dễ mắc}
+Không lấy supremum theo $f$ khi hằng số vẫn còn phụ thuộc vào chính $f$.
+\end{solution}
+
+\begin{problem}[KDE-24. Bổ đề đánh đổi tổng quát.]\label{k:24}
+\textit{(Nguồn: S8, S10, S25.)} Cực tiểu $g(h)=Ah^{2\beta}+B/(nh)$ với $A,B>0$. Đặc biệt hóa cho histogram, KDE bậc hai và chặn Tsybakov.
+\end{problem}
+\begin{solution}
+\giaimuc{1. Mục tiêu}
+Giải một lần bài toán cân bằng bias--variance cho độ trơn bất kỳ.
+\giaimuc{2. Công cụ và điều kiện}
+$g(h)=Ah^{2\beta}+B/(nh)$, $A,B,\beta>0$, $h>0$; đạo hàm theo $h$.
+\giaimuc{3. Giải từng bước}
+\buoc{Lấy đạo hàm và tính nghiệm duy nhất}
+$g'(h)=2\beta Ah^{2\beta-1}-B/(nh^2)=0\iff h^{2\beta+1}=B/(2\beta An)$. Vì $g\to\infty$ ở cả $h\to0^+$ và $h\to\infty$, và $g'$ đổi dấu đúng một lần, đây là cực tiểu toàn cục. Tại nghiệm $B/(nh_*)=2\beta Ah_*^{2\beta}$, do đó
+\[
+\begin{aligned}
+ h_*&=\Big(\frac{B}{2\beta An}\Big)^{1/(2\beta+1)},\\
+ g(h_*)&=(2\beta+1)Ah_*^{2\beta}\\
+ &=(2\beta+1)A^{\frac1{2\beta+1}}\Big(\frac{B}{2\beta n}\Big)^{\frac{2\beta}{2\beta+1}}
+ \asymp n^{-\frac{2\beta}{2\beta+1}}.
+\end{aligned}
+\]
+
+\buoc{Giải thích cân bằng và đặc biệt hóa}
+Tại tối ưu, variance bằng $2\beta$ lần squared bias.
+\emph{Histogram:} $A=R(f')/12$, $B=1$, $2\beta=2$: $h_*=(6/(R(f')n))^{1/3}$, risk $\asymp n^{-2/3}$.
+\emph{KDE bậc hai:} $A=\mu_2^2R(f'')/4$, $B=R(K)$, $2\beta=4$: đúng công thức KDE-17, risk $\tfrac54\cdots n^{-4/5}$.
+\emph{Tsybakov (S25):} $A=C_2^2$, $B=C_1$: $h_*=(C_1/(2\beta C_2^2))^{1/(2\beta+1)}n^{-1/(2\beta+1)}$.
+\emph{Ước lượng chiếu:} tham số làm trơn là $1/D$, cùng bổ đề với $h=1/D$.
+\giaimuc{4. Kết luận}
+$h_*=[B/(2\beta An)]^{1/(2\beta+1)}$ và $g(h_*)=(2\beta+1)A^{1/(2\beta+1)}[B/(2\beta n)]^{2\beta/(2\beta+1)}$. Tại nghiệm, variance bằng $2\beta$ lần squared bias.
+\giaimuc{5. Lỗi dễ mắc}
+Cân bằng bậc chỉ cho số mũ; muốn đúng hằng số phải giải phương trình đạo hàm.
+\end{solution}
+
+\begin{problem}[KDE-25. Chọn sai độ trơn $\tilde\beta$.]\label{k:25}
+\textit{(Nguồn: mở rộng S10 Remark 1, S25.)} Giả sử $p\in\mathcal P(\beta,L)$ nhưng dùng $h=n^{-1/(2\tilde\beta+1)}$ và nhân đủ bậc cho $\beta$. Tìm tốc độ của chặn MSE khi $\tilde\beta<\beta$ và $\tilde\beta>\beta$. Áp dụng với $\beta=2$.
+\end{problem}
+\begin{solution}
+\giaimuc{1. Mục tiêu}
+Xác định số hạng chi phối khi chọn bandwidth theo sai độ trơn.
+\giaimuc{2. Công cụ và điều kiện}
+Thay $h=n^{-1/(2\widetilde\beta+1)}$ vào chặn $C_2^2h^{2\beta}+C_1/(nh)$.
+\giaimuc{3. Giải từng bước}
+\buoc{Thay bandwidth đã chọn vào hai thành phần}
+Thay vào chặn $C_2^2h^{2\beta}+C_1/(nh)$:
+\[
+C_2^2\,n^{-2\beta/(2\tilde\beta+1)}+C_1\,n^{-2\tilde\beta/(2\tilde\beta+1)},\qquad
+\text{số mũ tốc độ } r(\tilde\beta)=\frac{2\min(\beta,\tilde\beta)}{2\tilde\beta+1}.
+\]
+
+\buoc{So các số mũ để tìm thành phần trội}
+Nếu $\tilde\beta<\beta$: $h$ quá nhỏ (undersmoothing), variance trội, $r=2\tilde\beta/(2\tilde\beta+1)<2\beta/(2\beta+1)$ vì $x\mapsto 2x/(2x+1)$ tăng. Nếu $\tilde\beta>\beta$: $h$ quá lớn (oversmoothing), bias trội, $r=2\beta/(2\tilde\beta+1)<2\beta/(2\beta+1)$. Chỉ $\tilde\beta=\beta$ tối ưu số mũ của chặn đang xét; chưa có cận dưới để khẳng định tốc độ MSE đúng bằng chặn cho từng mật độ. Với $\beta=2$: $\tilde\beta=1$ cho $h=n^{-1/3}$, variance $n^{-2/3}$, bias$^2$ $n^{-4/3}$, chặn tổng $O(n^{-2/3})$; $\tilde\beta=3$ cho $h=n^{-1/7}$, bias$^2$ $n^{-4/7}$, variance $n^{-6/7}$, chặn tổng $O(n^{-4/7})$.
+\[
+\answer{\beta=2:\ \tilde\beta=1\Rightarrow n^{-2/3},\quad \tilde\beta=2\Rightarrow n^{-4/5},\quad \tilde\beta=3\Rightarrow n^{-4/7}.}
+\]
+
+\buoc{Kiểm tra thêm bậc nhân}
+Nếu thêm nhân chỉ có bậc cho $\tilde\beta<\beta$ thì bias còn có thể chậm hơn $h^\beta$. Kết luận: vì $\beta$ không biết, cần chọn $h$ theo dữ liệu (CV, KDE-27--30) hoặc phương pháp thích nghi.
+\giaimuc{4. Kết luận}
+Số mũ của chặn MSE là $2\min(\beta,\widetilde\beta)/(2\widetilde\beta+1)$. Với $\beta=2$, chọn $\widetilde\beta=1,2,3$ lần lượt cho chặn bậc $n^{-2/3},n^{-4/5},n^{-4/7}$; đây không phải cận dưới cho từng mật độ.
+\giaimuc{5. Lỗi dễ mắc}
+Số mũ nhỏ hơn cho số hạng giảm chậm hơn; một chặn trên không tự thành đẳng thức tốc độ.
+\end{solution}
+
+\begin{problem}[KDE-26. Nhân bậc cao Gaussian $K_4$.]\label{k:26}
+\textit{(Nguồn: S22; đề xuất C14.)} Cho $K_4(u)=\tfrac12(3-u^2)\phi(u)$. Tính $\mu_j(K_4)$, $j\le4$, và $R(K_4)$; tìm bias, AMISE, tốc độ; chỉ ra $\widehat f$ có thể âm và cách sửa.
+\end{problem}
+\begin{solution}
+\giaimuc{1. Mục tiêu}
+Kiểm tra nhân Gaussian bậc cao và tính bias, AMISE tương ứng.
+\giaimuc{2. Công cụ và điều kiện}
+Moment $N(0,1)$: $1,3,15$ ở bậc $2,4,6$; muốn AMISE cần thêm trơn bậc bốn trong $L_2$.
+\giaimuc{3. Giải từng bước}
+\buoc{Tính các moment và tích phân nhân bình phương}
+Với $Z\sim N(0,1)$: $\E Z^2=1$, $\E Z^4=3$, $\E Z^6=15$. Do đó $\int K_4=\tfrac12(3-1)=1$, $\mu_2=\tfrac12(3-3)=0$, $\mu_4=\tfrac12(9-15)=-3$, các moment lẻ bằng 0. Vậy $K_4$ có bậc 3 theo Tsybakov (``nhân bậc bốn'' theo quy ước moment đầu tiên khác 0). Vì $\phi^2(u)=\frac1{2\sqrt\pi}\cdot$(mật độ $N(0,\tfrac12)$), với $W\sim N(0,\tfrac12)$:
+\[
+R(K_4)=\frac1{4}\cdot\frac1{2\sqrt\pi}\E(3-W^2)^2=\frac1{8\sqrt\pi}\Big(9-3+\frac34\Big)=\frac{27}{32\sqrt\pi}.
+\]
+
+\buoc{Tìm bias từ moment đầu tiên khác 0}
+Nếu $f\in C^4$ với $f^{(4)}$ bị chặn, Taylor bậc bốn như KDE-09 cho $b_h(x)=\frac{h^4}{24}\mu_4f^{(4)}(x)+o(h^4)=-\frac{h^4}8f^{(4)}(x)+o(h^4)$. Để suy ra kết quả tích phân, thêm $f\in W^{4,2}(\R)$ và dùng Taylor trong $L_2$ như KDE-16. Khi đó
+\[
+\AMISE(h)=\frac{h^8}{64}R(f^{(4)})+\frac{R(K_4)}{nh},
+\]
+bổ đề KDE-24 với $2\beta=8$ cho $h_*\asymp n^{-1/9}$ và $\answer{\AMISE(h_*)\asymp n^{-8/9}}$, nhanh hơn $n^{-4/5}$.
+
+\buoc{Kiểm tra tính âm và phép hiệu chỉnh}
+\emph{Cái giá:} $K_4<0$ khi $|u|>\sqrt3$, nhỏ nhất tại $u=\pm\sqrt5$ với giá trị $-\phi(\sqrt5)\approx-0.0327$. Ở đuôi hoặc khe giữa hai cụm, $\widehat f$ có thể âm. Sửa: $\tilde f=\widehat f_+/\int\widehat f_+$. Bước cắt dương không làm tăng sai số vì với $b=f(x)\ge0$, $|\max(a,0)-b|\le|a-b|$; bước chuẩn hóa lại chỉ thay đổi ít khi $\int\widehat f_+\approx1$.
+\giaimuc{4. Kết luận}
+$\mu_2(K_4)=0$, $\mu_4(K_4)=-3$, $R(K_4)=27/(32\sqrt\pi)$. Bias chính $-h^4f^{(4)}/8$; dưới độ trơn $L_2$ bậc bốn, bandwidth tối ưu bậc $n^{-1/9}$ và MISE bậc $n^{-8/9}$. Nhân có phần âm.
+\giaimuc{5. Lỗi dễ mắc}
+$\mu_2=0$ làm công thức AMISE bậc hai suy biến; phải khai triển tới moment đầu tiên khác 0.
+\end{solution}
+
+\nhom{D. Cross-validation}
+\begin{problem}[KDE-27. CV không chệch (W6.3).]\label{k:27}
+\textit{(Nguồn: S11; W6.3, tr.143; W Thm.~6.34.)} Chứng minh $\E\widehat J(h)=\E J(h)=\MISE(h)-R(f)$ với $h$ cố định, cho cả histogram và KDE.
+\end{problem}
+\begin{solution}
+\giaimuc{1. Mục tiêu}
+Chứng minh CV ước lượng không chệch MISE trừ hằng số $R(f)$.
+\giaimuc{2. Công cụ và điều kiện}
+$h$ cố định; $X_i$ độc lập với mẫu bỏ $i$; Fubini và khai triển ISE.
+\giaimuc{3. Giải từng bước}
+\buoc{Viết hai ước lượng trong cùng một dạng tổng}
+Cả hai ước lượng có dạng $\widehat f(x)=\frac1n\sum_iH(x,X_i)$ với $H$ tất định: KDE có $H(x,y)=K_h(x-y)$; histogram có $H(x,y)=h^{-1}\sum_j\1_{B_j}(x)\1_{B_j}(y)$. Ước lượng bỏ một điểm là $\widehat f_{(-i)}(x)=\frac1{n-1}\sum_{j\ne i}H(x,X_j)$. Vì $L(h)=\int(\widehat f-f)^2=J(h)+R(f)$, chỉ cần chứng minh $\E\big[\frac1n\sum_i\widehat f_{(-i)}(X_i)\big]=\E\int\widehat f f$.
+
+\buoc{Tính kỳ vọng của tích phân chứa mật độ thật}
+Vế phải: Fubini cho $\E\int\widehat f(x)f(x)dx=\int\E H(x,X_1)f(x)dx=\iint H(x,y)f(y)f(x)dy\,dx$.
+
+\buoc{Tính kỳ vọng leave-one-out bằng độc lập}
+Trước hết viết rõ đại lượng LOO:
+\[
+ \E\widehat f_{(-i)}(X_i)=\frac1{n-1}\sum_{j\ne i}\E H(X_i,X_j).
+\]
+Mỗi số hạng có cùng kỳ vọng; chia cho $n-1$ sẽ triệt tiêu số lượng số hạng. Vế trái: với $j\ne i$, $X_i,X_j$ độc lập cùng mật độ $f$, nên $\E H(X_i,X_j)=\iint H(x,y)f(x)f(y)dx\,dy$. Mỗi $\widehat f_{(-i)}(X_i)$ là trung bình của $n-1$ số hạng như vậy, nên có cùng kỳ vọng. Hai vế bằng nhau, suy ra
+\[
+\E\widehat J(h)=\E\int\widehat f^2-2\E\int\widehat ff=\E J(h)=\answer{\MISE(h)-R(f).}
+\]
+
+\buoc{Kiểm tra giả thiết và giới hạn của tính không chệch}
+Điều kiện: $n\ge2$ và $\iint|H(x,y)|f(x)f(y)<\infty$ (chẳng hạn $K$ bị chặn). Chú ý: đây là không chệch với $h$ \emph{cố định}; $\widehat J(\widehat h)$ tại $\widehat h=\arg\min\widehat J$ không còn không chệch. Nếu không bỏ $X_i$, số hạng $H(X_i,X_i)=K(0)/h$ làm kỳ vọng lệch và CV sẽ chọn $h\to0$.
+\giaimuc{4. Kết luận}
+Với $h$ cố định, $\E\widehat J(h)=\MISE(h)-R(f)$. Cốt lõi là độc lập giữa quan sát bị bỏ và ước lượng xây từ các quan sát còn lại.
+\giaimuc{5. Lỗi dễ mắc}
+Không dùng $\widehat f(X_i)$ thay cho $\widehat f_{(-i)}(X_i)$ trong chứng minh độc lập.
+\end{solution}
+
+\begin{problem}[KDE-28. Công thức tổng đôi (W6.4, công thức 6.35) và sửa S27.]\label{k:28}
+\textit{(Nguồn: S27; W6.4, tr.143; W (6.35), tr.136.)} Với $K$ đối xứng và $K^{(2)}=K*K$, chứng minh công thức chính xác của $\widehat J(h)$ và so sánh với (6.35) và slide 27.
+\end{problem}
+\begin{solution}
+\giaimuc{1. Mục tiêu}
+Biến định nghĩa CV thành hai tổng đôi và nhận ra hệ số đúng.
+\giaimuc{2. Công cụ và điều kiện}
+$K$ đối xứng; tích phân tích hai nhân là tích chập; KDE bỏ một điểm dùng mẫu số $n-1$.
+\giaimuc{3. Giải từng bước}
+\buoc{Tính tích phân bình phương KDE}
+\emph{Số hạng bình phương.} $\int\widehat f^2=\frac1{n^2h^2}\sum_{i,j}\int K(\frac{x-X_i}h)K(\frac{x-X_j}h)dx$. Đổi biến $y=(x-X_j)/h$, $dx=h\,dy$, đặt $a=(X_j-X_i)/h$:
+\[
+\begin{aligned}\int K\Big(\frac{x-X_i}h\Big)K\Big(\frac{x-X_j}h\Big)dx&=h\int K(y+a)K(y)dy\\&=h\int K(-a-y)K(y)dy=hK^{(2)}(-a),\end{aligned}
+\]
+dùng $K$ đối xứng; $K^{(2)}$ cũng đối xứng. Nên $\int\widehat f^2=\frac1{n^2h}\sum_{i,j}K^{(2)}\big(\frac{X_i-X_j}h\big)$ --- hệ số $1/(n^2h)$, không phải $1/(n^2h^2)$.
+
+\buoc{Tính thành phần leave-one-out}
+\emph{Số hạng bỏ một điểm.} $\widehat f_{(-i)}(X_i)=\frac1{(n-1)h}\sum_{j\ne i}K\big(\frac{X_i-X_j}h\big)$. Vậy
+\[
+\answer{\widehat J(h)=\frac1{n^2h}\sum_{i,j}K^{(2)}\Big(\frac{X_i-X_j}h\Big)-\frac2{n(n-1)h}\sum_{i\ne j}K\Big(\frac{X_i-X_j}h\Big).}
+\]
+
+\buoc{Đối chiếu với dạng viết gần đúng trong sách}
+\emph{So với (6.35).} Wasserman viết $W(h)=\frac1{hn^2}\sum_{i,j}K^*(\cdot)+\frac2{nh}K(0)$, $K^*=K^{(2)}-2K$. Tổng $\sum_{i,j}K$ chứa $n$ số hạng đường chéo $K(0)$ triệt tiêu với $+2K(0)/(nh)$, nên $W(h)=\frac1{n^2h}\sum_{i,j}K^{(2)}-\frac2{n^2h}\sum_{i\ne j}K$. Hiệu
+\[
+W(h)-\widehat J(h)=\frac2{n^2}\sum_i\widehat f_{(-i)}(X_i)=\frac2n\Big(\int f_hf+o_P(1)\Big),
+\]
+tức thường cỡ $O_P(1/n)$ khi trung bình LOO hội tụ tới hằng số hữu hạn dương, không phải $O(n^{-2})$ nói chung. Với $h\asymp n^{-1/5}$, cỡ $n^{-1}$ nhỏ hơn mức risk $n^{-4/5}$; tuy nhiên điều đó tự nó chưa chứng minh các argmin tương đương, vì còn cần kiểm soát đều theo $h$ và hình dạng tiêu chuẩn. Khi tính tay, dùng công thức chính xác ở trên.
+
+\buoc{Nhận diện công thức sai trên slide}
+\emph{S27} ghi $\frac1{h^2n^2}\sum K^{(2)}+\frac2{nh}K(0)$: sai hệ số $h$ và thiếu số hạng âm leave-one-out. Đây không phải tiêu chuẩn CV đúng.
+\giaimuc{4. Kết luận}
+CV chính xác là $\widehat J(h)=A/(n^2h)-2B/[n(n-1)h]$, trong đó $A=\sum_{i,j}(K*K)((X_i-X_j)/h)$ và $B=\sum_{i\ne j}K((X_i-X_j)/h)$. Hai tổng có quy tắc đường chéo khác nhau.
+\giaimuc{5. Lỗi dễ mắc}
+Tổng thứ nhất có đường chéo, tổng LOO không có đường chéo; hệ số tích phân là $1/(n^2h)$.
+\end{solution}
+
+\begin{problem}[KDE-29. CV với nhân Gaussian.]\label{k:29}
+\textit{(Nguồn: W Remark~6.36; S27.)} Chứng minh $K^{(2)}=\phi_{\sqrt2}$ khi $K=\phi$, viết $\widehat J(h)$ dạng đóng và mô tả dáng $\widehat J$ khi $h\to0$ và $h\to\infty$.
+\end{problem}
+\begin{solution}
+\giaimuc{1. Mục tiêu}
+Viết CV Gaussian bằng hàm mũ và xét giới hạn ở hai đầu bandwidth.
+\giaimuc{2. Công cụ và điều kiện}
+$\phi*\phi=\phi_{\sqrt2}$; khi xét $h\to0$, giả sử các quan sát phân biệt.
+\giaimuc{3. Giải từng bước}
+\buoc{Tìm tích chập Gaussian và thay vào công thức CV}
+$K^{(2)}(z)=\int\phi(z-y)\phi(y)dy$ là mật độ của $Z_1+Z_2$ với $Z_1,Z_2$ độc lập $N(0,1)$, tức $N(0,2)$: $K^{(2)}(z)=e^{-z^2/4}/\sqrt{4\pi}$. Thay vào KDE-28, đặt $D_{ij}=X_i-X_j$:
+\[
+\answer{\begin{aligned}\widehat J(h)&=\frac1{2\sqrt\pi\,n^2h}\sum_{i,j}e^{-D_{ij}^2/(4h^2)}\\&\quad-\frac{2}{\sqrt{2\pi}\,n(n-1)h}\sum_{i\ne j}e^{-D_{ij}^2/(2h^2)}.\end{aligned}}
+\]
+
+\buoc{Xét bandwidth tiến về 0}
+Đường chéo của tổng đầu cho đúng $\frac{1}{2\sqrt\pi nh}=R(K)/(nh)$, số hạng variance. Khi $h\to0$ (dữ liệu phân biệt), các số hạng ngoài đường chéo $\to0$ theo mũ, nên $\widehat J\approx R(K)/(nh)\to+\infty$.
+
+\buoc{Xét bandwidth tiến ra vô cùng và dấu CV}
+Khi $h\to\infty$, mọi mũ $\to1$ và $\widehat J\approx\frac1h\big(\frac1{2\sqrt\pi}-\frac2{\sqrt{2\pi}}\big)=-\frac{0.516}{h}\to0^-$. Vậy $\widehat J$ đi từ $+\infty$ xuống âm rồi về $0$ từ phía dưới; cực tiểu nằm ở giữa. $\widehat J$ âm là bình thường vì nó ước lượng $\MISE-R(f)$.
+\giaimuc{4. Kết luận}
+$\phi*\phi=\phi_{\sqrt2}$, cho hai tổng mũ với mẫu số trong số mũ lần lượt $4h^2$ và $2h^2$. Với dữ liệu phân biệt, CV tiến $+\infty$ khi $h\to0$ và tiến $0$ từ phía âm khi $h\to\infty$.
+\giaimuc{5. Lỗi dễ mắc}
+Nếu dữ liệu có điểm trùng, các số hạng ngoài đường chéo có thể không mất khi $h\to0$.
+\end{solution}
+
+\begin{problem}[KDE-30. Tính tay CV trên mẫu ba điểm.]\label{k:30}
+\textit{(Nguồn: bài tính biên soạn từ S27.)} Cho $X=(-1,0,1)$, nhân Gaussian. Tính $\widehat J(1)$, so sánh với dạng (6.35) và với vài giá trị $h$ khác.
+\end{problem}
+\begin{solution}
+\giaimuc{1. Mục tiêu}
+Tính từng thành phần của CV trên mẫu ba điểm và đối chiếu các ứng viên.
+\giaimuc{2. Công cụ và điều kiện}
+$n=3$, $X=(-1,0,1)$; nhóm chín cặp có thứ tự theo khoảng cách 0,1,2.
+\giaimuc{3. Giải từng bước}
+\buoc{Lập bảng số lần xuất hiện của mỗi khoảng cách}
+Các hiệu $D_{ij}$: ba số 0, bốn số $\pm1$, hai số $\pm2$. Đặt $c=1/\sqrt{4\pi}=0.282095$.
+
+\buoc{Tính tích phân bình phương}
+\emph{Số hạng đầu} ($h=1$): $\frac19\{3c+4ce^{-1/4}+2ce^{-1}\}=\frac19(0.846284+0.878780+0.207552)=0.214736$.
+
+\buoc{Tính ba giá trị leave-one-out rồi trừ}
+\emph{Bỏ một điểm}: $\widehat f_{(-1)}(-1)=\frac12\{\phi(1)+\phi(2)\}=\frac12(0.241971+0.053991)=0.147981$; $\widehat f_{(-2)}(0)=\phi(1)=0.241971$; $\widehat f_{(-3)}(1)=0.147981$. Trung bình $0.179311$, nhân 2 được $0.358622$.
+\[
+\widehat J(1)=0.214736-0.358622=\answer{-0.143886.}
+\]
+
+\buoc{Đối chiếu công thức và các ứng viên bandwidth}
+Dạng (6.35): $W(1)=\widehat J(1)+\frac29(0.537933)=-0.024345$; khác nhau nhiều khi $n=3$; phần chênh cũng phụ thuộc $h$, nên không được xem là hằng số khi tối ưu. Trên lưới: $\widehat J(0.5)=0.1385$, $\widehat J(1)=-0.1439$, $\widehat J(1.5)=-0.1926$, $\widehat J(2)=-0.1851$; cực tiểu số tại $\widehat h\approx1.59$ ($\widehat J\approx-0.1932$). Quy tắc $1.06s n^{-1/5}$ với $s=1$ cho $0.851$. Nếu dùng đúng bản robust của sách thì IQR $=1$ (phân vị nội suy tuyến tính), nên $\widehat\sigma=\min(1,1/1.34)=1/1.34$ và $h_{NR}\approx0.635$. Các giá trị thập phân để đối chiếu khi bấm máy; trong bài tính tay, giữ các số mũ ở dạng chính xác cũng đủ.
+\giaimuc{4. Kết luận}
+$\widehat J(1)\approx-0.143886$, còn dạng $W(1)$ của (6.35) xấp xỉ $-0.024345$. Trong các ứng viên $0.5,1,1.5,2$, giá trị $h=1.5$ cho điểm CV nhỏ nhất; không đồng nhất cực tiểu trên lưới với cực tiểu trên mọi $h>0$.
+\giaimuc{5. Lỗi dễ mắc}
+Đếm cặp có thứ tự: khoảng cách 1 xuất hiện bốn lần, không phải hai lần.
+\end{solution}
+
+\nhom{E. Nhất quán, chuẩn tiệm cận và khoảng tin cậy}
+\begin{problem}[KDE-31. Chứng minh nhất quán điểm (W6.1 = Theorem 6.27).]\label{k:31}
+\textit{(Nguồn: S28; W6.1, W6.2(b), tr.142--143.)} Giả sử $f$ liên tục tại $x$, $h_n\to0$, $nh_n\to\infty$. Chứng minh $\widehat f_n(x)\pto f(x)$.
+\end{problem}
+\begin{solution}
+\giaimuc{1. Mục tiêu}
+Chứng minh hội tụ theo xác suất bằng cách làm MSE tiến về 0.
+\giaimuc{2. Công cụ và điều kiện}
+$h_n\to0$, $nh_n\to\infty$; liên tục của $f$ tại điểm; nhân bị chặn có giá compact hoặc điều kiện thay thế được nêu trong lời giải.
+\giaimuc{3. Giải từng bước}
+\buoc{Chọn con đường chứng minh bằng MSE}
+Giả thiết thêm (chuẩn trong sách): $K$ bị chặn, $\int K=1$, $K$ có giá trong $[-1,1]$. Theo Chebyshev, $\Pp(|\widehat f-f|>\varepsilon)\le\MSE/\varepsilon^2$, nên chỉ cần $\MSE=b^2+v\to0$.
+
+\buoc{Cho bias tiến về 0 bằng tính liên tục}
+\emph{Bias.} $|b_h(x)|=\big|\int K(u)\{f(x-hu)-f(x)\}du\big|\le\sup_{|t|\le h}|f(x-t)-f(x)|\int|K|\to0$ vì $f$ liên tục tại $x$ và $h\to0$.
+
+\buoc{Cho variance tiến về 0 bằng điều kiện cỡ cửa sổ}
+\emph{Variance.} Theo KDE-12, $v\le\frac1{nh}\int K^2(u)f(x-hu)du\le\frac{\norm K_\infty}{nh}\int|K(u)|f(x-hu)du$. Tích phân cuối $\to f(x)\int|K|$ theo cùng lập luận liên tục, nên bị chặn; do đó $v=O(1/(nh))\to0$.
+
+\buoc{Áp dụng Chebyshev và kiểm tra biến thể boxcar}
+Ghép hai kết quả cho $\MSE=b_h(x)^2+\Var\widehat f_h(x)\to0$.
+Với mọi $\varepsilon>0$, Markov áp dụng cho biến không âm $(\widehat f_h-f)^2$ cho
+\[
+ \Pp(|\widehat f_h(x)-f(x)|>\varepsilon)
+ \le\frac{\E(\widehat f_h(x)-f(x))^2}{\varepsilon^2}
+ =\frac{\MSE}{\varepsilon^2}\longrightarrow0.
+\]
+Đây chính là định nghĩa hội tụ theo xác suất, nên $\answer{\widehat f_n(x)\pto f(x).}$
+Nếu $K$ không có giá compact (Gaussian), thay bước bias bằng bổ đề Bochner: cần $\int|K|<\infty$, $|u|K(u)\to0$ khi $|u|\to\infty$ và $f$ khả tích (hoặc bị chặn); phần xa của tích phân được khống chế riêng. \emph{Boxcar W6.2(b):} bias $=p_h/h-f(x)\to0$ vì trung bình tích phân của hàm liên tục; variance $=\frac{p_h(1-p_h)}{nh^2}\le\frac1{nh}\cdot\frac{p_h}h\to0\cdot f(x)$.
+\giaimuc{4. Kết luận}
+Dưới điều kiện nhân và liên tục đã nêu, $h_n\to0$ và $nh_n\to\infty$ làm bias và variance cùng tiến 0; do đó $\widehat f_{h_n}(x)\pto f(x)$.
+\giaimuc{5. Lỗi dễ mắc}
+Điều kiện $h\to0$ xử lý bias; điều kiện $nh\to\infty$ xử lý variance. Cần cả hai.
+\end{solution}
+
+\begin{problem}[KDE-32. CLT tâm hóa tại kỳ vọng.]\label{k:32}
+\textit{(Nguồn: S28; biến thể W Thm.~6.28.)} Giả sử $K$ bị chặn, $R(K)<\infty$, $f$ bị chặn, liên tục tại $x$ với $f(x)>0$, $h\to0$, $nh\to\infty$. Chứng minh $\sqrt{nh}\{\widehat f(x)-\E\widehat f(x)\}\dto N(0,f(x)R(K))$.
+\end{problem}
+\begin{solution}
+\giaimuc{1. Mục tiêu}
+Áp dụng CLT mảng tam giác cho KDE tâm hóa tại kỳ vọng.
+\giaimuc{2. Công cụ và điều kiện}
+$K$ bị chặn và chuẩn hóa, $K\in L_1\cap L_2$; $f$ bị chặn, liên tục, $f(x)>0$; $h\to0$, $nh\to\infty$.
+\giaimuc{3. Giải từng bước}
+\buoc{Viết biến chuẩn hóa thành tổng mảng tam giác}
+Viết $\sqrt{nh}(\widehat f-\E\widehat f)=\sum_{i=1}^nY_{ni}$ với $Y_{ni}=\frac{1}{\sqrt{nh}}\{K_i-\E K_i\}$, $K_i=K((x-X_i)/h)$. Kiểm tra hệ số trước khi áp dụng CLT:
+\[
+ \sqrt{nh}\frac1{nh}\sum_i(K_i-\E K_i)
+ =\frac1{\sqrt{nh}}\sum_i(K_i-\E K_i)=\sum_iY_{ni}.
+\]
+Đây là mảng tam giác: trong hàng thứ $n$ có $n$ biến, và phân phối mỗi biến còn phụ thuộc $h_n$. Các biến trong mỗi hàng độc lập, kỳ vọng 0. Để dùng Lyapunov cần kiểm tra hai điều: tổng variance tiến về số dương và moment tuyệt đối bậc ba của tổng các số hạng chuẩn hóa tiến về 0.
+
+\buoc{Tính giới hạn tổng variance}
+\emph{Variance.} $\sum_i\Var Y_{ni}=\frac1h\Var K_1=\int K^2(u)f(x-hu)du-hf_h(x)^2\to f(x)R(K)=:\sigma^2>0$.
+
+\buoc{Kiểm tra moment ba để áp dụng CLT}
+\emph{Điều kiện Lyapunov ($\delta=1$).} $|a-b|^3\le4(|a|^3+|b|^3)$ và $|\E K_1|^3\le\E|K_1|^3$ cho $\E|K_1-\E K_1|^3\le8\E|K_1|^3$, và
+$\E|K_1|^3=h\int|K(u)|^3f(x-hu)du\le h\norm K_\infty\norm f_\infty R(K)$. Do đó
+\[
+\sum_i\E|Y_{ni}|^3\le\frac{n\cdot8h\norm K_\infty\norm f_\infty R(K)}{(nh)^{3/2}}=\frac{C}{\sqrt{nh}}\to0.
+\]
+
+\buoc{Chuẩn hóa và dùng Slutsky}
+Lyapunov cho $\sum_iY_{ni}/\sqrt{\sum\Var Y_{ni}}\dto N(0,1)$, và Slutsky cho
+\[
+\answer{\sqrt{nh}\{\widehat f(x)-\E\widehat f(x)\}\dto N(0,f(x)R(K)).}
+\]
+Điều kiện $nh\to\infty$ xuất hiện đúng ở bước Lyapunov: nó đảm bảo số quan sát ``hiệu dụng'' trong cửa sổ, khoảng $nhf(x)$, tiến ra vô cùng.
+\giaimuc{4. Kết luận}
+$\sqrt{nh}\{\widehat f_h(x)-\E\widehat f_h(x)\}\dto N(0,f(x)R(K))$. Tổng moment ba bậc $O((nh)^{-1/2})$ là bước xác minh Lyapunov.
+\giaimuc{5. Lỗi dễ mắc}
+Các số hạng phụ thuộc $n$ qua $h_n$; không áp dụng máy móc CLT cho một phân phối cố định.
+\end{solution}
+
+\begin{problem}[KDE-33. CLT tâm hóa tại $f(x)$ khi $nh^5\to\lambda$.]\label{k:33}
+\textit{(Nguồn: S28 Theorem 5.)} Thêm giả thiết bias bậc hai (KDE-08) và $nh^5\to\lambda\in[0,\infty)$. Tìm giới hạn của $\sqrt{nh}\{\widehat f(x)-f(x)\}$ và tính tỉ số bias/độ lệch chuẩn tại bandwidth tối ưu điểm.
+\end{problem}
+\begin{solution}
+\giaimuc{1. Mục tiêu}
+Chuyển tâm từ $\E\widehat f$ sang $f$ và tính độ lệch của giới hạn.
+\giaimuc{2. Công cụ và điều kiện}
+CLT của KDE-32; bias bậc hai; $nh^5\to\lambda\in[0,\infty)$.
+\giaimuc{3. Giải từng bước}
+\buoc{Tách sai số quanh kỳ vọng và phần bias}
+Tách $\sqrt{nh}(\widehat f-f)=\sqrt{nh}(\widehat f-\E\widehat f)+\sqrt{nh}\,b_h(x)$. Số hạng đầu $\dto N(0,f(x)R(K))$ theo KDE-32. Số hạng sau tất định:
+$\sqrt{nh}\,b_h=\sqrt{nh^5}\{\tfrac12\muK f''(x)+o(1)\}\to\tfrac12\sqrt\lambda\,\muK f''(x)$. Đẳng thức cần nhớ ở đây là $\sqrt{nh}\,h^2=\sqrt{nh\cdot h^4}=\sqrt{nh^5}$. Khi $nh^5$ có giới hạn hữu hạn, phần $o(1)$ nhân với $\sqrt{nh^5}$ vẫn tiến 0. Slutsky nói rằng cộng một số hội tụ tất định chỉ tịnh tiến mean của phân phối giới hạn, không đổi variance. Vì vậy:
+\[
+\answer{\sqrt{nh}\{\widehat f(x)-f(x)\}\dto N\big(\tfrac12\sqrt\lambda\,\muK f''(x),\ f(x)R(K)\big).}
+\]
+
+\buoc{Xét bandwidth tối ưu và mean khác 0}
+Với $h=cn^{-1/5}$ (bậc tối ưu MSE/MISE) thì $\lambda=c^5>0$: phân phối giới hạn \emph{lệch tâm}.
+
+\buoc{Tính tỷ số bias trên độ lệch chuẩn}
+Tại bandwidth tối ưu điểm $h_{x,*}$ (KDE-14), $\lambda=f(x)R(K)/\{\muK^2f''(x)^2\}$, nên
+\[
+\frac{\text{bias tiệm cận}}{\text{sd tiệm cận}}=\frac{\tfrac12\sqrt\lambda\,\muK|f''(x)|}{\sqrt{f(x)R(K)}}=\frac12,
+\]
+không phụ thuộc $f$ và $K$. Khoảng ``95\%'' thông thường khi đó có độ phủ thật $\Pp(|Z+\tfrac12|\le1.96)=\Phi(1.46)-\Phi(-2.46)\approx0.921$.
+\giaimuc{4. Kết luận}
+$\sqrt{nh}\{\widehat f_h(x)-f(x)\}\dto N(\sqrt\lambda\mu_2(K)f''(x)/2,f(x)R(K))$. Khi $\lambda=0$ mới mất độ lệch tâm; tại bandwidth tối ưu điểm, trị tuyệt đối bias trên sd tiệm cận bằng $1/2$.
+\giaimuc{5. Lỗi dễ mắc}
+Nhân bias với đúng $\sqrt{nh}$: $\sqrt{nh}\,h^2=\sqrt{nh^5}$, không phải $nh^3$.
+\end{solution}
+
+\begin{problem}[KDE-34. Khoảng tin cậy điểm cho $f(x_0)$.]\label{k:34}
+\textit{(Nguồn: S28; đề xuất C17; W mục 6.3.)} Dựng khoảng tin cậy tiệm cận $1-\alpha$ cho $f(x_0)$. Áp dụng với $n=200$, $h=0.3$, nhân Gaussian, $\widehat f(x_0)=0.25$, $\alpha=0.05$. So sánh với khoảng qua phép căn.
+\end{problem}
+\begin{solution}
+\giaimuc{1. Mục tiêu}
+Dựng khoảng tin cậy tại một điểm và thay số đúng thứ tự.
+\giaimuc{2. Công cụ và điều kiện}
+$f(x_0)>0$; CLT, Slutsky; undersmoothing $nh^5\to0$ nếu nhắm $f(x_0)$; $z_{.975}\approx1.96$.
+\giaimuc{3. Giải từng bước}
+\buoc{Chuẩn hóa bằng CLT và thay variance bằng ước lượng}
+Chọn undersmoothing $nh^5\to0$ (vẫn $nh\to\infty$). Theo KDE-33 với $\lambda=0$: $\sqrt{nh}(\widehat f-f)\dto N(0,fR(K))$. Vì $\widehat f(x_0)\pto f(x_0)>0$ (KDE-31), Slutsky cho phép thay $f$ bằng $\widehat f$ trong variance:
+\[
+\answer{\widehat f(x_0)\pm z_{1-\alpha/2}\sqrt{\frac{\widehat f(x_0)R(K)}{nh}}.}
+\]
+
+\buoc{Tính sai số chuẩn và hai đầu khoảng}
+Thay số theo ba phép tính: (i) $nh=200\cdot0.3=60$; (ii) variance ước lượng $=0.25\cdot0.282095/60$; (iii) lấy căn để có sai số chuẩn, rồi nhân $1.96$ để có bán kính khoảng.
+Số: $R(\phi)=0.282095$, $\se=\sqrt{0.25\cdot0.282095/60}=0.034284$, khoảng $0.25\pm1.96\cdot0.034284=[0.1828,\,0.3172]$.
+
+\buoc{Kiểm tra cách dựng khoảng qua biến đổi căn}
+\emph{Qua phép căn.} Delta method với $g(t)=\sqrt t$: $\sqrt{nh}(\sqrt{\widehat f}-\sqrt f)\dto N(0,R(K)/4)$, variance không phụ thuộc $f$. Khoảng cho $\sqrt f$ là $\sqrt{\widehat f}\pm z\sqrt{R(K)/(4nh)}$; cắt đầu dưới ở 0 (nếu âm), rồi bình phương hai đầu: $[0.1873,\,0.3217]$, không đối xứng và không bao giờ chứa số âm.
+
+\buoc{Xác định đúng đại lượng được bao phủ}
+\emph{Lưu ý khi thi.} (i) Nếu dùng $h$ tối ưu MISE ($\lambda>0$), khoảng trên thực ra là khoảng cho $f_h(x_0)=\E\widehat f(x_0)$, không phải cho $f(x_0)$; Wasserman gọi đó là variability band. (ii) Cách khác là trừ bias ước lượng $\tfrac12h^2\mu_2\widehat{f''}$, nhưng ước lượng $f''$ khó hơn và cần thêm độ trơn. (iii) Đây là khoảng \emph{từng điểm}; băng đồng thời trên cả đường cần hiệu chỉnh bội (xem W mục 6.6).
+\giaimuc{4. Kết luận}
+Khoảng điểm là $\widehat f_h(x_0)\pm z_{1-\alpha/2}\sqrt{\widehat f_h(x_0)R(K)/(nh)}$ khi bias đã được xử lý. Trong ví dụ, khoảng chuẩn xấp xỉ $[0.1828,0.3172]$; qua phép căn xấp xỉ $[0.1873,0.3217]$.
+\giaimuc{5. Lỗi dễ mắc}
+Khoảng từng điểm không phải băng đồng thời; ở bandwidth tối ưu, bias thường chưa thể bỏ.
+\end{solution}
+
+\begin{problem}[KDE-35. Chọn số mũ $h_n=n^{-a}$.]\label{k:35}
+\textit{(Nguồn: S26, S28.)} Với $h=n^{-a}$ và nhân bậc hai, tại điểm trong thỏa $f(x)>0$, $f''(x)\ne0$ và các giả thiết khai triển trước đó, xác định: (a) $a$ để nhất quán; (b) tốc độ MSE theo $a$ và $a$ tối ưu; (c) $a$ để CLT tâm tại $f(x)$ không có bias; (d) tương tự khi bias bậc $h^q$.
+\end{problem}
+\begin{solution}
+\giaimuc{1. Mục tiêu}
+Chuyển các điều kiện tiệm cận thành bất đẳng thức của số mũ $a$.
+\giaimuc{2. Công cụ và điều kiện}
+$h=n^{-a}$; tại điểm không suy biến, squared bias bậc $h^4$, variance bậc $(nh)^{-1}$.
+\giaimuc{3. Giải từng bước}
+\buoc{Chuyển hai điều kiện nhất quán thành điều kiện của a}
+(a) Cần $h\to0\iff a>0$ và $nh=n^{1-a}\to\infty\iff a<1$: \ $0<a<1$.
+
+\buoc{Tìm số mũ tối ưu cho MSE}
+(b) $\MSE\asymp h^4+1/(nh)=n^{-4a}+n^{-(1-a)}$, số mũ tốc độ $\min(4a,1-a)$, lớn nhất khi $4a=1-a$, tức $a=1/5$, tốc độ $n^{-4/5}$. Ví dụ $a=1/4$ cho $n^{-3/4}$; $a=1/3$ cho $n^{-2/3}$; $a=1/10$ cho $n^{-2/5}$.
+
+\buoc{Thêm điều kiện loại bias trong CLT}
+(c) Cần $nh^5=n^{1-5a}\to0\iff a>1/5$ (kèm $a<1$): phải chọn $h$ \emph{nhỏ hơn} bậc tối ưu.
+
+\buoc{Tổng quát cho bias bậc bất kỳ}
+(d) Với bias $O(h^q)$: $\sqrt{nh}\,h^q\to0\iff nh^{2q+1}\to0\iff a>1/(2q+1)$; tốc độ tối ưu $a=1/(2q+1)$ cho $n^{-2q/(2q+1)}$.
+\[
+\answer{\text{nhất quán: }0<a<1;\quad\text{tối ưu: }a=\tfrac15;\quad\text{CI không bias: }\tfrac15<a<1.}
+\]
+\giaimuc{4. Kết luận}
+Nhất quán: $0<a<1$; MSE điểm tối ưu tại $a=1/5$; CLT tâm tại $f$ không lệch khi $1/5<a<1$. Nếu bias bậc $h^q$, thay mốc $1/5$ bằng $1/(2q+1)$.
+\giaimuc{5. Lỗi dễ mắc}
+Với $n>1$, $a$ lớn hơn cho $h$ nhỏ hơn; dễ đảo chiều undersmoothing.
+\end{solution}
+
+\nhom{F. Biên, local likelihood và câu hỏi lý thuyết}
+\begin{problem}[KDE-36. KDE tại biên của giá.]\label{k:36}
+\textit{(Nguồn: S35--36; đề xuất C13.)} $f$ có giá $[0,\infty)$, liên tục trên $[0,\infty)$, $f(0)>0$, khả vi phải tại 0. $K\ge0$, $\int K=1$, $K$ đối xứng, giá $[-1,1]$, có khối lượng dương trên mọi đoạn con của $(-1,1)$. Tính $\E\widehat f(ch)$ với $c\in[0,1)$, xét $c=0$ và $c=\tfrac12$ với Epanechnikov, và suy ra ảnh hưởng tới MISE.
+\end{problem}
+\begin{solution}
+\giaimuc{1. Mục tiêu}
+Tính khối lượng nhân bị mất ở biên và hậu quả đối với bias.
+\giaimuc{2. Công cụ và điều kiện}
+Mật độ có giá nửa trục, $f(0)>0$; nhân không âm đối xứng, chuẩn hóa, giá $[-1,1]$; đặt $x=ch$.
+\giaimuc{3. Giải từng bước}
+\buoc{Cắt đúng miền tích phân theo giá mật độ}
+$\E\widehat f(x)=\int K(u)f(x-hu)du$, và $f(x-hu)=0$ khi $x-hu<0\iff u>c$ (với $x=ch$). Đặt $a_j(c)=\int_{-1}^cu^jK(u)du$. Khai triển $f(ch-hu)=f(0)+h(c-u)f'(0)+o(h)$:
+\[
+\E\widehat f(ch)=a_0(c)f(0)+h\,f'(0)\{c\,a_0(c)-a_1(c)\}+o(h).
+\]
+
+\buoc{Trừ mật độ thật để tìm bias ở biên}
+Vì $f(ch)=f(0)+O(h)$, bias $\to f(0)\{a_0(c)-1\}\neq0$ khi $c<1$: bias bậc $O(1)$, không tiến về 0. Tại $c=0$: $a_0=\tfrac12$, nên $\answer{\E\widehat f(0)\to f(0)/2.}$ Với Epanechnikov $a_0(c)=\tfrac12+\tfrac34(c-c^3/3)$; tại $c=\tfrac12$: $a_0=0.84375$, bias chính $-0.156f(0)$.
+
+\buoc{Tích phân sai số biên và xét risk}
+\emph{Ảnh hưởng toàn cục.} Giả sử thêm phần nội miền đủ trơn và các tích phân risk hữu hạn. Vùng $[0,h]$ có bias$^2$ cỡ hằng số nên đóng góp $\asymp h$ vào integrated bias$^2$, lấn át $h^4$ ở điểm trong. Khi đó $\MISE\approx C h+R(K)/(nh)$, tối ưu $h\asymp n^{-1/2}$ và $\MISE\asymp n^{-1/2}$, chậm hơn $n^{-4/5}$. Công thức AMISE trong S26 ngầm giả sử $f$ trơn trên toàn $\R$.
+\giaimuc{4. Kết luận}
+Ở biên 0, $\E\widehat f_h(0)\to f(0)/2$ cho nhân đối xứng đã chuẩn hóa. Khi các điều kiện risk toàn cục phù hợp, bias biên trên dải rộng $h$ tạo squared bias tích phân bậc $h$, dẫn đến bandwidth bậc $n^{-1/2}$ và risk bậc $n^{-1/2}$.
+\giaimuc{5. Lỗi dễ mắc}
+Ở biên phải cắt miền tích phân theo giá thật của mật độ trước khi Taylor.
+\end{solution}
+
+\begin{problem}[KDE-37. Hiệu chỉnh phản xạ.]\label{k:37}
+\textit{(Nguồn: S35--36.)} Với $x\ge0$ đặt $\widehat f_R(x)=\frac1{nh}\sum_i\{K(\frac{x-X_i}h)+K(\frac{x+X_i}h)\}$. Chứng minh $\int_0^\infty\widehat f_R=1$ và tính bias tại $x=ch$.
+\end{problem}
+\begin{solution}
+\giaimuc{1. Mục tiêu}
+Chứng minh phản xạ bảo toàn khối lượng và xác định bậc bias còn lại.
+\giaimuc{2. Công cụ và điều kiện}
+Dữ liệu không âm; nhân đối xứng chuẩn hóa; $f$ trơn bậc hai ở phía phải 0 để có dư $O(h^2)$.
+\giaimuc{3. Giải từng bước}
+\buoc{Kiểm tra giả thiết của phép phản xạ}
+Giả sử $K$ đối xứng, chuẩn hóa, giá $[-1,1]$, dữ liệu không âm; để dùng dư $O(h^2)$, giả sử thêm $f$ có đạo hàm bậc hai bị chặn ở lân cận phải của 0.
+
+\buoc{Chứng minh tổng khối lượng bằng một}
+\emph{Tích phân.} Đổi $y=-x$ trong số hạng thứ hai và dùng $K$ đối xứng: $\int_0^\infty K(\frac{x+X_i}h)dx=\int_{-\infty}^0K(\frac{y-X_i}h)dy$. Cộng với $\int_0^\infty K(\frac{x-X_i}h)dx$ được $\int_{\R}K(\frac{x-X_i}h)dx=h$. Vậy $\int_0^\infty\widehat f_R=1$, và $\widehat f_R\ge0$ nếu $K\ge0$.
+
+\buoc{Viết kỳ vọng qua phần mở rộng đối xứng}
+\emph{Kỳ vọng.} Gộp hai số hạng: $\E\widehat f_R(x)=\int K(u)f(|x-hu|)du=(K_h*g)(x)$ với $g(y)=f(|y|)$ là phần mở rộng đối xứng của $f$. $g$ liên tục tại 0 nên bias $O(1)$ biến mất; nhưng $g$ có góc tại 0 với hệ số góc $\pm f'(0)$. Dùng $f(|c-u|h)=f(0)+h|c-u|f'(0)+O(h^2)$ và $\int(c-u)K=c$:
+\[
+\begin{aligned}\E\widehat f_R(ch)-f(ch)&=h\,f'(0)\int K(u)\{|c-u|-(c-u)\}du+O(h^2)\\
+&=\answer{2h\,f'(0)\int_c^1(u-c)K(u)du+O(h^2).}\end{aligned}
+\]
+
+\buoc{Thay các vị trí cụ thể và đọc bậc bias}
+Tại $c=0$: $hf'(0)\int|u|K$ ($=0.375\,hf'(0)$ với Epanechnikov); tại $c=\tfrac12$: $\frac7{128}\,hf'(0)\approx0.05469\,hf'(0)$. Bias là $O(h)$ nói chung và $O(h^2)$ khi $f'(0)=0$ (lúc đó $g\in C^2$ gần 0). Các cách khác: nhân biên (boundary kernel, có thể âm), biến đổi $Y=\log X$ rồi $f_X(x)=f_Y(\log x)/x$, hoặc local likelihood/local polynomial bậc $\ge1$ (KDE-38).
+\giaimuc{4. Kết luận}
+$\int_0^\infty\widehat f_R=1$. Bias tại $ch$ bằng $2hf'(0)\int_c^1(u-c)K(u)du+O(h^2)$; nói chung bậc $h$, và giảm xuống $O(h^2)$ nếu $f'(0)=0$ dưới độ trơn đã nêu.
+\giaimuc{5. Lỗi dễ mắc}
+Phần mở rộng $g(y)=f(|y|)$ tích phân bằng 2 trên toàn trục; không gọi nó là mật độ chuẩn hóa trên $\R$.
+\end{solution}
+
+\begin{problem}[KDE-38. Local likelihood bậc 0 là KDE (W6.8).]\label{k:38}
+\textit{(Nguồn: W6.8, tr.143; W Def.~6.39, (6.43), Remark~6.46.)} Chứng minh với $p=0$, cực đại của $L_x(a)$ cho $\widehat f_n(x)=e^{\widehat a_0}$ trùng KDE.
+\end{problem}
+\begin{solution}
+\giaimuc{1. Mục tiêu}
+Lấy đạo hàm local log-likelihood bậc 0 và chứng minh nghiệm là KDE.
+\giaimuc{2. Công cụ và điều kiện}
+Nhân không âm, $\int K=1$; $L(a_0)=a_0S-nhe^{a_0}$; kiểm tra đạo hàm hai.
+\giaimuc{3. Giải từng bước}
+\buoc{Rút gọn local log-likelihood thành hàm một biến}
+Với $p=0$, $P_x(a,u)=a_0$ là hằng. Theo (6.43), đặt $S=\sum_iK((X_i-x)/h)$,
+\[
+L_x(a_0)=a_0S-ne^{a_0}\int K\Big(\frac{u-x}h\Big)du=a_0S-nhe^{a_0},
+\]
+
+\buoc{Tính tích phân chuẩn hóa và đạo hàm}
+vì $\int K((u-x)/h)du=h\int K=h$. Đạo hàm $L_x'(a_0)=S-nhe^{a_0}$, $L_x''(a_0)=-nhe^{a_0}<0$: $L_x$ lõm chặt, nên nếu $S>0$ nghiệm duy nhất của $L_x'=0$ là cực đại toàn cục, $e^{\widehat a_0}=S/(nh)$. Vậy
+\[
+\answer{\widehat f_n(x)=e^{\widehat a_0}=\frac1{nh}\sum_iK\Big(\frac{X_i-x}h\Big),}
+\]
+chính là KDE (với $K$ đối xứng, $K((X_i-x)/h)=K((x-X_i)/h)$; nếu không đối xứng thì là KDE dùng nhân phản chiếu $K(-u)$).
+
+\buoc{Xử lý trường hợp không có khối lượng trong cửa sổ}
+Nếu $S=0$ thì $L_x$ tăng khi $a_0\to-\infty$, sup không đạt, và quy ước $\widehat f(x)=0$ vẫn khớp KDE. Với $p=1$, số hạng $a_1(x-u)$ cho phép khớp độ dốc của $\log f$ và giảm bias biên, giống local linear trong hồi quy.
+\giaimuc{4. Kết luận}
+Nếu $S>0$, nghiệm duy nhất thỏa $e^{\widehat a_0}=S/(nh)$, đúng KDE theo quy ước nhân tương ứng. Nếu $S=0$, lấy giá trị giới hạn $\widehat f(x)=0$.
+\giaimuc{5. Lỗi dễ mắc}
+$S=0$ chỉ cho nghiệm giới hạn $a_0\to-\infty$, không có cực đại hữu hạn.
+\end{solution}
+
+\begin{problem}[KDE-39. So sánh tốc độ và lời nguyền số chiều.]\label{k:39}
+\textit{(Nguồn: S10, S18, S26; W mục 6.5, (6.48).)} (a) Muốn giảm MISE một nửa, histogram và KDE cần tăng $n$ bao nhiêu lần? (b) Với tốc độ $n^{-4/(4+d)}$, cỡ mẫu $n_d$ nào cho cùng bậc sai số như $d=1$, $n=100$?
+\end{problem}
+\begin{solution}
+\giaimuc{1. Mục tiêu}
+Đổi tốc độ sai số thành hệ số tăng cỡ mẫu.
+\giaimuc{2. Công cụ và điều kiện}
+Giữ hằng số risk cố định khi so $Cn^{-r}$; giải phương trình lũy thừa.
+\giaimuc{3. Giải từng bước}
+\buoc{Giải hệ số tăng mẫu để giảm nửa risk}
+(a) MISE $\propto n^{-r}$ nên muốn chia 2 cần nhân $n$ với $2^{1/r}$: histogram ($r=2/3$) $2^{3/2}\approx2.83$ lần; KDE ($r=4/5$) $2^{5/4}\approx2.38$ lần; nhân bậc bốn ($r=8/9$) $2^{9/8}\approx2.18$; tham số ($r=1$) 2 lần.
+
+\buoc{Giải cỡ mẫu tương đương theo số chiều}
+(b) Giải $n_d^{-4/(4+d)}=100^{-4/5}$: $n_d=100^{(4+d)/5}$.
+\begin{center}\begin{tabular}{ccccccc}
+\toprule $d$ & 1 & 2 & 3 & 5 & 8 & 10\\\midrule
+$n_d$ & 100 & 251 & 631 & 3\,981 & 63\,096 & 398\,107\\\bottomrule
+\end{tabular}\end{center}
+
+\buoc{Phân biệt so bậc với so hằng số chính xác}
+Đây chỉ là so sánh \emph{bậc}, bỏ qua hằng số. Bảng của Silverman trong W tr.139 (tính cả hằng số, tiêu chí sai số tương đối tại 0 cho chuẩn nhiều chiều) cho $d=10$ cần $842\,000$ điểm; cả hai cách đều cho cùng thông điệp: cỡ mẫu tăng theo hàm mũ của $d$.
+\[
+\answer{n_d=100^{(4+d)/5},\quad n_{10}\approx4\times10^5.}
+\]
+\giaimuc{4. Kết luận}
+Risk bậc $n^{-r}$ giảm một nửa khi cỡ mẫu nhân $2^{1/r}$. So bậc $d$ chiều với một chiều, $n_d=n_1^{(4+d)/5}$; với $n_1=100,d=10$, được khoảng $398107$.
+\giaimuc{5. Lỗi dễ mắc}
+So bậc theo số chiều không phải so chính xác risk: hằng số cũng có thể phụ thuộc số chiều.
+\end{solution}
+
+\begin{problem}[KDE-40. Hiệu quả của các nhân và câu hỏi lý thuyết ngắn.]\label{k:40}
+\textit{(Nguồn: S20, S26, S29; W4.2.)} (a) Định nghĩa hiệu quả tương đối của nhân và tính cho các nhân ở bảng tra nhanh. (b) Trả lời ngắn: tác động của $h$; vì sao cực tiểu AMISE chưa chứng minh KDE tối ưu minimax; nhận xét ``$n^{-4/5}\gg n^{-2/3}$'' trong S26.
+\end{problem}
+\begin{solution}
+\giaimuc{1. Mục tiêu}
+Tính hiệu quả tương đối và giải thích ảnh hưởng của bandwidth.
+\giaimuc{2. Công cụ và điều kiện}
+$C(K)=R(K)\sqrt{\mu_2(K)}$; AMISE tối ưu tỷ lệ $[C(K)/n]^{4/5}$.
+\giaimuc{3. Giải từng bước}
+\buoc{Suy ra công thức hiệu quả từ AMISE}
+(a) Theo KDE-07, $\AMISE(h_*)\propto C(K)^{4/5}n^{-4/5}$ với $C(K)=R(K)\sqrt{\mu_2(K)}$. Để hai nhân cho cùng AMISE, tỉ số cỡ mẫu cần là $n_K/n_{\mathrm{Ep}}=C(K)/C(K_{\mathrm{Ep}})$. Đặt hiệu quả $\mathrm{eff}(K)=C(K_{\mathrm{Ep}})/C(K)$, với $C(K_{\mathrm{Ep}})=0.6\sqrt{0.2}=0.26833$:
+
+\buoc{Thay moment của từng nhân}
+\begin{center}\begin{tabular}{lccccc}
+\toprule Nhân & Epanechnikov & Tricube & Tam giác & Gaussian & Đều\\\midrule
+$C(K)$ & 0.26833 & 0.26889 & 0.27217 & 0.28209 & 0.28868\\
+eff & 1 & 0.998 & 0.986 & 0.951 & 0.930\\\bottomrule
+\end{tabular}\end{center}
+
+\buoc{Diễn giải khác biệt cỡ mẫu}
+Nhân tệ nhất trong bảng chỉ cần thêm khoảng $7.6\%$ dữ liệu: dạng nhân ít quan trọng, $h$ mới quan trọng. $C(K)$ bất biến theo đổi thang (KDE-06), nên so sánh công bằng.
+
+\buoc{Trả lời các câu hỏi về bandwidth và tốc độ}
+(b) \emph{Tác động của $h$:} $h$ nhỏ $\Rightarrow$ variance lớn, đường răng cưa, mode giả; $h$ lớn $\Rightarrow$ bias lớn, đỉnh bị hạ, mode thật bị gộp (S29). \emph{Minimax:} cực tiểu AMISE chỉ tối ưu \emph{trong họ KDE} và là cận trên; khẳng định ``không ước lượng nào tốt hơn bậc $n^{-4/5}$'' cần cận dưới trên mọi ước lượng (Phụ lục). \emph{S26:} $n^{-4/5}/n^{-2/3}=n^{-2/15}\to0$, tức $n^{-4/5}\ll n^{-2/3}$: sai số KDE \emph{nhỏ hơn}; số mũ lớn hơn nghĩa là hội tụ nhanh hơn.
+\giaimuc{4. Kết luận}
+Hiệu quả $\mathrm{eff}(K)=C(K_{\rm Ep})/C(K)$, $C(K)=R(K)\sqrt{\mu_2(K)}$. Gaussian khoảng $0.951$, nhân đều khoảng $0.930$. Cực tiểu AMISE chưa đủ chứng minh minimax; $n^{-4/5}=o(n^{-2/3})$.
+\giaimuc{5. Lỗi dễ mắc}
+Chỉ so các nhân sau quy đổi thang phù hợp; không đọc số mũ lớn hơn thành sai số lớn hơn.
+\end{solution}
+
+% Included by KDE_Exam_Complete_Solutions.tex. No programming exercises.
+\nhom{G. Bài tính tay: đề nhỏ, đáp số chính xác, cách trình bày}
+\noindent Các bài 41--53 dưới đây là bài luyện tự biên soạn từ các công thức trong slide và Wasserman, không phải nguyên văn bài tập đánh số của sách. Chỉ cần biến đổi đại số, tích phân cơ bản và bảng phân phối chuẩn; không cần code hoặc dữ liệu lớn.
+
+\begin{problem}[KDE-41. Vẽ KDE bằng tay, tính xác suất và moment.]\label{k:41}
+Cho mẫu $X=(0,1,2)$, $K(u)=\frac12\1_{|u|<1}$, $h=1$.
+Viết $\widehat f$, tính $\widehat f(1/2)$, $\int_{-\infty}^{1/2}\widehat f(x)dx$, trung bình và phương sai của mật độ $\widehat f$.
+\end{problem}
+\begin{solution}
+\giaimuc{1. Mục tiêu}
+Viết KDE từng đoạn, tính diện tích đến một điểm và moment của đường KDE.
+\giaimuc{2. Công cụ và điều kiện}
+Mẫu $(0,1,2)$, nhân đều, $h=1$; biểu diễn hỗn hợp $Y=X_I+hU$ điều kiện theo mẫu.
+\giaimuc{3. Giải từng bước}
+\buoc{Vẽ các cửa sổ rồi cộng chiều cao}
+Mỗi quan sát tạo một hình chữ nhật cao $1/(2nh)=1/6$, rộng $2$, tâm lần lượt $0,1,2$. Ngoài các đầu mút (giá trị tại hữu hạn điểm không ảnh hưởng tích phân),
+\[
+ \widehat f(x)=\begin{cases}
+ 1/6,&-1<x<0\text{ hoặc }2<x<3,\\
+ 1/3,&0<x<1\text{ hoặc }1<x<2,\\
+ 0,&x<-1\text{ hoặc }x>3.
+ \end{cases}
+\]
+
+\buoc{Tính giá trị điểm và diện tích cần tìm}
+Tại đầu mút, dùng trực tiếp định nghĩa $|u|<1$; chẳng hạn $\widehat f(1)=1/6$ theo quy ước mở này. Không suy ra giá trị đầu mút từ dòng công thức trên.
+Do đó $\widehat f(1/2)=1/3$ và $\int_{-\infty}^{1/2}\widehat f=1/6+(1/2)(1/3)=1/3$.
+Kiểm tra $\int\widehat f=1/6+2/3+1/6=1$.
+
+\buoc{Dùng hỗn hợp để tính trung bình và variance}
+Để tính moment nhanh, coi $Y=X_I+hU$, với $I$ đều trên $\{1,2,3\}$, $U\sim\mathrm{Unif}(-1,1)$ độc lập; \emph{điều kiện theo mẫu đã cho}, $Y$ có mật độ $\widehat f$.
+\[
+ \E(Y\mid X)=\overline X=1,\qquad
+ \Var(Y\mid X)=\frac{0^2+1^2+2^2}{3}-1^2+\frac13=1.
+\]
+
+\buoc{Viết công thức tổng quát và phân biệt hai loại variance}
+Tổng quát, nếu nhân có moment một 0, phương sai $\mu_2(K)$,
+$\Var(Y\mid X)=n^{-1}\sum_i(X_i-\overline X)^2+h^2\mu_2(K)$.
+Đây là phương sai của \emph{mật độ KDE như một phân phối}, khác $\Var(\widehat f_h(x))$ qua các mẫu lặp lại.
+\giaimuc{4. Kết luận}
+$\widehat f(1/2)=1/3$, xác suất theo KDE của $(-\infty,1/2]$ bằng $1/3$. Với $Y$ có mật độ KDE điều kiện theo mẫu, $\E Y=1$, $\Var Y=1$.
+\giaimuc{5. Lỗi dễ mắc}
+Phương sai của biến $Y$ có mật độ KDE khác phương sai lấy mẫu của $\widehat f_h(x)$.
+\end{solution}
+
+\begin{problem}[KDE-42. Chọn bandwidth bằng CV hoàn toàn bằng phân số.]\label{k:42}
+Giữ mẫu $(0,1,2)$ và nhân đều của KDE-41. Tính CV tại $h=3/4$ và $h=3/2$; chọn một trong hai.
+\end{problem}
+\begin{solution}
+\giaimuc{1. Mục tiêu}
+Tính CV tại hai bandwidth bằng đếm khoảng giao và đếm hàng xóm.
+\giaimuc{2. Công cụ và điều kiện}
+Hai hình chữ nhật rộng $2h$ cách tâm $d$ giao trên độ dài $(2h-|d|)_+$; $n=3$.
+\giaimuc{3. Giải từng bước}
+\buoc{Tính tích phân qua độ dài giao cửa sổ}
+Hai cửa sổ dài $2h$, cách tâm $d$, giao nhau trên đoạn dài $(2h-|d|)_+$. Vì thế
+\[
+ \int\widehat f_h^2=\frac1{4n^2h^2}\sum_{i,j}(2h-|X_i-X_j|)_+.
+\]
+
+\buoc{Đếm cặp và viết công thức LOO}
+Trong $9$ cặp \emph{có thứ tự}, có $3$ cặp khoảng cách $0$, $4$ cặp khoảng cách $1$, $2$ cặp khoảng cách $2$.
+Với leave-one-out,
+$\widehat f_{(-i)}(X_i)=\#\{j\ne i:|X_j-X_i|<h\}/[2(n-1)h]$.
+
+\buoc{Thay bandwidth thứ nhất}
+\emph{$h=3/4$.} Tổng độ dài giao là $3(3/2)+4(1/2)=13/2$.
+Không cặp khác nhau nào nằm trong khoảng cách $h$, nên số hạng LOO bằng 0:
+\[
+ \widehat J(3/4)=\frac{13/2}{36(9/16)}=\frac{26}{81}.
+\]
+
+\buoc{Thay bandwidth thứ hai và so sánh}
+\emph{$h=3/2$.} Tổng độ dài giao là $3(3)+4(2)+2(1)=19$; do đó tích phân bình phương bằng $19/81$.
+Các số đếm LOO là $(1,2,1)$, nên ba ước lượng LOO là $(1/6,1/3,1/6)$.
+\[
+ \widehat J(3/2)=\frac{19}{81}-\frac23\left(\frac16+\frac13+\frac16\right)
+ =-\frac{17}{81}.
+\]
+Chọn $h=3/2$ \emph{trong hai ứng viên}. Điểm CV âm không mâu thuẫn MISE không âm: $\E\widehat J=\MISE-R(f)$.
+\giaimuc{4. Kết luận}
+$\widehat J(3/4)=26/81$ và $\widehat J(3/2)=-17/81$. Chọn bandwidth $3/2$ trong hai ứng viên vì tiêu chuẩn được cực tiểu hóa.
+\giaimuc{5. Lỗi dễ mắc}
+LOO đếm khoảng cách nhỏ hơn $h$, còn tích phân bình phương dùng khoảng giao khi khoảng cách nhỏ hơn $2h$.
+\end{solution}
+
+\begin{problem}[KDE-43. Tối ưu AMISE với đáp số bandwidth hữu tỉ.]\label{k:43}
+Nhân Epanechnikov, $R(f'')=1$, $n=480$. Tìm $h_*$ và AMISE tối ưu; tính AMISE tại $h_*/2$ và $2h_*$.
+\end{problem}
+\begin{solution}
+\giaimuc{1. Mục tiêu}
+Tính nghiệm AMISE và so sai số khi giảm hoặc tăng bandwidth hai lần.
+\giaimuc{2. Công cụ và điều kiện}
+Epanechnikov: $\mu_2=1/5$, $R=3/5$; $n=480$, $R(f'')=1$.
+\giaimuc{3. Giải từng bước}
+\buoc{Thay các hằng số nhân vào AMISE}
+Vì $\mu_2=1/5$, $R(K)=3/5$,
+\[
+ A=\frac{(1/5)^2}{4}=\frac1{100},\quad B=\frac35,
+ \quad\AMISE(h)=\frac{h^4}{100}+\frac1{800h}.
+\]
+
+\buoc{Tính nghiệm và giá trị tối ưu}
+$4h^3/100-1/(800h^2)=0\iff h^5=1/32$, nên $h_*=1/2$.
+Tại đó squared bias tích phân là $1/1600$, variance tích phân là $1/400$; tổng $1/320$.
+\[
+ \AMISE(1/4)=\frac1{25600}+\frac1{200}=\frac{129}{25600},\qquad
+ \AMISE(1)=\frac1{100}+\frac1{800}=\frac9{800}.
+\]
+
+\buoc{Diễn giải độ nhạy theo bandwidth}
+Giảm $h$ một nửa làm bias$^2$ giảm 16 lần nhưng variance tăng 2 lần; tăng $h$ gấp đôi làm bias$^2$ tăng 16 lần nhưng variance chỉ giảm 2 lần.
+Tổng quát, với $h=ch_*$,
+\[
+ \frac{\AMISE(ch_*)}{\AMISE(h_*)}=\frac{c^4+4/c}{5}.
+\]
+Đây là AMISE, không phải MISE hữu hạn mẫu chính xác.
+\giaimuc{4. Kết luận}
+$h_*=1/2$, AMISE tối ưu $1/320$. Tại $h=1/4$ và $h=1$, AMISE lần lượt bằng $129/25600$ và $9/800$.
+\giaimuc{5. Lỗi dễ mắc}
+Squared bias đổi theo lũy thừa bốn của $h$, variance theo nghịch đảo của $h$.
+\end{solution}
+
+\begin{problem}[KDE-44. Bias và variance chính xác ở điểm trong và biên.]\label{k:44}
+$X_i\sim\mathrm{Unif}[0,1]$, $n=100$, $K(u)=\frac12\1_{|u|<1}$, $h=1/5$. Tính kỳ vọng, variance, MSE của KDE tại $x=1/2$ và $x=0$ (lấy $f(0)=1$ là giới hạn bên phải). Tính tại 0 sau phản xạ.
+\end{problem}
+\begin{solution}
+\giaimuc{1. Mục tiêu}
+Tính chính xác kỳ vọng, variance và MSE tại điểm trong và tại biên.
+\giaimuc{2. Công cụ và điều kiện}
+$N_x\sim\mathrm{Bin}(n,p_x)$; $\widehat f=N_x/(2nh)$; dữ liệu đều trên $[0,1]$.
+\giaimuc{3. Giải từng bước}
+\buoc{Viết phân phối của biến đếm và công thức chung}
+Đặt $N_x=\sum_i\1_{|X_i-x|<h}$; $N_x\sim\mathrm{Bin}(n,p_x)$ và $\widehat f=N_x/(2nh)$. Suy ra
+\[
+ \E\widehat f=\frac{p_x}{2h},\quad
+ \Var\widehat f=\frac{p_x(1-p_x)}{4nh^2},\quad
+ \MSE=\left(\frac{p_x}{2h}-f(x)\right)^2+\frac{p_x(1-p_x)}{4nh^2}.
+\]
+
+\buoc{Thay xác suất cửa sổ tại điểm trong}
+Ở $x=1/2$, cửa sổ $(0.3,0.7)$ có $p_x=2/5$, nên kỳ vọng 1, bias 0, variance $3/200$ và MSE $3/200$.
+
+\buoc{Thay xác suất cửa sổ tại biên}
+Ở $x=0$, chỉ đoạn $(0,1/5)$ thuộc giá, $p_x=1/5$; kỳ vọng $1/2$, bias $-1/2$, variance $1/100$, MSE $1/4+1/100=13/50$.
+
+\buoc{Tính lại sau phản xạ}
+Tại 0, KDE phản xạ bằng hai lần KDE thường do $K$ đối xứng:
+$\widehat f_R(0)=2\widehat f(0)$. Vì vậy kỳ vọng 1, variance $4/100=1/25$, MSE $1/25$.
+Phản xạ giảm MSE tại biên trong bài này dù làm variance tăng.
+Điểm biên không thỏa giả thiết trơn hai phía của công thức bias nội miền; không được thay $f''=0$ để kết luận KDE thường không chệch ở 0.
+\giaimuc{4. Kết luận}
+Tại $1/2$, $(\E,\Var,\MSE)=(1,3/200,3/200)$. Tại 0, $(1/2,1/100,13/50)$. Sau phản xạ tại 0, $(1,1/25,1/25)$.
+\giaimuc{5. Lỗi dễ mắc}
+Tại biên, xác suất cửa sổ là $h$, không phải $2h$; không dùng Taylor nội miền qua điểm gián đoạn.
+\end{solution}
+
+\begin{problem}[KDE-45. Một nhân hợp lệ nhưng không có bias bậc hai.]\label{k:45}
+Cho $K(u)=2u\1_{[0,1]}(u)$. Kiểm tra điều kiện mật độ, tính $\mu_1,\mu_2,R(K)$; khai triển bias và tìm tốc độ tối ưu tại điểm $f'(x)\ne0$, $f(x)>0$.
+\end{problem}
+\begin{solution}
+\giaimuc{1. Mục tiêu}
+Cho một ví dụ nhân hợp lệ nhưng có bias chính bậc một.
+\giaimuc{2. Công cụ và điều kiện}
+$K(u)=2u\1_{[0,1]}$; tích phân đa thức và Taylor của $f(x-hu)$.
+\giaimuc{3. Giải từng bước}
+\buoc{Tính các moment của nhân một phía}
+$K\ge0$, $\int_0^12u\,du=1$; nhân hợp lệ nhưng không đối xứng.
+\[
+ \mu_1=2/3,\quad\mu_2=1/2,\quad R(K)=4/3.
+\]
+
+\buoc{Tìm bias và lập MSE chính}
+Taylor của $f(x-hu)$ cho
+\[
+ b_h(x)=-\frac23hf'(x)+\frac14h^2f''(x)+o(h^2).
+\]
+Dấu âm đến từ $x-hu$, không phải $x+hu$. Nếu $f'(x)\ne0$,
+\[
+ \MSE\simeq Ah^2+\frac B{nh},\quad A=\frac49f'(x)^2,\ B=\frac43f(x).
+\]
+
+\buoc{Tối ưu và giải thích điều kiện triệt tiêu bậc một}
+Giải $2Ah-B/(nh^2)=0$:
+$h_*=[3f(x)/(2nf'(x)^2)]^{1/3}$, MSE tối ưu bậc $n^{-2/3}$.
+Vậy điều kiện $\int K=1$ chỉ bảo đảm chuẩn hóa; muốn triệt tiêu bias tuyến tính cần thêm $\int uK=0$.
+\giaimuc{4. Kết luận}
+$\mu_1=2/3$, $\mu_2=1/2$, $R=4/3$. Bias chính $-2hf'(x)/3$; tại điểm không suy biến, $h_*=[3f(x)/(2nf'(x)^2)]^{1/3}$ và MSE chính tối ưu bậc $n^{-2/3}$.
+\giaimuc{5. Lỗi dễ mắc}
+Dấu của bias tuyến tính là âm theo quy ước $K((x-X)/h)$.
+\end{solution}
+
+\begin{problem}[KDE-46. Chặn Hölder với đầy đủ hằng số.]\label{k:46}
+Cho lớp mật độ trên $\R$ thỏa $|f(x)-f(y)|\le|x-y|$. Dùng nhân đều $K=\frac12\1_{[-1,1]}$. Chứng minh một chặn MSE đều, tối ưu nó và thay $n=1000$.
+\end{problem}
+\begin{solution}
+\giaimuc{1. Mục tiêu}
+Tìm chặn MSE đều có hằng số cụ thể và tối ưu chặn này.
+\giaimuc{2. Công cụ và điều kiện}
+Lipschitz hằng số 1; diện tích dưới tam giác không thể vượt tổng khối lượng 1; nhân đều.
+\giaimuc{3. Giải từng bước}
+\buoc{Dùng diện tích để chặn chiều cao mật độ}
+Trước hết chứng minh $\|f\|_\infty\le1$. Với $a=f(x_0)$, Lipschitz cho $f(x_0+t)\ge(a-|t|)_+$; do đó $1=\int f\ge\int_{-a}^a(a-|t|)dt=a^2$.
+
+\buoc{Chặn riêng bias và variance}
+Bias:
+$|b_h(x)|\le h\int|u|K(u)du=h/2$.
+Variance: $\Var\widehat f\le\|f\|_\infty R(K)/(nh)\le1/(2nh)$.
+Vậy
+\[
+ \sup_f\sup_x\MSE\le\frac{h^2}{4}+\frac1{2nh}.
+\]
+
+\buoc{Tối ưu chặn và thay cỡ mẫu}
+Đạo hàm chặn bằng $h/2-1/(2nh^2)$; nghiệm $h=n^{-1/3}$. Thay lại được chặn $3n^{-2/3}/4$. Với $n=1000$, $h=0.1$ và chặn bằng $0.0075$.
+Đây là cực tiểu của \emph{chặn trên}, không chứng minh rằng MSE thật của mọi mật độ đều bằng $0.0075$, cũng chưa tự chứng minh cận dưới minimax.
+\giaimuc{4. Kết luận}
+$\sup_f\sup_x\MSE\le h^2/4+1/(2nh)$. Chặn nhỏ nhất tại $h=n^{-1/3}$, bằng $3n^{-2/3}/4$; với $n=1000$, $h=0.1$ và chặn bằng $0.0075$.
+\giaimuc{5. Lỗi dễ mắc}
+Giá trị $0.0075$ là chặn trên tại $n=1000$, không phải MSE thật của mọi mật độ.
+\end{solution}
+
+\begin{problem}[KDE-47. Gaussian: tính chính xác, không dùng dấu xấp xỉ.]\label{k:47}
+$X_i\sim N(0,1)$, $K=\phi$, $h=1$, $n=4$. Tính $\E\widehat f(0)$, bias, variance và MSE chính xác.
+\end{problem}
+\begin{solution}
+\giaimuc{1. Mục tiêu}
+Tính moment của $\phi(X)$ để tìm MSE chính xác, không dùng AMISE.
+\giaimuc{2. Công cụ và điều kiện}
+$X\sim N(0,1)$, $h=1$, $n=4$; $\int e^{-cu^2/2}du=\sqrt{2\pi/c}$.
+\giaimuc{3. Giải từng bước}
+\buoc{Tính hai moment Gaussian cần thiết}
+Vì $h=1$, $\widehat f(0)=\frac14\sum_i\phi(X_i)$. Tích phân Gaussian cho
+\[
+ \E\phi(X)=\int\phi^2=\frac1{2\sqrt\pi},\qquad
+ \E\phi(X)^2=\int\phi^3=\frac1{2\pi\sqrt3}.
+\]
+
+\buoc{Lấy hiệu để có bias và variance}
+Do $f(0)=1/\sqrt{2\pi}$,
+\[
+ b=\frac1{2\sqrt\pi}-\frac1{\sqrt{2\pi}},\quad
+ \Var\widehat f(0)=\frac14\left(\frac1{2\pi\sqrt3}-\frac1{4\pi}\right)
+ =\frac{2/\sqrt3-1}{16\pi},
+\]
+\[
+ \MSE=\left(\frac1{2\sqrt\pi}-\frac1{\sqrt{2\pi}}\right)^2
+ +\frac{2/\sqrt3-1}{16\pi}.
+\]
+
+\buoc{Kiểm tra đáp số hữu hạn mẫu}
+Không được bỏ số hạng âm $(\E\phi(X))^2/n$ trong variance nếu đề yêu cầu chính xác. $h=1$ không nhỏ nên khai triển $h\to0$ không thay cho đáp số hữu hạn mẫu này.
+\giaimuc{4. Kết luận}
+Bias $b=1/(2\sqrt\pi)-1/\sqrt{2\pi}$; variance $v=(2/\sqrt3-1)/(16\pi)$. Đáp số MSE chính xác là $b^2+v$.
+\giaimuc{5. Lỗi dễ mắc}
+$\E[\phi(X)^2]=\int\phi^3$, vì còn nhân thêm mật độ của $X$.
+\end{solution}
+
+\begin{problem}[KDE-48. Tự xây dựng nhân bậc bốn có giá compact.]\label{k:48}
+Tìm $a,b$ sao cho $K(u)=(a+bu^2)\1_{[-1,1]}(u)$ có $\int K=1$, $\int u^2K=0$. Tính $\mu_4,R(K)$ và AMISE bậc cao.
+\end{problem}
+\begin{solution}
+\giaimuc{1. Mục tiêu}
+Giải hệ moment để tự xây nhân bậc cao, rồi tính risk.
+\giaimuc{2. Công cụ và điều kiện}
+Nhân $K=(a+bu^2)\1_{[-1,1]}$; trơn bậc bốn và điều kiện $L_2$ cho phần AMISE.
+\giaimuc{3. Giải từng bước}
+\buoc{Lập và giải hệ ràng buộc moment}
+Đối xứng triệt tiêu moment lẻ. Hai phương trình còn lại:
+\[
+ 2a+2b/3=1,\qquad2a/3+2b/5=0,
+\]
+cho $a=9/8$, $b=-15/8$.
+\[
+ \mu_4=2a/5+2b/7=-3/35,\qquad
+ R(K)=2(a^2+2ab/3+b^2/5)=9/8.
+\]
+
+\buoc{Tìm bias rồi lập AMISE bậc cao}
+Với giả thiết đủ cho Taylor bậc bốn, bias $=h^4\mu_4f^{(4)}/24+o(h^4)=-h^4f^{(4)}/280+o(h^4)$.
+Thêm giả thiết $f\in W^{4,2}$ để tích phân remainder, thu
+\[
+ \AMISE=\frac{h^8R(f^{(4)})}{78400}+\frac9{8nh},\qquad
+ h_*^9=\frac{11025}{nR(f^{(4)})},\quad
+ \AMISE(h_*)\asymp n^{-8/9}.
+\]
+
+\buoc{Kiểm tra tính âm và quy ước bậc nhân}
+$K<0$ khi $|u|>\sqrt{3/5}$ trong giá, nên KDE này không luôn là mật độ không âm. Theo quy ước Tsybakov, đây là nhân triệt tiêu moment 1--3, tức bậc $\ell=3$; theo quy ước moment đầu tiên khác 0, gọi là bậc 4.
+\giaimuc{4. Kết luận}
+$K(u)=(9-15u^2)\1_{[-1,1]}/8$, $\mu_4=-3/35$, $R=9/8$. Bias chính $-h^4f^{(4)}/280$; bandwidth AMISE thỏa $h_*^9=11025/(nR(f^{(4)}))$ và risk bậc $n^{-8/9}$.
+\giaimuc{5. Lỗi dễ mắc}
+Có hệ số $4!=24$ trong Taylor; bỏ nó làm sai bias và bandwidth tối ưu.
+\end{solution}
+
+\begin{problem}[KDE-49. Hiệp phương sai của hai giá trị KDE.]\label{k:49}
+Với cùng một mẫu, suy ra $\Cov(\widehat f_h(x),\widehat f_h(y))$. Nếu $K$ có giá $[-1,1]$ và $|x-y|>2h$, hai giá trị KDE có độc lập không?
+\end{problem}
+\begin{solution}
+\giaimuc{1. Mục tiêu}
+Tính covariance giữa hai giá trị KDE dùng chung dữ liệu.
+\giaimuc{2. Công cụ và điều kiện}
+Khai triển covariance của hai tổng; cặp có chỉ số khác nhau độc lập; cặp cùng chỉ số vẫn phụ thuộc.
+\giaimuc{3. Giải từng bước}
+\buoc{Chỉ giữ các cặp cùng chỉ số trong covariance}
+Đặt $A_i=K_h(x-X_i)$, $B_i=K_h(y-X_i)$. Với $i\ne j$, $A_i,B_j$ độc lập; chỉ $n$ cặp cùng chỉ số đóng góp:
+\[
+ \Cov(\widehat f_h(x),\widehat f_h(y))
+ =\frac1n\left\{\int K_h(x-t)K_h(y-t)f(t)dt-f_h(x)f_h(y)\right\}.
+\]
+
+\buoc{Đưa tích phân về biến chuẩn hóa}
+Đổi biến $u=(x-t)/h$:
+\[
+ =\frac1{nh}\int K(u)K\!\left(u+\frac{y-x}{h}\right)f(x-hu)du
+ -\frac1nf_h(x)f_h(y).
+\]
+
+\buoc{Xét cửa sổ rời và kiểm tra trường hợp x bằng y}
+Khi hai cửa sổ rời nhau, tích hai nhân bằng 0, nhưng covariance còn
+$-f_h(x)f_h(y)/n$, âm nếu cả hai kỳ vọng dương. Vì vậy \emph{không độc lập}: một quan sát đã rơi vào cửa sổ thứ nhất thì không thể đồng thời thuộc cửa sổ thứ hai. Đặt $x=y$ thu lại variance của KDE, là bước kiểm tra công thức.
+\giaimuc{4. Kết luận}
+Covariance bằng $n^{-1}\{\int K_h(x-t)K_h(y-t)f(t)dt-f_h(x)f_h(y)\}$. Với cửa sổ rời, nó bằng $-f_h(x)f_h(y)/n$, thường khác 0 nên hai giá trị KDE không độc lập.
+\giaimuc{5. Lỗi dễ mắc}
+Cửa sổ rời nhau không làm hai KDE độc lập, vì chúng cùng dùng tổng số quan sát cố định.
+\end{solution}
+
+\begin{problem}[KDE-50. Đổi đơn vị dữ liệu và bandwidth.]\label{k:50}
+Cho $Z_i=a+bX_i$, $b>0$. Chứng minh bandwidth và mật độ biến đổi thế nào để giữ cùng mức làm trơn; xét $\mathrm{ISE}$ và normal-reference.
+\end{problem}
+\begin{solution}
+\giaimuc{1. Mục tiêu}
+Kiểm tra mật độ và bandwidth đổi đúng khi đổi đơn vị dữ liệu.
+\giaimuc{2. Công cụ và điều kiện}
+$Z=a+bX$, $b>0$; Jacobian $dz=b\,dx$; $h_Z=bh_X$.
+\giaimuc{3. Giải từng bước}
+\buoc{Thay biến và bandwidth vào định nghĩa KDE}
+Chọn $h_Z=bh_X$. Khi đó
+\[
+ \widehat f_{Z,h_Z}(z)=\frac1{nbh_X}\sum_iK\!\left(\frac{z-a-bX_i}{bh_X}\right)
+ =\frac1b\widehat f_{X,h_X}\!\left(\frac{z-a}{b}\right).
+\]
+
+\buoc{Đổi biến trong ISE để tìm hệ số tỷ lệ}
+Đây cũng là Jacobian của mật độ thật $f_Z$. Đổi biến $z=a+bx$ trong ISE cho
+$\mathrm{ISE}_Z(bh)=\mathrm{ISE}_X(h)/b$.
+
+\buoc{Kiểm tra normal reference và ví dụ đơn vị}
+Mọi bandwidth tối ưu tương ứng đổi theo hệ số $b$. Vì $s_Z=bs_X$, $\mathrm{IQR}_Z=b\mathrm{IQR}_X$, normal-reference cũng đổi đúng $h_{NR,Z}=bh_{NR,X}$.
+Ví dụ đổi từ nghìn đồng sang đồng: $b=1000$, bandwidth nhân 1000, mật độ chia 1000; diện tích vẫn bằng 1.
+\giaimuc{4. Kết luận}
+$h_Z=bh_X$, $\widehat f_Z(z)=\widehat f_X((z-a)/b)/b$ và $\mathrm{ISE}_Z(bh)=\mathrm{ISE}_X(h)/b$. Normal-reference đổi bandwidth cùng hệ số $b$.
+\giaimuc{5. Lỗi dễ mắc}
+Bandwidth nhân $b$ nhưng mật độ chia $b$, không nhân $b$.
+\end{solution}
+
+\begin{problem}[KDE-51. Vì sao nhân bậc cao phải nhận giá trị âm?]\label{k:51}
+Chứng minh không tồn tại một hàm $K\ge0$ có $\int K=1$ và $\int u^2K(u)du=0$. Phân biệt với một khối lượng Dirac tại 0.
+\end{problem}
+\begin{solution}
+\giaimuc{1. Mục tiêu}
+Chứng minh triệt tiêu moment hai không tương thích với một nhân mật độ không âm.
+\giaimuc{2. Công cụ và điều kiện}
+Hàm không âm có tích phân 0 thì bằng 0 hầu khắp nơi; tập một điểm có độ đo Lebesgue 0.
+\giaimuc{3. Giải từng bước}
+\buoc{Dùng tính không âm để buộc nhân bằng không hầu khắp}
+Vì $u^2K(u)\ge0$, tích phân bằng 0 suy ra $u^2K(u)=0$ hầu khắp nơi. Với $u\ne0$, điều này buộc $K(u)=0$ hầu khắp nơi. Tập $\{0\}$ có độ đo Lebesgue bằng 0, nên $\int K=0$, trái với $\int K=1$.
+
+\buoc{Giải thích vì sao Dirac không phải phản ví dụ}
+Khối lượng Dirac $\delta_0$ là một độ đo xác suất có moment hai 0, nhưng không phải hàm mật độ tích phân theo Lebesgue; không được dùng nó làm phản ví dụ.
+
+\buoc{Nêu cái được và mất của nhân bậc cao}
+Do đó nếu triệt tiêu moment hai trong một nhân khả tích chuẩn hóa, nhân phải đổi dấu. Đổi lại, nó có thể giảm bias khi $f$ đủ trơn; tính không âm của KDE không còn tự động.
+\giaimuc{4. Kết luận}
+Không tồn tại hàm nhân không âm chuẩn hóa có moment hai bằng 0. Một nhân khả tích chuẩn hóa muốn triệt tiêu moment hai phải nhận giá trị âm trên một tập có độ đo dương.
+\giaimuc{5. Lỗi dễ mắc}
+Khối lượng Dirac là độ đo, không phải hàm mật độ Lebesgue; nó không phản bác kết luận này.
+\end{solution}
+
+\begin{problem}[KDE-52. Biến bài Bart Simpson thành bài tính tay.]\label{k:52}
+Cho hỗn hợp trong W (6.2), $f=\tfrac12\phi+\tfrac1{10}\sum_{j=0}^4\phi_{0.1}(\cdot-m_j)$, $m_j=j/2-1$. Tính trung bình, variance và kỳ vọng KDE Gaussian bandwidth $h$; giải thích bằng công thức vì sao bandwidth lớn làm mờ móng.
+\end{problem}
+\begin{solution}
+\giaimuc{1. Mục tiêu}
+Tính moment của hỗn hợp Bart Simpson và kỳ vọng KDE Gaussian.
+\giaimuc{2. Công cụ và điều kiện}
+Trọng số hỗn hợp cộng bằng 1; moment hai của $N(m,s^2)$ là $m^2+s^2$; tích chập Gaussian cộng phương sai.
+\giaimuc{3. Giải từng bước}
+\buoc{Cộng trọng số và tính moment hai hỗn hợp}
+Trọng số cộng bằng $0.5+5(0.1)=1$. Do $\sum_jm_j=0$, trung bình bằng 0. Theo công thức moment hai hỗn hợp,
+\[
+ \Var X=0.5(1)+0.1\sum_j(0.1^2+m_j^2)
+ =0.5+0.1(0.05+2.5)=0.755.
+\]
+
+\buoc{Tính kỳ vọng KDE bằng phép tích chập}
+Tích chập hai Gaussian cộng \emph{phương sai}, nên
+\[
+ \E\widehat f_h(x)=\tfrac12\phi_{\sqrt{1+h^2}}(x)
+ +\tfrac1{10}\sum_{j=0}^4\phi_{\sqrt{0.01+h^2}}(x-m_j).
+\]
+
+\buoc{So độ rộng mới với khoảng cách hai đỉnh}
+Mỗi móng vốn có SD $0.1$ nay có SD $\sqrt{0.01+h^2}$. Nếu $h=0.1$, SD thành $0.1\sqrt2$; nếu $h=0.5$, thành $\sqrt{0.26}\approx0.510$, trong khi khoảng cách hai tâm kề nhau chỉ $0.5$.
+Đỉnh \emph{riêng từng thành phần} hạ theo hệ số $0.1/\sqrt{0.01+h^2}$; không nhầm với cực đại của toàn hỗn hợp vì các thành phần còn chồng lên nhau.
+\giaimuc{4. Kết luận}
+Bart Simpson có mean 0, variance $0.755$. Sau tích chập Gaussian bandwidth $h$, thành phần nền có variance $1+h^2$; mỗi móng có variance $0.01+h^2$, giữ nguyên tâm và trọng số.
+\giaimuc{5. Lỗi dễ mắc}
+$0.1$ trong mỗi móng là độ lệch chuẩn; phương sai tương ứng là $0.01$.
+\end{solution}
+
+\begin{problem}[KDE-53. Local likelihood: lời giải bằng hoàn bình phương.]\label{k:53}
+Trong W mục 6.4, dùng nhân Gaussian trên toàn $\R$, $t_i=X_i-x$, $w_i=\phi(t_i/h)$. Đặt $S=\sum_iw_i$, $m=\sum_iw_it_i/S$, $v=\sum_iw_i(t_i-m)^2/S$. Tìm $e^{\widehat a_0}$ khi log-density cục bộ có bậc 0, 1, 2.
+\end{problem}
+\begin{solution}
+\giaimuc{1. Mục tiêu}
+Tìm local likelihood bậc 0,1,2 bằng khớp moment Gaussian.
+\giaimuc{2. Công cụ và điều kiện}
+Tích phân trên toàn $\R$; hoàn bình phương; bậc 2 cần $a_2<h^{-2}$ và variance có trọng số $v>0$.
+\giaimuc{3. Giải từng bước}
+\buoc{Viết hàm mục tiêu và giải bậc không}
+Với $P(t)=a_0+a_1t+a_2t^2/2$,
+$L=\sum_iw_iP(t_i)-n\int\phi(t/h)e^{P(t)}dt$.
+\emph{Bậc 0:} $\int\phi(t/h)e^{a_0}dt=he^{a_0}$; đạo hàm cho $S-nhe^{a_0}=0$, nên $e^{\widehat a_0}=S/(nh)$, đúng KDE.
+
+\buoc{Hoàn bình phương và giải bậc một}
+\emph{Bậc 1:} hoàn bình phương cho tích phân $h\exp(a_0+h^2a_1^2/2)$.
+Đạo hàm theo $a_0,a_1$ lần lượt khớp tổng trọng số và moment một, nên
+\[
+ \widehat a_1=m/h^2,\qquad e^{\widehat a_0}=\frac{S}{nh}e^{-m^2/(2h^2)}.
+\]
+
+\buoc{Khớp variance và mean để giải bậc hai}
+\emph{Bậc 2:} cần $a_2<h^{-2}$ để tích phân hữu hạn. Chuẩn hóa hàm tỷ lệ với $\phi(t/h)e^{P(t)}$ cho phân phối Gaussian có variance $V=(h^{-2}-a_2)^{-1}$, mean $a_1V$. Score theo $a_0,a_1,a_2$ khớp ba moment $1,t,t^2$, suy ra $V=v$, $a_1V=m$ và
+\[
+ \widehat a_2=h^{-2}-v^{-1},\quad\widehat a_1=m/v,\qquad
+ e^{\widehat a_0}=\frac{S}{n\sqrt v}e^{-m^2/(2v)},\quad v>0.
+\]
+
+\buoc{Thay mẫu đối xứng và kiểm tra điều kiện}
+Kiểm tra bằng mẫu $(-1,0,1)$, $x=0$, $h=1$: $S=\phi(0)+2\phi(1)$, $m=0$, $v=2\phi(1)/S$.
+Bậc 0 và 1 cùng bằng $S/3$; bậc 2 bằng $(S/3)\sqrt{S/(2\phi(1))}$. Đây là đáp số tính tay chính xác, không cần tối ưu bằng máy.
+Để kiểm tra hệ số chuẩn hóa ở bậc hai, đặt $V=(h^{-2}-a_2)^{-1}$. Hoàn bình phương cho
+\[
+ \int\phi(t/h)e^{P(t)}dt
+ =\sqrt V\exp\{a_0+a_1^2V/2\}.
+\]
+Score theo $a_0$ buộc $n$ lần tích phân này bằng $S$. Sau khi thay $V=v$, $a_1=m/v$, giải được $e^{a_0}=S e^{-m^2/(2v)}/(n\sqrt v)$ như trên. Score theo $a_1$ khớp mean $a_1V=m$; theo $a_2$ khớp moment hai $V+(a_1V)^2=v+m^2$.
+Các ước lượng dương nhưng nhìn chung không có tổng tích phân 1 khi ghép các $x$; cũng không dùng công thức toàn trục này cho một miền bị cắt mà không sửa tích phân.
+\giaimuc{4. Kết luận}
+Bậc 0: $S/(nh)$. Bậc 1: $S e^{-m^2/(2h^2)}/(nh)$. Bậc 2: $S e^{-m^2/(2v)}/(n\sqrt v)$ khi $v>0$. Các công thức này dùng tích phân trên toàn trục.
+\giaimuc{5. Lỗi dễ mắc}
+Công thức toàn trục không áp dụng nguyên xi khi cắt miền tích phân ở một biên.
+\end{solution}
+
+\clearpage
+\nhom{H. Ba đề tự luyện chỉ tính tay và chứng minh}
+\noindent Các đề tự biên soạn này dùng cùng mẫu lời giải với các bài KDE. Mỗi đề gồm bốn ý; trong mục 3, mỗi bước giải một ý. Thời gian gợi ý 35 phút/đề. Không cần lập trình.
+
+\begin{problem}[Đề tự luyện 1. Bias, variance và AMISE.]
+\begin{enumerate}
+\item (2 điểm) $K=c(1-u^2)\1_{[-1,1]}$: tìm $c,\mu_2,R(K)$.
+\item (3 điểm) Với $f\in C^2$, $f''$ bị chặn, chứng minh khai triển bias tại điểm.
+\item (2 điểm) Chứng minh variance chính xác và tìm số hạng chính khi $f$ bị chặn, liên tục tại $x$.
+\item (3 điểm) Thêm $f\in W^{2,2}$, lập AMISE và tìm $h_*$. Đã chứng minh minimax chưa?
+\end{enumerate}
+\end{problem}
+\begin{solution}
+\giaimuc{1. Mục tiêu}
+Đi từ tính moment của nhân đến bias, variance, rồi tối ưu risk toàn cục.
+\giaimuc{2. Công cụ và điều kiện}
+Nhân có giá compact và đối xứng; Taylor bậc hai, variance của trung bình độc lập, và khai triển $L_2$ khi tính MISE. Giả sử $R(f'')>0$ để có nghiệm tối ưu hữu hạn.
+\giaimuc{3. Giải từng bước}
+\buoc{Chuẩn hóa nhân và tính hai tích phân cần dùng}
+$1=c\int_{-1}^1(1-u^2)du=c(2-2/3)=4c/3$, nên $c=3/4$.
+Tiếp theo
+\[
+ \mu_2=\tfrac34(2/3-2/5)=1/5,\qquad
+ R(K)=\tfrac9{16}(2-4/3+2/5)=3/5.
+\]
+Các moment lẻ bằng 0 do đối xứng. Đây là các hằng số sẽ dùng ở mọi bước sau.
+\buoc{Khai triển kỳ vọng và trừ mật độ thật}
+Đổi biến cho $\E\widehat f_h(x)=\int K(u)f(x-hu)du$.
+Taylor trên giá nhân $[-1,1]$ cho
+\[
+ f(x-hu)=f(x)-hu f'(x)+\tfrac12h^2u^2f''(x)+r_h(u).
+\]
+Vì $f''$ liên tục, $\sup_{|u|\le1}|r_h(u)|=o(h^2)$. Tích phân ba số hạng đầu dùng $\int K=1$, $\int uK=0$, $\int u^2K=1/5$; phần dư có trị tuyệt đối không vượt $\|K\|_1\sup|r_h|=o(h^2)$. Trừ $f(x)$ thu bias $h^2f''(x)/10+o(h^2)$.
+\buoc{Tính variance từ moment hai}
+Đặt $Z_i=K_h(x-X_i)$. Độc lập cho variance trung bình bằng $\Var Z_1/n$.
+Đổi biến trong moment hai: $\E Z_1^2=h^{-1}\int K^2(u)f(x-hu)du$.
+Vì $\E Z_1=f_h(x)$,
+\[
+ \Var\widehat f_h(x)=\frac1{nh}\int K^2(u)f(x-hu)du-\frac{f_h(x)^2}{n}.
+\]
+Tính liên tục cho tích phân $\to f(x)R(K)=3f(x)/5$; số hạng cuối bậc $1/n=o(1/(nh))$ khi $h\to0$. Do đó variance chính là $3f(x)/(5nh)$.
+\buoc{Tích phân risk và giải phương trình đạo hàm}
+Giả thiết $L_2$ cho phép dùng integrated squared bias $h^4R(f'')/100+o(h^4)$; integrated variance chính là $3/(5nh)$. Vậy
+\[
+ \AMISE(h)=\frac{h^4R(f'')}{100}+\frac3{5nh}.
+\]
+Đạo hàm bằng $h^3R(f'')/25-3/(5nh^2)$. Cho bằng 0 rồi nhân $25h^2$:
+$h^5R(f'')=15/n$, tức $h_*=[15/(nR(f''))]^{1/5}$.
+Cả hai thành phần tại nghiệm đều bậc $n^{-4/5}$. Đạo hàm hai dương nên nghiệm cực tiểu. Đây là tối ưu trong biểu thức AMISE của họ KDE, chưa có cận dưới trên mọi ước lượng.
+\giaimuc{4. Kết luận}
+$c=3/4$, $\mu_2=1/5$, $R=3/5$; bias chính $h^2f''/10$; $h_*=[15/(nR(f''))]^{1/5}$; MISE dọc bandwidth này bậc $n^{-4/5}$ dưới các giả thiết đã nêu.
+\giaimuc{5. Lỗi dễ mắc}
+Dùng $\mu_2$ thay $\mu_2^2$ trong squared bias; quên trừ bình phương kỳ vọng trong variance; tự tích phân phần dư tại điểm mà không có điều kiện $L_2$.
+\end{solution}
+
+\begin{problem}[Đề tự luyện 2. Tính tay và cross-validation.]
+\begin{enumerate}
+\item (2 điểm) Với mẫu $(0,1,2)$, nhân đều $\frac12\1_{|u|<1}$, $h=1$, tính $\widehat f(1/2)$ và xác suất theo KDE của $(-\infty,1/2]$.
+\item (4 điểm) Dùng CV chọn giữa $h=3/4$ và $h=3/2$.
+\item (3 điểm) Chứng minh $\E\widehat J(h)=\MISE(h)-R(f)$ cho $h$ cố định.
+\item (1 điểm) Giải thích điểm CV âm và việc chọn $h$ theo dữ liệu.
+\end{enumerate}
+\end{problem}
+\begin{solution}
+\giaimuc{1. Mục tiêu}
+Tính được cả hai thành phần CV, rồi giải thích vì sao tiêu chuẩn này liên hệ với risk.
+\giaimuc{2. Công cụ và điều kiện}
+Nhân đều tạo hình chữ nhật cao $1/(2nh)$; độ dài giao là $(2h-d)_+$; KDE LOO bỏ đúng một quan sát. Phần chứng minh kỳ vọng giả sử tích phân hữu hạn và $h$ tất định.
+\giaimuc{3. Giải từng bước}
+\buoc{Đếm cửa sổ và tính diện tích}
+Tại $1/2$, hai quan sát $0,1$ có khoảng cách nhỏ hơn 1; quan sát 2 không có. Mỗi quan sát đóng góp $1/6$, nên $\widehat f(1/2)=2/6=1/3$.
+Trên $(-1,0)$ mật độ cao $1/6$; trên $(0,1/2)$ cao $1/3$. Diện tích tới $1/2$ là $1\cdot1/6+(1/2)\cdot1/3=1/3$.
+\buoc{Tính CV riêng cho từng ứng viên}
+Chín cặp có thứ tự gồm 3 khoảng cách 0, 4 khoảng cách 1 và 2 khoảng cách 2.
+Với $h=3/4$, tổng độ dài giao là $3(3/2)+4(1/2)=13/2$. Chia cho $4n^2h^2=81/4$ được $26/81$. Không quan sát khác nào cách $X_i$ ít hơn $h$, nên LOO bằng 0; CV là $26/81$.
+
+Với $h=3/2$, tổng độ dài giao là $3(3)+4(2)+2(1)=19$. Chia cho $4n^2h^2=81$ được $19/81$. Các giá trị LOO là $(1/6,1/3,1/6)$; trung bình nhân 2 là $\frac23(2/3)=4/9$. CV là $19/81-4/9=-17/81$. Chọn $3/2$ vì điểm CV nhỏ hơn.
+\buoc{Dùng độc lập để chứng minh không chệch}
+Với mỗi $i$, $X_i$ độc lập với mẫu bỏ $i$; do các quan sát cùng mật độ, $\E\widehat f_{(-i)}(x)=f_h(x)$. Vì vậy
+\[
+ \E\widehat f_{(-i)}(X_i)=\int f_h(x)f(x)dx
+ =\E\int\widehat f_h(x)f(x)dx.
+\]
+Lấy trung bình theo $i$ không thay đổi kỳ vọng. Ghép vào định nghĩa CV và khai triển bình phương:
+\[
+ \E\widehat J=\E\int\widehat f_h^2-2\E\int\widehat f_hf
+ =\E\int(\widehat f_h-f)^2-\int f^2=\MISE-R(f).
+\]
+\buoc{Đọc đúng ý nghĩa của tiêu chuẩn}
+$R(f)$ không phụ thuộc $h$, nên trừ nó không đổi vị trí cực tiểu của risk kỳ vọng. CV có thể âm vì đã trừ hằng số này.
+Tính không chệch vừa chứng minh chỉ áp dụng cho mỗi $h$ cố định; chọn $\widehat h$ để làm điểm CV nhỏ nhất có thể tạo thiên lệch do lựa chọn. Không thay $h$ bằng $\widehat h$ trong kết luận không chệch mà không có lập luận mới.
+\giaimuc{4. Kết luận}
+Hai kết quả ý 1 đều là $1/3$; hai điểm CV là $26/81$ và $-17/81$; chọn $3/2$ trong hai ứng viên. Với $h$ tất định, $\E\widehat J=\MISE-R(f)$.
+\giaimuc{5. Lỗi dễ mắc}
+Tích phân bình phương đếm cả đường chéo; LOO bỏ đường chéo và chia cho $n-1$. Không đổi hai quy tắc này cho nhau.
+\end{solution}
+
+\begin{problem}[Đề tự luyện 3. Hội tụ, Hölder và biên.]
+\begin{enumerate}
+\item (3 điểm) $h=n^{-a}$, nhân bậc hai, $f(x)>0,f''(x)\ne0$: tìm miền $a$ cho nhất quán, tối ưu MSE và loại bias trong CLT.
+\item (2 điểm) Biết CLT tâm tại kỳ vọng, tìm giới hạn tâm tại $f$ khi $nh^5\to\lambda<\infty$.
+\item (3 điểm) Lớp mật độ Lipschitz hằng số 1, nhân đều: chứng minh chặn MSE đều và tối ưu.
+\item (2 điểm) Với $f=\1_{[0,1]}$, tính kỳ vọng KDE thường và phản xạ tại 0, $0<h<1$.
+\end{enumerate}
+\end{problem}
+\begin{solution}
+\giaimuc{1. Mục tiêu}
+Phân biệt điều kiện nhất quán, điều kiện tối ưu sai số và điều kiện bỏ bias khi suy luận; nhận ra ngoại lệ ở biên.
+\giaimuc{2. Công cụ và điều kiện}
+Ở ý 1--2, dùng giả thiết điểm trong đủ trơn cho bias bậc hai và CLT. Ý 3 dùng lớp Lipschitz toàn trục. Ý 4 dùng xác suất cửa sổ chính xác, không áp dụng Taylor qua biên.
+\giaimuc{3. Giải từng bước}
+\buoc{Viết mọi điều kiện theo lũy thừa của n}
+$h=n^{-a}\to0$ khi $a>0$; $nh=n^{1-a}\to\infty$ khi $a<1$. Do đó miền nhất quán là $0<a<1$.
+MSE chính có dạng $An^{-4a}+Bn^{-(1-a)}$ với $A,B>0$. Số hạng có số mũ nhỏ hơn chi phối; tối ưu bằng $4a=1-a$, cho $a=1/5$.
+Để bỏ bias trong CLT cần $nh^5=n^{1-5a}\to0$, tức $a>1/5$. Ghép với điều kiện variance cho miền $1/5<a<1$.
+\buoc{Tách hai tâm trong chuẩn hóa CLT}
+\[
+ \sqrt{nh}(\widehat f-f)=\sqrt{nh}(\widehat f-\E\widehat f)
+ +\sqrt{nh}\{\E\widehat f-f\}.
+\]
+Số hạng đầu hội tụ chuẩn mean 0, variance $f(x)R(K)$.
+Số hạng sau bằng $\sqrt{nh^5}\{\mu_2f''(x)/2+o(1)\}$, tiến về $\sqrt\lambda\mu_2f''(x)/2$.
+Slutsky cho giới hạn
+\[N(\sqrt\lambda\mu_2f''(x)/2,f(x)R(K)).\]
+\buoc{Chặn chiều cao mật độ trước khi lấy supremum}
+Đặt $c=f(x_0)$. Lipschitz cho $f(x_0+t)\ge(c-|t|)_+$, nên $1=\int f\ge\int_{-c}^c(c-|t|)dt=c^2$. Vậy $\|f\|_\infty\le1$ chung cho cả lớp.
+Với nhân đều, $\int|u|K=1/2$ nên $|\Bias|\le h/2$; $R(K)=1/2$ nên $\Var\widehat f\le1/(2nh)$.
+MSE không vượt $h^2/4+1/(2nh)$. Đạo hàm của chặn bằng $h/2-1/(2nh^2)$; cho bằng 0 thu $h^3=1/n$. Chặn tại nghiệm bằng $3n^{-2/3}/4$.
+\buoc{Tính trực tiếp tại biên thay vì dùng khai triển nội miền}
+Ở 0, cửa sổ $(-h,h)$ chỉ giao giá mật độ trên $(0,h)$, có xác suất $h$. KDE thường có kỳ vọng $h/(2h)=1/2$.
+KDE phản xạ tại 0 bằng hai lần KDE thường, nên kỳ vọng 1, đúng $f(0)$ theo phiên bản liên tục phải. Bias nội miền không dùng được vì mật độ nhảy từ 0 lên 1 qua biên 0.
+\giaimuc{4. Kết luận}
+Nhất quán: $0<a<1$; tối ưu MSE điểm: $a=1/5$; CLT không lệch tâm: $1/5<a<1$. Chặn Lipschitz tối ưu $3n^{-2/3}/4$. Ở biên của mật độ đều, kỳ vọng thường $1/2$, phản xạ 1.
+\giaimuc{5. Lỗi dễ mắc}
+Các ý dùng những bộ giả thiết khác nhau: lớp Lipschitz toàn trục không chứa mật độ đều bị gián đoạn ở 0 và 1. Không dùng kết luận ý 3 cho ý 4.
+\end{solution}
+
+
+\nhom{I. Kiểm tra bài chứng minh trước khi nộp}
+\begin{enumerate}
+\item \textbf{Xác định thứ cần chứng minh:} đẳng thức hữu hạn mẫu, khai triển tại điểm, chặn đều theo lớp hay MISE. Không đổi $O$ thành $\asymp$ nếu chỉ chứng minh một phía.
+\item \textbf{Ghi giả thiết đúng chỗ:} điểm trong/biên; $f$ liên tục hay có đạo hàm; moment tuyệt đối của $K$; $f''\in L_2$ cho kết quả tích phân.
+\item \textbf{Kiểm tra đổi biến:} $u=(x-t)/h$ tạo một hệ số $h$ trong tích phân. Kỳ vọng không còn $1/h$; moment hai còn $1/h$; variance có $1/(nh)$.
+\item \textbf{Kiểm tra moment:} $\mu_2=\int u^2K$, $R(K)=\int K^2$. Trong squared bias dùng $\mu_2^2$. Nhân chuẩn hóa không nhất thiết đối xứng, và nhân bậc cao có thể âm.
+\item \textbf{Kiểm tra điểm suy biến:} công thức bandwidth điểm chia cho $f''(x)^2$ cần $f''(x)\ne0$; nếu bằng 0 phải khai triển tiếp, không kết luận $h_*=\infty$.
+\item \textbf{Kiểm tra CV:} $n$ trong KDE đầy đủ, $n-1$ trong KDE bỏ một điểm; tổng bình phương chứa đường chéo, LOO không chứa.
+\item \textbf{Kiểm tra chuẩn hóa tiệm cận:} ở $h\asymp n^{-1/5}$, bias nhân $\sqrt{nh}$ thường không mất; muốn khoảng cho $f$ cần xử lý bias.
+\item \textbf{Kiểm tra kết luận:} $\sup_x\E|\widehat f(x)-f(x)|^2$ khác $\E\sup_x|\widehat f(x)-f(x)|^2$; tối ưu AMISE khác chứng minh minimax; khoảng từng điểm khác băng đồng thời.
+\end{enumerate}
+
+
+\nhom{Phụ lục. Cận dưới minimax và định lý Stone}
+\noindent Phần này nêu phát biểu, giả thiết và ý tưởng; không phải chứng minh đầy đủ.
+
+\begin{thm}[Cận dưới minimax; S10, S28; T Thm.~2.1 và chương 2]
+Với $\beta,L>0$, tồn tại $c>0$ sao cho với mọi $x_0$ và $n$ đủ lớn,
+$\inf_{T_n}\sup_{p\in\mathcal P(\beta,L)}\E_p(T_n-p(x_0))^2\ge c\,n^{-2\beta/(2\beta+1)}$, infimum trên \emph{mọi} ước lượng.
+\end{thm}
+\noindent\textit{Ý tưởng (hai giả thuyết).} Lấy $p_0\in\mathcal P(\beta,L/2)$ dương quanh $x_0$ và $p_1=p_0+Lh^\beta\psi((x-x_0)/h)$ với $\psi$ trơn, giá compact, $\int\psi=0$, $\psi(0)>0$, biên độ đủ nhỏ để $p_1\in\mathcal P(\beta,L)$. Khi đó $|p_1(x_0)-p_0(x_0)|\asymp h^\beta$, còn $\mathrm{KL}(P_1^{\otimes n},P_0^{\otimes n})\le n\chi^2(p_1,p_0)\asymp nh^{2\beta+1}$. Chọn $h\asymp n^{-1/(2\beta+1)}$ thì KL bị chặn, nên không kiểm định nào phân biệt được hai giả thuyết với sai số nhỏ; mọi ước lượng phải sai cỡ nửa khoảng cách $\asymp h^\beta$ dưới ít nhất một giả thuyết, cho cận $n^{-2\beta/(2\beta+1)}$. Cận cho MISE cần nhiều giả thuyết (Varshamov--Gilbert/Assouad). Kết hợp với KDE-23: KDE với nhân bậc $\ell$ và $h\asymp n^{-1/(2\beta+1)}$ là \emph{tối ưu về tốc độ}.
+
+\begin{thm}[Ý nghĩa kết quả Stone; S11; W Thm.~6.37]
+Dưới các điều kiện chính quy của định lý Stone về mật độ $f$, nhân $K$ và miền bandwidth được phép (không chỉ riêng điều kiện $f$ bị chặn), nếu $\widehat h$ chọn bằng CV bình phương tối thiểu thì
+$\int(f-\widehat f_{\widehat h})^2\big/\inf_{h\in H_n}\int(f-\widehat f_h)^2\asto1$.
+\end{thm}
+\noindent\textit{Ý nghĩa và giới hạn.} Khi các giả thiết của định lý được thỏa, CV đạt tiệm cận ISE của bandwidth tốt nhất \emph{cho chính mẫu đó} mà không cần biết $f$ hay $\beta$, nên giải quyết vấn đề ở KDE-25. Ở đây $H_n$ là miền bandwidth trong định lý; phát biểu chỉ giải thích ý nghĩa, không cung cấp bộ điều kiện đầy đủ để áp dụng. Trong các mô hình trơn chính quy dùng để phân tích bandwidth, hội tụ tương đối có thể rất chậm: $\widehat h_{CV}/h_{\mathrm{MISE}}-1=O_P(n^{-1/10})$ (Hall--Marron), nên $\widehat h_{CV}$ dao động mạnh giữa các mẫu; đường ước lượng lượn sóng chưa chắc có nghĩa là CV thất bại (W tr.136: ``the eye is not a good judge of risk'').
+
+\end{document}

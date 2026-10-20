@@ -1,0 +1,374 @@
+% !TeX program = xelatex
+% Compile: latexmk -xelatex -interaction=nonstopmode -halt-on-error test_loi_giai.tex
+\documentclass[11pt,a4paper]{article}
+\usepackage{fontspec,polyglossia}
+\setdefaultlanguage{vietnamese}
+\setmainfont{texgyretermes}[Extension=.otf,UprightFont=*-regular,BoldFont=*-bold,ItalicFont=*-italic,BoldItalicFont=*-bolditalic]
+\usepackage{amsmath,amssymb}
+\usepackage[a4paper,margin=2cm,headheight=15pt]{geometry}
+\usepackage{booktabs,array,enumitem,xcolor,fancyhdr,hyperref}
+\hypersetup{colorlinks=true,linkcolor=blue!45!black,pdftitle={Lời giải chi tiết bài kiểm tra Thống kê phi tham số},pdfauthor={}}
+\pagestyle{fancy}\fancyhf{}
+\fancyhead[L]{\small Thống kê phi tham số — Ước lượng mật độ nhân}
+\fancyhead[R]{\small Lời giải từng bước}\fancyfoot[C]{\thepage}
+\setlength{\parindent}{0pt}\setlength{\parskip}{4pt}
+\setlength{\emergencystretch}{1em}
+\setlist{nosep,leftmargin=*}
+\newcommand{\E}{\mathbb E}
+\newcommand{\R}{\mathbb R}
+\newcommand{\fh}{\widehat f_h}
+\DeclareMathOperator{\Var}{Var}
+\DeclareMathOperator{\Bias}{Bias}
+\DeclareMathOperator{\AMSE}{AMSE}
+\newcommand{\buoc}[1]{\par\medskip\textbf{#1}\par}
+\begin{document}
+\begin{center}
+{\LARGE\bfseries LỜI GIẢI BÀI KIỂM TRA}\\[5pt]
+{\Large Thống kê phi tham số}\\[5pt]
+{\normalsize Giải thích công thức, lý do sử dụng và từng bước tính}
+\end{center}
+
+\textbf{Nguồn đề:} ảnh JPEG có tên \texttt{test} trong cùng thư mục. Đề gồm 3 câu, tổng 10 điểm, thời gian 25 phút, được sử dụng tài liệu. Phần dưới chép lại nội dung toán học của đề; cuối tài liệu có bản lời giải ngắn để ôn tập.
+
+\section*{Đề bài và các ký hiệu cần hiểu}
+Trong toàn bài, $X_1,\ldots,X_n$ là mẫu i.i.d. có mật độ $f$ và
+\[
+\fh(x)=\frac{1}{nh}\sum_{i=1}^nK\!\left(\frac{x-X_i}{h}\right),
+\qquad K(u)=\frac34(1-u^2)\mathbf1_{\{|u|\leq1\}}.
+\]
+Đặt $\mu_2(K)=\int_{\R}u^2K(u)\,du$ và $R(K)=\int_{\R}K^2(u)\,du$.
+
+\textbf{Câu 1 (3 điểm).} Mẫu $(X_1,X_2,X_3,X_4)=(1,2,4,5)$, $h=2$.
+\begin{enumerate}[label=(\alph*)]
+\item Tính $\mu_2(K)$ và $R(K)$ (1 điểm).
+\item Tính $\fh(3)$ (2 điểm).
+\end{enumerate}
+\textbf{Câu 2 (3 điểm).} Cho $K$ là nhân đối xứng, $\int K=1$.
+\begin{enumerate}[label=(\alph*)]
+\item Chứng minh $\int_{\R}\fh(x)\,dx=1$ (1 điểm).
+\item Chứng minh $\E\fh(x)=\int K(u)f(x-hu)\,du$ (1 điểm).
+\item Giả sử $f\in C^2$, $f''$ bị chặn. Dùng Taylor chứng minh
+\[
+\E\fh(x)-f(x)=\frac{h^2}{2}\mu_2(K)f''(x)+o(h^2),\qquad h\to0
+\]
+(1 điểm).
+\end{enumerate}
+\textbf{Câu 3 (4 điểm).} $f$ là mật độ $\mathcal N(0,1)$, $n=100$, xét tại $x=0$; cho $f(0)\approx0.399$. Dùng Câu 2(c) và
+\[
+\Var\fh(x)\approx\frac{R(K)f(x)}{nh}.
+\]
+\begin{enumerate}[label=(\alph*)]
+\item Với $h=0.5$, tính chệch, phương sai xấp xỉ và $\AMSE=(\text{chệch})^2+\text{phương sai}$ tại $x=0$ (1.5 điểm).
+\item Tìm $h$ tối thiểu hóa $\AMSE(h)$ tại $x=0$ và AMSE tương ứng (2.5 điểm).
+\end{enumerate}
+
+\textbf{Đọc ký hiệu.} i.i.d. nghĩa là độc lập và cùng phân phối. $f$ là mật độ thật; $\fh$ là mật độ ước lượng từ mẫu. $x$ là vị trí muốn ước lượng, $X_i$ là quan sát thứ $i$, $n$ là cỡ mẫu, $h>0$ là độ rộng cửa sổ (bandwidth). Hàm chỉ báo $\mathbf1_{\{|u|\leq1\}}$ bằng 1 khi $|u|\leq1$, bằng 0 khi $|u|>1$.
+
+\clearpage
+\begingroup
+\setlength{\abovedisplayskip}{6pt}
+\setlength{\belowdisplayskip}{6pt}
+\setlength{\abovedisplayshortskip}{3pt}
+\setlength{\belowdisplayshortskip}{3pt}
+\renewcommand{\buoc}[1]{\par\textbf{#1}\par}
+\section*{Câu 1 — Tính trực tiếp từ định nghĩa}
+\subsection*{1(a). Tính hai hằng số của nhân}
+\buoc{Bước 1. Xác định miền tích phân và tính đối xứng.}
+Vì $K(u)=0$ bên ngoài $[-1,1]$, mọi tích phân có thừa số $K$ chỉ cần tính trên $[-1,1]$. Cả $u^2K(u)$ và $K^2(u)$ đều là hàm chẵn. Dùng
+\[
+\int_{-1}^1g(u)\,du=2\int_0^1g(u)\,du\quad\text{khi }g(-u)=g(u),
+\qquad \int_0^1u^k\,du=\frac{1}{k+1}.
+\]
+\textit{Tại sao dùng?} Hai công thức này biến tích phân của nhân thành tích phân đa thức đơn giản.
+
+\buoc{Bước 2. Thay $K$ vào định nghĩa của $\mu_2(K)$.}
+\begin{align*}
+\mu_2(K)&=\frac34\int_{-1}^1u^2(1-u^2)\,du
+=\frac32\int_0^1(u^2-u^4)\,du\\
+&=\frac32\left[\frac{u^3}{3}-\frac{u^5}{5}\right]_0^1
+=\frac32\left(\frac13-\frac15\right)
+=\boxed{\frac15}.
+\end{align*}
+Đây là moment bậc hai của nhân; nó xuất hiện trong hệ số độ chệch ở Câu 2(c).
+
+\buoc{Bước 3. Bình phương toàn bộ $K$ để tính $R(K)$.}
+Lưu ý $(3/4)^2=9/16$, $(1-u^2)^2=1-2u^2+u^4$ và chỉ báo bình phương vẫn bằng chính nó. Do đó
+\begin{align*}
+R(K)&=\frac9{16}\int_{-1}^1(1-2u^2+u^4)\,du
+=\frac98\left(1-\frac23+\frac15\right)\\
+&=\frac98\cdot\frac8{15}=\boxed{\frac35}.
+\end{align*}
+$R(K)$ là tích phân bình phương nhân, khác với $\mu_2(K)$; nó xuất hiện trong phương sai xấp xỉ.
+
+\subsection*{1(b). Tính $\widehat f_2(3)$}
+\buoc{Bước 1. Thay đúng $n=4$, $h=2$, $x=3$.}
+\[
+\widehat f_2(3)=\frac1{4\cdot2}\sum_{i=1}^4K\!\left(\frac{3-X_i}{2}\right).
+\]
+\buoc{Bước 2. Tính khoảng cách đã chia cho $h$, rồi tính từng giá trị nhân.}
+\begin{center}
+\begin{tabular}{cccl}
+\toprule
+$i$ & $X_i$ & $u_i=(3-X_i)/2$ & $K(u_i)$\\
+\midrule
+1&1&$1$&$\frac34(1-1)=0$\\
+2&2&$1/2$&$\frac34(1-1/4)=9/16$\\
+3&4&$-1/2$&$\frac34(1-1/4)=9/16$\\
+4&5&$-1$&$\frac34(1-1)=0$\\
+\bottomrule
+\end{tabular}
+\end{center}
+\buoc{Bước 3. Cộng rồi nhân với $1/(nh)$.}
+\[
+\boxed{\widehat f_2(3)=\frac18\left(0+\frac9{16}+\frac9{16}+0\right)
+=\frac9{64}=0.140625.}
+\]
+\textbf{Dễ nhầm:} tại $u=\pm1$, chỉ báo bằng 1 nhưng nhân vẫn bằng 0 vì $1-u^2=0$. Không bỏ hệ số $1/h$ ngoài tổng. Giá trị mật độ tại 3 không phải xác suất $P(X=3)$.
+\endgroup
+
+\clearpage
+\section*{Câu 2(a), 2(b) — Tích phân và kỳ vọng}
+\subsection*{2(a). Chứng minh tổng diện tích dưới $\widehat f_h$ bằng 1}
+\buoc{Bước 1. Đưa tích phân vào tổng hữu hạn.}
+Tích phân có tính tuyến tính, vì vậy
+\[
+\int_{\R}\fh(x)\,dx
+=\frac1{nh}\sum_{i=1}^n\int_{\R}K\!\left(\frac{x-X_i}{h}\right)\,dx.
+\]
+Khi tích phân theo $x$, coi các $X_i$ là những giá trị cố định của mẫu.
+
+\buoc{Bước 2. Đổi biến để bên trong nhân chỉ còn $u$.}
+Đặt $u=(x-X_i)/h$. Khi đó $x=X_i+hu$, $dx=h\,du$. Do $h>0$, cận $x=-\infty,+\infty$ tương ứng với $u=-\infty,+\infty$. Suy ra
+\[
+\int_{\R}K\!\left(\frac{x-X_i}{h}\right)\,dx
+=h\int_{\R}K(u)\,du=h.
+\]
+\textit{Tại sao dùng đổi biến?} Ta biết $\int K(u)\,du=1$; đổi biến đưa tích phân về đúng dạng đã biết đó. Hệ số $h$ sinh ra từ $dx$ sẽ triệt tiêu $1/h$ trong KDE.
+
+\buoc{Bước 3. Có $n$ số hạng đều bằng $h$.}
+\[
+\boxed{\int_{\R}\fh(x)\,dx=\frac1{nh}\sum_{i=1}^nh
+=\frac{nh}{nh}=1.}
+\]
+Kết quả này đúng với mọi mẫu. Phần (a) chỉ cần $\int K=1$, chưa cần đối xứng. Với nhân Epanechnikov, $K\geq0$ nên $\fh\geq0$; kết hợp tích phân bằng 1 cho thấy $\fh$ là một mật độ.
+
+\subsection*{2(b). Tìm kỳ vọng của $\widehat f_h(x)$}
+\buoc{Bước 1. Dùng tính tuyến tính của kỳ vọng và cùng phân phối.}
+Lúc này $x$ cố định còn các $X_i$ là ngẫu nhiên. Vì các $X_i$ cùng phân phối,
+\[
+\E\fh(x)=\frac1{nh}\sum_{i=1}^n\E K\!\left(\frac{x-X_i}{h}\right)
+=\frac1h\E K\!\left(\frac{x-X_1}{h}\right).
+\]
+\textit{Vì sao $n$ biến mất?} Có $n$ kỳ vọng bằng nhau, nên tổng là $n$ lần một kỳ vọng. Riêng bước này không cần tính độc lập.
+
+\buoc{Bước 2. Viết kỳ vọng bằng tích phân theo mật độ.}
+Với $X$ có mật độ $f$, công thức $\E[g(X)]=\int g(t)f(t)\,dt$ cho
+\[
+\E\fh(x)=\frac1h\int_{-\infty}^{\infty}K\!\left(\frac{x-t}{h}\right)f(t)\,dt.
+\]
+\buoc{Bước 3. Đổi biến, chú ý dấu âm và cận.}
+Đặt $u=(x-t)/h$, suy ra $t=x-hu$, $dt=-h\,du$. Khi $t$ đi từ $-\infty$ đến $+\infty$, $u$ đi từ $+\infty$ đến $-\infty$. Vì thế
+\[
+\E\fh(x)=\frac1h\int_{+\infty}^{-\infty}K(u)f(x-hu)(-h)\,du
+=\boxed{\int_{-\infty}^{\infty}K(u)f(x-hu)\,du}.
+\]
+Đảo cận loại dấu âm; $h$ triệt tiêu $1/h$. Kỳ vọng KDE là trung bình có trọng số của mật độ quanh $x$, nên thường khác chính $f(x)$: đây là nguồn gốc của độ chệch.
+
+\clearpage
+\section*{Câu 2(c) — Khai triển Taylor để tìm độ chệch}
+\textbf{Mục tiêu.} Độ chệch là $\Bias(\fh(x))=\E\fh(x)-f(x)$. Ta cần tìm số hạng chính của hiệu này khi $h\to0^+$, tại $x$ cố định.
+
+\buoc{Bước 1. Khai triển $f(x-hu)$ quanh $x$.}
+Taylor bậc hai có dạng $f(x+t)=f(x)+tf'(x)+t^2f''(x)/2+\text{phần dư}$. Thay $t=-hu$:
+\[
+f(x-hu)=f(x)-hu f'(x)+\frac{h^2u^2}{2}f''(x)+r_h(u).
+\]
+\textit{Tại sao dùng Taylor?} Câu 2(b) chứa $f(x-hu)$, trong khi độ chệch cần so sánh với $f(x)$. Taylor tách đúng $f(x)$ và các số hạng theo lũy thừa của $h$.
+
+\buoc{Bước 2. Thay vào công thức kỳ vọng rồi tách tích phân.}
+\begin{align*}
+\E\fh(x)
+&=f(x)\int K(u)\,du-hf'(x)\int uK(u)\,du\\
+&\quad+\frac{h^2}{2}f''(x)\int u^2K(u)\,du+\int K(u)r_h(u)\,du.
+\end{align*}
+Các đại lượng $f(x),f'(x),f''(x),h$ không phụ thuộc $u$ nên được đưa ra ngoài tích phân.
+
+\buoc{Bước 3. Dùng chuẩn hóa và đối xứng của nhân.}
+\[
+\int K(u)\,du=1,\qquad \int uK(u)\,du=0,\qquad
+\int u^2K(u)\,du=\mu_2(K).
+\]
+Tích phân giữa bằng 0 vì $K(-u)=K(u)$ nên $uK(u)$ là hàm lẻ: phần âm và phần dương triệt tiêu. Đây chính là bước sử dụng giả thiết đối xứng để loại số hạng bậc $h$.
+
+\buoc{Bước 4. Giải thích vì sao tích phân phần dư là $o(h^2)$.}
+Đối với nhân Epanechnikov của đề, chỉ cần xét $|u|\leq1$. Dạng phần dư tích phân của Taylor cho
+\[
+r_h(u)=h^2u^2\int_0^1(1-s)\{f''(x-shu)-f''(x)\}\,ds.
+\]
+Đặt $\omega_x(h)=\sup_{|v-x|\leq h}|f''(v)-f''(x)|$. Do $f''$ liên tục tại $x$, $\omega_x(h)\to0$. Với $|u|\leq1$,
+\[
+|r_h(u)|\leq\frac{h^2u^2}{2}\omega_x(h),\qquad
+\left|\int K(u)r_h(u)\,du\right|
+\leq\frac{h^2}{2}\omega_x(h)\mu_2(K)=o(h^2).
+\]
+Ký hiệu $o(h^2)$ nghĩa là phần dư chia cho $h^2$ tiến về 0. Bước này bảo đảm rằng phần dư vẫn nhỏ sau khi lấy tích phân.
+
+\buoc{Bước 5. Trừ $f(x)$ và kết luận.}
+\[
+\boxed{\E\fh(x)-f(x)=\frac{h^2}{2}\mu_2(K)f''(x)+o(h^2).}
+\]
+Riêng Epanechnikov: $\Bias(\fh(x))=h^2f''(x)/10+o(h^2)$.
+
+\textbf{Lưu ý về giả thiết tổng quát.} Với nhân đối xứng bất kỳ, phần (c) còn cần moment tuyệt đối bậc hai hữu hạn: $\int u^2|K(u)|\,du<\infty$. Khi đó $f''$ bị chặn giúp áp dụng định lý hội tụ bị trội cho phần dư chia $h^2$. Nhân của đề tự động thỏa điều kiện moment vì bị chặn và bằng 0 ngoài $[-1,1]$.
+
+\clearpage
+\section*{Câu 3(a) — Chệch, phương sai và AMSE tại $h=0.5$}
+\buoc{Bước 1. Tính $f''(0)$ từ mật độ chuẩn tắc.}
+Ta biết
+\[
+f(x)=\frac1{\sqrt{2\pi}}e^{-x^2/2}.
+\]
+Đạo hàm hàm hợp: $(e^{g(x)})'=g'(x)e^{g(x)}$, với $g'(x)=-x$. Do đó $f'(x)=-xf(x)$. Tiếp tục dùng đạo hàm tích:
+\[
+f''(x)=(-x)'f(x)+(-x)f'(x)
+=-f(x)+x^2f(x)=(x^2-1)f(x).
+\]
+Tại $x=0$,
+\[
+\boxed{f''(0)=-f(0)\approx-0.399.}
+\]
+\textit{Tại sao phải tính?} Công thức chệch của Câu 2(c) phụ thuộc đạo hàm bậc hai của mật độ, không phải đạo hàm bậc nhất. Đỉnh của mật độ chuẩn cong xuống nên $f''(0)<0$.
+
+\buoc{Bước 2. Tính chệch xấp xỉ.}
+Lấy số hạng chính của Câu 2(c), bỏ phần dư $o(h^2)$:
+\begin{align*}
+\Bias(\fh(0))&\approx\frac{h^2}{2}\mu_2(K)f''(0)\\
+&=\frac{(0.5)^2}{2}\cdot\frac15\cdot(-0.399)
+=\boxed{-0.009975}.
+\end{align*}
+Độ chệch âm nghĩa là trung bình qua các mẫu, ước lượng tại đỉnh thấp hơn mật độ thật. Đây là hiệu ứng làm trơn đỉnh, không phải mật độ ước lượng âm.
+
+\buoc{Bước 3. Tính phương sai xấp xỉ theo công thức đề cho.}
+\[
+\Var\fh(0)\approx\frac{R(K)f(0)}{nh}
+=\frac{(3/5)\cdot0.399}{100\cdot0.5}
+=\frac{0.2394}{50}=\boxed{0.004788}.
+\]
+\textit{Ý nghĩa:} phương sai đo mức dao động của $\fh(0)$ nếu lấy lại mẫu nhiều lần. Nó khác phương sai của một biến ngẫu nhiên có mật độ $f$, và cũng khác độ lệch chuẩn (căn bậc hai của phương sai).
+
+\buoc{Bước 4. Bình phương chệch trước khi cộng phương sai.}
+Với một ước lượng $T$ của $\theta$, ta có
+\[
+\E[(T-\theta)^2]=\Var(T)+(\E T-\theta)^2.
+\]
+Công thức này có được bằng cách viết $T-\theta=(T-\E T)+(\E T-\theta)$ rồi khai triển bình phương; số hạng chéo có kỳ vọng 0. Khi dùng các biểu thức xấp xỉ của chệch và phương sai, ta được AMSE:
+\begin{align*}
+\AMSE(0.5)&=(-0.009975)^2+0.004788\\
+&=0.000099500625+0.004788\\
+&=\boxed{0.004887500625\approx0.00488750}.
+\end{align*}
+\textbf{Dễ nhầm:} không cộng trực tiếp chệch âm vào phương sai; phải dùng \emph{bình phương} chệch. Các kết quả số dùng $f(0)=0.399$ theo giá trị làm tròn đề cho. AMSE là xấp xỉ của MSE, không phải MSE chính xác ở mẫu hữu hạn.
+
+\clearpage
+\section*{Câu 3(b) — Chọn $h$ tối thiểu hóa AMSE tại $x=0$}
+\buoc{Bước 1. Giữ $h$ là biến, thay các hằng số đã biết.}
+\[
+\Bias(\fh(0))\approx-0.0399h^2,\qquad
+\Var\fh(0)\approx\frac{0.002394}{h}.
+\]
+Vì vậy, với $h>0$,
+\[
+\boxed{\AMSE(h)=Ah^4+\frac Bh,\qquad
+A=(0.0399)^2=0.00159201,\quad B=0.002394.}
+\]
+\textit{Tại sao có $h^4$?} Chệch tỷ lệ với $h^2$, nên bình phương chệch tỷ lệ với $(h^2)^2=h^4$. Khi $h$ tăng, bình phương chệch tăng còn phương sai giảm; cần cân bằng hai phần này.
+
+\buoc{Bước 2. Đạo hàm và giải phương trình bằng 0.}
+Vì $(h^4)'=4h^3$ và $(h^{-1})'=-h^{-2}$,
+\[
+\AMSE'(h)=4Ah^3-\frac{B}{h^2}=0
+\quad\Longleftrightarrow\quad4Ah^5=B.
+\]
+Ta nhân hai vế với $h^2>0$, rồi lấy căn bậc năm:
+\[
+h_* =\left(\frac{B}{4A}\right)^{1/5}
+=\left(\frac{0.002394}{4\cdot0.00159201}\right)^{1/5}
+=\boxed{0.82228747\approx0.8223}.
+\]
+Để bấm máy: tính $0.002394/(4\times0.00159201)$ trước, rồi nâng kết quả lên lũy thừa $1/5=0.2$.
+
+\buoc{Bước 3. Kiểm tra nghiệm thực sự là điểm cực tiểu toàn cục.}
+\[
+\AMSE''(h)=12Ah^2+\frac{2B}{h^3}>0\qquad(h>0).
+\]
+Do $A,B>0$, hàm lồi nghiêm ngặt; đồng thời $\AMSE(h)\to\infty$ khi $h\to0^+$ hoặc $h\to\infty$. Vì vậy nghiệm trên là điểm tối thiểu duy nhất trên $h>0$.
+
+\buoc{Bước 4. Thay $h_*$ vào AMSE.}
+\begin{align*}
+A h_*^4&\approx0.000727847647,\\
+B/h_*&\approx0.002911390586,\\
+\AMSE(h_*)&\approx0.000727847647+0.002911390586
+=\boxed{0.003639238233\approx0.00363924}.
+\end{align*}
+\textbf{Cách kiểm tra nhanh:} từ $4Ah_*^5=B$, suy ra $B/h_*=4Ah_*^4$. Tại nghiệm tối ưu, phương sai xấp xỉ bằng 4 lần bình phương chệch, và $\AMSE(h_*)=5Ah_*^4$. Hai thành phần không cần bằng nhau.
+
+\textbf{Công thức tổng quát rút ra từ phép tính:}
+\[
+\AMSE_x(h)=\frac{\mu_2(K)^2[f''(x)]^2}{4}h^4+\frac{R(K)f(x)}{nh},
+\qquad
+h_*(x)=\left[\frac{R(K)f(x)}{n\mu_2(K)^2[f''(x)]^2}\right]^{1/5}.
+\]
+Công thức áp dụng ở điểm có $f(x)>0$, $f''(x)\ne0$ và $\mu_2(K)\ne0$. Đây là tối ưu \emph{AMSE tại $x=0$}; không phải tối ưu sai số tích phân trên toàn trục, cũng không khẳng định tối ưu MSE chính xác.
+
+\clearpage
+\section*{Bản trình bày ngắn để ôn tập}
+Sau khi hiểu các bước phía trước, có thể rút lời giải thành các dòng sau.
+
+\textbf{Câu 1(a).} Vì nhân bằng 0 ngoài $[-1,1]$ và các hàm dưới dấu tích phân là chẵn,
+\[
+\mu_2(K)=\frac32\left(\frac13-\frac15\right)=\frac15,
+\qquad R(K)=\frac98\left(1-\frac23+\frac15\right)=\frac35.
+\]
+\textbf{Câu 1(b).} Các đối số nhân là $1,1/2,-1/2,-1$, nên
+\[
+\widehat f_2(3)=\frac18\left(0+\frac9{16}+\frac9{16}+0\right)=\frac9{64}.
+\]
+\textbf{Câu 2(a).} Đổi biến $u=(x-X_i)/h$, $dx=h\,du$:
+\[
+\int\fh(x)\,dx=\frac1{nh}\sum_{i=1}^nh\int K(u)\,du=1.
+\]
+\textbf{Câu 2(b).} Cùng phân phối và tuyến tính của kỳ vọng cho
+\[
+\E\fh(x)=\frac1h\int K\!\left(\frac{x-t}{h}\right)f(t)\,dt
+=\int K(u)f(x-hu)\,du,
+\]
+trong đó đổi biến $t=x-hu$, $dt=-h\,du$ và đảo cận.
+
+\textbf{Câu 2(c).} Với $|u|\leq1$, Taylor cho
+\[
+f(x-hu)=f(x)-hu f'(x)+\frac{h^2u^2}{2}f''(x)+r_h(u),
+\]
+với $|r_h(u)|\leq h^2u^2\omega_x(h)/2$, $\omega_x(h)\to0$ do $f''$ liên tục. Vì $\int K=1$, $\int uK=0$ và $\int u^2K=\mu_2(K)$,
+\[
+\E\fh(x)-f(x)=\frac{h^2}{2}\mu_2(K)f''(x)+o(h^2).
+\]
+\textbf{Câu 3(a).} $f'(x)=-xf(x)$, $f''(x)=(x^2-1)f(x)$, nên $f''(0)\approx-0.399$. Với $h=0.5$,
+\[
+\Bias\approx\frac{0.5^2}{2}\cdot\frac15\cdot(-0.399)=-0.009975,
+\qquad \Var\approx\frac{(3/5)\cdot0.399}{100\cdot0.5}=0.004788.
+\]
+Suy ra $\AMSE(0.5)=(-0.009975)^2+0.004788\approx0.00488750$.
+
+\textbf{Câu 3(b).} $\AMSE(h)=0.00159201h^4+0.002394/h$, với $h>0$.
+\[
+\AMSE'(h)=4(0.00159201)h^3-0.002394h^{-2}=0
+\ \Longrightarrow\ 
+h_* =\left[\frac{0.002394}{4(0.00159201)}\right]^{1/5}\approx0.8223.
+\]
+Vì $\AMSE''(h)>0$ với mọi $h>0$, đây là điểm tối thiểu duy nhất, và
+\[
+\boxed{\AMSE(h_*)\approx0.00363924.}
+\]
+\vfill
+\textbf{Bốn điều tự kiểm tra:} có hệ số $1/(nh)$ trong KDE; đổi biến có vi phân và cận mới; đối xứng làm moment bậc nhất bằng 0; AMSE cộng \emph{bình phương} chệch với phương sai.
+\end{document}
