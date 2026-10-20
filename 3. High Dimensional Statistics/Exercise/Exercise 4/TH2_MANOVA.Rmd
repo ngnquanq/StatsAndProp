@@ -1,0 +1,603 @@
+---
+title: "TH2 — Thực hành MANOVA"
+subtitle: "So sánh đặc điểm hình thái của ba loài chim cánh cụt"
+date: "Học phần High Dimensional Statistics"
+output:
+  html_document:
+    pandoc_args: ["--metadata=lang:vi"]
+    toc: true
+    toc_depth: 2
+    number_sections: true
+    self_contained: true
+    theme: readable
+    code_folding: hide
+  pdf_document:
+    latex_engine: xelatex
+    toc: true
+    toc_depth: 2
+    number_sections: true
+    fig_caption: true
+mainfont: "lmroman10-regular.otf"
+mainfontoptions:
+  - BoldFont=lmroman10-bold.otf
+  - ItalicFont=lmroman10-italic.otf
+  - BoldItalicFont=lmroman10-bolditalic.otf
+fontsize: 11pt
+geometry: margin=2cm
+header-includes:
+  - \usepackage{float}
+  - \floatplacement{figure}{H}
+  - \AtBeginDocument{\renewcommand{\contentsname}{Mục lục}\renewcommand{\figurename}{Hình}\renewcommand{\tablename}{Bảng}}
+---
+
+```{r setup, include=FALSE}
+# Hình được knitr lưu thẳng vào TH2_output/figures/ khi render.
+knitr::opts_chunk$set(echo = knitr::is_html_output(), message = FALSE, warning = TRUE,
+                      fig.align = "center", out.width = "100%",
+                      dev = "png", dpi = 150, fig.path = "TH2_output/figures/")
+library(car)  # leveneTest()
+
+out <- "TH2_output"
+dir.create(file.path(out, "tables"), recursive = TRUE, showWarnings = FALSE)
+
+alpha  <- 0.05
+vars   <- c("culmen_length_mm", "culmen_depth_mm", "flipper_length_mm", "body_mass_g")
+vn     <- setNames(c("Dài mỏ", "Sâu mỏ", "Dài vây", "Khối lượng"), vars)  # nhãn bảng
+labels <- c("Chieu dai mo (mm)", "Do sau mo (mm)", "Chieu dai vay (mm)", "Khoi luong (g)")  # nhãn hình
+colors <- c(Adelie = "#0072B2", Chinstrap = "#D55E00", Gentoo = "#009E73")
+
+# Định dạng p-value cho bảng
+pv <- function(x) sapply(x, function(z) {
+  if (z == 0)     return("< 2.2e-16")   # nhỏ hơn độ chính xác máy
+  if (z < 1e-300) return("< 1e-300")
+  if (z < 0.001)  return(formatC(z, format = "e", digits = 2))
+  sprintf("%.4f", z)
+})
+tab <- function(x, digits = 3, ...) knitr::kable(x, digits = digits, row.names = FALSE, ...)
+```
+
+# Mục tiêu và phương pháp
+
+**Câu hỏi nghiên cứu:** Ba loài Adelie, Chinstrap và Gentoo có khác nhau về hình thái khi xét đồng thời chiều dài mỏ, độ sâu mỏ, chiều dài vây và khối lượng cơ thể không?
+
+Các thiết lập của bài làm bao gồm dặt ra mức ý nghĩa $\alpha=0{,}05$. Quy trình gồm khám phá và xử lý dữ liệu; trực quan hóa; đánh giá giả định; MANOVA một nhân tố; phân tích sau MANOVA; kết luận và thảo luận.
+
+Với quan sát $j$ của loài $i$, đặt
+
+$$\mathbf Y_{ij}=(\text{dài mỏ},\text{sâu mỏ},\text{dài vây},\text{khối lượng})^T,
+\qquad \mathbf Y_{ij}=\boldsymbol\mu_i+\boldsymbol\varepsilon_{ij}.$$
+
+MANOVA cổ điển giả định các sai số độc lập, có phân phối chuẩn đa biến trong từng nhóm và cùng một ma trận hiệp phương sai $\Sigma$. Giả thuyết cần kiểm định là
+
+$$H_0:\boldsymbol\mu_{\mathrm{Adelie}}=\boldsymbol\mu_{\mathrm{Chinstrap}}=\boldsymbol\mu_{\mathrm{Gentoo}},$$
+$$H_1:\text{có ít nhất hai vector trung bình khác nhau}.$$
+
+Nếu kiểm định tổng thể có ý nghĩa thì ta mới chỉ biết các vector trung bình khác nhau ở đâu đó. Muốn biết khác ở biến nào, giữa cặp loài nào thì phải phân tích tiếp.
+
+## Mô hình xác suất và đối tượng suy luận
+
+Quy ước $i\in\{1,2,3\}$ lần lượt chỉ Adelie, Chinstrap, Gentoo; $j=1,\ldots,n_i$; $k=1,\ldots,p$ chỉ các biến, với $p=4$, $g=3$ và $N=\sum_i n_i=342$. Ký hiệu $\mu_{ik}=\mathbb E(Y_{ijk})$, $\boldsymbol\mu_i=\mathbb E(\mathbf Y_{ij})$ và $\Sigma_i=\operatorname{Cov}(\mathbf Y_{ij})$. Tham số cần kiểm định là trung bình của các quần thể mà mẫu có thể đại diện.
+
+Để có phân phối tham chiếu cho các thống kê MANOVA cổ điển, ta dùng mô hình
+
+$$\mathbf Y_{ij}\overset{\mathrm{ind}}\sim
+\mathcal N_p(\boldsymbol\mu_i,\Sigma),\qquad \Sigma\succ0.$$
+
+Điều này đòi hỏi các quan sát độc lập; trong mỗi nhóm, các vector quan sát cùng phân phối chuẩn đa biến; các nhóm có chung ma trận hiệp phương sai (xác định dương) nhưng được phép khác vector trung bình.
+
+# Khám phá và xử lý dữ liệu
+
+## Cấu trúc và dữ liệu thiếu
+
+```{r data-preparation}
+raw <- read.csv("penguins_size.csv", na.strings = c("NA", ""))
+missing <- data.frame(variable = names(raw), missing_n = colSums(is.na(raw)))
+
+keep <- complete.cases(raw[c("species", vars)])  # chỉ loại dòng thiếu số đo
+d <- raw[keep, ]
+d$source_row <- which(keep)          # số thứ tự dòng trong file gốc
+d$sex[d$sex == "."] <- NA            # nhãn giới tính không hợp lệ
+d$species <- factor(d$species, levels = c("Adelie", "Chinstrap", "Gentoo"))
+
+Y <- as.matrix(d[vars])
+n <- nrow(d); p <- length(vars)
+groups <- levels(d$species); g <- length(groups)
+stopifnot(!anyDuplicated(raw), all(Y > 0))
+
+counts <- data.frame(species    = groups,
+                     original_n = as.vector(table(factor(raw$species, levels = groups))),
+                     analysis_n = as.vector(table(d$species)))
+group_means <- aggregate(d[vars], by = list(species = d$species), FUN = mean)
+group_sds   <- aggregate(d[vars], by = list(species = d$species), FUN = sd)
+```
+
+Dữ liệu gồm **`r nrow(raw)` quan sát và `r ncol(raw)` cột**. `species` là nhân tố phân nhóm; bốn biến đáp ứng là `culmen_length_mm`,
+`culmen_depth_mm`, `flipper_length_mm` (mm) và `body_mass_g` (g). `island` và `sex` là các biến bổ sung, cho biết loài đó thấy ở đảo nào và có giới tính gì.
+
+```{r missing}
+tab(setNames(missing, c("Biến", "Số NA gốc")))
+```
+
+Có 2 quan sát thiếu đồng thời cả bốn số đo nên bị loại khỏi phân tích. Chúng ta sẽ không điền giá trị trung bình vào các ô thiếu vì cách này làm thay đổi phương sai và hiệp phương sai. 
+Các dòng thiếu giới tính vẫn được giữ nếu có đủ số đo. Ngoài 10 giá trị NA gốc ở `sex`, có một nhãn `.` không hợp lệ; mã đổi nhãn này thành NA trong dữ liệu phân tích để không làm giảm cỡ mẫu MANOVA.
+
+```{r counts}
+tab(setNames(counts, c("Loài", "Ban đầu", "Phân tích")), digits = 0)
+```
+
+Mẫu phân tích có **`r n` quan sát**, gồm 151 Adelie, 68 Chinstrap và 123 Gentoo. Không có dòng nào trùng nhau. 4 biến định lượng đều có giá trị dương.
+
+## Thống kê mô tả
+
+```{r descriptive}
+z <- data.frame(Loài = groups)
+for (v in vars) z[[v]] <- sprintf("%.2f ± %.2f", group_means[[v]], group_sds[[v]])
+names(z)[-1] <- paste(vn, c("(mm)", "(mm)", "(mm)", "(g)"))
+tab(z, caption = "Trung bình ± độ lệch chuẩn theo loài.")
+```
+
+Gentoo có khối lượng và chiều dài vây lớn nhất, nhưng độ sâu mỏ nhỏ nhất. Chinstrap có chiều dài mỏ trung bình lớn nhất, khối lượng và độ sâu mỏ trung bình gần Adelie.
+
+# Trực quan hóa dữ liệu
+
+
+```{r boxplots, fig.width=10, fig.height=7.3, fig.cap="Phân bố bốn đặc điểm theo loài; chấm ngoài râu hộp chỉ là dấu hiệu cần xem xét."}
+par(mfrow = c(2, 2), mar = c(4, 4, 2, 1))
+for (j in 1:p) {
+  boxplot(d[[vars[j]]] ~ d$species, col = colors, xlab = "", ylab = labels[j], main = labels[j])
+}
+```
+
+Boxplot cho thấy Gentoo tách rõ ở chiều dài vây và khối lượng; Adelie và Chinstrap còn chồng lấn đáng kể ở khối lượng và độ sâu mỏ. Có một vài điểm nằm ngoài râu của hộp, ta vẫn sẽ để đó trong phân tích 
+vì có thể có những con có đặt điểm khác thường như vậy.
+
+
+```{r scatter-matrix, fig.width=10, fig.height=10, fig.cap="Ma trận phân tán: Adelie xanh lam, Chinstrap cam, Gentoo xanh lục."}
+pairs(Y, labels = labels, col = adjustcolor(colors[d$species], alpha.f = 0.55), pch = 19, cex = 0.55)
+```
+
+Các biến có quan hệ với nhau và các điểm tụ thành từng cụm theo loài. Một phần tương quan trên toàn mẫu có thể chỉ phản ánh khác biệt giữa các loài, nên ở phần kiểm tra giả định ta sẽ xem thêm tương quan trong từng nhóm.
+
+
+```{r pca, fig.width=8.7, fig.height=6.7, fig.cap="PCA trên biến đã chuẩn hóa về trung bình 0 và độ lệch chuẩn 1."}
+pca <- prcomp(Y, scale. = TRUE)
+pca_variance <- pca$sdev^2 / sum(pca$sdev^2)
+par(mar = c(4, 4, 2, 1))
+plot(pca$x[, 1:2], col = colors[d$species], pch = 19, main = "PCA tren bon bien da chuan hoa",
+     xlab = sprintf("PC1 (%.1f%%)", 100 * pca_variance[1]),
+     ylab = sprintf("PC2 (%.1f%%)", 100 * pca_variance[2]))
+legend("topright", legend = groups, col = colors, pch = 19, bty = "n")
+```
+
+```{r pca-table}
+tab(data.frame(PC = paste0("PC", 1:p), "Độ lệch chuẩn" = pca$sdev,
+               "% phương sai" = 100 * pca_variance, "% tích lũy" = 100 * cumsum(pca_variance),
+               check.names = FALSE), digits = 2,
+    caption = "Phương sai giải thích bởi các thành phần chính.")
+```
+
+Hai thành phần đầu giải thích **`r sprintf("%.2f", 100*sum(pca_variance[1:2]))`%** tổng phương sai của dữ liệu chuẩn hóa. 
+Chuẩn hóa trước khi dùng PCA tránh để đơn vị gram chi phối kết quả. *Note: ta sử dụng PCA chỉ để cho bước khám phá dữ liệu*.
+Do đó phần MANOVA ở đây vẫn sử dụng cả bốn biến gốc
+
+# Đánh giá giả định MANOVA
+
+## Tính độc lập và bối cảnh lấy mẫu
+
+Do không biết được cách mà người ta lấy mẫu nên ở đây ta sẽ giả sử rằng các mẫu này có tính độc lập với nhau
+
+Cũng cần lưu ý đây là dữ liệu quan sát: loài, đảo và giới tính có thể gắn liền với nhau, trong khi mô hình một nhân tố chỉ so sánh các nhóm loài như đang thấy, chưa tách được ảnh hưởng của các yếu tố khác.
+
+## Tương quan, khả nghịch và cỡ mẫu
+
+```{r within-group-matrices}
+group_data  <- split.data.frame(Y, d$species)   # list: ma trận số đo của từng loài
+covariances <- lapply(group_data, cov)          # S_i
+ni <- sapply(group_data, nrow)
+grand <- colMeans(Y)
+
+# E = sum (n_i - 1) S_i ;  H = sum n_i (ybar_i - ybar)(ybar_i - ybar)^T ;  T = E + H
+E <- H <- matrix(0, p, p)
+for (s in groups) {
+  E <- E + (ni[s] - 1) * covariances[[s]]
+  H <- H + ni[s] * tcrossprod(colMeans(group_data[[s]]) - grand)
+}
+Tmat <- crossprod(sweep(Y, 2, grand))
+stopifnot(all.equal(Tmat, E + H, check.attributes = FALSE))
+
+Sp <- E / (n - g)   # hiệp phương sai gộp
+condition <- data.frame(species                = groups,
+                        covariance_rank        = sapply(covariances, function(S) qr(S)$rank),
+                        standardized_condition = sapply(covariances, function(S) kappa(cov2cor(S), exact = TRUE)))
+```
+
+```{r correlation}
+z <- data.frame(Biến = unname(vn), round(cov2cor(Sp), 3))
+names(z)[-1] <- unname(vn)
+tab(z, caption = "Tương quan từ ma trận hiệp phương sai gộp trong nhóm.")
+```
+
+Tương quan trong nhóm dao động khoảng 0,48–0,62: các biến có liên hệ với nhau nhưng chưa tới mức gần như phụ thuộc tuyến tính. Đó cũng là lý do nên xét chúng đồng thời bằng MANOVA thay vì tách riêng từng biến.
+
+```{r covariances, results="asis"}
+# Mỗi loài một ma trận 4x4; khối lượng tính bằng g nên phương sai của nó rất lớn (g^2)
+for (s in groups) {
+  z <- data.frame(Biến = unname(vn), covariances[[s]], check.names = FALSE)
+  names(z)[-1] <- unname(vn)
+  print(tab(z, digits = 2,
+            caption = paste0("Ma trận hiệp phương sai mẫu của loài ", s, " (đơn vị mm², mm·g hoặc g² tùy cặp biến).")))
+  cat("\n\n")
+}
+```
+
+```{r condition}
+tab(setNames(condition, c("Loài", "Hạng hiệp phương sai", "Số điều kiện tương quan")))
+```
+
+Cả ba ma trận hiệp phương sai có hạng 4, vậy các ma trận này đều khả nghịch. 
+Mỗi nhóm có nhiều quan sát hơn bốn biến đáp ứng. Ngoài ra có thể thấy các lớp đang có hiện tượng mất cân bằng 
+(nhóm lớn nhất khoảng `r sprintf("%.2f", max(ni)/min(ni))` lần nhóm nhỏ nhất), cần lưu ý khi hiệp phương sai khác nhau.
+
+## Phân phối trong nhóm và ngoại lệ đa biến
+
+Tính chuẩn đa biến cần được xem xét **trong từng loài**, không phải trên hỗn hợp cả ba loài.
+
+
+```{r qq-univariate, fig.width=12, fig.height=10, fig.cap="Q–Q chuẩn của từng biến trong từng loài."}
+par(mfrow = c(3, 4), mar = c(3, 3, 3, 1))
+for (s in groups) for (j in 1:p) {
+  x <- group_data[[s]][, j]
+  qqnorm(x, main = paste(s, labels[j], sep = "\n"), pch = 19, cex = 0.55, col = colors[s])
+  qqline(x, col = "grey30")
+}
+```
+
+
+### Shapiro–Wilk: kiểm định chuẩn của từng phân phối biên
+
+Với từng cặp loài–biến $(i,k)$, ta kiểm định
+
+$$H_{0,ik}^{\mathrm{SW}}:\ Y_{ijk}\sim\mathcal N(\mu_{ik},\sigma_{ik}^2)
+\text{ với một }\mu_{ik}\in\mathbb R,\ \sigma_{ik}^2>0,$$
+$$H_{1,ik}^{\mathrm{SW}}:\ \text{phân phối biên này không thuộc họ chuẩn}.$$
+
+**Giả định:** các quan sát của biến $k$ trong loài $i$ là mẫu độc lập, cùng phân phối. Với $X_{(1)}\le\cdots\le X_{(n_i)}$, thống kê là
+
+$$W=\frac{\left(\sum_{j=1}^{n_i}a_jX_{(j)}\right)^2}
+{\sum_{j=1}^{n_i}(X_j-\bar X)^2}.$$
+
+Các hệ số $a_j$ được tính từ kỳ vọng và ma trận hiệp phương sai của thống kê thứ tự của mẫu chuẩn tắc, rồi chuẩn hóa về độ dài 1. $W$ càng nhỏ thì càng có bằng chứng chống lại tính chuẩn, nên p-value lấy ở đuôi trái, $\Pr_{H_0}(W\le W_{\mathrm{obs}})$. Phân phối của $W$ không phải $F$ hay $\chi^2$; hàm `shapiro.test()` dùng một xấp xỉ số cho phân phối này. Vì có tất cả 12 kiểm định (3 loài × 4 biến) nên p-value được hiệu chỉnh Holm, và ta bác bỏ khi p-value Holm không vượt 0,05.
+
+```{r shapiro-tests}
+shapiro <- expand.grid(variable = vars, species = groups, stringsAsFactors = FALSE)[2:1]
+for (i in 1:nrow(shapiro)) {
+  z <- shapiro.test(group_data[[shapiro$species[i]]][, shapiro$variable[i]])
+  shapiro[i, c("W", "p_value")] <- c(z$statistic, z$p.value)
+}
+shapiro$p_holm <- p.adjust(shapiro$p_value, "holm")
+```
+
+```{r shapiro}
+tab(data.frame(Loài = shapiro$species, Biến = vn[shapiro$variable], W = shapiro$W,
+               p = pv(shapiro$p_value), "p Holm (12)" = pv(shapiro$p_holm), check.names = FALSE))
+```
+
+Một số kiểm định Shapiro–Wilk chưa hiệu chỉnh có ý nghĩa; sau Holm trên 12 phép kiểm định,
+chiều dài vây của Gentoo vẫn lệch chuẩn ($p_{\mathrm{Holm}}=`r pv(shapiro$p_holm[shapiro$species=="Gentoo" & shapiro$variable=="flipper_length_mm"])`$).
+Các Q–Q plots giúp xem xét mức độ lệch và phần đuôi
+
+
+```{r mahalanobis-screen}
+md <- data.frame(source_row = d$source_row, species = d$species, D2 = NA)
+for (s in groups) {
+  x <- group_data[[s]]
+  md$D2[md$species == s] <- mahalanobis(x, colMeans(x), cov(x))
+}
+cutoff <- qchisq(1 - alpha / n, df = p)   # ngưỡng tham khảo kiểu Bonferroni
+md$bonferroni_screen <- md$D2 > cutoff
+```
+
+### Khoảng cách Mahalanobis
+
+Khoảng cách Mahalanobis được tính riêng theo trung bình và hiệp phương sai của từng loài:
+
+$$D_{ij}^2=(\mathbf y_{ij}-\bar{\mathbf y}_i)^T S_i^{-1}(\mathbf y_{ij}-\bar{\mathbf y}_i).$$
+
+Nếu ta biết trung bình và hiệp phương sai thật, với một quan sát chuẩn đa biến ta có $(\mathbf Y-\boldsymbol\mu_i)^T\Sigma_i^{-1}(\mathbf Y-\boldsymbol\mu_i)\sim\chi_p^2$. 
+Ở đây cả hai tham số đều được ước lượng và quan sát đang xét cũng góp vào ước lượng, nên không có đẳng thức phân phối đó cho $D_{ij}^2$. 
+Vì vậy đường $\chi^2_p$ và ngưỡng Bonferroni trên hình dưới chỉ để tham khảo khi sàng lọc điểm bất thường, không phải một kiểm định ngoại lệ chính xác.
+
+
+```{r qq-mahalanobis, fig.width=10, fig.height=4, fig.cap="Q–Q khoảng cách Mahalanobis với chi-square(4); đường đứt là ngưỡng sàng lọc Bonferroni."}
+par(mfrow = c(1, 3), mar = c(4, 4, 3, 1))
+for (s in groups) {
+  obs  <- sort(md$D2[md$species == s])
+  theo <- qchisq(ppoints(length(obs)), p)
+  plot(theo, obs, pch = 19, col = colors[s], main = s,
+       xlab = "Phan vi chi-square(4)", ylab = "Khoang cach Mahalanobis binh phuong")
+  abline(0, 1, col = "grey30")
+  abline(h = cutoff, lty = 2, col = "red3")
+}
+```
+
+Ngưỡng tham khảo $\chi^2_{4;1-0{,}05/342}=`r sprintf("%.2f", cutoff)`$ đánh dấu **`r sum(md$bonferroni_screen)` quan sát**, dòng dữ liệu `r paste(md$source_row[md$bonferroni_screen], collapse=", ")` (Chinstrap, $D^2=`r sprintf("%.2f", max(md$D2))`$).
+
+
+## Đồng nhất ma trận hiệp phương sai
+
+### Box's M: giả thuyết về toàn bộ ma trận
+
+Kiểm định này được sử dụng cho các ma trận hiệp phương sai $\Sigma_i$.
+
+$$H_0^{\mathrm{Box}}:\Sigma_1=\Sigma_2=\Sigma_3,
+\qquad H_1^{\mathrm{Box}}:\exists i\ne\ell:\Sigma_i\ne\Sigma_\ell.$$
+
+**Giả định:** các mẫu độc lập trong và giữa các nhóm, mỗi nhóm có phân phối chuẩn đa biến với ma trận hiệp phương 
+sai xác định dương, và $n_i>p$ để các $S_i$ khả nghịch. Dưới $H_0^{\mathrm{Box}}$ các trung bình nhóm vẫn được phép khác nhau, nên việc bác bỏ $H_0^{\mathrm{Box}}$ không nói gì trực tiếp về khác biệt trung bình.
+
+
+```{r box-m-test}
+M  <- (n - g) * log(det(Sp)) - sum((ni - 1) * sapply(covariances, function(S) log(det(S))))
+cc <- (2*p^2 + 3*p - 1) / (6*(p + 1)*(g - 1)) * (sum(1 / (ni - 1)) - 1 / (n - g))
+box_df <- (g - 1) * p * (p + 1) / 2
+box_m <- data.frame(M = M, correction = cc, chi_square = (1 - cc) * M, df = box_df,
+                    p_value = pchisq((1 - cc) * M, box_df, lower.tail = FALSE))
+```
+
+Với $N=342$, $g=3$, $p=4$ và $S_p=E/(N-g)$, thống kê Box's M và hệ số hiệu chỉnh là
+
+$$M=(N-g)\log|S_p|-\sum_i(n_i-1)\log|S_i|,$$
+$$c=\frac{2p^2+3p-1}{6(p+1)(g-1)}\left[\sum_i\frac{1}{n_i-1}-\frac{1}{N-g}\right].$$
+
+Đặt $B=(1-c)M$. Dưới $H_0^{\mathrm{Box}}$ và giả định chuẩn, $B$ có phân phối xấp xỉ $\chi^2_{(g-1)p(p+1)/2}=\chi^2_{20}$; p-value là $\Pr(\chi^2_{20}\ge B_{\mathrm{obs}})$ và ta bác bỏ khi p-value không vượt 0,05. Đây chỉ là xấp xỉ chứ không phải phân phối chính xác với mẫu hữu hạn, và dữ liệu càng lệch chuẩn thì xấp xỉ càng kém tin cậy.
+
+Kết quả thu được là $M=`r sprintf("%.3f",box_m$M)`$, $\chi^2=`r sprintf("%.3f",box_m$chi_square)`$, $df=20$, **$p=`r pv(box_m$p_value)`$**, nên ta bác bỏ giả thuyết ba ma trận hiệp phương sai bằng nhau. Tuy nhiên Box's M rất nhạy với lệch chuẩn, nên kết quả này cần được đọc cùng với các chẩn đoán phân phối ở trên.
+
+### Levene dùng trung vị (Brown–Forsythe): kiểm tra từng độ phân tán
+
+Với mỗi biến $k$, giả thuyết về phương sai mà ta quan tâm là
+
+$$H_{0,k}^{\mathrm{var}}:\sigma_{1k}^2=\sigma_{2k}^2=\sigma_{3k}^2,
+\qquad H_{1,k}^{\mathrm{var}}:\exists i\ne\ell:\sigma_{ik}^2\ne\sigma_{\ell k}^2.$$
+
+Đặt $Z_{ijk}=|Y_{ijk}-\widetilde Y_{ik}|$, với $\widetilde Y_{ik}$ là trung vị mẫu của nhóm $i$. Hàm `leveneTest(..., center=median)` thực chất là ANOVA một nhân tố trên $Z$:
+
+$$F_{\mathrm{BF},k}=\frac{\sum_i n_i(\bar Z_{ik}-\bar Z_{\cdot k})^2/(g-1)}
+{\sum_{i,j}(Z_{ijk}-\bar Z_{ik})^2/(N-g)}.$$
+
+**Giả định và cách hiểu:** các quan sát độc lập, cùng phân phối trong mỗi nhóm và có mômen đủ hữu hạn để phép xấp xỉ dùng được. Nói cho chính xác, thủ tục này so sánh độ lệch tuyệt đối kỳ vọng quanh trung vị quần thể, $\tau_{ik}=\mathbb E|Y_{ijk}-m_{ik}|$, tức là kiểm định $H_{0,k}^{\mathrm{BF}}:\tau_{1k}=\tau_{2k}=\tau_{3k}$. Nếu các phân phối có cùng dạng, chỉ khác vị trí và thang đo, thì $\tau_{ik}$ tỉ lệ với $\sigma_{ik}$ và ta có thể hiểu đây là kiểm định đồng nhất phương sai. Còn nếu dạng phân phối khác nhau thì hai giả thuyết này không hoàn toàn tương đương.
+
+Phân phối tham chiếu là $F_{g-1,N-g}=F_{2,339}$ và p-value bằng $\Pr(F_{2,339}\ge F_{\mathrm{BF},k}^{\mathrm{obs}})$. Do dùng trung vị ước lượng và lấy trị tuyệt đối, đây chỉ là kiểm định $F$ xấp xỉ. P-value của bốn biến được hiệu chỉnh Holm trước khi kết luận. Định nghĩa và cách chọn tâm có thể xem ở [NIST: Levene test](https://itl.nist.gov/div898/handbook/eda/section3/eda35a.htm).
+
+```{r brown-forsythe-tests}
+levene <- data.frame(variable = vars)
+for (i in 1:p) {
+  z <- leveneTest(d[[vars[i]]], d$species, center = median)
+  levene[i, c("F", "p_value")] <- c(z[1, "F value"], z[1, "Pr(>F)"])
+}
+levene$p_holm <- p.adjust(levene$p_value, "holm")
+```
+
+```{r levene}
+tab(data.frame(Biến = vn, F = levene$F, p = pv(levene$p_value),
+               "p Holm (4)" = pv(levene$p_holm), check.names = FALSE))
+```
+
+Chỉ có **khối lượng** là có độ phân tán khác nhau rõ giữa các loài ($p_{\mathrm{Holm}}=`r pv(levene$p_holm[levene$variable == "body_mass_g"])`$); ba biến còn lại chưa thấy khác biệt. Kết hợp với Box's M, có bằng chứng chống lại giả định đồng nhất hiệp phương sai giữa ba loài.
+
+**Hướng xử lý:** ở phần MANOVA, ta lấy thống kê Pillai làm kết quả chính vì Pillai ít nhạy với vi phạm này hơn ba thống kê còn lại (nhưng không khắc phục hoàn toàn). Ở phần hậu kiểm, ta làm thêm kiểm định Welch (không cần phương sai bằng nhau) để kiểm tra lại kết luận của Tukey.
+
+# MANOVA một nhân tố
+
+## Giả thuyết, giả định và phân phối dưới giả thuyết không
+
+Kiểm định chính của bài là
+
+$$H_0^{\mathrm{MV}}:\boldsymbol\mu_1=\boldsymbol\mu_2=\boldsymbol\mu_3,
+\qquad H_1^{\mathrm{MV}}:\exists i\ne\ell:\boldsymbol\mu_i\ne\boldsymbol\mu_\ell.$$
+
+Đây là giả thuyết về các **vector kỳ vọng**. Nó không nói rằng mọi cá thể có hình thái giống nhau, rằng toàn bộ phân phối của các nhóm trùng nhau, hay rằng cả bốn biến đều phải khác nhau. Phân phối tham chiếu được suy ra từ mô hình độc lập – chuẩn đa biến – hiệp phương sai chung đã nêu ở phần đầu.
+
+Đặt các ma trận tổng bình phương và tích chéo trong nhóm ($E$), giữa nhóm ($H$) và toàn phần ($T$):
+
+$$E=\sum_{i,j}(\mathbf y_{ij}-\bar{\mathbf y}_i)(\mathbf y_{ij}-\bar{\mathbf y}_i)^T,$$
+$$H=\sum_i n_i(\bar{\mathbf y}_i-\bar{\mathbf y})(\bar{\mathbf y}_i-\bar{\mathbf y})^T,\qquad T=E+H.$$
+
+Với $S_i=(n_i-1)^{-1}\sum_j(\mathbf y_{ij}-\bar{\mathbf y}_i)(\mathbf y_{ij}-\bar{\mathbf y}_i)^T$ thì $E=\sum_i(n_i-1)S_i$. Đặt $q=g-1=2$ và $\nu=N-g=339$. Dưới $H_0^{\mathrm{MV}}$ và mô hình cổ điển,
+
+$$E\sim W_p(\Sigma,\nu),\qquad H\sim W_p(\Sigma,q),\qquad E\perp H,$$
+
+trong đó $W_p(\Sigma,r)$ là phân phối Wishart với ma trận thang $\Sigma$ và $r$ bậc tự do; $H$ có hạng không quá $q=2$. Các phân phối tham chiếu của MANOVA đều dựa trên cấu trúc Wishart và tính độc lập này, nên khi các $\Sigma_i$ khác nhau thì lập luận trên không còn bảo đảm được mức ý nghĩa danh nghĩa.
+
+Wilks' lambda là $\Lambda=|E|/|E+H|$. Gọi $\lambda_k$ là các trị riêng của $E^{-1}H$, thống kê Pillai là $V=\sum_k\lambda_k/(1+\lambda_k)$. Vì có tối đa $\min(p,g-1)=2$ trị riêng khác 0, trong bài này $V$ nằm trong khoảng $[0,2]$ và có thể lớn hơn 1, nên không nên đọc $V$ như tỉ lệ phần trăm phương sai được giải thích.
+
+## Thống kê Pillai và cách tính p-value chính
+
+Với $s=\min(p,q)$, $a=(|p-q|-1)/2$ và $b=(\nu-p-1)/2$, hàm `summary.manova()` dùng phép biến đổi
+
+$$F_V=\frac{2b+s+1}{2a+s+1}\frac{V}{s-V},$$
+$$d_1=s(2a+s+1),\qquad d_2=s(2b+s+1).$$
+
+Trong bài này $s=2$, $a=0{,}5$, $b=167$, nên $F_V=\frac{337}{4}\frac{V}{2-V}$, và dưới $H_0^{\mathrm{MV}}$ thì $F_V$ có phân phối **xấp xỉ** $F_{8,674}$. P-value chính là
+
+$$p_V=\Pr\{F_{8,674}\ge F_V^{\mathrm{obs}}\}.$$
+
+$V$ (hay $F_V$) càng lớn thì càng có bằng chứng chống lại $H_0^{\mathrm{MV}}$; ta bác bỏ khi $p_V\le0{,}05$.
+
+Với Wilks, $\Lambda=\prod_k(1+\lambda_k)^{-1}$ và giá trị nhỏ mới là bằng chứng chống lại $H_0^{\mathrm{MV}}$. Với kích thước của bài này, R dùng biến đổi Rao $F_\Lambda=84(\Lambda^{-1/2}-1)$, so với $F_{8,672}$ và lấy đuôi phải. Hai thống kê còn lại là Hotelling–Lawley $U=\sum_k\lambda_k$ và Roy $R=\max_k\lambda_k$. Cả bốn đều kiểm định cùng $H_0^{\mathrm{MV}}$ nhưng dùng các phép xấp xỉ khác nhau. Riêng với Roy, giá trị $F$ trong bảng chỉ là cận trên khi hiệu ứng có hơn một bậc tự do, nên p-value của Roy không nên coi là chính xác. Chi tiết xem [tài liệu của R về `summary.manova`](https://www.stat.ethz.ch/R-manual/R-devel/library/stats/html/summary.manova.html).
+
+
+```{r manova-tests}
+fit <- manova(Y ~ species, data = d)
+tests <- c("Pillai", "Wilks", "Hotelling-Lawley", "Roy")
+mvtests <- data.frame(test = tests)
+for (i in 1:4) {
+  mvtests[i, c("statistic", "approx_F", "num_df", "den_df", "p_value")] <-
+    summary(fit, test = tests[i])$stats["species", 2:6]
+}
+
+# Đối chiếu với công thức trị riêng của E^{-1}H
+roots <- Re(eigen(solve(E, H))$values)
+stopifnot(all.equal(sum(roots / (1 + roots)), mvtests$statistic[1]),   # Pillai
+          all.equal(det(E) / det(E + H),      mvtests$statistic[2]))   # Wilks
+```
+
+```{r manova}
+tab(data.frame("Thống kê" = mvtests$test, "Giá trị" = mvtests$statistic, F = mvtests$approx_F,
+               df1 = mvtests$num_df, df2 = mvtests$den_df, p = pv(mvtests$p_value), check.names = FALSE))
+```
+
+**Kết quả chính:** Pillai $V=`r sprintf("%.6f",mvtests$statistic[1])`$, $F(8,674)=`r sprintf("%.3f",mvtests$approx_F[1])`$, $p=`r pv(mvtests$p_value[1])`$. Ta bác bỏ $H_0$: vector trung bình của bốn đặc điểm hình thái khác nhau giữa các loài. Wilks cũng cho kết luận tương tự ($\Lambda=`r sprintf("%.6f",mvtests$statistic[2])`$). P-value nhỏ như vậy cho thấy bằng chứng rất mạnh trong khuôn khổ mô hình, chứ không phải là xác suất để $H_0$ đúng; những giá trị nhỏ hơn độ chính xác của máy được ghi dưới dạng cận.
+
+Trong code, ta cũng đã kiểm tra $T=E+H$ và tính lại Pillai, Wilks trực tiếp từ các ma trận; kết quả khớp với `manova()`. Vì kiểm định tổng thể có ý nghĩa, ta chuyển sang các phân tích sau MANOVA.
+
+# Phân tích sau MANOVA
+
+## ANOVA từng biến và độ lớn hiệu ứng
+
+Với từng biến $k$, ta kiểm định
+
+$$H_{0,k}^{\mathrm A}:\mu_{1k}=\mu_{2k}=\mu_{3k},
+\qquad H_{1,k}^{\mathrm A}:\exists i\ne\ell:\mu_{ik}\ne\mu_{\ell k}.$$
+
+**Giả định để kiểm định $F$ là chính xác:** $Y_{ijk}=\mu_{ik}+\varepsilon_{ijk}$ với các sai số độc lập, $\varepsilon_{ijk}\sim\mathcal N(0,\sigma_k^2)$, và phương sai $\sigma_k^2>0$ như nhau ở cả ba loài. Việc các biến tương quan với nhau không ảnh hưởng tới từng ANOVA riêng lẻ, nhưng vì làm tới bốn kiểm định nên cần hiệu chỉnh đa kiểm định.
+
+Đặt
+
+$$SS_{B,k}=\sum_i n_i(\bar Y_{ik}-\bar Y_{\cdot k})^2,
+\qquad SS_{E,k}=\sum_{i,j}(Y_{ijk}-\bar Y_{ik})^2.$$
+
+Dưới $H_{0,k}^{\mathrm A}$ và các giả định trên,
+
+$$F_k=\frac{SS_{B,k}/(g-1)}{SS_{E,k}/(N-g)}\sim F_{2,339},
+\qquad p_k=\Pr(F_{2,339}\ge F_k^{\mathrm{obs}}).$$
+
+Ta bác bỏ $H_{0,k}^{\mathrm A}$ khi p-value đã hiệu chỉnh Holm (trong **họ bốn ANOVA**) không vượt 0,05. 
+
+
+```{r anova-tests}
+aov_tables <- summary.aov(fit)   # 4 bảng ANOVA, mỗi biến một bảng
+anova <- data.frame(variable = vars)
+for (i in 1:p) {
+  z <- aov_tables[[i]]
+  ssb <- z[1, "Sum Sq"]; sst <- sum(z[, "Sum Sq"]); mse <- z[2, "Mean Sq"]
+  anova[i, c("F", "p_value", "eta_squared", "omega_squared")] <-
+    c(z[1, "F value"], z[1, "Pr(>F)"], ssb / sst, (ssb - (g - 1) * mse) / (sst + mse))
+}
+anova$p_holm <- p.adjust(anova$p_value, "holm")
+```
+
+```{r anova}
+tab(data.frame(Biến = vn, "F (2,339)" = anova$F, "p Holm (4)" = pv(anova$p_holm),
+               eta2 = anova$eta_squared, omega2 = anova$omega_squared, check.names = FALSE))
+```
+
+Sau hiệu chỉnh Holm, cả bốn biến đều khác nhau giữa ít nhất hai loài. Chiều dài vây có $\eta^2$ lớn nhất (`r sprintf("%.3f",max(anova$eta_squared))`), nhưng các biến còn lại cũng có độ lớn hiệu ứng đáng kể. Dù vậy vẫn cần nhớ tới giả định phương sai bằng nhau, nhất là với khối lượng.
+
+## Tukey HSD: cặp loài nào khác nhau?
+
+Với biến $k$ và cặp loài $(a,b)$, tham số cần quan tâm là $\delta_{ab,k}=\mu_{ak}-\mu_{bk}$, và ta kiểm định hai phía
+
+$$H_{0,ab,k}^{\mathrm{pair}}:\delta_{ab,k}=0,
+\qquad H_{1,ab,k}^{\mathrm{pair}}:\delta_{ab,k}\ne0.$$
+
+**Giả định:** các quan sát độc lập, có phân phối chuẩn trong từng loài và cùng phương sai $\sigma_k^2$ ở cả ba loài. Dùng $MS_{E,k}=SS_{E,k}/(N-g)$ từ ANOVA, thống kê là
+
+$$Q_{ab,k}=\frac{|\bar Y_{ak}-\bar Y_{bk}|}
+{\sqrt{\frac{MS_{E,k}}2(1/n_a+1/n_b)}}.$$
+
+P-value Tukey–Kramer được lấy từ đuôi của phân phối **studentized range** $\mathcal Q_{g,N-g}$ tại $Q_{ab,k}^{\mathrm{obs}}$. P-value này đã được hiệu chỉnh cho cả ba cặp so sánh của biến $k$, khác với p-value của một t-test thông thường. Khoảng tin cậy đồng thời tương ứng là
+
+$$\bar Y_{ak}-\bar Y_{bk}\ \pm\
+q_{1-\alpha;g,N-g}\sqrt{\frac{MS_{E,k}}2(1/n_a+1/n_b)},$$
+
+với $q_{1-\alpha;g,N-g}$ là phân vị của phân phối studentized range. Ta bác bỏ $H_{0,ab,k}^{\mathrm{pair}}$ khi p-value Tukey không vượt 0,05, tương đương với việc khoảng tin cậy không chứa 0. Phân phối range cho kết quả chính xác khi dữ liệu chuẩn, cùng phương sai và cỡ mẫu cân bằng. Với cỡ mẫu không bằng nhau như ở đây, `TukeyHSD()` tự dùng điều chỉnh Tukey–Kramer, nhưng điều chỉnh này không giải quyết được vấn đề phương sai khác nhau. Vì giả định đó bị vi phạm trong dữ liệu, kết quả Tukey sẽ được đối chiếu với Welch–Holm ở phần sau.
+
+
+```{r tukey-tests}
+tukey <- do.call(rbind, lapply(vars, function(v) {
+  z <- TukeyHSD(aov(d[[v]] ~ species, data = d))$species
+  data.frame(variable = v, contrast = rownames(z), difference = z[, "diff"],
+             lower = z[, "lwr"], upper = z[, "upr"], p_tukey = z[, "p adj"])
+}))
+```
+
+```{r tukey}
+tab(data.frame(Biến = vn[tukey$variable], Cặp = tukey$contrast, Chênh = tukey$difference,
+               "CI 95% Tukey" = sprintf("[%.2f; %.2f]", tukey$lower, tukey$upper),
+               p = pv(tukey$p_tukey), check.names = FALSE), digits = 2)
+```
+
+Tóm lại, Adelie và Chinstrap khác nhau về chiều dài mỏ và chiều dài vây, còn ở độ sâu mỏ và khối lượng thì chưa có bằng chứng khác biệt. Gentoo khác cả Adelie lẫn Chinstrap ở cả bốn biến: vây dài hơn, nặng hơn nhưng mỏ nông hơn; riêng chiều dài mỏ của Gentoo nằm giữa Adelie và Chinstrap.
+
+## Kiểm tra độ nhạy: Welch và Holm chung cho 12 cặp
+
+Welch kiểm định **cùng giả thuyết** về cặp trung bình như Tukey, $H_{0,ab,k}^{\mathrm{pair}}:\mu_{ak}=\mu_{bk}$ đối lại $H_{1,ab,k}^{\mathrm{pair}}:\mu_{ak}\ne\mu_{bk}$. Tham số cần suy luận không đổi; thứ thay đổi là mô hình phương sai và phân phối tham chiếu.
+
+**Giả định:** hai mẫu độc lập, mỗi nhóm cùng phân phối với phương sai dương hữu hạn, và trung bình mẫu xấp xỉ chuẩn. Nếu dữ liệu trong nhóm chuẩn thì phép xấp xỉ với mẫu hữu hạn có cơ sở tốt hơn; nếu không thì phải dựa vào định lý giới hạn trung tâm với cỡ mẫu đủ lớn, và không có quy tắc chung kiểu "$n_i>30$ là đủ". Welch không cần $\sigma_{ak}^2=\sigma_{bk}^2$, nhưng cũng không xử lý được sự phụ thuộc giữa các cá thể hay các ngoại lệ.
+
+Với phương sai mẫu $s_{ak}^2$, $s_{bk}^2$, đặt $u=s_{ak}^2/n_a$, $v=s_{bk}^2/n_b$. Thống kê và bậc tự do Welch–Satterthwaite là
+
+$$t_W=\frac{\bar Y_{ak}-\bar Y_{bk}}{\sqrt{u+v}},
+\qquad \widehat\nu_W=\frac{(u+v)^2}{u^2/(n_a-1)+v^2/(n_b-1)}.$$
+
+Dưới $H_{0,ab,k}^{\mathrm{pair}}$, $t_W$ có phân phối xấp xỉ $t_{\widehat\nu_W}$ (ký hiệu $t_W\ \dot\sim\ t_{\widehat\nu_W}$); kể cả khi dữ liệu chuẩn thì đây vẫn là xấp xỉ, vì phương sai hai nhóm khác nhau. P-value hai phía là
+
+$$p_{ab,k}=2\Pr\{t_{\widehat\nu_W}\ge|t_W^{\mathrm{obs}}|\}.$$
+
+Ta hiệu chỉnh Holm chung cho cả $4\binom32=12$ p-value và bác bỏ khi $\widetilde p_{ab,k}\le0{,}05$. Họ 12 so sánh này được chọn từ trước, chứ không phải chỉ chọn những cặp trông có vẻ khác nhau trên hình.
+
+Welch được thêm vào vì Box's M và Levene đã cho thấy giả định phương sai bằng nhau bị vi phạm. Nếu từng p-value Welch hợp lệ thì Holm kiểm soát được sai lầm loại I cho cả họ 12 kiểm định. Tuy vậy, đây chỉ là kiểm tra ở mức từng biến, không thay thế được một kiểm định MANOVA tổng thể vững với phương sai khác nhau.
+
+
+```{r welch-tests}
+# Cùng 12 cặp (biến, cặp loài) như bảng Tukey; chênh lệch = loài trước - loài sau
+welch <- tukey[c("variable", "contrast")]
+for (i in 1:nrow(welch)) {
+  ab <- strsplit(welch$contrast[i], "-")[[1]]
+  x <- d[d$species == ab[1], welch$variable[i]]
+  y <- d[d$species == ab[2], welch$variable[i]]
+  z <- t.test(x, y, var.equal = FALSE)
+  welch[i, c("difference", "t", "df", "lower_pointwise", "upper_pointwise", "p_value")] <-
+    c(mean(x) - mean(y), z$statistic, z$parameter, z$conf.int, z$p.value)
+}
+welch$p_holm_12 <- p.adjust(welch$p_value, "holm")
+```
+
+```{r welch}
+tab(data.frame(Biến = vn[welch$variable], Cặp = welch$contrast, Chênh = welch$difference,
+               "p Holm (12)" = pv(welch$p_holm_12),
+               "Có ý nghĩa" = ifelse(welch$p_holm_12 < alpha, "Có", "Chưa"), check.names = FALSE), digits = 2)
+```
+
+Kết luận về các cặp loài không thay đổi so với Tukey. Đáng chú ý nhất là chênh lệch khá nhỏ về chiều dài mỏ giữa Gentoo và Chinstrap (Gentoo ngắn hơn khoảng **1,33 mm**) vẫn có ý nghĩa sau khi hiệu chỉnh cho cả 12 so sánh ($p_{\mathrm{Holm}}=`r pv(welch$p_holm_12[welch$variable=="culmen_length_mm" & welch$contrast=="Gentoo-Chinstrap"])`$). Sự nhất quán này giúp ta tin hơn vào các kết luận hậu kiểm khi cho phép phương sai khác nhau, dù nó không chứng minh được rằng các giả định của MANOVA đã thỏa. 
+
+
+```{r export-results}
+# Lưu các bảng chưa làm tròn vào TH2_output/tables/
+tables <- list(missing = missing, sample_sizes = counts, analysis_data = d,
+               excluded_rows = cbind(source_row = which(!keep), raw[!keep, ]),
+               group_means = group_means, group_sds = group_sds,
+               matrix_diagnostics = condition,
+               correlation_within = data.frame(variable = vars, cov2cor(Sp)),
+               shapiro = shapiro, mahalanobis = md, box_m = box_m, levene = levene,
+               manova = mvtests, anova = anova, tukey = tukey, welch_holm = welch)
+for (name in names(tables)) {
+  write.csv(tables[[name]], file.path(out, "tables", paste0(name, ".csv")), row.names = FALSE)
+}
+saveRDS(list(E = E, H = H, T = Tmat, eigenvalues = roots), file.path(out, "results.rds"))
+capture.output(sessionInfo(), file = file.path(out, "sessionInfo.txt"))
+```
+
+# Kết luận và thảo luận
+
+**Theo mô hình MANOVA cổ điển, ta bác bỏ giả thuyết ba loài có cùng vector trung bình hình thái.** Trên 342 quan sát, Pillai cho $V=1{,}63665$, $F(8,674)=379{,}487$, $p<0{,}001$. Tuy nhiên, giả định đồng nhất hiệp phương sai và giả định chuẩn đều có dấu hiệu bị vi phạm, nên không thể khẳng định kiểm định giữ đúng mức 5% chỉ vì p-value rất nhỏ. Bốn ANOVA cổ điển cũng đều có ý nghĩa sau Holm, với $\eta^2$ khoảng 0,67–0,78, và các kiểm định Welch–Holm cho thêm bằng chứng ở mức từng cặp trung bình (dưới các giả định riêng của chúng).
+
+Các chênh lệch trung bình ước lượng trên thang đo gốc dưới đây giúp đánh giá sự khác biệt lớn đến cỡ nào. Bài không có ngưỡng khác biệt tối thiểu quan trọng về sinh học được xác định trước, nên không đồng nhất ý nghĩa thống kê với ý nghĩa thực tiễn:
+
+- **Gentoo so với Adelie:** vây dài hơn khoảng 27,23 mm, nặng hơn 1.375,35 g, mỏ dài hơn 8,71 mm và nông hơn 3,36 mm.
+- **Gentoo so với Chinstrap:** vây dài hơn khoảng 21,36 mm, nặng hơn 1.342,93 g, mỏ ngắn hơn 1,33 mm và nông hơn 3,44 mm.
+- **Chinstrap so với Adelie:** mỏ dài hơn khoảng 10,04 mm và vây dài hơn 5,87 mm; sau hiệu chỉnh chưa có bằng chứng khác biệt về độ sâu mỏ và khối lượng. Tuy nhiên, không bác bỏ được không có nghĩa là đã chứng minh hai loài giống nhau ở hai biến này.
+
+Tóm lại, giả định hiệp phương sai đồng nhất bị bác bỏ, có dấu hiệu lệch chuẩn ở một nhóm và có một điểm cần kiểm tra thêm, nên kết luận MANOVA phải đi kèm các giới hạn này. Bù lại, Welch–Holm và Tukey cho kết quả nhất quán, cho thấy các nhận định theo từng cặp loài khá ổn định.
+
