@@ -179,6 +179,12 @@ variable "startup_run_timeout_seconds" {
   default     = 43200
 }
 
+variable "seed_object" {
+  description = "Artifact-bucket object holding a tar.gz of pre-crawled images/ and cache/ that startup-run workers extract instead of crawling nomfoundation. Empty disables seeding."
+  type        = string
+  default     = ""
+}
+
 variable "repo_url" {
   description = "Git repository URL cloned by startup-script workers."
   type        = string

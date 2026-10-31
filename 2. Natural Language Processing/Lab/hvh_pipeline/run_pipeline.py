@@ -41,6 +41,34 @@ CACHE_DIR = HERE / "cache"
 OUTPUT_DIR = HERE / "output"
 DELAY_S = 5.0  # each page = 2–4 API calls; the server's burst quota is small
 
+# Circuit breaker for the API engine. The 2026-07-06 incident showed that
+# sustained retries against a struggling server make the outage worse: after
+# BREAKER_FAILURES consecutive failed pages sit out BREAKER_PAUSE_S instead of
+# hammering, and after BREAKER_ABORT give up so a fleet worker uploads its
+# partial bundle rather than grinding for hours.
+BREAKER_FAILURES = 3
+BREAKER_PAUSE_S = 900
+BREAKER_ABORT = 12
+
+_api_fail_streak = 0
+
+
+def _api_page_failed():
+    global _api_fail_streak
+    _api_fail_streak += 1
+    if _api_fail_streak >= BREAKER_ABORT:
+        raise OCRError(
+            f"{_api_fail_streak} consecutive API page failures — server unhealthy, aborting run"
+        )
+    if _api_fail_streak % BREAKER_FAILURES == 0:
+        print(f"  [{_api_fail_streak} consecutive API failures — pausing {BREAKER_PAUSE_S // 60} min]")
+        time.sleep(BREAKER_PAUSE_S)
+
+
+def _api_page_succeeded():
+    global _api_fail_streak
+    _api_fail_streak = 0
+
 def _page_stems(unit_code, max_pages=None):
     """Page stems (page_001, ...) from images, or from cache when images are
     absent (lets --reseg rebuild outputs on a machine that only has cache/)."""
@@ -110,11 +138,14 @@ def ocr_unit(
             except Exception as err:  # OCRError / LocalOCRError
                 print(f"  {image.name}: FAILED — {err}")
                 failures.append({"page": image.name, "error": str(err)})
+                if engine is api_client:
+                    _api_page_failed()
             else:
                 target.write_text(json.dumps(result, ensure_ascii=False, indent=1))
                 note = result.get("skipped", f"{len(result['lines'])} lines")
                 print(f"  {image.name}: {note} ({result.get('source', 'api')})")
                 if engine is api_client:
+                    _api_page_succeeded()
                     time.sleep(DELAY_S)
 
         cached = _best_cached(cache_dir, stem, read_suffixes or ("api", "trocr"))
@@ -225,7 +256,16 @@ def _pop_option(argv, name, default=None):
 
 
 def main():
+    global DELAY_S
     argv = sys.argv[1:]
+    delay_s = _pop_option(argv, "--delay")
+    if delay_s is not None:
+        try:
+            DELAY_S = float(delay_s)
+        except ValueError as err:
+            raise SystemExit("--delay must be a number (seconds)") from err
+        if DELAY_S < 0:
+            raise SystemExit("--delay must be >= 0")
     engine = _pop_option(argv, "--engine", "api")
     if engine not in ("api", "local", "trocr", "nomnaocr"):
         raise SystemExit(f"--engine must be 'api', 'local', 'trocr', or 'nomnaocr', not {engine!r}")
