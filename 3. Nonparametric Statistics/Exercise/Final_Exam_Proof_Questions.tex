@@ -1,0 +1,672 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[margin=2.1cm]{geometry}
+\usepackage{fontspec,polyglossia}
+\setdefaultlanguage{vietnamese}
+\setotherlanguage{english}
+% Latin Modern la bo font mac dinh quen thuoc cua LaTeX, co du dau tieng Viet.
+\setmainfont{lmroman10}[Extension=.otf,UprightFont=*-regular,BoldFont=*-bold,ItalicFont=*-italic,BoldItalicFont=*-bolditalic]
+\usepackage{amsmath,amssymb,amsthm,booktabs,array,enumitem,xcolor,hyperref,graphicx}
+\hypersetup{colorlinks=true,linkcolor=blue!55!black,urlcolor=blue!55!black}
+\setlist[enumerate]{leftmargin=*,itemsep=4pt,topsep=4pt}
+\setlength{\parskip}{4pt}
+\newcommand{\R}{\mathbb R}
+\newcommand{\E}{\mathbb E}
+\newcommand{\PP}{\mathbb P}
+\newcommand{\Var}{\operatorname{Var}}
+\newcommand{\Cov}{\operatorname{Cov}}
+\newcommand{\I}{\mathbf 1}
+\newcommand{\Fn}{\widehat F_n}
+\newcommand{\fh}{\widehat f_h}
+\newcommand{\norm}[1]{\lVert #1\rVert}
+\newcommand{\stepdetail}[2]{\expandafter\def\csname detail#1\endcsname{#2}}
+\input{Final_Exam_Proof_Steps.tex}
+\newcommand{\slideref}[2]{\par\noindent{\small\color{blue!55!black}\textbf{Slide:} #1, trang #2.}\par\nopagebreak[4]\noindent\textbf{Lời giải.}\par\nopagebreak[4]\csname detail\thequestion\endcsname}
+\newcounter{question}
+\newenvironment{question}[1]{\refstepcounter{question}\par\medskip\noindent\textbf{Câu \thequestion. #1}\par\nopagebreak[4]\noindent}{\par\medskip}
+\newcommand{\proofidea}{\par\noindent\textit{Công thức cần nhớ.} }
+\newcommand{\answer}{\par\noindent\textit{Lưu ý.} }
+\begin{document}
+\begin{center}
+{\LARGE\bfseries Ngân hàng câu hỏi chứng minh cuối kỳ}\\[4pt]
+{\large ECDF, ước lượng chiếu, Nadaraya--Watson và kiểm định}\\[5pt]
+\end{center}
+
+\noindent\textbf{Cách dùng.} Tài liệu ưu tiên ước lượng chiếu theo phạm vi ôn thi đã cập nhật. Mỗi câu có lời giải đã thực hiện các phép tính và biến đổi, sau đó là công thức cần nhớ hoặc lưu ý. Ký hiệu trang là số trang trong PDF slide. Các chứng minh của DKW, cận minimax và bất đẳng thức oracle là kết quả sâu được slide \emph{phát biểu}; tài liệu giải các hệ quả và phác thảo đúng mức slide, không nhận là chứng minh đầy đủ.
+
+\begin{center}\small
+\begin{tabular}{@{}llp{8.7cm}@{}}\toprule
+Mã & Phần & PDF slide trong thư mục \texttt{../Slides/}\\\midrule
+C1 & ECDF & \texttt{TKPTS\_Chương 1.pdf}\\
+C2 & Mật độ & \texttt{Chap2\_Density\_estimation (handout).pdf}\\
+C2P & Phép chiếu & \shortstack[l]{\texttt{Chap2\_Density\_Estimation\_}\\\texttt{Projection\_estimator-2.pdf}}\\
+C3 & Hồi quy & \texttt{Chap3\_Nonparametric\_Regression\_v2.pdf}\\
+C5 & Kiểm định & \texttt{Chap5\_Kiem\_dinh\_phi\_tham\_so\_v2.pdf}\\\bottomrule
+\end{tabular}
+\end{center}
+
+\section{ECDF và khoảng tin cậy}
+
+\begin{question}{Định nghĩa ECDF; tại sao nó là một hàm phân phối?}
+Cho $X_1,\ldots,X_n$ i.i.d. có CDF $F$. Định nghĩa $\Fn$; chứng minh không giảm, liên tục phải, giới hạn ở $\pm\infty$. Nếu dữ liệu trùng nhau thì bước nhảy bằng bao nhiêu?
+\slideref{C1}{10--12}
+\proofidea Đặt $\Fn(x)=n^{-1}\sum_i\I\{X_i\le x\}$. Mỗi hàm chỉ báo theo $x$ không giảm và liên tục phải; tổng hữu hạn giữ hai tính chất ấy. Khi $x<\min_iX_i$, tổng bằng 0; khi $x\ge\max_iX_i$, tổng bằng 1. Tại giá trị $a$, $\Fn(a)-\Fn(a-)=\#\{i:X_i=a\}/n$.
+\answer Slide 12 nói ``đúng $n$ bước nhảy''; điều này chỉ đúng khi mọi quan sát phân biệt. Có giá trị trùng, số bước nhảy bằng số giá trị \emph{khác nhau}.
+\end{question}
+
+\newpage
+\begin{question}{Tính ECDF và xác suất thực nghiệm của một khoảng}
+Với mẫu $(1,2,2,4,5)$, tính $\Fn(2-),\Fn(2),\Fn(3)$ và $\widehat P((2,4])$.
+\slideref{C1}{11--12}
+\answer Các giá trị lần lượt là $1/5,3/5,3/5$ và $\Fn(4)-\Fn(2)=1/5$. Nếu đổi thành $[2,4]$, kết quả là $\Fn(4)-\Fn(2-)=3/5$. Dấu $\le$ trong định nghĩa quyết định giá trị tại điểm nhảy.
+\end{question}
+
+\begin{question}{Tại sao $n\Fn(x)$ có phân phối nhị thức? Từ đó suy ra tính không chệch và phương sai}
+\slideref{C1}{14--15, 20}
+\proofidea Với $x$ cố định, $I_i=\I\{X_i\le x\}$ là Bernoulli với tham số $p=F(x)$; các $I_i$ độc lập. Do đó $n\Fn(x)=\sum_iI_i\sim\mathrm{Bin}(n,p)$. Suy ra
+\[\E\Fn(x)=p,\qquad \Var(\Fn(x))=\frac{p(1-p)}n.\]
+Tính không chệch là $\E\Fn(x)-F(x)=0$. Độc lập giữa \emph{các quan sát} là bước quyết định, không phải độc lập giữa $\Fn(x)$ và $\Fn(y)$.
+\end{question}
+
+\begin{question}{Tính hiệp phương sai $\Cov(\Fn(x),\Fn(y))$}
+\slideref{C1}{14--15; mở rộng trực tiếp từ định nghĩa}
+\proofidea Viết $I_i(x)=\I\{X_i\le x\}$. Hạng với $i\ne j$ có hiệp phương sai 0. Với cùng $i$, $I_i(x)I_i(y)=I_i(\min\{x,y\})$. Vì vậy
+\[\Cov(\Fn(x),\Fn(y))=\frac{F(\min\{x,y\})-F(x)F(y)}{n}.\]
+Nếu $x<y$, kết quả rút gọn thành $F(x)[1-F(y)]/n$.
+\end{question}
+
+\begin{question}{Chứng minh nhất quán tại một điểm và CLT cho ECDF}
+\slideref{C1}{15--16}
+\proofidea Luật số lớn áp dụng cho các $I_i(x)$ Bernoulli i.i.d., cho $\Fn(x)\to F(x)$ gần chắc chắn. CLT cho
+\[\sqrt n\{\Fn(x)-F(x)\}\Rightarrow N(0,F(x)[1-F(x)]).\]
+Khi $F(x)=0$ hoặc 1, giới hạn suy biến; không được chia cho độ lệch chuẩn bằng 0.
+\end{question}
+
+\begin{question}{Phát biểu DKW và suy ra băng tin cậy đồng thời}
+\slideref{C1}{18--19, 27}
+\proofidea DKW cho $\PP(\sup_x|\Fn(x)-F(x)|>\varepsilon)\le2e^{-2n\varepsilon^2}$. Đặt vế phải bằng $\alpha$, được $\varepsilon_{n,\alpha}=\sqrt{\log(2/\alpha)/(2n)}$. Trên biến cố bù, mọi $x$ đồng thời thỏa
+\[L(x)=\max\{0,\Fn(x)-\varepsilon_{n,\alpha}\}\le F(x)\le
+U(x)=\min\{1,\Fn(x)+\varepsilon_{n,\alpha}\}.\]
+Do đó xác suất phủ \emph{ít nhất} $1-\alpha$.
+\answer Chứng minh toàn bộ DKW không nằm trong slide; khi thi nên phân biệt \emph{phát biểu định lý} và \emph{suy ra băng}.
+\end{question}
+
+\begin{question}{Từ DKW chứng minh Glivenko--Cantelli như thế nào?}
+\slideref{C1}{16--18}
+\proofidea Với $Z_n=\sup_x|\Fn(x)-F(x)|$ và mỗi $k\ge1$, $\sum_n\PP(Z_n>1/k)\le2\sum_ne^{-2n/k^2}<\infty$. Borel--Cantelli cho $Z_n>1/k$ chỉ xảy ra hữu hạn lần, gần chắc chắn. Lấy giao theo $k\in\mathbb N$ suy ra $Z_n\to0$ gần chắc chắn. Đây là một cách chứng minh hệ quả bằng DKW.
+\end{question}
+
+\begin{question}{Suy ra khoảng Hoeffding tại một điểm; phân biệt với DKW}
+\slideref{C1}{20, 24--27}
+\proofidea Với $p=F(x_0)$ và $\widehat p=\Fn(x_0)$, Hoeffding cho $\PP(|\widehat p-p|>\varepsilon)\le2e^{-2n\varepsilon^2}$. Chọn $\varepsilon=\varepsilon_{n,\alpha}$ như trên, được khoảng $[\max(0,\widehat p-\varepsilon),\min(1,\widehat p+\varepsilon)]$ phủ ít nhất $1-\alpha$ tại $x_0$.
+\answer Hai công thức có cùng nửa độ rộng, nhưng Hoeffding chỉ nói về một $x_0$ cố định, còn DKW nói về mọi $x$ cùng lúc. Với $n=100,\widehat p=0.4,\alpha=0.05$, $\varepsilon\approx0.1358$ và khoảng là $[0.2642,0.5358]$.
+\end{question}
+
+\begin{question}{Dựng khoảng Wald và nêu điều kiện của xấp xỉ}
+\slideref{C1}{20--23}
+\proofidea Từ CLT và Slutsky, khi $0<p<1$, $\sqrt n(\widehat p-p)/\sqrt{\widehat p(1-\widehat p)}\Rightarrow N(0,1)$. Đảo bất đẳng thức chuẩn xấp xỉ cho
+\[\widehat p\pm z_{1-\alpha/2}\sqrt{\widehat p(1-\widehat p)/n}.\]
+Có thể cắt về $[0,1]$. Đây là khoảng \emph{tiệm cận}; mẫu nhỏ hoặc $\widehat p$ gần 0, 1 thì chất lượng phủ kém.
+\end{question}
+
+\begin{question}{Cỡ mẫu để nửa độ rộng DKW không quá $\delta$}
+\slideref{C1}{18--19, 25}
+\proofidea Giải $\sqrt{\log(2/\alpha)/(2n)}\le\delta$ cho $n$:
+\[n\ge\left\lceil\frac{\log(2/\alpha)}{2\delta^2}\right\rceil.\]
+Ví dụ $\alpha=0.05,\delta=0.05$ cho $n\ge738$.
+\end{question}
+
+\begin{question}{Nguyên lý thế và công thức tích phân theo phân phối thực nghiệm}
+\slideref{C1}{28--35}
+\proofidea Phân phối thực nghiệm là $P_n=n^{-1}\sum_i\delta_{X_i}$, nên với $g$ khả tích theo $P_n$,
+\[\int g\,d\Fn=\frac1n\sum_{i=1}^n g(X_i).\]
+Thế $F$ bởi $\Fn$ trong $T(F)$ cho $\widehat\theta=T(\Fn)$. Với trung bình, được $\bar X$; với phương sai, được $n^{-1}\sum_i(X_i-\bar X)^2$. Nếu $T$ liên tục \emph{theo chuẩn sup tại $F$}, Glivenko--Cantelli và định lý ánh xạ liên tục cho nhất quán. Điều kiện liên tục này quan trọng: không phải mọi phiếm hàm đều liên tục theo chuẩn sup.
+\end{question}
+
+\section{Histogram và ước lượng chiếu}
+
+\begin{question}{Định nghĩa histogram và chứng minh nó là mật độ}
+\slideref{C2}{12}
+\proofidea Chia miền thành các ô $B_j$ rộng $h$, đặt $Y_j=\#\{i:X_i\in B_j\}$ và $\widehat f(x)=Y_j/(nh)$ khi $x\in B_j$. Chọn quy tắc nửa mở để mỗi quan sát thuộc đúng một ô. Không âm là hiển nhiên; $\int\widehat f=\sum_jhY_j/(nh)=\sum_jY_j/n=1$ nếu các ô phủ toàn bộ mẫu.
+\end{question}
+
+\begin{question}{Kỳ vọng, phương sai và bias histogram tại một điểm}
+\slideref{C2}{13--14}
+\proofidea Đặt $p_j=\int_{B_j}f(u)\,du$. Vì $Y_j\sim\mathrm{Bin}(n,p_j)$, với $x\in B_j$,
+\[\E\widehat f(x)=p_j/h,\qquad \Var\widehat f(x)=p_j(1-p_j)/(nh^2).\]
+Nếu $c_j$ là trung điểm và $f$ đủ trơn, khai triển $f(u)$ quanh $x$ cho $p_j/h-f(x)=f'(x)(c_j-x)+O(h^2)$. Chỉ giả thiết $f\in C^1$ thường cho phần dư $o(h)$; để khẳng định $O(h^2)$ cần thêm điều kiện trơn như $f'$ Lipschitz.
+\end{question}
+
+\begin{question}{Từ đâu có hằng số $1/12$ trong MISE histogram?}
+\slideref{C2}{13--15}
+\proofidea Trên mỗi ô, bias chính là $f'(x)(c_j-x)$. Tích phân $(c_j-x)^2$ trên ô rộng $h$ bằng $h^3/12$. Cộng các ô và dùng tổng Riemann cho bias bình phương tích phân xấp xỉ $(h^2/12)\int(f')^2$. Phương sai tích phân là
+\[\sum_j h\frac{p_j(1-p_j)}{nh^2}=\frac{1-\sum_jp_j^2}{nh}\sim\frac1{nh}.\]
+Do đó $\mathrm{MISE}\approx Ah^2+1/(nh)$, $A=\int(f')^2/12$. Đạo hàm theo $h$ cho $h_*=[6/(n\int(f')^2)]^{1/3}$ và tốc độ $n^{-2/3}$.
+\end{question}
+
+\begin{question}{Suy ra công thức CV chọn độ rộng ô của histogram}
+\slideref{C2}{17}
+\proofidea Với $\widehat p_j=Y_j/n$, $\int\widehat f_h^2=\sum_jY_j^2/(n^2h)=h^{-1}\sum_j\widehat p_j^2$. Nếu $X_i$ thuộc ô $j$, histogram bỏ quan sát $i$ tại $X_i$ bằng $(Y_j-1)/[(n-1)h]$. Vì vậy
+\[\frac2n\sum_i\widehat f_{h,-i}(X_i)
+=\frac{2}{n(n-1)h}\sum_jY_j(Y_j-1).\]
+Trừ hai hạng, dùng $\sum_jY_j=n$ và rút gọn:
+\[\mathrm{CV}_{\mathrm{hist}}(h)=\frac{2}{(n-1)h}
+-\frac{n+1}{(n-1)h}\sum_j\widehat p_j^2.\]
+Chọn $h$ (hay số ô $m=1/h$) làm CV nhỏ nhất trong tập ứng viên. Phải dùng cùng gốc chia ô khi so sánh, vì histogram phụ thuộc vị trí biên ô.
+\end{question}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+\begin{question}{Tại sao ước lượng phép chiếu có hệ số $\widehat a_j=n^{-1}\sum_i\phi_j(X_i)$?}
+\slideref{C2}{30--32; C2P 4, 10--12}
+\proofidea Với hệ trực chuẩn $\phi_1,\ldots,\phi_D$ trong $L^2$, hệ số thật $a_j=\langle f,\phi_j\rangle=\int\phi_j(x)f(x)\,dx=\E\phi_j(X)$. Ước lượng bằng trung bình mẫu. Vì thế $\E\widehat a_j=a_j$ và $\widehat f_D=\sum_{j=1}^D\widehat a_j\phi_j$. Cũng có thể tối thiểu hóa contrast $\gamma_n(t)=\norm t_2^2-2n^{-1}\sum_it(X_i)$: với $t=\sum_jb_j\phi_j$, $\gamma_n(t)=\sum_jb_j^2-2\sum_jb_j\widehat a_j$, nên cực tiểu ở $b_j=\widehat a_j$.
+\end{question}
+
+\begin{question}{Chứng minh phân rã bias--variance và cận rủi ro của phép chiếu}
+\slideref{C2}{32; C2P 13--15}
+\proofidea Đặt $f_D=\sum_ja_j\phi_j$. Vì $f-f_D\perp S_D$ và $\widehat f_D-f_D\in S_D$, Pythagoras cho
+\[\E\norm{\widehat f_D-f}_2^2=\norm{f_D-f}_2^2+\sum_{j=1}^D\Var(\widehat a_j).\]
+Độc lập theo $i$ cho $\Var(\widehat a_j)=\Var(\phi_j(X_1))/n\le\E\phi_j(X_1)^2/n$. Nếu $\sup_x\sum_{j=1}^D\phi_j(x)^2\le\Phi D$, tổng phương sai không quá $\Phi D/n$.
+\answer Điều kiện đúng là cận của \emph{tổng} $\sum_j\phi_j(x)^2$. Riêng cơ sở histogram có $\sup_x\phi_j(x)^2=D$ cho từng $j$ nhưng $\sum_j\phi_j(x)^2=D$, nên dùng $\sup_{x,j}\phi_j(x)^2\cdot D/n$ sẽ cho cận quá thô.
+\end{question}
+
+\begin{question}{Tại sao histogram là một ước lượng phép chiếu?}
+\slideref{C2}{31--32; C2P 6, 11}
+\proofidea Trên $[0,1]$, chia $D$ ô $B_j$ rộng $1/D$, đặt $\phi_j=\sqrt D\,\I_{B_j}$. Các hàm này trực chuẩn. Khi đó $\widehat a_j=\sqrt D\,Y_j/n$ và $\widehat f_D(x)=\sum_j(DY_j/n)\I_{B_j}(x)=Y_j/(nh)$ với $h=1/D$.
+\end{question}
+
+\begin{question}{Có thể chứng minh bất đẳng thức oracle trực tiếp từ phân rã Pythagoras không?}
+\slideref{C2}{33--34; C2P 22--24}
+\answer Không. Pythagoras chỉ cho rủi ro ở $D$ cố định. Với $\widehat D$ chọn từ dữ liệu, cần bước so sánh contrast có phạt:
+\[\gamma_n(\widehat f_{\widehat D})+\operatorname{pen}(\widehat D)
+\le\gamma_n(f_D)+\operatorname{pen}(D)\quad\text{với mọi }D,\]
+sau đó khống chế quá trình thực nghiệm $\nu_n(t)=(P_n-P)t$ đồng thời trên các mô hình. Slide chỉ đưa \emph{phác thảo}; khống chế tập trung là phần không được chứng minh ở đây. Hãy nhớ phát biểu, giả thiết và logic của các bước, không nhận một phác thảo là chứng minh đầy đủ.
+\end{question}
+
+\begin{question}{Chứng minh cơ sở lượng giác là trực chuẩn và tính tổng bình phương cơ sở}
+\slideref{C2P}{4--5}
+\end{question}
+
+\begin{question}{Dựng cơ sở Legendre bậc một trên từng ô và kiểm tra trực chuẩn}
+\slideref{C2P}{7--8}
+\end{question}
+
+\begin{question}{Đổi cơ sở trực chuẩn từ $[0,1]$ sang $[a,b]$; mật độ đổi thang ra sao?}
+\slideref{C2P}{9}
+\end{question}
+
+\begin{question}{Chứng minh $f_D$ là điểm cực tiểu duy nhất của sai số $L^2$ trong $S_D$}
+\slideref{C2P}{4, 10--12}
+\end{question}
+
+\begin{question}{Chứng minh hệ số chiếu không chệch và tính phương sai hệ số}
+\slideref{C2P}{10--11, 14}
+\end{question}
+
+\begin{question}{Phân rã rủi ro chiếu chính xác và tính thành phần phương sai}
+\slideref{C2P}{13--15}
+\end{question}
+
+\begin{question}{Chứng minh cận $\|t\|_\infty\le\sqrt D\|t\|_2$ cho cơ sở lượng giác}
+\slideref{C2P}{5, 14--15}
+\end{question}
+
+\begin{question}{Chứng minh bias của phép chiếu histogram khi $f$ là Hölder bậc $\alpha$}
+\slideref{C2P}{16--17}
+\end{question}
+
+\begin{question}{Bias lượng giác suy ra từ Parseval; điều kiện nào còn thiếu trong slide?}
+\slideref{C2}{9, 32; C2P 5, 16--19}
+\end{question}
+
+\begin{question}{Tối ưu số chiều $D$ từ cận bias–variance; phân biệt với chọn băng thông}
+\slideref{C2P}{18--20}
+\end{question}
+
+\begin{question}{Tính contrast tại $\widehat f_D$ và suy ra tiêu chuẩn chọn mô hình từ dữ liệu}
+\slideref{C2P}{12, 20--22}
+\end{question}
+
+\begin{question}{So sánh tiêu chuẩn phạt giữa $D=3$ và $D=5$ trong ví dụ trên slide}
+Viết hiệu hai tiêu chuẩn bằng đúng bốn hệ số lượng giác được thêm vào; nêu điều kiện để chọn $D=5$ khi không có dữ liệu thô trên slide.
+\slideref{C2P}{5, 22, 25--26}
+\end{question}
+
+\begin{question}{Phác thảo chứng minh bất đẳng thức oracle: bước nào thật sự khó?}
+\slideref{C2P}{23--24}
+\end{question}
+
+\begin{question}{Ước lượng chiếu có luôn không âm và tích phân bằng một không?}
+\slideref{C2P}{10--11, 26--28}
+\end{question}
+
+\begin{question}{Viết tường minh các ước lượng $D=3,5$ và histogram $D=10$ trên slide}
+Từ định nghĩa cơ sở, viết dạng hàm của ba ước lượng trong ví dụ $X_i\sim N(4,25)$ sau khi chuẩn hóa dữ liệu về $[0,1]$.
+\slideref{C2P}{5--6, 9--11, 25--26}
+\end{question}
+
+\begin{question}{Vì sao có thể cập nhật ước lượng chiếu và contrast khi tăng $D$?}
+\slideref{C2P}{20--22, 26}
+\end{question}
+
+\section{Ước lượng Nadaraya--Watson}
+
+\begin{question}{Từ tỷ số mật độ suy ra công thức NW như thế nào?}
+\slideref{C3}{12--16}
+\proofidea Với $r(x)=\E[Y\mid X=x]=\int yf_{XY}(x,y)\,dy/f_X(x)$, dùng KDE chung $\widehat f_{XY}(x,y)=n^{-1}\sum_iK_h(X_i-x)K_h(Y_i-y)$ và KDE biên $\widehat f_X(x)=n^{-1}\sum_iK_h(X_i-x)$. Nếu $\int K=1$ và $\int uK(u)\,du=0$,
+\[\int yK_h(Y_i-y)\,dy=Y_i.\]
+Thay vào tỷ số cho $\widehat r_{NW}(x)=\sum_iY_iK_h(X_i-x)/\sum_iK_h(X_i-x)$ khi mẫu số khác 0. Đây là phép tính trung tâm của slide 14.
+\end{question}
+
+\begin{question}{Từ bình phương tối thiểu có trọng số suy ra NW; chứng minh tái tạo hằng số}
+\slideref{C3}{16, 29, 48}
+\proofidea Đặt $w_i=K_h(X_i-x)\ge0$ và $Q(\theta)=\sum_iw_i(Y_i-\theta)^2$. Nếu $\sum_iw_i>0$, $Q'(\theta)=-2\sum_iw_iY_i+2\theta\sum_iw_i=0$ có nghiệm duy nhất $\widehat r_{NW}(x)$. Với $W_i=w_i/\sum_jw_j$, $\sum_iW_i=1$. Nếu mọi $Y_i=c$, $\widehat r_{NW}(x)=c$. Nếu mẫu số 0, công thức tỷ số không xác định và phải quy định xử lý riêng.
+\end{question}
+
+\begin{question}{Bài tập 3: kỳ vọng, phương sai và băng thông ở thiết kế cố định}
+Cho $X_i=i/n$, $Y_i=r(X_i)+\xi_i$ với $\xi_i$ độc lập, trung bình 0, phương sai $\sigma^2$. Xét $\widehat r_h(x)=n^{-1}\sum_iY_iK_h(X_i-x)$ ở điểm nội. Tính kỳ vọng, phương sai, bias dẫn đầu và băng thông tối ưu; nêu điều kiện cần cho phép xấp xỉ tổng bằng tích phân.
+\slideref{C3}{20, 49}
+\end{question}
+
+\begin{question}{Vì sao bias NW với thiết kế ngẫu nhiên có hạng $r'f'/f$?}
+\slideref{C3}{20--23}
+\proofidea Đặt $a(x)=r(x)f(x)$, $b(x)=f(x)$ và ước lượng nhân $\widehat a,\widehat b$. Ở điểm nội, kernel đối xứng cho $\E\widehat a=a+h^2\mu_2a''/2+o(h^2)$ và $\E\widehat b=b+h^2\mu_2b''/2+o(h^2)$. Khai triển tỷ số ở cấp leading order:
+\[\frac{a+h^2\mu_2a''/2}{b+h^2\mu_2b''/2}-\frac ab
+=\frac{h^2\mu_2}{2}\left(r''+2r'\frac{f'}f\right)+o(h^2).\]
+Hạng $r'f'/f$ là \emph{design bias}. Đây là khai triển tỷ số kỳ vọng/leading asymptotic bias, không phải đẳng thức hữu hạn mẫu $\E(\widehat a/\widehat b)=\E\widehat a/\E\widehat b$.
+\end{question}
+
+\begin{question}{Bài tập 6: chứng minh công thức leave-one-out CV cho NW và local polynomial}
+\slideref{C3}{24, 50}
+\proofidea Tại $X_i$, viết $\widehat r(X_i)=\sum_jW_{ij}Y_j$, với $W_{ij}=K_h(X_j-X_i)/\sum_kK_h(X_k-X_i)$ cho NW. Bỏ quan sát $i$ và chuẩn hóa lại cho
+\[\widehat r^{(-i)}(X_i)=\frac{\widehat r(X_i)-W_{ii}Y_i}{1-W_{ii}},\qquad
+Y_i-\widehat r^{(-i)}(X_i)=\frac{Y_i-\widehat r(X_i)}{1-W_{ii}}.\]
+Vì thế $\mathrm{CV}(h)=n^{-1}\sum_i[(Y_i-\widehat r(X_i))/(1-W_{ii})]^2$, khi $W_{ii}\ne1$. Với local polynomial, dùng hệ chuẩn và phép cập nhật bỏ một quan sát như trong lời giải. Công thức cần cấu trúc phép khớp này; chỉ biết $\widehat y=Wy$ chưa đủ để suy ra cách $W$ đổi khi bỏ quan sát.
+\end{question}
+
+\begin{question}{NW có tốc độ MSE và băng thông tối ưu nào?}
+\slideref{C3}{20--23}
+\proofidea Ở điểm nội với đủ độ trơn, bias bậc $h^2$, phương sai bậc $(nh)^{-1}$. MSE có dạng $Ah^4+B/(nh)$. Đạo hàm theo $h$ cho $h_*^5=B/(4An)$, nên $h_*\asymp n^{-1/5}$ và MSE tối ưu bậc $n^{-4/5}$.
+\end{question}
+
+\begin{question}{Vì sao local linear loại được design bias và tái tạo hàm tuyến tính?}
+\slideref{C3}{29--40, 49--50}
+\proofidea Local linear cực tiểu $\sum_iK_h(X_i-x)[Y_i-a-b(X_i-x)]^2$ và lấy $\widehat r_{LL}(x)=\widehat a$. Đặt $S_k=\sum_iK_h(X_i-x)(X_i-x)^k$, $T_k=\sum_iK_h(X_i-x)(X_i-x)^kY_i$. Hệ chuẩn là
+\[\begin{pmatrix}S_0&S_1\\S_1&S_2\end{pmatrix}\begin{pmatrix}a\\b\end{pmatrix}
+=\begin{pmatrix}T_0\\T_1\end{pmatrix},\qquad
+\widehat a=\frac{S_2T_0-S_1T_1}{S_0S_2-S_1^2}.\]
+Nếu $Y_i=c+dX_i$, cặp $(a,b)=(c+dx,d)$ làm mọi phần dư bằng 0; nghiệm là duy nhất khi ma trận khả nghịch. Vì vậy estimator tái tạo đúng hằng số và đường thẳng, làm mất thành phần bias gắn với độ dốc $r'(x)$ ở cấp leading order. Đây là nội dung của claim ``không có $r'f'/f$'' ở slide 40.
+\end{question}
+
+\section{Kiểm định phi tham số: chứng minh phân phối và tính tay}
+
+\begin{question}{Tại sao kiểm định dấu có phân phối nhị thức dưới $H_0$?}
+\slideref{C5}{6--13, 40}
+\proofidea Với giả thiết phân phối liên tục và trung vị $m_0$ dưới $H_0$, $\PP(X_i>m_0)=\PP(X_i<m_0)=1/2$. Sau khi loại hiệu bằng 0, dấu của các quan sát độc lập; vì thế $S^+=\sum_i\I\{X_i>m_0\}\sim\mathrm{Bin}(n,1/2)$. Hai phía với $k=\min(S^+,n-S^+)$ cho $p=\min\{1,2\PP(B\le k)\}$, $B\sim\mathrm{Bin}(n,1/2)$. Một phía phải dùng đúng đuôi: $m>m_0$ dùng $\PP(B\ge S^+)$; $m<m_0$ dùng $\PP(B\le S^+)$.
+\end{question}
+
+\begin{question}{Tính kiểm định dấu chính xác trên một mẫu nhỏ}
+Với dữ liệu thời gian phản hồi $(218,195,240,232,207,225,198,250,212,228)$ trên slide, kiểm định trung vị $m_0=200$ ở mức $5\%$.
+\slideref{C5}{10--11}
+\answer $k=2$ và $p=2\sum_{j=0}^2\binom{10}{j}2^{-10}=2(1+10+45)/1024=0.109375$. Ở mức 5\%, chưa bác bỏ $H_0$.
+\end{question}
+
+\begin{question}{Tại sao phân phối Wilcoxon dấu hạng không phụ thuộc $F$? Tính kỳ vọng, phương sai}
+\slideref{C5}{15--18, 41}
+\proofidea Với $d_i=X_i-m_0$ liên tục và phân phối đối xứng, sau khi cố định các $|d_i|$ khác nhau, mỗi dấu là Bernoulli$(1/2)$ độc lập và độc lập với độ lớn. Gọi $B_j$ là dấu dương của quan sát có hạng $j$. Khi đó
+\[W^+=\sum_{j=1}^n jB_j,\qquad
+\E W^+=\frac12\sum_jj=\frac{n(n+1)}4,\qquad
+\Var(W^+)=\frac14\sum_jj^2=\frac{n(n+1)(2n+1)}{24}.\]
+Phân phối chính xác được tạo bằng mọi cách gán dấu cho $1,\ldots,n$. Điều kiện đối xứng quan trọng hơn điều kiện không chuẩn. Khi có hạng trùng, dùng hạng trung bình và phân phối/variance thích hợp.
+\end{question}
+
+\begin{question}{Tính $W^+,W^-$ và chọn đuôi kiểm định}
+Với dữ liệu thay đổi nhịp tim $(-2,4,8,25,-5,16,3,1,12,17,20,9)$ trên slide, kiểm định trung tâm đối xứng $m_0=15$ hai phía ở mức $5\%$.
+\slideref{C5}{19--21, 41}
+\end{question}
+
+\begin{question}{Suy ra $U=R_X-n(n+1)/2$ và phân phối dưới $H_0$}
+\slideref{C5}{23--29, 42}
+\proofidea Gộp mẫu $X$ cỡ $n$ và $Y$ cỡ $m$, $N=n+m$, xếp hạng. Nếu $r_i$ là hạng toàn bộ của $X_{(i)}$, thì $r_i-i$ đúng bằng số $Y$ nhỏ hơn $X_{(i)}$. Cộng cho $U_X=\sum_i(r_i-i)=R_X-n(n+1)/2$. Dưới $H_0:F=G$ liên tục, mọi tập $n$ hạng của nhóm $X$ trong $1,\ldots,N$ đều có xác suất $1/\binom Nn$, nên phân phối của $U$ chỉ phụ thuộc $n,m$.
+\end{question}
+
+\begin{question}{Chứng minh kỳ vọng và phương sai Mann--Whitney $U$}
+\slideref{C5}{24--25}
+\proofidea $R_X$ là tổng của mẫu ngẫu nhiên đơn không hoàn lại gồm $n$ hạng từ $1,\ldots,N$. Trung bình hạng là $(N+1)/2$, phương sai tổng thể theo mẫu số $N$ là $(N^2-1)/12$. Công thức phương sai tổng không hoàn lại cho
+\[\E R_X=\frac{n(N+1)}2,\quad
+\Var(R_X)=\frac{n(N-n)}{N-1}\frac{N^2-1}{12}=\frac{nm(N+1)}{12}.\]
+Trừ hằng số $n(n+1)/2$ suy ra $\E U=nm/2$ và $\Var(U)=nm(N+1)/12$.
+\end{question}
+
+\begin{question}{Tính Mann--Whitney bằng tay}
+Với nhóm A $(12,15,9,18,14,20)$ và nhóm B $(7,10,6,13,8)$ trên slide, tính tổng hạng và $U_A,U_B$; kiểm định hai phía ở mức $5\%$.
+\slideref{C5}{26--28, 42}
+\end{question}
+
+\begin{question}{Suy ra công thức rút gọn của Spearman}
+\slideref{C5}{30--33, 43}
+\proofidea Không có hạng trùng, $\bar R=\bar S=(n+1)/2$ và $A=\sum_i(R_i-\bar R)^2=n(n^2-1)/12=\sum_i(S_i-\bar S)^2$. Đặt $d_i=R_i-S_i$. Khi đó $\sum_i d_i^2=2A-2\sum_i(R_i-\bar R)(S_i-\bar S)$. Chia cho $2A$ được
+\[\rho_S=1-\frac{6\sum_i d_i^2}{n(n^2-1)}.\]
+Có hạng trùng thì dùng Pearson trên \emph{hạng trung bình}, không dùng công thức rút gọn này. Phân phối tự do dưới $H_0$ cần giả thiết độc lập của $X,Y$ với biên liên tục, mạnh hơn chỉ nói ``tương quan bằng 0''.
+\end{question}
+
+\begin{question}{Tính Kendall $\tau$ và giải thích phương sai dưới độc lập}
+\slideref{C5}{34--36, 43}
+\proofidea Với không có hạng trùng, đặt $Z_{ij}=\operatorname{sgn}[(X_i-X_j)(Y_i-Y_j)]$ cho $i<j$. Khi đó $S=\sum_{i<j}Z_{ij}=n_c-n_d$ và $\tau=S/\binom n2$. Dưới độc lập và biên liên tục, $\E Z_{ij}=0$, $\Var(Z_{ij})=1$; các cặp chỉ số rời nhau có hiệp phương sai 0. Với một bộ ba chỉ số, mỗi cặp trong ba cặp hạng chia sẻ chỉ số có $\E(Z_{ij}Z_{ik})=1/9$: ở mỗi biên, liệt kê $3!$ thứ tự cho kỳ vọng tích dấu bằng $\pm1/3$, rồi nhân hai biên độc lập. Khi khai triển phương sai tổng, bộ ba góp $2\cdot3/9=2/3$. Do đó
+\[\Var(S)=\binom n2+\frac23\binom n3=\frac{n(n-1)(2n+5)}{18}.\]
+Vì vậy
+\[\E\tau=0,\qquad \Var(\tau)=\frac{2(2n+5)}{9n(n-1)}.\]
+Nếu có hạng trùng, dùng biến thể $\tau_b$ và công thức phương sai khác. Phép tính chỉ số ba quan sát là phần khó nhất của chứng minh phương sai.
+\end{question}
+
+\begin{question}{KS một mẫu: tại sao chỉ cần kiểm tra ở hai phía của mỗi điểm nhảy?}
+\slideref{C1}{36--38}
+\proofidea Nếu $F_0$ liên tục và $X_{(1)}\le\cdots\le X_{(n)}$, giữa hai quan sát liên tiếp ECDF là hằng số còn $F_0$ không giảm. Độ lệch cực đại trên khoảng đạt tại một đầu mút. Tại $X_{(i)}$ và ngay bên trái nó, ECDF lần lượt là $i/n$ và $(i-1)/n$. Do đó
+\[D_n=\sup_x|\Fn(x)-F_0(x)|=
+\max_{1\le i\le n}\max\left\{\frac in-F_0(X_{(i)}),\ F_0(X_{(i)})-\frac{i-1}{n}\right\}.\]
+Thống kê trên slide là $T_{KS}=\sqrt nD_n$. Công thức cần chú ý điều kiện $F_0$ liên tục và cách xử lý giá trị trùng.
+\end{question}
+
+\begin{question}{CvM và Anderson--Darling đo loại sai khác nào?}
+\slideref{C1}{39--41}
+\answer Cram\'er--von Mises dùng $T_{CvM}=n\int(\Fn-F_0)^2\,dF_0$. Với $F_0$ liên tục và được chỉ định hoàn toàn, đặt $U_i=F_0(X_i)$ rồi sắp thứ tự để suy ra
+\[T_{CvM}=\frac1{12n}+\sum_{i=1}^n\left(U_{(i)}-\frac{2i-1}{2n}\right)^2.\]
+Anderson--Darling dùng $T_{AD}=n\int(\Fn-F_0)^2/[F_0(1-F_0)]\,dF_0$, nên nhấn mạnh vùng đuôi. Dạng tính tay là
+\[T_{AD}=-n-\frac1n\sum_{i=1}^n(2i-1)\{\log U_{(i)}+\log[1-U_{(n+1-i)}]\}.\]
+Không tự áp dụng bảng tới hạn cho $F_0$ có tham số ước lượng từ chính mẫu; khi đó phân phối dưới $H_0$ thay đổi. Slide 40 có một câu về giá trị tới hạn dễ gây nhầm: với $F_0$ liên tục \emph{được chỉ định hoàn toàn}, biến đổi xác suất tích lũy làm phân phối kiểm định không phụ thuộc dạng $F_0$.
+\end{question}
+
+\begin{question}{KS hai mẫu: suy ra hệ số chuẩn hóa $\sqrt{nm/(n+m)}$}
+\slideref{C1}{42--46}
+\proofidea Dưới $H_0:F_X=F_Y=F$, tại mỗi $x$ cố định,
+\[\Var\{\widehat F_X(x)-\widehat F_Y(x)\}=F(x)[1-F(x)]\left(\frac1n+\frac1m\right).\]
+Nghịch đảo căn của $1/n+1/m$ là $\sqrt{nm/(n+m)}$, nên đó là chuẩn hóa tự nhiên của sai khác hai ECDF. Lấy supremum cho thống kê KS hai mẫu; để suy ra phân phối Kolmogorov tiệm cận của supremum còn cần định lý quá trình thực nghiệm, không chỉ CLT tại một điểm.
+\end{question}
+
+\section{Bổ sung từ các slide chưa được hỏi ở bản đầu}
+
+\begin{question}{Định nghĩa CDF, quantile và chứng minh phép biến đổi nghịch đảo}
+\slideref{C1}{6--9}
+\proofidea $F(x)=\PP(X\le x)$ luôn tồn tại, không giảm và liên tục phải. Quantile tổng quát là $F^{-1}(u)=\inf\{x:F(x)\ge u\}$. Với $U\sim\mathrm{Unif}(0,1)$, tính chất của nghịch đảo tổng quát cho $\{F^{-1}(U)\le x\}=\{U\le F(x)\}$ (bỏ qua các điểm biên không ảnh hưởng xác suất), do đó $\PP(F^{-1}(U)\le x)=F(x)$. Nếu $F$ liên tục, $F(X)\sim\mathrm{Unif}(0,1)$. Với $F(x)=1-e^{-\lambda x}$ trên $x\ge0$, giải $u=F(x)$ được $F^{-1}(u)=-\log(1-u)/\lambda$.
+\end{question}
+
+\begin{question}{Tại sao plug-in quantile là một thống kê thứ tự? Plug-in skewness là gì?}
+\slideref{C1}{28--35}
+\proofidea Vì $\Fn$ nhảy bậc $1/n$ tại từng quan sát sắp thứ tự, $\Fn^{-1}(p)=\inf\{x:\Fn(x)\ge p\}=X_{(\lceil np\rceil)}$ với $p\in(0,1]$. Skewness là phiếm hàm phi tuyến $\kappa(F)=\E[(X-\mu)^3]/\{\E[(X-\mu)^2]\}^{3/2}$. Thay $F$ bằng $\Fn$ và $\mu$ bằng $\bar X$ cho
+\[\widehat\kappa=\frac{n^{-1}\sum_i(X_i-\bar X)^3}{\{n^{-1}\sum_i(X_i-\bar X)^2\}^{3/2}},\]
+khi mẫu có phương sai dương. Cần phân biệt quy ước quantile $X_{(\lceil np\rceil)}$ của slide với các quy ước nội suy trong phần mềm.
+\end{question}
+
+\begin{question}{Viết CvM và Anderson--Darling hai mẫu từ ECDF gộp}
+\slideref{C1}{42--46}
+\proofidea Đặt $\widehat H=(n\widehat F_X+m\widehat F_Y)/(n+m)$, $N=n+m$. Hai thống kê trên slide 44 là
+\[T_{CvM,2}=\frac{nm}{N}\int(\widehat F_X-\widehat F_Y)^2\,d\widehat H,\quad
+T_{AD,2}=\frac{nm}{N}\int\frac{(\widehat F_X-\widehat F_Y)^2}{\widehat H(1-\widehat H)}\,d\widehat H.\]
+Vì $\widehat H$ là phân phối rời rạc, tích phân là tổng trên các giá trị gộp; ở điểm có $\widehat H=0$ hoặc 1 cần dùng quy ước loại phần hạng không xác định. AD đặt trọng số lớn hơn ở hai đuôi. Đây là định nghĩa/thao tác tính, không phải tự động là chứng minh phân phối giới hạn.
+\end{question}
+
+\begin{question}{Định nghĩa risk và chứng minh phân rã bias--variance tổng quát}
+\slideref{C2}{6--10; C3 7}
+\proofidea Tại một điểm, $\mathrm{MSE}(x)=\E[(\widehat f(x)-f(x))^2]$. Cộng trừ $\E\widehat f(x)$ rồi khai triển bình phương; hạng chéo có kỳ vọng 0, nên $\mathrm{MSE}(x)=\{\E\widehat f(x)-f(x)\}^2+\Var(\widehat f(x))$. Rủi ro tích phân là $\mathrm{MISE}=\E\int(\widehat f-f)^2=\int\mathrm{MSE}(x)\,dx$ khi đổi thứ tự kỳ vọng--tích phân hợp lệ (Tonelli cho tích phân không âm). Đối với hồi quy, thay $f$ bằng $r$.
+\end{question}
+
+\begin{question}{Lớp H\"older, Sobolev và cận minimax trên slide nói gì?}
+\slideref{C2}{9--10, 22--25; C3 6, 43}
+\answer Với $\beta>0$ không nguyên, đặt $\ell=\lfloor\beta\rfloor$; điều kiện H\"older là $|f^{(\ell)}(x)-f^{(\ell)}(y)|\le L|x-y|^{\beta-\ell}$, cùng các điều kiện bị chặn cần thiết. Ở $\beta$ nguyên, phát biểu cần một quy ước riêng (chẳng hạn $\ell=\lceil\beta\rceil-1$) để tránh số mũ 0 không diễn đạt đúng độ trơn mong muốn. Sobolev đo độ trơn bằng năng lượng Fourier có trọng số $\int|f^*(u)|^2(1+|u|^2)^\beta du$. Slide nêu cận minimax bậc $n^{-2\beta/(2\beta+1)}$; cận trên của ước lượng chiếu suy từ bias/variance, nhưng cận dưới đòi lập luận riêng và không tự suy ra chỉ bằng tối ưu $D$.
+\end{question}
+
+
+
+
+
+
+
+\begin{question}{Phân biệt thiết kế cố định, ngẫu nhiên và regressogram}
+\slideref{C3}{3--7, 11, 20--22}
+\answer Thiết kế cố định coi $X_i$ là các điểm cho trước, thí dụ $X_i=i/n$; thiết kế ngẫu nhiên coi $X_i$ i.i.d. có mật độ $f_X$. Với $Y_i=r(X_i)+\xi_i$ và ô $I_k$ chứa $n_k>0$ điểm, regressogram tại $x\in I_k$ là $\sum_{i:X_i\in I_k}Y_i/n_k$. Đây là trung bình cục bộ theo ô, còn NW dùng trọng số nhân biến thiên trơn theo khoảng cách đến $x$. Ô rỗng làm regressogram chưa xác định; cần quy tắc xử lý.
+\end{question}
+
+\begin{question}{Tính phương sai điều kiện của một bộ làm trơn tuyến tính}
+\slideref{C3}{16--21, 38--40}
+\proofidea Nếu $\widehat r(x)=\sum_iW_i(x)Y_i$ với trọng số chỉ phụ thuộc $X$, và các nhiễu độc lập có $\Var(Y_i\mid X)=\sigma_i^2$, thì
+\[\Var(\widehat r(x)\mid X)=\sum_iW_i(x)^2\sigma_i^2.\]
+Nếu đồng phương sai, kết quả bằng $\sigma^2\sum_iW_i^2$. Đây là công thức chính xác. Với NW hoặc local linear ở điểm nội, phép xấp xỉ tiệm cận cho phương sai là
+\[\frac{\sigma^2(x)R(K)}{nhf_X(x)}.\]
+Tại biên, hằng số equivalent-kernel nói chung khác hằng số điểm nội; cần tính lại.
+\end{question}
+
+\begin{question}{Ma trận làm trơn và GCV được dựng thế nào?}
+\slideref{C3}{17--19, 24--25}
+\proofidea Tại các $X_i$, đặt $W_{ij}=W_j(X_i)$ thì $\widehat y=Wy$. Trace $\tau=\operatorname{tr}(W)=\sum_iW_{ii}$ đóng vai trò bậc tự do hiệu dụng. Từ CV leave-one-out $n^{-1}\sum_i[(Y_i-\widehat Y_i)/(1-W_{ii})]^2$, thay từng $W_{ii}$ bằng trung bình $\tau/n$ cho
+\[\mathrm{GCV}(h)=\frac{n^{-1}\sum_i(Y_i-\widehat Y_i)^2}{(1-\tau/n)^2}.\]
+Đây là tiêu chuẩn xấp xỉ CV, cần $\tau<n$ để mẫu số dương.
+\end{question}
+
+\begin{question}{Chứng minh moment rời rạc và tái tạo đa thức cho local polynomial bậc $\ell$}
+\slideref{C3}{31--37, 41--43, 50}
+\proofidea Đặt hàng $V_i=(1,X_i-x,\ldots,(X_i-x)^\ell)$ và $B=V^\top WV$ khả nghịch. Vector trọng số ước lượng giá trị tại $x$ là $\mathbf l^\top=e_0^\top B^{-1}V^\top W$. Nếu $c_k$ có phần tử $(X_i-x)^k$, thì $V^\top Wc_k=Be_k$ cho $0\le k\le\ell$. Vì vậy $\sum_i l_i(X_i-x)^k=e_0^\top B^{-1}Be_k=\delta_{0k}$. Viết đa thức bậc $\le\ell$ theo các lũy thừa $(u-x)^k$ cho $\sum_i l_iP(X_i)=P(x)$. Với kernel tương đương ở điểm nội, các moment triệt tiêu tương tự. Đó là cơ chế khử bias của local polynomial.
+\end{question}
+
+\begin{question}{Khi nào dùng phân phối chính xác, xấp xỉ chuẩn và hiệu chỉnh hạng trùng?}
+\slideref{C5}{5, 8--9, 16--18, 24--25, 38--43}
+\answer Mẫu nhỏ: dùng nhị thức chính xác cho dấu; phân phối gán dấu cho Wilcoxon dấu hạng; phân phối hoán vị hạng cho Mann--Whitney. Mẫu lớn: chuẩn hóa bằng kỳ vọng và phương sai dưới $H_0$; có thể hiệu chỉnh liên tục theo chiều đuôi. Ties làm các công thức ``hạng $1,\ldots,n$ phân biệt'' không còn áp dụng nguyên dạng: gán midrank, tính lại phương sai hoặc dùng phân phối hoán vị điều kiện phù hợp. Kiểm định dấu loại các hiệu bằng 0 và giảm cỡ mẫu hiệu dụng. Với Spearman/Kendall, giả thuyết tự do phân phối chuẩn là \emph{độc lập} với biên liên tục, không chỉ hệ số tương quan Pearson bằng 0.
+\end{question}
+
+\begin{question}{Tính Spearman và Kendall từ ví dụ hạng trên slide}
+\slideref{C5}{30--36, 43}
+\answer Ở ví dụ $n=8$ của slide, $\sum_i(R_i-S_i)^2=4$, nên $\rho_S=1-6\cdot4/[8(8^2-1)]=20/21\approx0.9524$. Với Kendall, $n_c=26,n_d=2$, nên $\tau=(26-2)/\binom82=24/28=6/7\approx0.8571$. Cả hai vượt ngưỡng hai phía 5\% được nêu ở slide 33 và 36. Khi tính bài mới, phải tự lập vector hạng hoặc liệt kê 28 cặp; không suy trực tiếp $\tau$ từ $\rho_S$.
+\end{question}
+
+\noindent\textbf{Phạm vi của tài liệu.} Các câu hỏi trên tập trung vào ECDF, histogram như một phép chiếu, ước lượng chiếu, NW và kiểm định. Phần ước lượng mật độ bằng nhân đã được rút khỏi ngân hàng câu hỏi theo phạm vi ôn thi mới. Tài liệu không chép lại từng hình minh họa, mã R, bảng tra nguyên trang hay chứng minh đầy đủ của các kết quả sâu chỉ được slide phát biểu (DKW, cận dưới minimax, bất đẳng thức oracle và giới hạn quá trình thực nghiệm). Với các kết quả đó, mục tiêu thi là nêu đúng giả thiết, kết luận và chứng minh hệ quả/phác thảo đúng cấp độ slide.
+
+\section{Chứng minh bổ sung từ ECDF trong Chương 1}
+
+\begin{question}{Phân phối đồng thời tại nhiều điểm và giới hạn Gaussian hữu hạn chiều}
+Với $x_1<\cdots<x_k$, hãy suy ra phân phối của số quan sát trong các khoảng tạo bởi $x_j$ và hiệp phương sai của vectơ ECDF. Từ đó suy ra CLT hữu hạn chiều.
+\slideref{C1}{14--16; suy rộng trực tiếp từ Bernoulli ở trang 14}
+\end{question}
+
+\begin{question}{Chứng minh phép biến đổi xác suất tích lũy $F(X)$ là đều}
+Giả sử $F$ liên tục. Chứng minh $F(X)\sim\mathrm{Unif}(0,1)$, kể cả khi $F$ có đoạn hằng.
+\slideref{C1}{8--9}
+\end{question}
+
+\begin{question}{Vì sao KS, CvM và AD một mẫu không phụ thuộc dạng của $F_0$?}
+Giả sử $F_0$ liên tục và được chỉ định hoàn toàn. Dùng $U_i=F_0(X_i)$ để biến đổi ba thống kê.
+\slideref{C1}{36--40; hệ quả từ trang 8}
+\end{question}
+
+\begin{question}{Tự tính tích phân và chứng minh công thức tổng của CvM}
+Chứng minh $n\int(\Fn-F_0)^2\,dF_0=1/(12n)+\sum_{i=1}^n[U_{(i)}-(2i-1)/(2n)]^2$ khi $F_0$ liên tục.
+\slideref{C1}{39}
+\end{question}
+
+\begin{question}{Tự tính tích phân và chứng minh công thức log của Anderson--Darling}
+Chứng minh dạng tổng của $n\int(\Fn-F_0)^2/[F_0(1-F_0)]\,dF_0$ bằng cách phân tích phân thức trên từng khoảng giữa các $U_{(i)}$.
+\slideref{C1}{40}
+\end{question}
+
+\begin{question}{Chứng minh phân vị mẫu nhất quán từ Glivenko--Cantelli}
+Đặt $q=F^{-1}(p)$ và $\widehat q_n=\Fn^{-1}(p)$. Phát biểu điều kiện tại $q$ để $\widehat q_n\to q$ gần chắc chắn và chứng minh bằng hai điểm $q-\varepsilon,q+\varepsilon$.
+\slideref{C1}{16--17, 31, 35}
+\end{question}
+
+\begin{question}{Từ DKW suy ra cận kỳ vọng của sai số đều}
+Với $Z_n=\sup_x|\Fn(x)-F(x)|$, chứng minh $\E Z_n\le\sqrt{\pi/(2n)}$ bằng công thức tích phân đuôi.
+\slideref{C1}{18; hệ quả trực tiếp của DKW}
+\end{question}
+
+\begin{question}{Đảo băng DKW thành khoảng tin cậy cho phân vị}
+Nếu $L\le F\le U$ đồng thời, chứng minh $U^{-1}(p)\le F^{-1}(p)\le L^{-1}(p)$ khi các nghịch đảo hữu hạn; áp dụng với băng DKW và nêu điều kiện biên.
+\slideref{C1}{8, 19, 35; hệ quả trực tiếp}
+\end{question}
+
+\begin{question}{Vì sao phương sai plug-in chia cho $n$ và có bias?}
+Tính kỳ vọng của $n^{-1}\sum_i(X_i-\bar X)^2$ khi $X_i$ có phương sai $\sigma^2<\infty$.
+\slideref{C1}{30, 33--34; tính chất suy ra từ công thức trên slide}
+\end{question}
+
+\begin{question}{Vì sao hội tụ đều của CDF chưa đủ cho mọi phiếm hàm plug-in?}
+Cho một dãy CDF hội tụ đều về $F$ nhưng trung bình không hội tụ. Từ đó nêu đúng điều kiện liên tục cần dùng trong nguyên lý thế.
+\slideref{C1}{17, 28--31; kiểm tra giả thiết của mệnh đề trên slide}
+\end{question}
+
+\section{Bổ sung chứng minh và bài tập từ slide ước lượng chiếu}
+
+\begin{question}{Tính rủi ro chính xác cho cơ sở lượng giác và histogram}
+Dùng tính chất $\sum_{j=1}^D\phi_j(x)^2=D$ để viết rủi ro thành biểu thức chính xác.
+\slideref{C2P}{5--6, 13--15}
+\end{question}
+
+\begin{question}{Chứng minh cận chuẩn vô cùng của cơ sở Legendre từng ô}
+Với $d$ ô, đa thức đến bậc $r$ và $D=d(r+1)$, chứng minh $\|t\|_\infty\le\sqrt{r+1}\sqrt D\|t\|_2$ từ các hàm cơ sở trên slide.
+\slideref{C2P}{7--8}
+\end{question}
+
+\begin{question}{Vì sao các không gian histogram đều ô không lồng nhau khi tăng $D$?}
+So sánh $D=2$ và $D=3$; đối chiếu với tính lồng nhau của cơ sở lượng giác.
+\slideref{C2P}{5--6, 8, 22}
+\end{question}
+
+\begin{question}{Kiểm tra dấu của hạng quá trình thực nghiệm trong phác thảo oracle}
+Từ định nghĩa $\gamma_n(t)=\|t\|_2^2-2P_nt$ và $\nu_n(t)=(P_n-P)t$, tự khai triển $\gamma_n(t)-\gamma_n(s)$; chỉ ra dấu đúng trong công thức trên slide 24.
+\slideref{C2P}{12, 23--24}
+\end{question}
+
+\section{Bài tập và chứng minh bổ sung từ slide hồi quy và kiểm định}
+
+\begin{question}{Bài tập dấu cho dữ liệu cặp trước--sau trên slide}
+Từ 12 hiệu số cân nặng ở C5 trang 12, bỏ hiệu bằng 0, tính $S^+$ và $p$ một phía cho $H_1:m_D<0$, rồi kết luận ở mức $5\%$.
+\slideref{C5}{12--13}
+\end{question}
+
+\begin{question}{Bài tập 4: suy ra trọng số local linear từ hệ chuẩn $2\times2$}
+Từ $S_k,T_k$ của C3 trang 35, biến đổi nghiệm $\widehat r_{LL}(x)$ thành trung bình có trọng số $w_i=K_h(X_i-x)[S_2-(X_i-x)S_1]$ và kiểm tra tổng trọng số.
+\slideref{C3}{32--35, 49}
+\end{question}
+
+\begin{question}{Chứng minh local linear khử hạng bias bậc một tại điểm nội và biên}
+Dùng hai moment rời rạc $\sum_i\ell_i=1$ và $\sum_i\ell_i(X_i-x)=0$ để khai triển bias có điều kiện theo thiết kế; nêu điều kiện cần cho bậc $O(h^2)$.
+\slideref{C3}{36--40, 46--47}
+\end{question}
+
+\begin{question}{Chứng minh các moment của equivalent kernel}
+Từ $K_\ell^*(u)=e_0^\top S^{-1}(1,u,\ldots,u^\ell)^\top K(u)$, chứng minh $\int u^kK_\ell^*(u)du=\delta_{0k}$ cho $0\le k\le\ell$.
+\slideref{C3}{41--43}
+\end{question}
+
+\begin{question}{Bài tập 7: tính CV, GCV và so sánh NW với local linear trên mcycle}
+Dùng dữ liệu \texttt{MASS::mcycle} của slide; chọn băng thông trên lưới $0.5,0.75,\ldots,15$ bằng CV và GCV cho từng estimator, rồi xem đồ thị ở biên.
+\slideref{C3}{8--10, 24--25, 44--50}
+\end{question}
+
+\begin{question}{Chứng minh chuẩn tiệm cận của $W^+$ bằng định lý Lyapunov}
+Từ biểu diễn gán dấu $W^+=\sum_{j=1}^n jB_j$ ở slide, kiểm tra điều kiện Lyapunov rồi suy ra CLT khi không có hạng trùng.
+\slideref{C5}{16--18}
+\end{question}
+
+\begin{question}{Kiểm tra $p$ chính xác của ví dụ Spearman và Kendall trên slide}
+Với vector hạng ở C5 trang 32 và dãy điểm theo $X$ ở trang 35, đếm các hoán vị cực đoan; so sánh với các $p$ và ngưỡng được in trên slide.
+\slideref{C5}{32--36, 43}
+\end{question}
+
+\begin{question}{Hệ số local polynomial ước lượng các đạo hàm như thế nào?}
+Đối chiếu cơ sở Taylor chuẩn hóa $V_\ell(z)=(1,z,z^2/2!,\ldots)$ ở trang 30 với cơ sở đơn thức thô ở trang 32; xác định đúng hệ số ước lượng $r^{(k)}(x)$.
+\slideref{C3}{29--32, 42}
+\end{question}
+
+\begin{question}{Từ bias $h^\beta$ và variance $(nh)^{-1}$ suy ra tốc độ local polynomial}
+Tối ưu cận MSE ở C3 trang 42--43 theo $h$ và nêu rõ đây là cận trên; khi nào được gọi là minimax tối ưu?
+\slideref{C3}{42--43}
+\end{question}
+
+\begin{question}{Xấp xỉ chuẩn và hiệu chỉnh liên tục cho kiểm định dấu, Wilcoxon, Mann--Whitney}
+Viết các trung bình, phương sai dưới $H_0$ từ slide và chỉ rõ cách chọn dấu $0.5$ khi tính đuôi trái hoặc phải.
+\slideref{C5}{8--9, 17--18, 25, 40--42}
+\end{question}
+
+\section{Ví dụ trên slide: giải từng phép tính}
+
+\begin{question}{Ví dụ ECDF trên hình ở Chương 1}
+Với năm quan sát $(1,1.2,1.5,2,2.5)$ trên C1 trang 12, viết toàn bộ hàm bậc thang, kiểm tra giá trị ngay trước/sau từng điểm nhảy và tính xác suất thực nghiệm của $(1.2,2]$.
+\slideref{C1}{11--12}
+\end{question}
+
+\begin{question}{Ví dụ nhị thức $X_i\sim U[0,2]$ ở Chương 1}
+Với $n=100$ và $x_0=0.8$, viết phân phối chính xác của $\Fn(0.8)$, tính kỳ vọng, phương sai và độ lệch chuẩn.
+\slideref{C1}{14--15, 20}
+\end{question}
+
+\begin{question}{Ví dụ Wald và Hoeffding cùng dữ liệu $n=100,\widehat p=0.4$}
+Tính hai khoảng tin cậy 95\% trên C1 trang 21 và 26 từng phép tính; so sánh ý nghĩa bảo đảm phủ của chúng.
+\slideref{C1}{20--27}
+\end{question}
+
+\begin{question}{Ví dụ mô phỏng phân phối mũ bằng nghịch đảo CDF}
+Từ $F(x)=1-e^{-\lambda x}$ trên C1 trang 9, giải $F^{-1}$ và kiểm tra trực tiếp rằng $X=-\log(1-U)/\lambda$ có phân phối mũ.
+\slideref{C1}{8--9}
+\end{question}
+
+\begin{question}{Ví dụ mô phỏng hồi quy trên slide: ba băng thông, CV và biên}
+Tái lập dữ liệu $n=200$, $r(x)=\sin(2\pi x)+0.5x$, seed 2025; tính băng thông NW bằng CV theo lưới trên slide và so sánh NW với local linear tại $x=0,0.5,1$.
+\slideref{C3}{26--28, 44--47}
+\end{question}
+
+\newpage
+\begin{question}{Ví dụ phép chiếu $N(4,25)$: tính được gì khi slide không cho mẫu thô?}
+Với $n=1000$, viết từng bước chuẩn hóa, các hệ số và ba ước lượng $D=3,5$ và histogram $D=10$ trên C2P trang 25; tính giá trị của mật độ thật tại $x=4$.
+\slideref{C2P}{9--11, 25--26}
+\end{question}
+
+\begin{question}{Ví dụ gán hạng đầu Chương 5}
+Từ mẫu $(5,2,6,3,8,1)$ trên C5 trang 5, sắp thứ tự, gán hạng từng quan sát theo đúng vị trí ban đầu và kiểm tra tổng hạng.
+\slideref{C5}{5}
+\end{question}
+
+\begin{question}{Ba ví dụ CDF trên slide đầu Chương 1}
+Viết CDF cho $U[0,1]$, $\operatorname{Exp}(0.5)$ và biến hỗn hợp bằng $0.5$ với xác suất $1/2$, còn lại phân phối đều trên $[0,1]$; tính bước nhảy tại $0.5$ của biến hỗn hợp.
+\slideref{C1}{6--7}
+\end{question}
+
+\begin{question}{Tính từng ước lượng plug-in được liệt kê ở Chương 1}
+Từ $P_n=n^{-1}\sum_i\delta_{X_i}$, suy ra công thức mẫu cho trung bình, moment bậc $k$, xác suất đuôi, giá trị CDF, phương sai, skewness, phân vị và tương quan hai biến.
+\slideref{C1}{28--35}
+\end{question}
+
+\begin{question}{Giải thích hai hình ECDF hai mẫu dưới $H_0$ và $H_1$}
+Từ hai ECDF của C1 trang 45, chỉ rõ sai khác nào được KS, CvM và Anderson--Darling đo; nêu phần không thể tính số khi slide chỉ cung cấp hình.
+\slideref{C1}{42--46}
+\end{question}
+
+\newpage
+\begin{question}{Tái lập ví dụ local linear và local quadratic trên slide hồi quy}
+Với dữ liệu mô phỏng seed 2025 và cùng băng thông $0.08$, tính các giá trị ở $x=0,0.5,1$ bằng \texttt{KernSmooth::locpoly} bậc 1, 2; so sánh đồ thị với hàm thật.
+\slideref{C3}{26, 44--47}
+\end{question}
+
+\section{Bảng tự kiểm cuối cùng}
+\begin{enumerate}
+\item Với mỗi claim, nêu rõ giả thiết: i.i.d., liên tục, đối xứng, trơn, kernel không âm, không có hạng trùng, hay $f_X(x)>0$.
+\item Với mỗi chứng minh, chỉ đúng bước quyết định: Bernoulli, đổi biến, Taylor, trực chuẩn/Pythagoras, gán dấu ngẫu nhiên, hay hoán vị hạng.
+\item Với mỗi bài kiểm định, viết đúng $H_0,H_1$, chiều đuôi, thống kê, phân phối dưới $H_0$, $p$-value/ngưỡng và kết luận theo bối cảnh.
+\item Phân biệt định lý được \emph{phát biểu} trên slide (DKW, cận minimax, oracle, giới hạn quá trình) với hệ quả có thể tự chứng minh ở thời lượng thi.
+\end{enumerate}
+
+\end{document}
