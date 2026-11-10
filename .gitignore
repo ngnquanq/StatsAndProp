@@ -31,6 +31,8 @@ PhD_Applications/
 99. For fun/financial-engineering/
 .vscode/
 .playwright-mcp/
+99. For fun/agent-engineering/node_modules/
+99. For fun/agent-engineering/.browsers/
 .DS_Store
 **/.DS_Store
 *.toc
