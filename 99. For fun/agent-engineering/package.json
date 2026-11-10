@@ -3,7 +3,8 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "crawl": "node crawl.mjs"
+    "crawl": "node crawl.mjs",
+    "download": "node download.mjs"
   },
   "devDependencies": {
     "playwright": "1.56.1"

@@ -33,6 +33,10 @@ PhD_Applications/
 .playwright-mcp/
 99. For fun/agent-engineering/node_modules/
 99. For fun/agent-engineering/.browsers/
+99. For fun/agent-engineering/slides/
+99. For fun/agent-engineering/readings/
+99. For fun/agent-engineering/ARCHIVE.md
+99. For fun/agent-engineering/archive.json
 .DS_Store
 **/.DS_Store
 *.toc
